@@ -1,0 +1,216 @@
+import { useEffect, useRef, useState } from "react";
+import { AccountStub } from "./settings/account";
+import { AdvancedPanel } from "./settings/advanced-panel";
+import { BugReportPanel } from "./settings/bug-report-panel";
+import { LibraryPanel, type LibraryKey } from "./settings/library-panel";
+import { LanguagePanel } from "./settings/language-panel";
+import { SettingsNav } from "./settings/nav";
+import { HotkeysPanel } from "./settings/hotkeys-panel";
+import { PlayerLayoutPanel } from "./settings/player-layout-panel";
+import { QualityPanel } from "./settings/quality-panel";
+import { TraktPanel } from "./settings/trakt-panel";
+import { RelaySection, type RelayMode } from "./settings/relay-section";
+import { SettingsActiveContext, type SectionId } from "./settings/shared";
+import { StreamingSourcesPanel, type DebridKey } from "./settings/streaming-sources-panel";
+import { ThemePanel } from "./settings/theme-panel";
+import { WebhooksPanel } from "./settings/webhooks-panel";
+import { BackToTop } from "@/components/back-to-top";
+import { resetOmdbBudget } from "@/lib/providers/omdb";
+import { useSettings } from "@/lib/settings";
+import { useView } from "@/lib/view";
+
+const IS_WEB = typeof window !== "undefined" && !("__TAURI_INTERNALS__" in window);
+
+const SECTION_META: Record<SectionId, { label: string; sub: string }> = {
+  account: {
+    label: "Account",
+    sub: "Your Stremio sign-in. Library, watch progress, and addons sync from here.",
+  },
+  library: {
+    label: "Library & metadata",
+    sub: "Optional keys that unlock TMDB rails, baked-in poster ratings, fanart, and TVDB episode data.",
+  },
+  trakt: {
+    label: "Trakt",
+    sub: "Connect your Trakt account to scrobble playback, sync your watchlist, and pull personalized recommendations.",
+  },
+  relay: {
+    label: "Harbor Relay",
+    sub: IS_WEB
+      ? "Watch Together rooms are routed through Harbor's hosted relay."
+      : "A Cloudflare Worker on your own account that hosts your Watch Together rooms.",
+  },
+  streaming: {
+    label: "Streaming sources",
+    sub: "How Harbor finds and resolves playable streams. Debrid keys and addon installs live here.",
+  },
+  language: {
+    label: "Languages",
+    sub: "Which audio and subtitle languages rank first in stream lists.",
+  },
+  player: {
+    label: "Player & quality",
+    sub: "Pick the playback engine and which quality chips show up on cards.",
+  },
+  playerLayout: {
+    label: "Player layout",
+    sub: "Pick a theme, then rearrange every button in the player chrome. Hide what you never use, promote what you do.",
+  },
+  hotkeys: {
+    label: "Hotkeys",
+    sub: "Every shortcut Harbor responds to. Click a binding to rebind it.",
+  },
+  theme: {
+    label: "Theme & appearance",
+    sub: "Color presets, custom backgrounds, and the font pair Harbor renders in.",
+  },
+  webhooks: {
+    label: "Webhooks",
+    sub: "Push upcoming releases to Discord or Telegram. Pick which calendars feed the notifications.",
+  },
+  bug: {
+    label: "Report a bug",
+    sub: "Send a bug report straight to the Harbor team. Screenshots and screen recordings welcome.",
+  },
+  advanced: {
+    label: "Advanced",
+    sub: "Diagnostics, manual overrides, things most users never need.",
+  },
+};
+
+type SavedKey = LibraryKey | DebridKey;
+
+export function Settings() {
+  const { settings, update } = useSettings();
+  const [tmdbDraft, setTmdbDraft] = useState(settings.tmdbKey);
+  const [omdbDraft, setOmdbDraft] = useState(settings.omdbKey);
+  const [rpdbDraft, setRpdbDraft] = useState(settings.rpdbKey);
+  const [fanartDraft, setFanartDraft] = useState(settings.fanartKey);
+  const [tvdbDraft, setTvdbDraft] = useState(settings.tvdbKey);
+  const [rdDraft, setRdDraft] = useState(settings.rdKey);
+  const [tbDraft, setTbDraft] = useState(settings.tbKey);
+  const [adDraft, setAdDraft] = useState(settings.adKey);
+  const [pmDraft, setPmDraft] = useState(settings.pmKey);
+  const [dlDraft, setDlDraft] = useState(settings.dlKey);
+  const [savedKey, setSavedKey] = useState<SavedKey | null>(null);
+  const { consumeSettingsSection } = useView();
+  const [active, setActive] = useState<SectionId>(() => {
+    const requested = consumeSettingsSection();
+    return (requested as SectionId | null) ?? "account";
+  });
+  const [relayMode, setRelayMode] = useState<RelayMode>("panel");
+  const scrollRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const requested = consumeSettingsSection();
+    if (requested) setActive(requested as SectionId);
+  }, []);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: 0 });
+    if (active !== "relay") setRelayMode("panel");
+  }, [active]);
+
+  const saveKey = (which: SavedKey, value: string) => {
+    const trimmed = value.trim();
+    if (which === "tmdb") update({ tmdbKey: trimmed });
+    else if (which === "omdb") {
+      update({ omdbKey: trimmed });
+      resetOmdbBudget();
+    } else if (which === "rpdb") {
+      if (trimmed) update({ rpdbKey: trimmed, showImdbBadge: false, showRtBadge: false });
+      else update({ rpdbKey: trimmed });
+    }
+    else if (which === "fanart") update({ fanartKey: trimmed });
+    else if (which === "tvdb") update({ tvdbKey: trimmed });
+    else if (which === "rd") update({ rdKey: trimmed });
+    else if (which === "tb") update({ tbKey: trimmed });
+    else if (which === "ad") update({ adKey: trimmed });
+    else if (which === "pm") update({ pmKey: trimmed });
+    else if (which === "dl") update({ dlKey: trimmed });
+    setSavedKey(which);
+    setTimeout(() => setSavedKey((s) => (s === which ? null : s)), 1400);
+  };
+
+  return (
+    <SettingsActiveContext.Provider value={{ setActive }}>
+    <div className="flex h-full bg-canvas">
+      <SettingsNav active={active} onChange={setActive} />
+      <main
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto pt-28 pb-16"
+      >
+        <div data-tauri-drag-region className="mx-auto flex max-w-3xl flex-col gap-10 px-12">
+          {!(active === "relay" && relayMode !== "panel") && (
+            <header className="flex flex-col gap-2">
+              <h1 className="font-display text-[44px] font-medium leading-[1.05] tracking-tight text-ink">
+                {SECTION_META[active].label}
+              </h1>
+              <p className="text-[15px] text-ink-muted">{SECTION_META[active].sub}</p>
+            </header>
+          )}
+
+          {active === "account" && <AccountStub />}
+
+          {active === "library" && (
+            <LibraryPanel
+              tmdbDraft={tmdbDraft}
+              omdbDraft={omdbDraft}
+              rpdbDraft={rpdbDraft}
+              fanartDraft={fanartDraft}
+              tvdbDraft={tvdbDraft}
+              setTmdbDraft={setTmdbDraft}
+              setOmdbDraft={setOmdbDraft}
+              setRpdbDraft={setRpdbDraft}
+              setFanartDraft={setFanartDraft}
+              setTvdbDraft={setTvdbDraft}
+              savedKey={savedKey}
+              saveKey={saveKey}
+            />
+          )}
+
+          {active === "relay" && (
+            <RelaySection mode={relayMode} onModeChange={setRelayMode} />
+          )}
+
+          {active === "streaming" && (
+            <StreamingSourcesPanel
+              rdDraft={rdDraft}
+              tbDraft={tbDraft}
+              adDraft={adDraft}
+              pmDraft={pmDraft}
+              dlDraft={dlDraft}
+              setRdDraft={setRdDraft}
+              setTbDraft={setTbDraft}
+              setAdDraft={setAdDraft}
+              setPmDraft={setPmDraft}
+              setDlDraft={setDlDraft}
+              savedKey={savedKey}
+              saveKey={saveKey}
+            />
+          )}
+
+          {active === "language" && <LanguagePanel />}
+
+          {active === "player" && <QualityPanel />}
+
+          {active === "playerLayout" && <PlayerLayoutPanel />}
+
+          {active === "hotkeys" && <HotkeysPanel />}
+
+          {active === "trakt" && <TraktPanel />}
+
+          {active === "theme" && <ThemePanel />}
+
+          {active === "webhooks" && <WebhooksPanel />}
+
+          {active === "bug" && <BugReportPanel />}
+
+          {active === "advanced" && <AdvancedPanel />}
+        </div>
+      </main>
+      <BackToTop scrollRef={scrollRef} />
+    </div>
+    </SettingsActiveContext.Provider>
+  );
+}

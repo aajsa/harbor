@@ -1,0 +1,75 @@
+import type { CalendarFilter, CalendarItem } from "@/lib/calendar";
+import { type LibraryItem } from "@/lib/stremio";
+import type { Meta } from "@/lib/cinemeta";
+import type { Cell } from "./types";
+
+export const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
+export const WEEKDAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+export const FILTERS: Array<{ id: CalendarFilter; label: string }> = [
+  { id: "all", label: "All" },
+  { id: "movie", label: "Movies" },
+  { id: "tv", label: "TV" },
+  { id: "anime", label: "Anime" },
+];
+
+export function calendarToMeta(item: CalendarItem): Meta {
+  return {
+    id: item.id,
+    type: item.type === "tv" ? "series" : "movie",
+    name: item.name,
+    poster: item.poster ?? undefined,
+    background: item.background ?? undefined,
+    description: item.overview,
+    releaseInfo: item.releaseDate.slice(0, 4),
+    releaseDate: item.releaseDate,
+  };
+}
+
+export function normalizeName(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/[’‘“”'"`]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+export function buildLibraryNameSet(items: LibraryItem[]): Set<string> {
+  const out = new Set<string>();
+  for (const item of items) {
+    if (item.removed && !item.temp) continue;
+    if (!item.name) continue;
+    const t = item.type === "series" ? "tv" : "movie";
+    out.add(`${normalizeName(item.name)}::${t}`);
+  }
+  return out;
+}
+
+export function buildMonthCells(year: number, month: number): Cell[] {
+  const first = new Date(year, month, 1);
+  const dayOfWeek = first.getDay();
+  const start = new Date(year, month, 1 - dayOfWeek);
+  const cells: Cell[] = [];
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    cells.push({ date: d, iso, inMonth: d.getMonth() === month });
+  }
+  return cells;
+}
+
+export function formatDateLong(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  const date = new Date(y, (m ?? 1) - 1, d ?? 1);
+  return date.toLocaleDateString(undefined, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}

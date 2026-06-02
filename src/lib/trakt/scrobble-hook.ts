@@ -1,0 +1,152 @@
+import { useEffect, useRef } from "react";
+import { useTrakt } from "./provider";
+import { TRAKT_API_BASE, TRAKT_API_VERSION, TRAKT_CLIENT_ID } from "./config";
+import { getSession } from "./session";
+import type { PlayerSrc } from "@/lib/view";
+
+type Snap = {
+  status: string;
+  positionSec: number;
+  durationSec: number;
+};
+
+type LastAction = "start" | "pause" | "stop" | null;
+
+export function useTraktScrobble({ src, snap }: { src: PlayerSrc; snap: Snap }): void {
+  const { isConnected, resolveTarget, scrobble } = useTrakt();
+  const lastActionRef = useRef<LastAction>(null);
+  const lastKeyRef = useRef<string | null>(null);
+
+  const metaId = src.meta.id;
+  const season = src.episode?.season;
+  const episode = src.episode?.episode;
+  const key = `${metaId}|${season ?? ""}|${episode ?? ""}`;
+
+  const stopArgsRef = useRef({ metaId, episode: src.episode, snap });
+  stopArgsRef.current = { metaId, episode: src.episode, snap };
+
+  useEffect(() => {
+    if (!isConnected) return;
+    const target = resolveTarget(metaId, src.episode);
+    if (!target) return;
+    const onPageHide = () => {
+      const a = stopArgsRef.current;
+      if (a.snap.durationSec <= 0) return;
+      if (lastActionRef.current !== "start" && lastActionRef.current !== "pause") return;
+      const progress = Math.min(100, Math.max(0, (a.snap.positionSec / a.snap.durationSec) * 100));
+      sendPauseBeacon(target, progress);
+      lastActionRef.current = "pause";
+    };
+    window.addEventListener("pagehide", onPageHide);
+    return () => window.removeEventListener("pagehide", onPageHide);
+  }, [isConnected, resolveTarget, metaId, src.episode]);
+
+  useEffect(() => {
+    if (lastKeyRef.current && lastKeyRef.current !== key) {
+      const prevPos = snap.positionSec;
+      const prevDur = snap.durationSec;
+      if (prevDur > 0) {
+        const progress = Math.min(100, (prevPos / prevDur) * 100);
+        scrobble("pause", { metaId, episode: src.episode, progress });
+      }
+      lastActionRef.current = "pause";
+    }
+    lastKeyRef.current = key;
+  }, [key, metaId, src.episode, scrobble, snap.durationSec, snap.positionSec]);
+
+  useEffect(() => {
+    if (!isConnected) return;
+    const target = resolveTarget(metaId, src.episode);
+    if (!target) return;
+    if (snap.durationSec <= 0) return;
+    const progress = Math.min(100, Math.max(0, (snap.positionSec / snap.durationSec) * 100));
+
+    if (snap.status === "playing" && lastActionRef.current !== "start") {
+      scrobble("start", { metaId, episode: src.episode, progress });
+      lastActionRef.current = "start";
+    } else if (snap.status === "paused" && lastActionRef.current === "start") {
+      scrobble("pause", { metaId, episode: src.episode, progress });
+      lastActionRef.current = "pause";
+    }
+  }, [
+    isConnected,
+    resolveTarget,
+    scrobble,
+    metaId,
+    src.episode,
+    snap.status,
+    snap.positionSec,
+    snap.durationSec,
+  ]);
+
+  const seekTrackRef = useRef({ pos: 0, at: 0, lastResyncAt: 0 });
+  useEffect(() => {
+    if (!isConnected) return;
+    if (snap.durationSec <= 0) return;
+    if (lastActionRef.current !== "start") {
+      seekTrackRef.current = { pos: snap.positionSec, at: Date.now(), lastResyncAt: 0 };
+      return;
+    }
+    const now = Date.now();
+    const ref = seekTrackRef.current;
+    const dPos = snap.positionSec - ref.pos;
+    const dT = (now - ref.at) / 1000;
+    ref.pos = snap.positionSec;
+    ref.at = now;
+    const isSeek = Math.abs(dPos) > 8 && (dT < 1.5 || Math.abs(dPos / Math.max(0.001, dT)) > 4);
+    if (!isSeek) return;
+    if (now - ref.lastResyncAt < 30000) return;
+    ref.lastResyncAt = now;
+    const progress = Math.min(100, Math.max(0, (snap.positionSec / snap.durationSec) * 100));
+    scrobble("start", { metaId, episode: src.episode, progress });
+  }, [isConnected, scrobble, metaId, src.episode, snap.positionSec, snap.durationSec]);
+
+  useEffect(() => {
+    return () => {
+      if (lastActionRef.current !== "start" && lastActionRef.current !== "pause") return;
+      const a = stopArgsRef.current;
+      if (a.snap.durationSec > 0) {
+        const progress = Math.min(100, (a.snap.positionSec / a.snap.durationSec) * 100);
+        scrobble("pause", { metaId: a.metaId, episode: a.episode, progress });
+      }
+      lastActionRef.current = "pause";
+    };
+  }, [scrobble]);
+}
+
+function sendPauseBeacon(
+  target: ReturnType<NonNullable<ReturnType<typeof useTrakt>["resolveTarget"]>> & object,
+  progress: number,
+): void {
+  const session = getSession();
+  if (!session) return;
+  const clamped = Math.max(0, Math.min(100, Number(progress.toFixed(2))));
+  let body: object;
+  if (target.kind === "movie") {
+    body = { movie: { ids: target.ids }, progress: clamped };
+  } else if (target.kind === "episode") {
+    body = {
+      show: { ids: target.show.ids },
+      episode: { season: target.season, number: target.number },
+      progress: clamped,
+    };
+  } else {
+    body = { show: { ids: target.ids }, progress: clamped };
+  }
+  const url = `${TRAKT_API_BASE}/scrobble/pause`;
+  try {
+    void fetch(url, {
+      method: "POST",
+      keepalive: true,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.accessToken}`,
+        "trakt-api-version": TRAKT_API_VERSION,
+        "trakt-api-key": TRAKT_CLIENT_ID,
+      },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    /* noop */
+  }
+}

@@ -1,0 +1,421 @@
+import {
+  Children,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useView } from "@/lib/view";
+
+const GAP = 20;
+const EAGER_COUNT = 6;
+const NEAR_MARGIN = "300px";
+
+export type RowShape = "portrait" | "landscape" | "service" | "rank" | "tile";
+
+const RowTrackContext = createContext<HTMLDivElement | null>(null);
+export const ScrollRootContext = createContext<HTMLElement | null>(null);
+
+function LazyChild({
+  children,
+  eager,
+  shape,
+}: {
+  children: ReactNode;
+  eager: boolean;
+  shape: RowShape;
+}) {
+  const root = useContext(RowTrackContext);
+  const [visible, setVisible] = useState(eager);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (visible) return;
+    if (!root) return;
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) setVisible(true);
+      },
+      { root, rootMargin: NEAR_MARGIN },
+    );
+    io.observe(el);
+    const recheck = window.setTimeout(() => {
+      const rect = el.getBoundingClientRect();
+      const rr = root.getBoundingClientRect();
+      const near = 300;
+      const within =
+        rect.right > rr.left - near &&
+        rect.left < rr.right + near &&
+        rect.bottom > rr.top - near &&
+        rect.top < rr.bottom + near;
+      if (within) setVisible(true);
+    }, 400);
+    return () => {
+      io.disconnect();
+      window.clearTimeout(recheck);
+    };
+  }, [root, visible]);
+
+  return (
+    <div ref={ref} className="h-full">
+      {visible ? children : <Skeleton shape={shape} />}
+    </div>
+  );
+}
+
+function Skeleton({ shape }: { shape: RowShape }) {
+  if (shape === "service") {
+    return <div className="h-20 w-full rounded-xl bg-elevated/40" />;
+  }
+  if (shape === "rank") {
+    return <div className="aspect-[228/268] w-full rounded-xl bg-elevated/30" />;
+  }
+  if (shape === "tile") {
+    return <div className="aspect-[5/4] w-full rounded-2xl bg-elevated/30" />;
+  }
+  const aspect = shape === "landscape" ? "aspect-[16/9]" : "aspect-[2/3]";
+  return (
+    <div className="flex w-full min-w-0 flex-col gap-2.5">
+      <div className={`${aspect} rounded-xl bg-elevated/40`} />
+      <div className="flex flex-col gap-1.5">
+        <div className="h-3 w-3/5 rounded bg-elevated/35" />
+        <div className="h-3 w-2/5 rounded bg-elevated/25" />
+      </div>
+    </div>
+  );
+}
+
+export function Row({
+  title,
+  className = "",
+  min = 144,
+  shape = "portrait",
+  scrollKey,
+  children,
+  onEndReached,
+}: {
+  title?: React.ReactNode;
+  className?: string;
+  min?: number;
+  shape?: RowShape;
+  alwaysActive?: boolean;
+  scrollKey?: string;
+  children: React.ReactNode;
+  onEndReached?: () => void;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [trackEl, setTrackEl] = useState<HTMLDivElement | null>(null);
+  const trackCb = useCallback((el: HTMLDivElement | null) => {
+    trackRef.current = el;
+    setTrackEl(el);
+  }, []);
+  const [cellWidth, setCellWidth] = useState<number | null>(null);
+  const [canPrev, setCanPrev] = useState(false);
+  const [canNext, setCanNext] = useState(false);
+  const onEndRef = useRef(onEndReached);
+  useEffect(() => {
+    onEndRef.current = onEndReached;
+  });
+
+  const measure = () => {
+    const container = containerRef.current;
+    if (!container) return;
+    const available = container.clientWidth;
+    if (available <= 0) return;
+    const fits = Math.max(1, Math.floor((available + GAP) / (min + GAP)));
+    setCellWidth((available - (fits - 1) * GAP) / fits);
+  };
+
+  const measureScroll = () => {
+    const el = trackRef.current;
+    if (!el) return;
+    setCanPrev(el.scrollLeft > 1);
+    const remaining = el.scrollWidth - (el.scrollLeft + el.clientWidth);
+    setCanNext(remaining > 1);
+    if (el.clientWidth > 0 && remaining < 800) onEndRef.current?.();
+  };
+
+  const childCount = Children.count(children);
+  const restoredRef = useRef(false);
+  const userInteractedRef = useRef(false);
+  const { rememberRowScroll, recallRowScroll } = useView();
+  useLayoutEffect(() => {
+    measure();
+    measureScroll();
+    if (!trackEl || cellWidth == null) return;
+    if (scrollKey && !restoredRef.current && childCount > 0) {
+      const n = recallRowScroll(scrollKey);
+      const max = trackEl.scrollWidth - trackEl.clientWidth;
+      const target = n != null && n > 0 && max > 0 ? Math.min(n, max) : 0;
+      if (trackEl.scrollLeft !== target) trackEl.scrollLeft = target;
+      restoredRef.current = true;
+      return;
+    }
+    if (!userInteractedRef.current && trackEl.scrollLeft !== 0) {
+      trackEl.scrollLeft = 0;
+    }
+  }, [children, childCount, cellWidth, trackEl, scrollKey, recallRowScroll]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    const track = trackRef.current;
+    if (!container || !track) return;
+    const ro = new ResizeObserver(() => {
+      measure();
+      measureScroll();
+    });
+    ro.observe(container);
+    ro.observe(track);
+    let saveTimer: number | null = null;
+    const onScroll = () => {
+      measureScroll();
+      if (!scrollKey) return;
+      if (saveTimer != null) window.clearTimeout(saveTimer);
+      saveTimer = window.setTimeout(() => {
+        saveTimer = null;
+        rememberRowScroll(scrollKey, track.scrollLeft);
+      }, 200);
+    };
+    track.addEventListener("scroll", onScroll, { passive: true });
+    const markInteracted = () => {
+      userInteractedRef.current = true;
+    };
+    track.addEventListener("wheel", markInteracted, { passive: true });
+    track.addEventListener("pointerdown", markInteracted);
+    track.addEventListener("keydown", markInteracted);
+    const onReset = (e: Event) => {
+      const detail = (e as CustomEvent<{ prefix?: string }>).detail;
+      if (!scrollKey) return;
+      if (!detail?.prefix || !scrollKey.startsWith(detail.prefix)) return;
+      if (saveTimer != null) {
+        window.clearTimeout(saveTimer);
+        saveTimer = null;
+      }
+      track.scrollLeft = 0;
+      rememberRowScroll(scrollKey, 0);
+      userInteractedRef.current = false;
+      measureScroll();
+    };
+    window.addEventListener("harbor:reset-row-scrolls", onReset);
+    return () => {
+      ro.disconnect();
+      track.removeEventListener("scroll", onScroll);
+      track.removeEventListener("wheel", markInteracted);
+      track.removeEventListener("pointerdown", markInteracted);
+      track.removeEventListener("keydown", markInteracted);
+      window.removeEventListener("harbor:reset-row-scrolls", onReset);
+      if (saveTimer != null) window.clearTimeout(saveTimer);
+      if (rafId.current != null) cancelAnimationFrame(rafId.current);
+      if (scrollKey && track.scrollLeft > 0) {
+        rememberRowScroll(scrollKey, track.scrollLeft);
+      }
+    };
+  }, [scrollKey, rememberRowScroll]);
+
+  const scroll = (dir: -1 | 1) => {
+    const el = trackRef.current;
+    if (!el) return;
+    userInteractedRef.current = true;
+    el.scrollBy({ left: dir * el.clientWidth, behavior: "smooth" });
+  };
+
+  const drag = useRef({
+    active: false,
+    moved: false,
+    startX: 0,
+    startScroll: 0,
+    pointerId: -1,
+    lastX: 0,
+    lastT: 0,
+    vel: 0,
+  });
+  const rafId = useRef<number | null>(null);
+
+  const cancelGlide = () => {
+    if (rafId.current != null) {
+      cancelAnimationFrame(rafId.current);
+      rafId.current = null;
+    }
+  };
+
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0 || e.pointerType === "touch") return;
+    if (!(e.target as Element).closest("button")) return;
+    const el = trackRef.current;
+    if (!el) return;
+    cancelGlide();
+    drag.current = {
+      active: true,
+      moved: false,
+      startX: e.clientX,
+      startScroll: el.scrollLeft,
+      pointerId: e.pointerId,
+      lastX: e.clientX,
+      lastT: performance.now(),
+      vel: 0,
+    };
+  };
+
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const d = drag.current;
+    const el = trackRef.current;
+    if (!d.active || !el) return;
+    const dx = e.clientX - d.startX;
+    if (!d.moved && Math.abs(dx) < 6) return;
+    if (!d.moved) {
+      d.moved = true;
+      el.style.scrollSnapType = "none";
+      el.style.scrollBehavior = "auto";
+      try {
+        el.setPointerCapture(d.pointerId);
+      } catch {
+        /* ignore */
+      }
+    }
+    const now = performance.now();
+    const dt = now - d.lastT;
+    if (dt > 0) {
+      const instant = (e.clientX - d.lastX) / dt;
+      d.vel = d.vel * 0.55 + instant * 0.45;
+    }
+    d.lastX = e.clientX;
+    d.lastT = now;
+    el.scrollLeft = d.startScroll - dx;
+  };
+
+  const endDrag = (e?: React.PointerEvent<HTMLDivElement>) => {
+    const d = drag.current;
+    const el = trackRef.current;
+    d.active = false;
+    if (!d.moved || !el) {
+      setTimeout(() => {
+        drag.current.moved = false;
+      }, 0);
+      return;
+    }
+    try {
+      if (e) el.releasePointerCapture(d.pointerId);
+    } catch {
+      /* ignore */
+    }
+
+    const friction = 0.004;
+    const v = d.vel;
+    const projection = -((v * Math.abs(v)) / (2 * friction));
+    const projected = el.scrollLeft + projection;
+    const stride = (cellWidth ?? min) + GAP;
+    const max = el.scrollWidth - el.clientWidth;
+    const targetIdx = Math.round(projected / stride);
+    const target = Math.max(0, Math.min(targetIdx * stride, max));
+
+    const start = el.scrollLeft;
+    const distance = target - start;
+    const startTime = performance.now();
+    const duration = Math.max(280, Math.min(620, 260 + Math.abs(distance) * 0.45));
+
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - startTime) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      el.scrollLeft = start + distance * eased;
+      if (t < 1) {
+        rafId.current = requestAnimationFrame(tick);
+      } else {
+        rafId.current = null;
+        el.style.scrollSnapType = "";
+        el.style.scrollBehavior = "";
+      }
+    };
+    rafId.current = requestAnimationFrame(tick);
+
+    setTimeout(() => {
+      drag.current.moved = false;
+    }, 0);
+  };
+
+  const onClickCapture = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (drag.current.moved) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+  };
+
+  return (
+    <div className={`flex min-w-0 flex-col gap-5 pl-[9px] ${className}`}>
+      {title && (
+        <h3 className="truncate text-[17px] font-medium tracking-tight text-ink">
+          {title}
+        </h3>
+      )}
+      <div ref={containerRef} className="group/row relative min-w-0">
+        <RowTrackContext.Provider value={trackEl}>
+          <div
+            ref={trackCb}
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={endDrag}
+            onPointerCancel={endDrag}
+            onClickCapture={onClickCapture}
+            onDragStart={(e) => e.preventDefault()}
+            className="grid grid-flow-col gap-5 overflow-x-auto p-5 -m-5 scroll-pl-5 scroll-pr-5 [scroll-snap-type:x_mandatory] [&>*]:[scroll-snap-align:start] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] [overflow-anchor:none] [&_img]:select-none [&_img]:[-webkit-user-drag:none] [will-change:transform]"
+            style={{ gridAutoColumns: cellWidth != null ? `${cellWidth}px` : `${min}px` }}
+          >
+            {Children.map(children, (child, i) => (
+              <LazyChild eager={i < EAGER_COUNT} shape={shape}>
+                {child}
+              </LazyChild>
+            ))}
+          </div>
+        </RowTrackContext.Provider>
+        <EdgeArrow side="left" visible={canPrev} onClick={() => scroll(-1)} />
+        <EdgeArrow side="right" visible={canNext} onClick={() => scroll(1)} />
+      </div>
+    </div>
+  );
+}
+
+function EdgeArrow({
+  side,
+  visible,
+  onClick,
+}: {
+  side: "left" | "right";
+  visible: boolean;
+  onClick: () => void;
+}) {
+  const sideClass =
+    side === "left"
+      ? "right-full pr-3 justify-end"
+      : "left-full pl-3 justify-start";
+  const shadowClass =
+    side === "left"
+      ? "shadow-[-2px_3px_8px_rgba(0,0,0,0.45)]"
+      : "shadow-[2px_3px_8px_rgba(0,0,0,0.45)]";
+  return (
+    <div
+      className={`absolute top-0 bottom-0 z-30 flex w-9 items-center ${sideClass} ${
+        visible ? "" : "pointer-events-none"
+      }`}
+    >
+      <button
+        onClick={onClick}
+        aria-label={`Scroll ${side}`}
+        tabIndex={visible ? 0 : -1}
+        className={`flex h-[50%] w-7 items-center justify-center rounded-lg border border-edge-soft/40 bg-canvas/95 text-ink-muted ${shadowClass} transition-opacity duration-200 hover:text-ink ${
+          visible
+            ? "opacity-0 group-hover/row:opacity-100"
+            : "pointer-events-none opacity-0"
+        }`}
+      >
+        {side === "left" ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
+      </button>
+    </div>
+  );
+}

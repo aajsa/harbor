@@ -1,0 +1,60 @@
+import stremioWordmark from "@/assets/stremio-wordmark.png";
+import { ContinueCard } from "@/components/continue-card";
+import { Row } from "@/components/row";
+import { type LibraryItem } from "@/lib/stremio";
+import { isLibraryItemWatched } from "@/lib/trakt/library-key";
+import { openUrl } from "@/lib/window";
+
+const STREMIO_REGISTER_URL = "https://www.stremio.com/register";
+
+type Props = {
+  signedIn: boolean;
+  items: LibraryItem[];
+  watchedSet?: Set<string>;
+};
+
+export function CWSection({ signedIn, items, watchedSet }: Props) {
+  if (items.length > 0) {
+    return (
+      <Row title="Continue Watching" min={260} shape="landscape" scrollKey="home:cw">
+        {items.map((item) => (
+          <ContinueCard
+            key={item._id}
+            item={item}
+            watched={watchedSet ? isLibraryItemWatched(item, watchedSet) : false}
+          />
+        ))}
+      </Row>
+    );
+  }
+  return (
+    <div className="flex flex-col gap-4">
+      <h3 className="text-[17px] font-medium tracking-tight text-ink">Continue Watching</h3>
+      <div className="flex items-center justify-center rounded-2xl border border-dashed border-edge px-6 py-14 text-center">
+        {signedIn ? (
+          <p className="text-[15.5px] leading-relaxed text-ink-muted">
+            Nothing in progress yet. Press Play on something.
+          </p>
+        ) : (
+          <p className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[15.5px] leading-relaxed text-ink-muted">
+            <span>Sign in to</span>
+            <button
+              type="button"
+              onClick={() => openUrl(STREMIO_REGISTER_URL)}
+              className="rounded-md transition-opacity hover:opacity-80"
+              aria-label="Open Stremio registration"
+            >
+              <img
+                src={stremioWordmark}
+                alt="Stremio"
+                className="relative top-0.5 h-7 w-auto select-none grayscale invert"
+                draggable={false}
+              />
+            </button>
+            <span>to bring in your library.</span>
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}

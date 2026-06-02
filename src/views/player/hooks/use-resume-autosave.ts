@@ -1,0 +1,79 @@
+import { useEffect, useRef } from "react";
+import { profileFromMeta } from "@/lib/discover/profile";
+import { trackEvent } from "@/lib/discover/store";
+import { savePlayback } from "@/lib/playback-history";
+import { saveResumeMs } from "@/lib/resume";
+import type { PlayerSnapshot } from "@/lib/player/bridge";
+import type { PlayerSrc } from "@/lib/view";
+
+const TICK_MS = 4000;
+const MIN_POSITION_SEC = 5;
+const TASTE_MIN_SEC = 90;
+const WATCHED_RATIO = 0.85;
+
+export function useResumeAutosave(params: {
+  src: PlayerSrc;
+  snap: PlayerSnapshot;
+  season: number | undefined;
+  episode: number | undefined;
+}) {
+  const { src, snap, season, episode } = params;
+  const lastSavedRef = useRef(0);
+  const taughtRef = useRef<Set<string>>(new Set());
+  const latestRef = useRef({ src, snap, season, episode });
+  latestRef.current = { src, snap, season, episode };
+
+  const record = (s: PlayerSrc, sn: PlayerSnapshot, se?: number, ep?: number): void => {
+    const id = s.meta.id;
+    if (!id || id.startsWith("iptv:")) return;
+    if (sn.positionSec < MIN_POSITION_SEC) return;
+    lastSavedRef.current = sn.positionSec * 1000;
+    saveResumeMs(id, sn.positionSec * 1000, se, ep);
+    savePlayback(id, { title: s.meta.name, parsedTitle: s.meta.name }, se, ep);
+    if (sn.positionSec < TASTE_MIN_SEC) return;
+    const ratio = sn.durationSec > 0 ? sn.positionSec / sn.durationSec : 0;
+    const kind = ratio >= WATCHED_RATIO ? "watched" : "play";
+    const key = `${id}|${kind}`;
+    if (taughtRef.current.has(key)) return;
+    taughtRef.current.add(key);
+    trackEvent(id, kind, profileFromMeta(s.meta));
+  };
+
+  const persistNow = (force: boolean): void => {
+    const { src: s, snap: sn, season: se, episode: ep } = latestRef.current;
+    if (s.meta.id?.startsWith("iptv:")) return;
+    if (sn.positionSec < MIN_POSITION_SEC) return;
+    const ms = sn.positionSec * 1000;
+    if (!force && Math.abs(ms - lastSavedRef.current) < 1500) return;
+    record(s, sn, se, ep);
+  };
+
+  useEffect(() => {
+    if (snap.status !== "playing") return;
+    const id = window.setInterval(() => persistNow(false), TICK_MS);
+    return () => window.clearInterval(id);
+  }, [snap.status]);
+
+  useEffect(() => {
+    if (snap.status === "playing") return;
+    persistNow(true);
+  }, [snap.status]);
+
+  useEffect(() => {
+    const mySeason = season;
+    const myEpisode = episode;
+    return () => {
+      record(latestRef.current.src, latestRef.current.snap, mySeason, myEpisode);
+    };
+  }, [src.url, src.meta.id, season, episode]);
+
+  useEffect(() => {
+    const onUnload = () => persistNow(true);
+    window.addEventListener("pagehide", onUnload);
+    window.addEventListener("beforeunload", onUnload);
+    return () => {
+      window.removeEventListener("pagehide", onUnload);
+      window.removeEventListener("beforeunload", onUnload);
+    };
+  }, []);
+}

@@ -1,0 +1,166 @@
+import { Clock } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useAuth } from "@/lib/auth";
+import { library, type LibraryItem } from "@/lib/stremio";
+import { fetchWatchedHistory, type HistoryItem } from "@/lib/trakt/history";
+import { useTrakt } from "@/lib/trakt/provider";
+import {
+  applyFilter,
+  countByType,
+  FilterBar,
+  GroupedGrid,
+  groupByDate,
+  parseTs,
+  type TypeKey,
+  type WatchlistMerged,
+} from "./shared";
+
+export function HistoryTab() {
+  const { authKey } = useAuth();
+  const { isConnected: traktConnected } = useTrakt();
+  const [stremio, setStremio] = useState<LibraryItem[]>([]);
+  const [trakt, setTrakt] = useState<HistoryItem[]>([]);
+  const [traktStatus, setTraktStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
+
+  useEffect(() => {
+    if (!authKey) {
+      setStremio([]);
+      return;
+    }
+    let cancelled = false;
+    library(authKey)
+      .then((items) => {
+        if (cancelled) return;
+        const filtered = items
+          .filter((i) => !i.removed || i.temp)
+          .filter((i) => i.state?.flaggedWatched === 1 || (i.state?.timeOffset ?? 0) > 0)
+          .sort((a, b) => Date.parse(b._mtime) - Date.parse(a._mtime));
+        setStremio(filtered);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [authKey]);
+
+  useEffect(() => {
+    if (!traktConnected) {
+      setTrakt([]);
+      setTraktStatus("idle");
+      return;
+    }
+    let cancelled = false;
+    setTraktStatus("loading");
+    fetchWatchedHistory(200)
+      .then((items) => {
+        if (!cancelled) {
+          setTrakt(items);
+          setTraktStatus("ready");
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setTraktStatus("error");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [traktConnected]);
+
+  const merged = useMemo(() => mergeHistory(stremio, trakt), [stremio, trakt]);
+  const [type, setType] = useState<TypeKey>("all");
+  const [query, setQuery] = useState("");
+  const counts = useMemo(() => countByType(merged), [merged]);
+  const visible = useMemo(() => applyFilter(merged, type, query), [merged, type, query]);
+
+  if (!authKey && !traktConnected) {
+    return (
+      <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-edge-soft bg-canvas/30 px-8 py-16 text-center">
+        <Clock size={28} strokeWidth={1.6} className="text-ink-subtle" />
+        <h2 className="text-[16px] font-semibold text-ink">No history yet</h2>
+        <p className="max-w-md text-[13px] leading-relaxed text-ink-muted">
+          Sign in to Stremio or connect Trakt to see what you've been watching here.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <section className="flex flex-col gap-4">
+      {merged.length > 0 && (
+        <FilterBar type={type} setType={setType} query={query} setQuery={setQuery} counts={counts} />
+      )}
+      <div className="flex items-center justify-between">
+        <span className="text-[12px] text-ink-muted">
+          {merged.length} item{merged.length === 1 ? "" : "s"}
+          {traktConnected && traktStatus === "loading" ? " · Syncing Trakt…" : ""}
+        </span>
+      </div>
+      {merged.length === 0 ? (
+        <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-edge-soft bg-canvas/30 px-8 py-16 text-center">
+          <Clock size={28} strokeWidth={1.6} className="text-ink-subtle" />
+          <h2 className="text-[16px] font-semibold text-ink">Nothing watched yet</h2>
+          <p className="max-w-md text-[13px] leading-relaxed text-ink-muted">
+            Press play on something. It'll show up here once you start watching.
+          </p>
+        </div>
+      ) : visible.length === 0 ? (
+        <p className="rounded-2xl border border-dashed border-edge-soft bg-canvas/30 px-6 py-10 text-center text-[13px] text-ink-muted">
+          No matches for these filters.
+        </p>
+      ) : (
+        <GroupedGrid groups={groupByDate(visible)} />
+      )}
+    </section>
+  );
+}
+
+function mergeHistory(stremio: LibraryItem[], trakt: HistoryItem[]): WatchlistMerged[] {
+  const out = new Map<string, WatchlistMerged>();
+  for (const item of stremio) {
+    out.set(item._id, {
+      key: item._id,
+      meta: {
+        id: item._id,
+        type: item.type,
+        name: item.name,
+        poster: item.poster,
+        background: item.background,
+      },
+      date: parseTs(item._mtime),
+    });
+  }
+  for (const h of trakt) {
+    const id = h.type === "movie" ? h.imdb : h.showImdb;
+    if (!id || out.has(id)) continue;
+    out.set(id, {
+      key: id,
+      meta: {
+        id,
+        type: h.type === "movie" ? "movie" : "series",
+        name: h.type === "movie" ? h.title : (h.showImdb ? "" : h.title),
+      },
+      date: parseTs(h.watchedAt),
+    });
+  }
+  return Array.from(out.values());
+}
+
+export function historyItemsToDated(items: HistoryItem[]): WatchlistMerged[] {
+  const seen = new Set<string>();
+  const out: WatchlistMerged[] = [];
+  for (const h of items) {
+    const id = h.type === "movie" ? h.imdb : h.showImdb;
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    out.push({
+      key: id,
+      meta: {
+        id,
+        type: h.type === "movie" ? "movie" : "series",
+        name: h.title,
+      },
+      date: parseTs(h.watchedAt),
+    });
+  }
+  return out;
+}

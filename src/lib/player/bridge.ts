@@ -1,0 +1,109 @@
+export type TrackInfo = {
+  id: string;
+  label: string;
+  lang?: string;
+  kind: "audio" | "subtitle";
+  selected: boolean;
+  codec?: string;
+  channels?: string;
+  channelCount?: number;
+  title?: string;
+  external?: boolean;
+  forced?: boolean;
+  default?: boolean;
+  hearingImpaired?: boolean;
+};
+
+export type Chapter = {
+  title: string;
+  startSec: number;
+};
+
+export type PlayerStatus = "idle" | "loading" | "ready" | "playing" | "paused" | "ended" | "error";
+
+export type PlayerSnapshot = {
+  status: PlayerStatus;
+  positionSec: number;
+  durationSec: number;
+  bufferedSec: number;
+  volume: number;
+  muted: boolean;
+  rate: number;
+  audioTracks: TrackInfo[];
+  subtitleTracks: TrackInfo[];
+  chapters: Chapter[];
+  subDelaySec: number;
+  audioDelaySec: number;
+  subText: string;
+  subStartSec: number;
+  audioNormalize: boolean;
+  videoWidth: number;
+  videoHeight: number;
+  errorMessage: string | null;
+  errorCode: "decode" | "codec" | "network" | "source" | "unknown" | null;
+};
+
+export type PlayerSource = {
+  url: string;
+  subtitles?: { id?: string; url: string; lang?: string; m?: string }[];
+  notWebReady?: boolean;
+  startAtSec?: number;
+};
+
+export type PlayerBridge = {
+  attach: (host: HTMLElement) => void;
+  detach: () => void;
+  load: (src: PlayerSource) => Promise<void>;
+  play: () => Promise<void>;
+  pause: () => void;
+  seek: (sec: number) => void;
+  setVolume: (v: number) => void;
+  setMuted: (m: boolean) => void;
+  setRate: (r: number) => void;
+  setAudioTrack: (id: string) => void;
+  setSubtitleTrack: (id: string | null) => void;
+  setSubDelay: (sec: number) => void;
+  setAudioDelay: (sec: number) => void;
+  addSubtitle: (url: string, lang?: string, title?: string, select?: boolean) => Promise<boolean>;
+  setAudioNormalize: (on: boolean) => void;
+  screenshot: (path: string) => Promise<{ ok: boolean; path?: string; error?: string }>;
+  setAbLoop: (a: number | null, b: number | null) => void;
+  requestPiP: () => Promise<void>;
+  exitPiP: () => Promise<void>;
+  requestFullscreen: () => Promise<void>;
+  exitFullscreen: () => Promise<void>;
+  capabilities: () => PlayerCapabilities;
+  subscribe: (listener: (snap: PlayerSnapshot) => void) => () => void;
+  destroy: () => void;
+};
+
+export type PlayerCapabilities = {
+  engine: "html5" | "mpv";
+  pictureInPicture: boolean;
+  airplay: boolean;
+  chromecast: boolean;
+  hdrPassthrough: boolean;
+  hardwareDecode: boolean;
+};
+
+export const emptySnapshot: PlayerSnapshot = {
+  status: "idle",
+  positionSec: 0,
+  durationSec: 0,
+  bufferedSec: 0,
+  volume: 1,
+  muted: false,
+  rate: 1,
+  audioTracks: [],
+  subtitleTracks: [],
+  chapters: [],
+  subDelaySec: 0,
+  audioDelaySec: 0,
+  subText: "",
+  subStartSec: 0,
+  audioNormalize: false,
+  videoWidth: 0,
+  videoHeight: 0,
+  errorMessage: null,
+  errorCode: null,
+};

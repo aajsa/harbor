@@ -1,0 +1,42 @@
+import type { PlayEpisode } from "@/lib/view";
+
+export function buildStreamIds(
+  metaId: string,
+  episode: PlayEpisode | undefined,
+  imdbId: string | null,
+): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  const push = (s: string | undefined | null) => {
+    if (!s || seen.has(s)) return;
+    seen.add(s);
+    out.push(s);
+  };
+
+  if (episode?.kitsuStreamId) {
+    push(episode.kitsuStreamId);
+  } else if (metaId.startsWith("kitsu:") && episode) {
+    push(`kitsu:${metaId.split(":")[1]}:${episode.episode}`);
+  } else if ((metaId.startsWith("kitsu:") || metaId.startsWith("mal:")) && !episode) {
+    push(metaId);
+  } else if (metaId.startsWith("tt") && episode) {
+    push(`${metaId}:${episode.season}:${episode.episode}`);
+  } else if (metaId.startsWith("tt") && !episode) {
+    push(metaId);
+  } else if (metaId.startsWith("tmdb:")) {
+    if (episode) push(`${metaId}:${episode.season}:${episode.episode}`);
+    else push(metaId);
+  } else {
+    if (episode) push(`${metaId}:${episode.season}:${episode.episode}`);
+    else push(metaId);
+  }
+
+  if (episode?.imdbId && episode.imdbSeason != null && episode.imdbEpisode != null) {
+    push(`${episode.imdbId}:${episode.imdbSeason}:${episode.imdbEpisode}`);
+  } else if (imdbId && imdbId.startsWith("tt")) {
+    if (episode) push(`${imdbId}:${episode.season}:${episode.episode}`);
+    else push(imdbId);
+  }
+
+  return out;
+}

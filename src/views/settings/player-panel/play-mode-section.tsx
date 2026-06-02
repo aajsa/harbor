@@ -1,0 +1,63 @@
+import { useSettings } from "@/lib/settings";
+
+export function PlayModePanel() {
+  const { settings, update } = useSettings();
+
+  const choices: Array<{
+    id: "instant" | "manual";
+    label: string;
+    sub: string;
+    recommended?: boolean;
+  }> = [
+    {
+      id: "instant",
+      label: "Instant",
+      sub: "Hitting Play jumps straight into playback with the best stream Harbor finds.",
+      recommended: true,
+    },
+    {
+      id: "manual",
+      label: "Manual picker",
+      sub: "Hitting Play opens the source list so you can choose quality, debrid, and audio yourself.",
+    },
+  ];
+
+  return (
+    <div className="flex flex-col gap-2.5">
+      {choices.map((c) => {
+        const selected = (c.id === "instant") === settings.instantPlay;
+        return (
+          <button
+            key={c.id}
+            type="button"
+            onClick={() => update({ instantPlay: c.id === "instant" })}
+            className={`flex items-start gap-3.5 rounded-2xl border px-5 py-4 text-left transition-colors ${
+              selected
+                ? "border-ink bg-elevated"
+                : "border-edge-soft bg-canvas/40 hover:border-edge hover:bg-canvas/60"
+            }`}
+          >
+            <span
+              className={`mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
+                selected ? "border-ink" : "border-edge"
+              }`}
+            >
+              {selected && <span className="h-2.5 w-2.5 rounded-full bg-ink" />}
+            </span>
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <span className="text-[15px] font-semibold text-ink">{c.label}</span>
+                {c.recommended && (
+                  <span className="rounded-md bg-accent/15 px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wider text-accent">
+                    Recommended
+                  </span>
+                )}
+              </div>
+              <span className="text-[12.5px] leading-snug text-ink-muted">{c.sub}</span>
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}

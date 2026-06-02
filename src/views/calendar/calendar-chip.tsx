@@ -1,0 +1,113 @@
+import { useLayoutEffect, useRef, useState } from "react";
+import { Poster } from "@/components/poster";
+import type { CalendarItem } from "@/lib/calendar";
+import { formatDateLong } from "./utils";
+
+export function CalendarChip({
+  item,
+  onOpen,
+}: {
+  item: CalendarItem;
+  onOpen: (item: CalendarItem) => void;
+}) {
+  const [hovered, setHovered] = useState(false);
+  const ref = useRef<HTMLButtonElement>(null);
+  const tag = item.isAnime ? "Anime" : item.type === "movie" ? "Movie" : "TV";
+  const tagClass = item.isAnime
+    ? "bg-rose-400/20 text-rose-200"
+    : item.type === "movie"
+      ? "bg-amber-400/20 text-amber-200"
+      : "bg-blue-400/20 text-blue-200";
+  return (
+    <button
+      ref={ref}
+      onClick={(e) => {
+        e.stopPropagation();
+        onOpen(item);
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className="group relative flex min-w-0 items-center gap-2 rounded-md bg-canvas/50 p-1 pr-2 text-left transition-colors hover:bg-canvas/85"
+    >
+      <div className="h-7 w-5 shrink-0 overflow-hidden rounded-[3px] bg-elevated/50">
+        {item.poster ? (
+          <Poster src={item.poster} seed={item.id} ratio="portrait" className="h-full w-full" />
+        ) : null}
+      </div>
+      <span className="flex-1 truncate text-[11.5px] font-medium text-ink">{item.name}</span>
+      <span
+        className={`hidden shrink-0 rounded-sm px-1 py-px text-[9px] font-bold uppercase tracking-[0.12em] xl:inline ${tagClass}`}
+      >
+        {tag}
+      </span>
+      {hovered && <ChipTooltip item={item} anchorRef={ref} />}
+    </button>
+  );
+}
+
+function ChipTooltip({
+  item,
+  anchorRef,
+}: {
+  item: CalendarItem;
+  anchorRef: React.RefObject<HTMLElement | null>;
+}) {
+  const [pos, setPos] = useState<{ left: number; top: number; ready: boolean }>({
+    left: 0,
+    top: 0,
+    ready: false,
+  });
+
+  useLayoutEffect(() => {
+    const el = anchorRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const tooltipWidth = 320;
+    const tooltipHeight = 220;
+    const margin = 8;
+    let left = rect.right + margin;
+    if (left + tooltipWidth > window.innerWidth - 16) {
+      left = rect.left - tooltipWidth - margin;
+    }
+    let top = rect.top + rect.height / 2 - tooltipHeight / 2;
+    if (top < 16) top = 16;
+    if (top + tooltipHeight > window.innerHeight - 16) {
+      top = window.innerHeight - tooltipHeight - 16;
+    }
+    setPos({ left, top, ready: true });
+  }, [anchorRef]);
+
+  const tag = item.isAnime ? "Anime" : item.type === "movie" ? "Movie" : "TV";
+  const dateLabel = formatDateLong(item.releaseDate);
+
+  return (
+    <div
+      onClick={(e) => e.stopPropagation()}
+      style={{ left: pos.left, top: pos.top, opacity: pos.ready ? 1 : 0 }}
+      className="pointer-events-none fixed z-[140] flex w-[320px] flex-col gap-3 rounded-2xl border border-edge bg-elevated/95 p-4 shadow-[0_24px_60px_-18px_rgba(0,0,0,0.7)] backdrop-blur-md transition-opacity duration-100"
+    >
+      <div className="flex items-start gap-3">
+        <div className="h-[120px] w-[80px] shrink-0 overflow-hidden rounded-lg bg-canvas/40 ring-1 ring-edge-soft">
+          {item.poster ? (
+            <Poster src={item.poster} seed={item.id} ratio="portrait" className="h-full w-full" />
+          ) : null}
+        </div>
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <span className="text-[10.5px] font-bold uppercase tracking-[0.18em] text-ink-subtle">
+            {tag}
+          </span>
+          <p className="text-[14px] font-semibold leading-tight text-ink">{item.name}</p>
+          <p className="text-[12px] text-ink-muted">{dateLabel}</p>
+          {item.voteAverage > 0 && (
+            <p className="text-[11.5px] text-ink-muted">
+              <span className="text-amber-300">★</span> {item.voteAverage.toFixed(1)}
+            </p>
+          )}
+        </div>
+      </div>
+      {item.overview && (
+        <p className="line-clamp-4 text-[12px] leading-relaxed text-ink-muted">{item.overview}</p>
+      )}
+    </div>
+  );
+}

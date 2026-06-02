@@ -1,0 +1,108 @@
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+import { stremioSourceProfileId, useProfiles } from "./profiles";
+import { login as apiLogin, type User } from "./stremio";
+
+type Session = { authKey: string; user: User };
+type AuthValue = {
+  user: User | null;
+  authKey: string | null;
+  signIn: (email: string, password: string, remember?: boolean) => Promise<void>;
+  signOut: () => void;
+};
+
+const PROFILE_KEY_PREFIX = "harbor.auth.";
+
+function profileAuthKey(id: string): string {
+  return PROFILE_KEY_PREFIX + id;
+}
+
+function readProfileSession(id: string): Session | null {
+  try {
+    const raw = localStorage.getItem(profileAuthKey(id));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Session;
+    if (!parsed?.authKey || !parsed?.user) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writeProfileSession(id: string, session: Session | null): void {
+  try {
+    if (session) localStorage.setItem(profileAuthKey(id), JSON.stringify(session));
+    else localStorage.removeItem(profileAuthKey(id));
+  } catch {
+    /* ignore */
+  }
+}
+
+const Ctx = createContext<AuthValue | null>(null);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const { profiles, activeProfile, updateProfile } = useProfiles();
+  const sourceId = stremioSourceProfileId(activeProfile, profiles);
+
+  const [session, setSession] = useState<Session | null>(() =>
+    sourceId ? readProfileSession(sourceId) : null,
+  );
+
+  useEffect(() => {
+    setSession(sourceId ? readProfileSession(sourceId) : null);
+  }, [sourceId]);
+
+  const signIn = useCallback(
+    async (email: string, password: string) => {
+      const fresh = await apiLogin(email, password);
+      if (!activeProfile) {
+        setSession(fresh);
+        return;
+      }
+      if (activeProfile.shareStremioWith) {
+        updateProfile(activeProfile.id, { shareStremioWith: null });
+      }
+      writeProfileSession(activeProfile.id, fresh);
+      setSession(fresh);
+    },
+    [activeProfile, updateProfile],
+  );
+
+  const signOut = useCallback(() => {
+    if (!activeProfile) {
+      setSession(null);
+      return;
+    }
+    if (activeProfile.shareStremioWith) {
+      updateProfile(activeProfile.id, { shareStremioWith: null });
+    } else {
+      writeProfileSession(activeProfile.id, null);
+    }
+    setSession(null);
+  }, [activeProfile, updateProfile]);
+
+  const value = useMemo<AuthValue>(
+    () => ({
+      user: session?.user ?? null,
+      authKey: session?.authKey ?? null,
+      signIn,
+      signOut,
+    }),
+    [session, signIn, signOut],
+  );
+
+  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
+}
+
+export function useAuth() {
+  const v = useContext(Ctx);
+  if (!v) throw new Error("useAuth outside AuthProvider");
+  return v;
+}

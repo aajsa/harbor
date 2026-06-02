@@ -1,0 +1,710 @@
+//! Trust filter. Mirror of `src/lib/streams/trust.ts`.
+
+#![allow(dead_code)]
+
+use crate::types::*;
+use once_cell::sync::Lazy;
+use regex::Regex;
+use std::collections::HashSet;
+use std::time::{SystemTime, UNIX_EPOCH};
+
+const KIB: u64 = 1024;
+const MIB: u64 = KIB * 1024;
+const GIB: u64 = MIB * 1024;
+
+const TINY_STUB_FLOOR: u64 = 5 * MIB;
+
+fn movie_min_size(r: Resolution, in_cinema: bool, older: bool) -> u64 {
+    let (cinema, normal, older_floor) = match r {
+        Resolution::UHD => (2560 * MIB, 1536 * MIB, 800 * MIB),
+        Resolution::P1080 => (1228 * MIB, 700 * MIB, 350 * MIB),
+        Resolution::P720 => (600 * MIB, 400 * MIB, 200 * MIB),
+        Resolution::P480 => (250 * MIB, 150 * MIB, 80 * MIB),
+        Resolution::SD => (200 * MIB, 100 * MIB, 50 * MIB),
+    };
+    if older { older_floor } else if in_cinema { cinema } else { normal }
+}
+
+fn episode_min_size(r: Resolution, in_cinema: bool, older: bool) -> u64 {
+    let (cinema, normal, older_floor) = match r {
+        Resolution::UHD => (1024 * MIB, 600 * MIB, 300 * MIB),
+        Resolution::P1080 => (400 * MIB, 250 * MIB, 150 * MIB),
+        Resolution::P720 => (200 * MIB, 120 * MIB, 70 * MIB),
+        Resolution::P480 => (80 * MIB, 50 * MIB, 30 * MIB),
+        Resolution::SD => (50 * MIB, 30 * MIB, 20 * MIB),
+    };
+    if older { older_floor } else if in_cinema { cinema } else { normal }
+}
+
+fn resolution_label(r: Resolution) -> &'static str {
+    match r {
+        Resolution::UHD => "4K",
+        Resolution::P1080 => "1080p",
+        Resolution::P720 => "720p",
+        Resolution::P480 => "480p",
+        Resolution::SD => "SD",
+    }
+}
+
+const FILENAME_BLACKLIST: &[&str] = &[
+    ".exe", ".zip", ".rar", ".lnk", ".scr", ".bat", ".iso", ".img",
+];
+
+static TRAILER_RX: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(
+        r"(?i)\b(trailer|teaser|tlr|trl|tra(?:iler)?|sneak[\s.\-_]?peek|preview|behind[\s.\-_]?the[\s.\-_]?scenes|featurette|making[\s.\-_]?of|deleted[\s.\-_]?scene|bloopers?|gag[\s.\-_]?reel|extras?|promo)\b",
+    )
+    .unwrap()
+});
+
+static SEQUEL_TAIL_RX: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"(?i)(?:\s|^)(\d{1,2}|[ivx]+)\s*$").unwrap());
+
+static YEAR_PAREN_RX: Lazy<Regex> = Lazy::new(|| Regex::new(r"\(\d{4}\)").unwrap());
+
+static PART_WORD_RX: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"(?i)\b(part|chapter|vol|volume)\b").unwrap());
+
+static WORD_RX: Lazy<Regex> = Lazy::new(|| Regex::new(r"[a-z0-9]+").unwrap());
+
+static ANIME_JA_RX: Lazy<Regex> = Lazy::new(|| Regex::new(r"(?i)^(ja|jp|jap|japanese)").unwrap());
+
+static TITLE_STOPWORDS: Lazy<HashSet<&'static str>> = Lazy::new(|| {
+    [
+        "the", "a", "an", "of", "and", "in", "to", "for", "on", "at", "by", "is", "or", "as",
+        "from", "with", "into", "movie", "film",
+    ]
+    .into_iter()
+    .collect()
+});
+
+fn roman_to_num(s: &str) -> Option<i32> {
+    match s {
+        "ii" => Some(2),
+        "iii" => Some(3),
+        "iv" => Some(4),
+        "v" => Some(5),
+        "vi" => Some(6),
+        "vii" => Some(7),
+        "viii" => Some(8),
+        "ix" => Some(9),
+        "x" => Some(10),
+        _ => None,
+    }
+}
+
+pub struct TrustResult {
+    pub keep: Vec<ParsedStream>,
+    pub rejected: Vec<Rejection>,
+}
+
+pub fn apply_trust(streams: Vec<ParsedStream>, opts: &TrustOptions) -> TrustResult {
+    if opts.disabled {
+        return TrustResult {
+            keep: streams,
+            rejected: Vec::new(),
+        };
+    }
+    let strict = opts.strict;
+    let in_cinema_window = is_in_cinema_window(opts.release_date.as_deref());
+    let older_catalog = is_older_catalog(opts.release_date.as_deref(), opts.expected_year);
+
+    let mut keep: Vec<ParsedStream> = Vec::with_capacity(streams.len());
+    let mut rejected: Vec<Rejection> = Vec::new();
+    for s in streams {
+        match check_one(&s, opts, strict, in_cinema_window, older_catalog) {
+            Some(reason) => rejected.push(Rejection { stream: s, reason }),
+            None => keep.push(s),
+        }
+    }
+    TrustResult { keep, rejected }
+}
+
+fn check_one(
+    s: &ParsedStream,
+    opts: &TrustOptions,
+    strict: bool,
+    in_cinema_window: bool,
+    older_catalog: bool,
+) -> Option<String> {
+    let filename = behavior_hint_filename(s).unwrap_or_default().to_lowercase();
+    let title_lower = s.stream.title.as_deref().unwrap_or("").to_lowercase();
+    let name_lower = s.stream.name.as_deref().unwrap_or("").to_lowercase();
+    let haystack = format!("{filename} {title_lower} {name_lower}");
+
+    for ext in FILENAME_BLACKLIST {
+        if filename.ends_with(ext) {
+            return Some(format!("suspicious-extension:{ext}"));
+        }
+    }
+
+    if TRAILER_RX.is_match(&haystack) {
+        return Some("trailer-or-extra".to_string());
+    }
+
+    if let Some(sz) = s.size {
+        if sz < TINY_STUB_FLOOR {
+            return Some("size-stub".to_string());
+        }
+    }
+
+    let kind_is_movie = opts.kind.as_deref() == Some("movie");
+    let kind_is_series = opts.kind.as_deref() == Some("series");
+
+    if kind_is_movie {
+        if let Some(sz) = s.size {
+            let floor = movie_min_size(s.resolution, in_cinema_window, older_catalog);
+            if sz < floor {
+                return Some(format!(
+                    "movie-stub-too-small-for-{}",
+                    resolution_label(s.resolution)
+                ));
+            }
+        }
+    }
+
+    if kind_is_movie && !opts.is_anime
+        && (s.season_pack || s.season.is_some() || s.episode.is_some()) {
+            return Some("series-result-for-movie".to_string());
+        }
+
+    if strict
+        && kind_is_movie
+        && !opts.is_anime
+        && in_cinema_window
+        && opts.expected_year.is_some()
+        && s.year.is_none()
+        && matches!(s.source, Source::Other)
+        && matches!(s.resolution, Resolution::SD)
+    {
+        return Some("cinema-bare-untagged".to_string());
+    }
+
+    if strict && kind_is_movie {
+        if let Some(expected) = opts.expected_title.as_deref() {
+            if !s.parsed_title.is_empty()
+                && !title_matches(
+                    expected,
+                    &s.parsed_title,
+                    s.year.map(|y| y as i32),
+                    opts.expected_year.map(|y| y as i32),
+                )
+            {
+                return Some("title-mismatch".to_string());
+            }
+        }
+    }
+
+    if strict && kind_is_movie {
+        if let Some(expected) = opts.expected_title.as_deref() {
+            if let Some(expected_seq) = sequel_marker(expected) {
+                if expected_seq >= 2 {
+                    let title_str = s.stream.title.as_deref().unwrap_or("");
+                    let haystack = format!("{filename} {title_str}").to_lowercase();
+                    if !haystack_has_sequel_token(&haystack, expected_seq) {
+                        return Some("filename-missing-sequel".to_string());
+                    }
+                }
+            }
+        }
+    }
+
+    if strict && kind_is_movie && in_cinema_window {
+        if matches!(s.source, Source::BluRay) || s.remux {
+            return Some("fresh-cinema-fake-bluray".to_string());
+        }
+        if matches!(s.resolution, Resolution::UHD)
+            && matches!(
+                s.source,
+                Source::WebDl | Source::WEBRip | Source::BDRip | Source::HDRip
+            )
+        {
+            return Some("fresh-cinema-fake-4k-web".to_string());
+        }
+    }
+
+    if kind_is_series {
+        if let Some(sz) = s.size {
+            let floor = episode_min_size(s.resolution, in_cinema_window, older_catalog);
+            if sz < floor {
+                return Some(format!(
+                    "episode-stub-too-small-for-{}",
+                    resolution_label(s.resolution)
+                ));
+            }
+        }
+    }
+
+    if strict && kind_is_series && !opts.is_anime {
+        if let Some(expected) = opts.expected_title.as_deref() {
+            if !s.parsed_title.is_empty()
+                && !title_matches(
+                    expected,
+                    &s.parsed_title,
+                    s.year.map(|y| y as i32),
+                    opts.expected_year.map(|y| y as i32),
+                )
+            {
+                return Some("title-mismatch".to_string());
+            }
+        }
+    }
+
+    let has_file_idx = s.stream.file_idx.is_some();
+
+    if strict && !opts.is_anime && !has_file_idx && !s.season_pack {
+        if let (Some(expected_season), Some(season)) = (opts.expected_season, s.season) {
+            if season != expected_season {
+                return Some(format!(
+                    "season-mismatch:{season}-vs-{expected_season}"
+                ));
+            }
+        }
+    }
+
+    if strict && !opts.is_anime && !has_file_idx && !s.season_pack {
+        if let (Some(expected_episode), Some(episode)) = (opts.expected_episode, s.episode) {
+            if episode != expected_episode {
+                return Some(format!(
+                    "episode-mismatch:{episode}-vs-{expected_episode}"
+                ));
+            }
+        }
+    }
+
+    if s.scam_score >= 5 && !opts.allow_cam && !older_catalog {
+        return Some(format!("scam-score-{}", s.scam_score));
+    }
+
+    None
+}
+
+fn behavior_hint_filename(s: &ParsedStream) -> Option<&str> {
+    s.stream
+        .behavior_hints
+        .as_ref()
+        .and_then(|v| v.get("filename"))
+        .and_then(|v| v.as_str())
+}
+
+fn haystack_has_sequel_token(haystack: &str, expected_seq: i32) -> bool {
+    let digit = expected_seq.to_string();
+    let roman = match expected_seq {
+        2 => Some("ii"),
+        3 => Some("iii"),
+        4 => Some("iv"),
+        5 => Some("v"),
+        6 => Some("vi"),
+        7 => Some("vii"),
+        8 => Some("viii"),
+        9 => Some("ix"),
+        10 => Some("x"),
+        _ => None,
+    };
+    let word = match expected_seq {
+        2 => Some("two"),
+        3 => Some("three"),
+        4 => Some("four"),
+        5 => Some("five"),
+        6 => Some("six"),
+        7 => Some("seven"),
+        8 => Some("eight"),
+        9 => Some("nine"),
+        10 => Some("ten"),
+        _ => None,
+    };
+    for token in WORD_RX.find_iter(haystack) {
+        let tok = token.as_str();
+        if tok == digit {
+            return true;
+        }
+        if let Some(r) = roman {
+            if tok == r {
+                return true;
+            }
+        }
+        if let Some(w) = word {
+            if tok == w {
+                return true;
+            }
+        }
+    }
+    false
+}
+
+fn sequel_marker(title: &str) -> Option<i32> {
+    let no_year = YEAR_PAREN_RX.replace_all(title, "");
+    let no_part = PART_WORD_RX.replace_all(&no_year, "");
+    let trimmed = no_part.trim();
+    let m = SEQUEL_TAIL_RX.captures(trimmed)?;
+    let tok = m.get(1)?.as_str().to_lowercase();
+    if tok.chars().all(|c| c.is_ascii_digit()) {
+        let n: i32 = tok.parse().ok()?;
+        if (2..=20).contains(&n) {
+            return Some(n);
+        }
+        return None;
+    }
+    roman_to_num(&tok)
+}
+
+fn title_matches(
+    expected: &str,
+    parsed: &str,
+    parsed_year: Option<i32>,
+    expected_year: Option<i32>,
+) -> bool {
+    let expected_seq = sequel_marker(expected);
+    let parsed_seq = sequel_marker(parsed);
+    if let (Some(e), Some(p)) = (expected_seq, parsed_seq) {
+        if e != p {
+            return false;
+        }
+    }
+    if expected_seq.is_some() && parsed_seq.is_none() {
+        match (expected_year, parsed_year) {
+            (Some(ey), Some(py)) => {
+                if (py - ey).abs() > 1 {
+                    return false;
+                }
+            }
+            _ => return false,
+        }
+    }
+    if expected_seq.is_none() {
+        if let Some(ps) = parsed_seq {
+            if ps >= 2 {
+                match (expected_year, parsed_year) {
+                    (Some(ey), Some(py)) => {
+                        if (py - ey).abs() > 1 {
+                            return false;
+                        }
+                    }
+                    _ => return false,
+                }
+            }
+        }
+    }
+
+    let expected_tokens = tokenize(expected);
+    let parsed_tokens = tokenize(parsed);
+    if expected_tokens.is_empty() || parsed_tokens.is_empty() {
+        return true;
+    }
+    let expected_set: HashSet<&str> = expected_tokens.iter().map(|s| s.as_str()).collect();
+    let parsed_set: HashSet<&str> = parsed_tokens.iter().map(|s| s.as_str()).collect();
+    let overlap = count_overlap(&expected_tokens, &parsed_set);
+    let reverse_overlap = count_overlap(&parsed_tokens, &expected_set);
+    let expected_ratio = overlap as f64 / expected_tokens.len() as f64;
+    let parsed_ratio = reverse_overlap as f64 / parsed_tokens.len() as f64;
+    expected_ratio >= 0.5 || parsed_ratio >= 0.5 || overlap >= 2
+}
+
+fn count_overlap(words: &[String], lookup: &HashSet<&str>) -> usize {
+    let mut hits = 0usize;
+    for w in words {
+        if lookup.contains(w.as_str()) {
+            hits += 1;
+            continue;
+        }
+        for l in lookup.iter() {
+            if w.len() >= 4
+                && l.len() >= 4
+                && (w.starts_with(l) || l.starts_with(w.as_str()))
+            {
+                hits += 1;
+                break;
+            }
+        }
+    }
+    hits
+}
+
+fn tokenize(text: &str) -> Vec<String> {
+    let lower = text.to_lowercase();
+    let stripped: String = lower
+        .chars()
+        .filter(|c| {
+            let cp = *c as u32;
+            !(0x0300..=0x036F).contains(&cp)
+        })
+        .collect();
+    WORD_RX
+        .find_iter(&stripped)
+        .map(|m| m.as_str().to_string())
+        .filter(|w| w.len() >= 3 && !TITLE_STOPWORDS.contains(w.as_str()))
+        .collect()
+}
+
+fn parse_iso_date_to_unix_ms(s: &str) -> Option<i64> {
+    let trimmed = s.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+    let date_part = trimmed.split(['T', ' ']).next()?;
+    let mut parts = date_part.split('-');
+    let y: i64 = parts.next()?.parse().ok()?;
+    let m: i64 = parts.next()?.parse().ok()?;
+    let d: i64 = parts.next()?.parse().ok()?;
+    if !(1..=12).contains(&m) || !(1..=31).contains(&d) {
+        return None;
+    }
+    Some(days_from_civil(y, m, d) * 86_400_000)
+}
+
+fn days_from_civil(y: i64, m: i64, d: i64) -> i64 {
+    let yy = if m <= 2 { y - 1 } else { y };
+    let era = if yy >= 0 { yy } else { yy - 399 } / 400;
+    let yoe = yy - era * 400;
+    let mp = if m > 2 { m - 3 } else { m + 9 };
+    let doy = (153 * mp + 2) / 5 + d - 1;
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    era * 146_097 + doe - 719_468
+}
+
+fn now_unix_ms() -> i64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_millis() as i64)
+        .unwrap_or(0)
+}
+
+fn current_year() -> i32 {
+    let ms = now_unix_ms();
+    let days = ms / 86_400_000;
+    civil_from_days(days).0 as i32
+}
+
+fn civil_from_days(days: i64) -> (i64, u32, u32) {
+    let z = days + 719_468;
+    let era = if z >= 0 { z } else { z - 146_096 } / 146_097;
+    let doe = z - era * 146_097;
+    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146_096) / 365;
+    let y = yoe + era * 400;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let d = (doy - (153 * mp + 2) / 5 + 1) as u32;
+    let m = (if mp < 10 { mp + 3 } else { mp - 9 }) as u32;
+    let yr = if m <= 2 { y + 1 } else { y };
+    (yr, m, d)
+}
+
+fn is_in_cinema_window(release_date: Option<&str>) -> bool {
+    let Some(s) = release_date else { return false };
+    let Some(ts) = parse_iso_date_to_unix_ms(s) else {
+        return false;
+    };
+    let days = (now_unix_ms() - ts) as f64 / 86_400_000.0;
+    days > -90.0 && days < 60.0
+}
+
+fn is_older_catalog(release_date: Option<&str>, expected_year: Option<u16>) -> bool {
+    if let Some(s) = release_date {
+        if let Some(ts) = parse_iso_date_to_unix_ms(s) {
+            let days = (now_unix_ms() - ts) as f64 / 86_400_000.0;
+            return days > 365.0 * 2.0;
+        }
+    }
+    if let Some(ey) = expected_year {
+        return current_year() - (ey as i32) > 2;
+    }
+    false
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    fn base_stream() -> ParsedStream {
+        ParsedStream {
+            stream: Stream {
+                addon_id: "addon".into(),
+                addon_name: "Addon".into(),
+                ..Default::default()
+            },
+            parsed_title: "Sample Movie".into(),
+            episode_title: None,
+            resolution: Resolution::P1080,
+            hdr_format: None,
+            codec: Codec::Hevc,
+            source: Source::WebDl,
+            audio: AudioInfo::default(),
+            audio_languages: Vec::new(),
+            size: Some(2 * GIB),
+            seeders: Some(50),
+            cached: Default::default(),
+            in_library: Default::default(),
+            container: Some(Container::Mkv),
+            release_group: None,
+            release_group_normalized: None,
+            remux: false,
+            edition: None,
+            year: Some(2020),
+            year_range: None,
+            season: None,
+            episode: None,
+            season_pack: false,
+            disc_index: None,
+            repack_iteration: 0,
+            proper: false,
+            hardcoded: false,
+            anime_hash: None,
+            scam_score: 0,
+        }
+    }
+
+    fn opts_strict() -> TrustOptions {
+        TrustOptions {
+            strict: true,
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn keeps_clean_stream() {
+        let s = base_stream();
+        let result = apply_trust(vec![s], &opts_strict());
+        assert_eq!(result.keep.len(), 1);
+        assert!(result.rejected.is_empty());
+    }
+
+    #[test]
+    fn rejects_suspicious_extension() {
+        let mut s = base_stream();
+        s.stream.behavior_hints = Some(json!({ "filename": "Setup.exe" }));
+        let result = apply_trust(vec![s], &opts_strict());
+        assert!(result.keep.is_empty());
+        assert_eq!(result.rejected.len(), 1);
+        assert_eq!(result.rejected[0].reason, "suspicious-extension:.exe");
+    }
+
+    #[test]
+    fn allows_season_pack_when_flag_set() {
+        let mut s = base_stream();
+        s.season_pack = true;
+        s.season = Some(1);
+        s.episode = None;
+        let mut opts = opts_strict();
+        opts.allow_season_packs = true;
+        opts.expected_season = Some(1);
+        opts.expected_episode = Some(3);
+        let result = apply_trust(vec![s], &opts);
+        assert_eq!(result.keep.len(), 1);
+        assert!(result.rejected.is_empty());
+    }
+
+    #[test]
+    fn rejects_trailer_below_ceiling() {
+        let mut s = base_stream();
+        s.stream.behavior_hints = Some(json!({ "filename": "movie.trailer.mkv" }));
+        s.size = Some(50 * MIB);
+        let result = apply_trust(vec![s], &opts_strict());
+        assert_eq!(result.rejected.len(), 1);
+        assert_eq!(result.rejected[0].reason, "trailer-or-extra");
+    }
+
+    #[test]
+    fn rejects_size_stub() {
+        let mut s = base_stream();
+        s.size = Some(MIB);
+        let result = apply_trust(vec![s], &opts_strict());
+        assert_eq!(result.rejected.len(), 1);
+        assert_eq!(result.rejected[0].reason, "size-stub");
+    }
+
+    #[test]
+    fn rejects_scam_score() {
+        let mut s = base_stream();
+        s.scam_score = 7;
+        let result = apply_trust(vec![s], &opts_strict());
+        assert_eq!(result.rejected.len(), 1);
+        assert_eq!(result.rejected[0].reason, "scam-score-7");
+    }
+
+    #[test]
+    fn disabled_short_circuits() {
+        let s = base_stream();
+        let mut opts = opts_strict();
+        opts.disabled = true;
+        opts.expected_year = Some(1900);
+        let mut bad = base_stream();
+        bad.size = Some(500 * GIB);
+        let result = apply_trust(vec![s, bad], &opts);
+        assert_eq!(result.keep.len(), 2);
+        assert!(result.rejected.is_empty());
+    }
+
+    #[test]
+    fn rejects_series_result_for_movie() {
+        let mut s = base_stream();
+        s.parsed_title = "Obsession".into();
+        s.season = Some(1);
+        s.episode = Some(1);
+        let mut opts = opts_strict();
+        opts.kind = Some("movie".into());
+        let result = apply_trust(vec![s], &opts);
+        assert!(result.keep.is_empty());
+        assert_eq!(result.rejected[0].reason, "series-result-for-movie");
+    }
+
+    #[test]
+    fn rejects_season_pack_for_movie() {
+        let mut s = base_stream();
+        s.parsed_title = "Obsession".into();
+        s.season_pack = true;
+        s.season = Some(1);
+        s.episode = None;
+        let mut opts = opts_strict();
+        opts.kind = Some("movie".into());
+        let result = apply_trust(vec![s], &opts);
+        assert!(result.keep.is_empty());
+        assert_eq!(result.rejected[0].reason, "series-result-for-movie");
+    }
+
+    #[test]
+    fn rejects_cinema_bare_untagged() {
+        let days = now_unix_ms() / 86_400_000 - 7;
+        let (y, m, d) = civil_from_days(days);
+        let mut s = base_stream();
+        s.parsed_title = "Obsession".into();
+        s.year = None;
+        s.source = Source::Other;
+        s.resolution = Resolution::SD;
+        let mut opts = opts_strict();
+        opts.kind = Some("movie".into());
+        opts.expected_year = Some(2025);
+        opts.release_date = Some(format!("{y:04}-{m:02}-{d:02}"));
+        let result = apply_trust(vec![s], &opts);
+        assert!(result.keep.is_empty());
+        assert_eq!(result.rejected[0].reason, "cinema-bare-untagged");
+    }
+
+    #[test]
+    fn keeps_real_movie_in_cinema_window() {
+        let days = now_unix_ms() / 86_400_000 - 7;
+        let (y, m, d) = civil_from_days(days);
+        let mut s = base_stream();
+        s.parsed_title = "Obsession".into();
+        s.year = Some(2025);
+        s.source = Source::WebDl;
+        s.resolution = Resolution::P1080;
+        let mut opts = opts_strict();
+        opts.kind = Some("movie".into());
+        opts.expected_year = Some(2025);
+        opts.release_date = Some(format!("{y:04}-{m:02}-{d:02}"));
+        let result = apply_trust(vec![s], &opts);
+        assert_eq!(result.keep.len(), 1);
+    }
+
+    #[test]
+    fn season_pack_with_file_idx_skips_episode_check() {
+        let mut s = base_stream();
+        s.stream.file_idx = Some(2);
+        s.episode = Some(7);
+        let mut opts = opts_strict();
+        opts.expected_episode = Some(3);
+        let result = apply_trust(vec![s], &opts);
+        assert_eq!(result.keep.len(), 1);
+    }
+}

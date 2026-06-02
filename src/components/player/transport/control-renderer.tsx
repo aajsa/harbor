@@ -1,0 +1,378 @@
+import { ChevronLeft, Info, Maximize, Minimize, PauseCircle, PictureInPicture2, PlayCircle, Replace, Tv } from "lucide-react";
+import type { ReactNode } from "react";
+import type { PlayerCapabilities, PlayerSnapshot } from "@/lib/player/bridge";
+import type { Meta } from "@/lib/cinemeta";
+import { getCustomIcon, type ControlVariant, type CustomIconMap, type PlayerControlId, type TimeFormat, type VolumeStyle } from "@/lib/player-chrome";
+import type { DownloadStatus } from "@/views/player/hooks/use-video-download";
+import { renderCustomIconControl } from "./custom-icon-renderer";
+
+function getControlState(id: PlayerControlId, ctx: ControlContext): string | undefined {
+  switch (id) {
+    case "play-pause":
+      return ctx.playing ? "playing" : "paused";
+    case "fullscreen":
+      return ctx.fullscreen ? "fullscreen" : "windowed";
+    case "draw-toggle":
+      return ctx.drawMode ? "active" : "inactive";
+    case "dvr":
+      return ctx.isLiveChannel ? "recording" : "idle";
+    case "cast":
+      return ctx.capabilities.chromecast ? "connected" : "idle";
+    case "pip":
+      return "inactive";
+    case "download":
+      return ctx.download?.kind ?? "idle";
+  }
+  return undefined;
+}
+import { SubtitleMenu } from "../subtitle-menu";
+import { AudioMenu } from "../audio-menu";
+import { DownloadButton } from "./download-button";
+import { Tooltip } from "./tooltip";
+import { BigButton } from "./big-button";
+import { DvrButton } from "./dvr-button";
+import { VolumeControl } from "./volume-control";
+import { SpeedMenu } from "./speed-menu";
+import { DrawToggle } from "./draw-toggle";
+import { CastButton } from "./cast-button";
+import { SeekStepBtn } from "./seek-step-btn";
+import { EpisodeNavBtn } from "./episode-nav-btn";
+import { fmtTime } from "./transport-utils";
+
+export type ControlContext = {
+  snap: PlayerSnapshot;
+  capabilities: PlayerCapabilities;
+  fullscreen: boolean;
+  drawMode: boolean;
+  hideOthersDrawings: boolean;
+  showDraw: boolean;
+  isWatchTogether?: boolean;
+  playing: boolean;
+  mid: boolean;
+  compact: boolean;
+  tight: boolean;
+  isLiveChannel: boolean;
+  showEpisodeNav: boolean;
+  hasPrevEp: boolean;
+  hasNextEp: boolean;
+  canPickAnother: boolean;
+  engine: "html5" | "mpv";
+  useOverlayPopups?: boolean;
+  customIcons?: CustomIconMap;
+  controlVariants?: Partial<Record<PlayerControlId, ControlVariant>>;
+  timeFormat?: TimeFormat;
+  volumeStyle?: VolumeStyle;
+  title?: string;
+  subtitle?: string;
+  titleClickable?: boolean;
+  onBack?: () => void;
+  onTitleClick?: () => void;
+  meta?: Meta;
+  metaImdbId?: string | null;
+  metaTitle?: string | null;
+  metaReleaseDate?: string | null;
+  season?: number | null;
+  episode?: number | null;
+  download?: DownloadStatus;
+  sleep?: import("@/views/player/hooks/use-sleep-timer").SleepTimerState;
+  onPlayPause: () => void;
+  onSeekStep: (delta: number) => void;
+  onMute: () => void;
+  onVolume: (v: number) => void;
+  onAudio: (id: string) => void;
+  onSubtitle: (id: string | null) => void;
+  onSubDelay: (sec: number) => void;
+  onAudioDelay: (sec: number) => void;
+  onAddSubtitle: (url: string, lang?: string, title?: string) => void;
+  onRate: (r: number) => void;
+  onPiP: () => void;
+  onFullscreen: () => void;
+  onCast: () => void;
+  onToggleDraw: () => void;
+  onToggleHideOthers: () => void;
+  onPickAnother: () => void;
+  onPrevEp: () => void;
+  onNextEp: () => void;
+  onDownloadStart?: () => void;
+  onDownloadCancel?: () => void;
+  onDownloadReveal?: () => void;
+  onDownloadReset?: () => void;
+  onOpenDvr?: () => void;
+  setAudioMenuOpen: (v: boolean) => void;
+  setSubtitleMenuOpen: (v: boolean) => void;
+  setSpeedMenuOpen: (v: boolean) => void;
+};
+
+export function renderControl(id: PlayerControlId, ctx: ControlContext): ReactNode {
+  const state = getControlState(id, ctx);
+  const iconUrl = getCustomIcon(ctx.customIcons, id, state);
+  if (iconUrl) {
+    const custom = renderCustomIconControl(id, ctx, iconUrl);
+    if (custom !== undefined) return custom;
+  }
+  switch (id) {
+    case "back": {
+      if (!ctx.onBack) return null;
+      return (
+        <Tooltip label="Back" side="bottom">
+          <button
+            onClick={ctx.onBack}
+            aria-label="Back"
+            className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur-md transition-colors hover:bg-black/80"
+          >
+            <ChevronLeft size={26} strokeWidth={2.2} />
+          </button>
+        </Tooltip>
+      );
+    }
+    case "title-info": {
+      if (!ctx.title) return null;
+      if (ctx.titleClickable && ctx.onTitleClick) {
+        return (
+          <button
+            type="button"
+            onClick={ctx.onTitleClick}
+            className="pointer-events-auto group inline-flex items-center gap-2 rounded-lg px-2 py-0.5 text-right transition-colors hover:bg-white/10"
+            aria-label="Title info"
+          >
+            <div className="flex flex-col items-end gap-0.5">
+              <h1 className="text-[19px] font-semibold leading-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
+                {ctx.title}
+              </h1>
+              {ctx.subtitle && (
+                <p className="text-[13px] text-white/70 drop-shadow-[0_1px_4px_rgba(0,0,0,0.6)]">
+                  {ctx.subtitle}
+                </p>
+              )}
+            </div>
+            <Info
+              size={14}
+              strokeWidth={2.2}
+              className="opacity-50 transition-opacity group-hover:opacity-95"
+            />
+          </button>
+        );
+      }
+      return (
+        <div className="pointer-events-none flex flex-col items-end gap-0.5 text-right">
+          <h1 className="text-[19px] font-semibold leading-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
+            {ctx.title}
+          </h1>
+          {ctx.subtitle && (
+            <p className="text-[13px] text-white/70 drop-shadow-[0_1px_4px_rgba(0,0,0,0.6)]">
+              {ctx.subtitle}
+            </p>
+          )}
+        </div>
+      );
+    }
+    case "time-start": {
+      if (ctx.isLiveChannel || ctx.tight) return null;
+      return (
+        <span className="shrink-0 font-mono text-[13px] tabular-nums text-white/85 drop-shadow-[0_1px_3px_rgba(0,0,0,0.7)]">
+          {fmtTime(ctx.snap.positionSec)}
+        </span>
+      );
+    }
+    case "time-end": {
+      if (ctx.isLiveChannel || ctx.tight) return null;
+      const fmt: TimeFormat = ctx.timeFormat ?? "start-end";
+      if (fmt === "elapsed-only") return null;
+      const duration = ctx.snap.durationSec ?? 0;
+      const text =
+        fmt === "remaining"
+          ? `-${fmtTime(Math.max(0, duration - ctx.snap.positionSec))}`
+          : fmtTime(duration);
+      return (
+        <span className="shrink-0 font-mono text-[13px] tabular-nums text-white/65 drop-shadow-[0_1px_3px_rgba(0,0,0,0.7)]">
+          {text}
+        </span>
+      );
+    }
+    case "volume": {
+      if (ctx.tight) return null;
+      return (
+        <VolumeControl
+          snap={ctx.snap}
+          onMute={ctx.onMute}
+          onVolume={ctx.onVolume}
+          capabilities={ctx.capabilities}
+          style={ctx.volumeStyle ?? "slider"}
+        />
+      );
+    }
+    case "dvr": {
+      if (ctx.tight || !ctx.isLiveChannel || !ctx.onOpenDvr) return null;
+      return <DvrButton channelName={ctx.meta?.name ?? "Live"} onClick={ctx.onOpenDvr} />;
+    }
+    case "download": {
+      if (ctx.mid || ctx.isLiveChannel) return null;
+      if (!ctx.download || !ctx.onDownloadStart || !ctx.onDownloadCancel || !ctx.onDownloadReveal || !ctx.onDownloadReset) {
+        return null;
+      }
+      return (
+        <DownloadButton
+          status={ctx.download}
+          onStart={ctx.onDownloadStart}
+          onCancel={ctx.onDownloadCancel}
+          onReveal={ctx.onDownloadReveal}
+          onReset={ctx.onDownloadReset}
+        />
+      );
+    }
+    case "prev-episode": {
+      if (ctx.tight || !ctx.showEpisodeNav) return null;
+      const v = ctx.controlVariants?.["prev-episode"] ?? "auto";
+      const iconOnly = v === "condensed" ? true : v === "full" ? false : ctx.mid;
+      return (
+        <EpisodeNavBtn
+          direction="prev"
+          label="Previous Episode"
+          onClick={ctx.onPrevEp}
+          disabled={!ctx.hasPrevEp}
+          iconOnly={iconOnly}
+        />
+      );
+    }
+    case "seek-back": {
+      if (ctx.tight || ctx.isLiveChannel) return null;
+      return <SeekStepBtn direction="back" seconds={10} onSeekStep={ctx.onSeekStep} />;
+    }
+    case "play-pause": {
+      return (
+        <Tooltip label={ctx.playing ? "Pause" : "Play"}>
+          <button
+            onClick={ctx.onPlayPause}
+            className={`flex items-center justify-center rounded-full bg-white/12 text-white backdrop-blur-md transition-[background-color,transform] hover:bg-white/22 active:scale-95 ${
+              ctx.tight ? "h-12 w-12" : ctx.compact ? "h-14 w-14" : "h-16 w-16"
+            }`}
+            aria-label={ctx.playing ? "Pause" : "Play"}
+          >
+            {ctx.playing ? (
+              <PauseCircle size={ctx.tight ? 28 : ctx.compact ? 32 : 36} strokeWidth={1.5} />
+            ) : (
+              <PlayCircle size={ctx.tight ? 28 : ctx.compact ? 32 : 36} strokeWidth={1.5} />
+            )}
+          </button>
+        </Tooltip>
+      );
+    }
+    case "seek-forward": {
+      if (ctx.tight || ctx.isLiveChannel) return null;
+      return <SeekStepBtn direction="forward" seconds={10} onSeekStep={ctx.onSeekStep} />;
+    }
+    case "next-episode": {
+      if (ctx.tight || !ctx.showEpisodeNav) return null;
+      const v = ctx.controlVariants?.["next-episode"] ?? "auto";
+      const iconOnly = v === "condensed" ? true : v === "full" ? false : ctx.mid;
+      return (
+        <EpisodeNavBtn
+          direction="next"
+          label="Next Episode"
+          onClick={ctx.onNextEp}
+          disabled={!ctx.hasNextEp}
+          iconOnly={iconOnly}
+        />
+      );
+    }
+    case "pick-another": {
+      if (ctx.tight || !ctx.canPickAnother) return null;
+      return (
+        <BigButton
+          onClick={ctx.onPickAnother}
+          ariaLabel={ctx.isLiveChannel ? "TV Guide" : "Switch stream"}
+          tooltip={ctx.isLiveChannel ? "TV Guide" : "Switch stream"}
+        >
+          {ctx.isLiveChannel ? (
+            <Tv size={22} strokeWidth={1.9} />
+          ) : (
+            <Replace size={22} strokeWidth={1.9} />
+          )}
+        </BigButton>
+      );
+    }
+    case "audio-menu": {
+      if (ctx.tight || ctx.engine === "html5") return null;
+      return (
+        <AudioMenu
+          tracks={ctx.snap.audioTracks}
+          selectedId={ctx.snap.audioTracks.find((t) => t.selected)?.id ?? null}
+          delaySec={ctx.snap.audioDelaySec}
+          engine={ctx.engine}
+          onSelect={ctx.onAudio}
+          onDelay={ctx.onAudioDelay}
+          onOpenChange={ctx.setAudioMenuOpen}
+          useOverlayPopup={ctx.useOverlayPopups}
+        />
+      );
+    }
+    case "subtitle-menu": {
+      return (
+        <SubtitleMenu
+          tracks={ctx.snap.subtitleTracks}
+          selectedId={ctx.snap.subtitleTracks.find((t) => t.selected)?.id ?? null}
+          delaySec={ctx.snap.subDelaySec}
+          onSelect={ctx.onSubtitle}
+          onDelay={ctx.onSubDelay}
+          onAddSubtitle={ctx.onAddSubtitle}
+          metaImdbId={ctx.metaImdbId}
+          metaTitle={ctx.metaTitle}
+          metaReleaseDate={ctx.metaReleaseDate}
+          season={ctx.season}
+          episode={ctx.episode}
+          useOverlayPopup={ctx.useOverlayPopups}
+          onOpenChange={ctx.setSubtitleMenuOpen}
+        />
+      );
+    }
+    case "speed-menu": {
+      if (ctx.compact || ctx.isLiveChannel) return null;
+      return (
+        <SpeedMenu
+          rate={ctx.snap.rate}
+          onRate={ctx.onRate}
+          sleep={ctx.sleep}
+          onOpenChange={ctx.setSpeedMenuOpen}
+        />
+      );
+    }
+    case "draw-toggle": {
+      if (ctx.compact || !ctx.showDraw) return null;
+      return (
+        <DrawToggle
+          active={ctx.drawMode}
+          hideOthers={ctx.hideOthersDrawings}
+          onToggle={ctx.onToggleDraw}
+          onToggleHideOthers={ctx.onToggleHideOthers}
+        />
+      );
+    }
+    case "pip": {
+      if (!ctx.capabilities.pictureInPicture) return null;
+      return (
+        <BigButton onClick={ctx.onPiP} ariaLabel="Picture in Picture" tooltip="Picture in Picture">
+          <PictureInPicture2 size={22} strokeWidth={1.9} />
+        </BigButton>
+      );
+    }
+    case "cast": {
+      if (ctx.tight) return null;
+      return <CastButton onClick={ctx.onCast} capabilities={ctx.capabilities} />;
+    }
+    case "fullscreen": {
+      return (
+        <BigButton
+          onClick={ctx.onFullscreen}
+          ariaLabel="Fullscreen"
+          tooltip={ctx.fullscreen ? "Exit fullscreen" : "Fullscreen"}
+        >
+          {ctx.fullscreen ? (
+            <Minimize size={22} strokeWidth={1.9} />
+          ) : (
+            <Maximize size={22} strokeWidth={1.9} />
+          )}
+        </BigButton>
+      );
+    }
+  }
+}

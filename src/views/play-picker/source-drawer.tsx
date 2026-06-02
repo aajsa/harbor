@@ -1,0 +1,178 @@
+import { ChevronDown, Download, ExternalLink, Loader2, Play, Zap } from "lucide-react";
+import { AddonLogo, AddonLogoStack } from "@/components/addon-logo";
+import { FlagStack } from "@/components/flag";
+import { FormatBadge } from "@/components/format-badge";
+import { useDebridClients } from "@/lib/debrid/registry";
+import type { ScoredStream } from "@/lib/streams/types";
+import type { PlayEpisode } from "@/lib/view";
+import { contributorLabel, displayTitle, streamSummaryParts, tierChipBadges } from "./picker-utils";
+
+export function SourceDrawer({
+  open,
+  onToggle,
+  count,
+  addonCount,
+  usedAddons,
+  streams,
+  debrids,
+  getAddonLogo,
+  onPlay,
+  resolvingId,
+  showName,
+  episode,
+}: {
+  open: boolean;
+  onToggle: () => void;
+  count: number;
+  addonCount: number;
+  usedAddons: Array<{ id: string; name: string; logo: string | null }>;
+  streams: ScoredStream[];
+  debrids: ReturnType<typeof useDebridClients>;
+  getAddonLogo: (addonId: string) => string | null;
+  onPlay: (s: ScoredStream) => void;
+  resolvingId: string | null;
+  showName: string;
+  episode?: PlayEpisode;
+}) {
+  return (
+    <div className="flex flex-col gap-4">
+      <button
+        onClick={onToggle}
+        className="group flex w-fit items-center gap-3 rounded-full border border-edge-soft/70 bg-canvas/70 px-4 py-2 text-[11.5px] font-semibold uppercase tracking-[0.22em] text-ink-muted transition-all hover:border-edge hover:bg-canvas/90 hover:text-ink"
+      >
+        <ChevronDown
+          size={14}
+          className={`transition-transform duration-300 ${open ? "rotate-180" : ""}`}
+        />
+        <span>{open ? "Hide all sources" : "All sources"}</span>
+        <span className="text-ink-subtle/80">{count}</span>
+        {usedAddons.length > 0 && (
+          <span className="flex items-center gap-2">
+            <AddonLogoStack addons={usedAddons} size="sm" max={5} />
+            <span className="text-ink-subtle/80">
+              {addonCount} addon{addonCount === 1 ? "" : "s"}
+            </span>
+          </span>
+        )}
+      </button>
+      {open && (
+        <ul className="overflow-hidden rounded-2xl border border-edge-soft/60 bg-canvas/80">
+          {streams.slice(0, 80).map((s, i) => (
+            <SourceRow
+              key={`${s.addonId}-${s.infoHash ?? s.url ?? i}`}
+              stream={s}
+              debrids={debrids}
+              addonLogo={getAddonLogo(s.addonId)}
+              onPlay={() => onPlay(s)}
+              resolving={resolvingId !== null && s.infoHash === resolvingId}
+              divider={i > 0}
+              showName={showName}
+              episode={episode}
+            />
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function SourceRow({
+  stream,
+  debrids,
+  addonLogo,
+  onPlay,
+  resolving,
+  divider,
+  showName,
+  episode,
+}: {
+  stream: ScoredStream;
+  debrids: ReturnType<typeof useDebridClients>;
+  addonLogo: string | null;
+  onPlay: () => void;
+  resolving: boolean;
+  divider: boolean;
+  showName: string;
+  episode?: PlayEpisode;
+}) {
+  const cachedDebrids = debrids.filter((d) => stream.cached[d.slug]);
+  const libraryDebrids = debrids.filter((d) => stream.inLibrary[d.slug]);
+  const summary = streamSummaryParts(stream);
+
+  return (
+    <li className={divider ? "border-t border-edge-soft/30" : ""}>
+      <button
+        onClick={onPlay}
+        disabled={resolving}
+        className="group flex w-full items-start gap-4 px-5 py-4 text-left transition-colors hover:bg-ink/5 disabled:cursor-wait disabled:opacity-60"
+      >
+        <div className="flex shrink-0 items-center gap-1.5 pt-0.5">
+          {tierChipBadges(stream).map((k) => (
+            <FormatBadge key={k} kind={k} size="md" />
+          ))}
+        </div>
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+          <p className="truncate font-mono text-[14px] text-ink">{displayTitle(stream, showName, episode)}</p>
+          <p className="flex items-center gap-2 truncate text-[12px] font-semibold uppercase tracking-[0.14em] text-ink-subtle">
+            <AddonLogo
+              addonId={stream.addonId}
+              addonName={stream.addonName}
+              manifestLogo={addonLogo}
+              size="sm"
+            />
+            <span className="truncate">
+              {contributorLabel(stream)}
+              {summary.length > 0 && <span className="text-ink-subtle/60"> · {summary.join(" · ")}</span>}
+            </span>
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-3 pt-0.5">
+          {stream.audioLanguages.filter((l) => l.toLowerCase() !== "unknown").length > 0 && (
+            <FlagStack
+              languages={stream.audioLanguages.filter((l) => l.toLowerCase() !== "unknown")}
+              size="md"
+              max={4}
+            />
+          )}
+          {libraryDebrids.length > 0 ? (
+            <span className="inline-flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-[0.14em] text-accent">
+              <Zap size={12} fill="currentColor" strokeWidth={0} />
+              In {libraryDebrids.map((d) => d.name).join(" + ")}
+            </span>
+          ) : cachedDebrids.length > 0 ? (
+            <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
+              <Zap size={11} strokeWidth={2} />
+              Cached on {cachedDebrids.map((d) => d.name).join(" + ")}
+            </span>
+          ) : !stream.url && !stream.infoHash && (stream.externalUrl || stream.ytId) ? (
+            <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.14em] text-ink-subtle">
+              <ExternalLink size={11} strokeWidth={2.2} />
+              External
+            </span>
+          ) : !stream.url ? (
+            <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.14em] text-ink-subtle">
+              <Download size={11} strokeWidth={2.2} />
+              {debrids.length === 0 && stream.infoHash ? "Stream" : "Cache"}
+            </span>
+          ) : null}
+          {resolving ? (
+            <Loader2 size={16} className="animate-spin text-ink-muted" />
+          ) : !stream.url && !stream.infoHash && (stream.externalUrl || stream.ytId) ? (
+            <ExternalLink
+              size={14}
+              strokeWidth={2.2}
+              className="text-ink-muted/50 transition-all group-hover:text-ink"
+            />
+          ) : (
+            <Play
+              size={15}
+              fill="currentColor"
+              strokeWidth={0}
+              className="text-ink-muted/50 transition-all group-hover:translate-x-0.5 group-hover:text-ink"
+            />
+          )}
+        </div>
+      </button>
+    </li>
+  );
+}

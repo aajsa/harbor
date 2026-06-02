@@ -1,0 +1,37 @@
+import { FormatBadge, resolutionBadge } from "@/components/format-badge";
+import type { ScoredStream } from "@/lib/streams/types";
+
+export function StreamPill({
+  stream,
+  cached,
+  onPick,
+}: {
+  stream: ScoredStream;
+  cached: boolean;
+  onPick: () => void;
+}) {
+  void cached;
+  const headline = stream.name?.trim() || stream.parsedTitle || stream.title || stream.addonName || "Source";
+  const description = stream.title?.trim() || stream.description?.trim() || "";
+  const resBadge = resolutionBadge(stream);
+  return (
+    <button
+      onClick={onPick}
+      className="group flex w-full items-start gap-3 rounded-xl bg-elevated/40 px-3 py-2.5 text-left ring-1 ring-edge-soft/40 transition-colors hover:bg-raised hover:ring-edge"
+    >
+      <div className="flex flex-1 flex-col gap-1.5 min-w-0">
+        <div className="flex items-center gap-2">
+          {resBadge && <FormatBadge kind={resBadge} size="sm" />}
+          <p className="whitespace-pre-line text-[13px] font-semibold leading-snug text-ink">
+            {headline}
+          </p>
+        </div>
+        {description && (
+          <p className="whitespace-pre-line text-[12px] leading-snug text-ink-muted">
+            {description}
+          </p>
+        )}
+      </div>
+    </button>
+  );
+}

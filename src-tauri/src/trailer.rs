@@ -1,0 +1,197 @@
+use serde::Serialize;
+use std::path::{Path, PathBuf};
+use std::time::{Duration, SystemTime};
+use tauri_plugin_shell::ShellExt;
+
+const METADATA_TIMEOUT: Duration = Duration::from_secs(15);
+const DOWNLOAD_TIMEOUT: Duration = Duration::from_secs(120);
+const CACHE_MAX_BYTES: u64 = 1_500_000_000;
+const CACHE_MAX_AGE: Duration = Duration::from_secs(14 * 24 * 60 * 60);
+
+const FORMAT_LOW: &str =
+    "18/best[height<=360][ext=mp4][vcodec!=none][acodec!=none]/worst[ext=mp4][vcodec!=none][acodec!=none]";
+const FORMAT_HIGH: &str =
+    "22/18/best[ext=mp4][vcodec!=none][acodec!=none][height<=720]/best[vcodec!=none][acodec!=none]";
+
+fn cache_dir() -> PathBuf {
+    std::env::temp_dir().join("harbor-trailers")
+}
+
+fn sanitize_id(id: &str) -> Result<String, String> {
+    let safe: String = id
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric() || *c == '-' || *c == '_')
+        .collect();
+    if safe.is_empty() {
+        return Err("invalid video id".to_string());
+    }
+    Ok(safe)
+}
+
+fn normalize_quality(q: Option<String>) -> &'static str {
+    match q.as_deref() {
+        Some("low") => "low",
+        _ => "high",
+    }
+}
+
+fn quality_path(id: &str, quality: &str) -> PathBuf {
+    cache_dir().join(format!("{}-{}.mp4", id, quality))
+}
+
+fn format_for(quality: &str) -> &'static str {
+    if quality == "low" { FORMAT_LOW } else { FORMAT_HIGH }
+}
+
+fn cached_info(path: &Path, quality: &str, size: u64) -> TrailerInfo {
+    TrailerInfo {
+        file_path: path.to_string_lossy().to_string(),
+        quality: quality.to_string(),
+        duration_seconds: 0,
+        title: String::new(),
+        size_bytes: size,
+    }
+}
+
+pub fn sweep_cache() {
+    let dir = cache_dir();
+    let entries = match std::fs::read_dir(&dir) {
+        Ok(e) => e,
+        Err(_) => return,
+    };
+    let now = SystemTime::now();
+    let mut keep: Vec<(PathBuf, SystemTime, u64)> = Vec::new();
+    for entry in entries.flatten() {
+        let path = entry.path();
+        let meta = match entry.metadata() {
+            Ok(m) => m,
+            Err(_) => continue,
+        };
+        if !meta.is_file() {
+            continue;
+        }
+        let mtime = meta.modified().unwrap_or(now);
+        let age = now.duration_since(mtime).unwrap_or_default();
+        if age > CACHE_MAX_AGE {
+            let _ = std::fs::remove_file(&path);
+            continue;
+        }
+        keep.push((path, mtime, meta.len()));
+    }
+    let total: u64 = keep.iter().map(|(_, _, s)| s).sum();
+    if total <= CACHE_MAX_BYTES {
+        return;
+    }
+    keep.sort_by_key(|(_, m, _)| *m);
+    let mut to_evict = total - CACHE_MAX_BYTES;
+    for (path, _, size) in keep {
+        if to_evict == 0 {
+            break;
+        }
+        let _ = std::fs::remove_file(&path);
+        to_evict = to_evict.saturating_sub(size);
+    }
+}
+
+#[derive(Serialize)]
+pub struct TrailerInfo {
+    pub file_path: String,
+    pub quality: String,
+    pub duration_seconds: u64,
+    pub title: String,
+    pub size_bytes: u64,
+}
+
+#[tauri::command]
+pub async fn fetch_trailer(
+    video_id: String,
+    quality: Option<String>,
+    app: tauri::AppHandle,
+) -> Result<TrailerInfo, String> {
+    let quality = normalize_quality(quality);
+    let safe_id = sanitize_id(&video_id)?;
+    let dir = cache_dir();
+    let file_path = quality_path(&safe_id, quality);
+
+    if let Ok(meta) = std::fs::metadata(&file_path) {
+        if meta.len() > 1024 {
+            return Ok(cached_info(&file_path, quality, meta.len()));
+        }
+    }
+
+    std::fs::create_dir_all(&dir).map_err(|e| format!("cache dir: {}", e))?;
+    let url = format!("https://www.youtube.com/watch?v={}", video_id);
+
+    let meta_sidecar = app
+        .shell()
+        .sidecar("yt-dlp")
+        .map_err(|e| format!("sidecar init: {}", e))?
+        .args([
+            "-j",
+            "--no-playlist",
+            "--no-warnings",
+            "--skip-download",
+            &url,
+        ]);
+
+    let meta_output = tokio::time::timeout(METADATA_TIMEOUT, meta_sidecar.output())
+        .await
+        .map_err(|_| "yt-dlp metadata timed out".to_string())?
+        .map_err(|e| format!("yt-dlp metadata: {}", e))?;
+
+    if !meta_output.status.success() {
+        let stderr = String::from_utf8_lossy(&meta_output.stderr);
+        return Err(format!("yt-dlp failed: {}", stderr));
+    }
+
+    let meta: serde_json::Value = serde_json::from_slice(&meta_output.stdout)
+        .map_err(|e| format!("metadata parse: {}", e))?;
+
+    let title = meta["title"].as_str().unwrap_or("").to_string();
+    let duration_seconds = meta["duration"].as_f64().unwrap_or(0.0) as u64;
+
+    let file_path_str = file_path.to_string_lossy().to_string();
+    let download_sidecar = app
+        .shell()
+        .sidecar("yt-dlp")
+        .map_err(|e| format!("sidecar init: {}", e))?
+        .args([
+            "-f",
+            format_for(quality),
+            "-o",
+            &file_path_str,
+            "--no-playlist",
+            "--no-warnings",
+            "--quiet",
+            "--force-overwrites",
+            &url,
+        ]);
+
+    let download_output = tokio::time::timeout(DOWNLOAD_TIMEOUT, download_sidecar.output())
+        .await
+        .map_err(|_| "yt-dlp download timed out".to_string())?
+        .map_err(|e| format!("yt-dlp download: {}", e))?;
+
+    if !download_output.status.success() {
+        let stderr = String::from_utf8_lossy(&download_output.stderr);
+        return Err(format!("yt-dlp download failed: {}", stderr));
+    }
+
+    let file_meta = std::fs::metadata(&file_path).map_err(|e| format!("file check: {}", e))?;
+    let size_bytes = file_meta.len();
+
+    if size_bytes < 1024 {
+        let _ = std::fs::remove_file(&file_path);
+        return Err("downloaded file is too small".to_string());
+    }
+
+    sweep_cache();
+
+    Ok(TrailerInfo {
+        file_path: file_path_str,
+        quality: quality.to_string(),
+        duration_seconds,
+        title,
+        size_bytes,
+    })
+}

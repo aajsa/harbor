@@ -1,0 +1,62 @@
+import { Play } from "lucide-react";
+import { AddonLogo } from "@/components/addon-logo";
+import { FormatBadge, resolutionBadge } from "@/components/format-badge";
+import type { ScoredStream } from "@/lib/streams/types";
+
+export function StremioRow({
+  stream,
+  failed,
+  addonLogo,
+  onPlay,
+}: {
+  stream: ScoredStream;
+  failed: boolean;
+  addonLogo: string | null;
+  onPlay: () => void;
+}) {
+  const addonName = stream.addonName ?? "Source";
+  const headline = stream.name?.trim() || addonName;
+  const description = stream.title?.trim() || stream.description?.trim() || "";
+  const resBadge = resolutionBadge(stream);
+  return (
+    <div
+      className={`flex items-stretch gap-5 rounded-2xl bg-elevated/40 p-5 ring-1 transition-colors ${
+        failed ? "ring-danger/40 bg-danger/5" : "ring-edge-soft/50"
+      }`}
+    >
+      <div className="relative flex w-[68px] shrink-0 flex-col items-center justify-center">
+        <AddonLogo
+          addonId={stream.addonId}
+          addonName={addonName}
+          manifestLogo={addonLogo}
+          size="tile"
+        />
+        {resBadge && (
+          <span className="pointer-events-none absolute -bottom-1.5 -right-2 flex items-center justify-center drop-shadow-[0_2px_4px_rgba(0,0,0,0.55)]">
+            <FormatBadge kind={resBadge} size="sm" />
+          </span>
+        )}
+      </div>
+      <div className="flex min-w-0 flex-1 flex-col justify-center gap-1.5">
+        <p className="whitespace-pre-line text-[16px] font-semibold leading-snug text-ink">
+          {headline}
+        </p>
+        {description && (
+          <p className="whitespace-pre-line text-[14.5px] leading-snug text-ink-muted">
+            {description}
+          </p>
+        )}
+        {failed && (
+          <p className="text-[13px] font-medium text-danger">Unavailable, try another.</p>
+        )}
+      </div>
+      <button
+        onClick={onPlay}
+        aria-label="Play"
+        className="flex h-16 w-16 shrink-0 items-center justify-center self-center rounded-full bg-accent text-canvas transition-transform active:scale-95 hover:opacity-90"
+      >
+        <Play size={26} fill="currentColor" className="ml-0.5" />
+      </button>
+    </div>
+  );
+}

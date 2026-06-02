@@ -1,0 +1,83 @@
+import { useEffect, useState, type RefObject } from "react";
+import { emptySnapshot, type PlayerBridge, type PlayerSnapshot } from "@/lib/player/bridge";
+import { probeMpv } from "@/lib/player/mpv";
+import type { PlayerSrc } from "@/lib/view";
+import type { Settings } from "@/lib/settings";
+import { isLinuxDesktop } from "@/lib/platform";
+import { pickBridge } from "../player-utils";
+
+export function usePlayerBridge(params: {
+  bridgeRef: RefObject<PlayerBridge | null>;
+  videoMountRef: RefObject<HTMLDivElement | null>;
+  src: PlayerSrc;
+  settings: Settings;
+}) {
+  const { bridgeRef, videoMountRef, src, settings } = params;
+
+  const [snap, setSnap] = useState<PlayerSnapshot>(emptySnapshot);
+  const [engine, setEngine] = useState<"html5" | "mpv">("html5");
+  const [autoFallbackTried, setAutoFallbackTried] = useState(false);
+
+  const bridgeKey = `${autoFallbackTried ? "mpv" : settings.playerEngine}|${settings.playerAnime4k}|${settings.playerHdrToSdr}|${settings.playerAnime4kShaders.join(",")}`;
+  const [bridgeReady, setBridgeReady] = useState(false);
+  useEffect(() => {
+    const host = videoMountRef.current;
+    if (!host) return;
+    let cancelled = false;
+    let off: (() => void) | null = null;
+    let bridge: PlayerBridge | null = null;
+    setBridgeReady(false);
+    (async () => {
+      const want = autoFallbackTried ? "mpv" : settings.playerEngine;
+      const getEmbedRect = async () => {
+        const el = videoMountRef.current;
+        if (!el) return null;
+        const r = el.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        return {
+          screenX: Math.round(r.left * dpr),
+          screenY: Math.round(r.top * dpr),
+          w: Math.max(1, Math.round(r.width * dpr)),
+          h: Math.max(1, Math.round(r.height * dpr)),
+        };
+      };
+      const { bridge: choose, engine: chosen } = await pickBridge(want, src.notWebReady === true, {
+        anime4k: settings.playerAnime4k,
+        hdrToSdr: settings.playerHdrToSdr,
+        embed: isLinuxDesktop() ? false : settings.playerMpvEmbed,
+        anime4kShaders: settings.playerAnime4k && settings.playerAnime4kShaders.length > 0
+          ? settings.playerAnime4kShaders
+          : [],
+        getEmbedRect,
+      });
+      if (cancelled) return;
+      bridge = choose;
+      bridge.attach(host);
+      bridgeRef.current = bridge;
+      setEngine(chosen);
+      off = bridge.subscribe((s) => setSnap(s));
+      setBridgeReady(true);
+    })();
+    return () => {
+      cancelled = true;
+      setBridgeReady(false);
+      off?.();
+      bridge?.destroy();
+      bridgeRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bridgeKey]);
+
+  useEffect(() => {
+    if (engine !== "html5") return;
+    if (autoFallbackTried) return;
+    if (settings.playerEngine !== "auto") return;
+    if (snap.errorCode !== "decode" && snap.errorCode !== "codec") return;
+    (async () => {
+      const probe = await probeMpv();
+      if (probe.available) setAutoFallbackTried(true);
+    })();
+  }, [engine, autoFallbackTried, snap.errorCode, settings.playerEngine]);
+
+  return { snap, engine, bridgeReady, bridgeKey };
+}

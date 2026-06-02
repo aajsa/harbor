@@ -1,0 +1,122 @@
+import { Check, ExternalLink, Link2, LogOut, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { TraktDeviceModal } from "@/components/trakt/trakt-device-modal";
+import { useTrakt } from "@/lib/trakt/provider";
+import { openUrl } from "@/lib/window";
+import { Section } from "./shared";
+
+export function TraktPanel() {
+  const { isConnected, username, disconnect, session } = useTrakt();
+  const [modalOpen, setModalOpen] = useState(false);
+  const [confirmDisconnect, setConfirmDisconnect] = useState(false);
+
+  return (
+    <>
+      {!isConnected ? (
+        <section className="flex flex-col gap-5 rounded-2xl border border-edge-soft bg-elevated/40 p-7">
+          <div className="flex flex-col gap-2">
+            <h2 className="text-[19px] font-medium tracking-tight text-ink">
+              Connect your Trakt account
+            </h2>
+            <p className="text-[13.5px] leading-relaxed text-ink-muted">
+              Track everything you watch, see your watchlist, and get personalized
+              recommendations on Harbor's home page. Free at trakt.tv.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setModalOpen(true)}
+              className="flex h-11 items-center gap-2.5 rounded-xl bg-ink px-5 text-[13.5px] font-semibold text-canvas transition-transform hover:scale-[1.02] active:scale-[0.97]"
+            >
+              <Link2 size={15} strokeWidth={2.2} />
+              Connect Trakt
+            </button>
+            <button
+              onClick={() => openUrl("https://trakt.tv")}
+              className="flex h-11 items-center gap-2 rounded-xl border border-edge-soft px-4 text-[13.5px] font-medium text-ink-muted transition-colors hover:border-edge hover:text-ink"
+            >
+              About Trakt
+              <ExternalLink size={13} strokeWidth={2.2} />
+            </button>
+          </div>
+        </section>
+      ) : (
+        <Section
+          title="Connected"
+          subtitle="Harbor will scrobble your playback to Trakt and sync your watchlist."
+        >
+          <div className="flex items-center justify-between gap-4 rounded-xl border border-edge-soft bg-canvas/40 px-4 py-3">
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-400/12 ring-1 ring-emerald-400/30 text-emerald-300">
+                <Check size={16} strokeWidth={2.4} />
+              </span>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[14px] font-medium text-ink">
+                  {username ? `@${username}` : "Connected"}
+                </span>
+                <span className="text-[12px] text-ink-subtle">
+                  Authorized {sessionAge(session?.createdAt)}
+                </span>
+              </div>
+            </div>
+            {username && (
+              <button
+                onClick={() =>
+                  openUrl(`https://trakt.tv/users/${encodeURIComponent(username)}`)
+                }
+                className="flex h-9 items-center gap-1.5 rounded-lg border border-edge-soft px-3 text-[12.5px] font-medium text-ink-muted transition-colors hover:border-edge hover:text-ink"
+              >
+                Open profile
+                <ExternalLink size={11} strokeWidth={2.2} />
+              </button>
+            )}
+          </div>
+          {!confirmDisconnect ? (
+            <button
+              onClick={() => setConfirmDisconnect(true)}
+              className="flex items-center gap-2 self-start rounded-lg px-2 py-1.5 text-[12.5px] font-medium text-ink-subtle transition-colors hover:text-red-300"
+            >
+              <Trash2 size={12} />
+              Disconnect from Trakt
+            </button>
+          ) : (
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-red-400/30 bg-red-400/5 p-3">
+              <span className="text-[12.5px] text-red-200">
+                Disconnect Trakt? Scrobbles and syncs will stop until you reconnect.
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setConfirmDisconnect(false)}
+                  className="rounded-md px-2.5 py-1 text-[12px] text-ink-muted hover:text-ink"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    disconnect();
+                    setConfirmDisconnect(false);
+                  }}
+                  className="flex items-center gap-1.5 rounded-md bg-red-400/20 px-3 py-1 text-[12px] font-semibold text-red-200 hover:bg-red-400/30"
+                >
+                  <LogOut size={11} strokeWidth={2.4} />
+                  Disconnect
+                </button>
+              </div>
+            </div>
+          )}
+        </Section>
+      )}
+
+      {modalOpen && <TraktDeviceModal onClose={() => setModalOpen(false)} />}
+    </>
+  );
+}
+
+function sessionAge(createdAt?: number): string {
+  if (!createdAt) return "";
+  const days = Math.floor((Date.now() / 1000 - createdAt) / 86400);
+  if (days < 1) return "today";
+  if (days < 30) return `${days} day${days === 1 ? "" : "s"} ago`;
+  const months = Math.floor(days / 30);
+  return `${months} month${months === 1 ? "" : "s"} ago`;
+}

@@ -1,0 +1,69 @@
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
+import { CHROME_HIDE_MS_PAUSED, CHROME_HIDE_MS_PLAYING } from "../player-utils";
+
+export function useChromeVisibility(params: {
+  playing: boolean;
+  drawMode: boolean;
+  pipMode: boolean;
+  setChromeHidden: (hidden: boolean) => void;
+}) {
+  const { playing, drawMode, pipMode, setChromeHidden } = params;
+  const [chromeVisible, setChromeVisible] = useState(false);
+  const chromeVisibleRef = useRef(false);
+  useEffect(() => {
+    chromeVisibleRef.current = chromeVisible;
+  }, [chromeVisible]);
+
+  const hideTimer = useRef<number | null>(null);
+  const anyMenuOpenRef = useRef(false);
+
+  const wakeChrome = useCallback(() => {
+    setChromeVisible(true);
+    setChromeHidden(pipMode);
+    if (hideTimer.current) window.clearTimeout(hideTimer.current);
+    if (anyMenuOpenRef.current) return;
+    const wait = playing && !drawMode ? CHROME_HIDE_MS_PLAYING : CHROME_HIDE_MS_PAUSED;
+    hideTimer.current = window.setTimeout(() => {
+      setChromeVisible(false);
+      setChromeHidden(true);
+    }, wait);
+  }, [playing, drawMode, pipMode, setChromeHidden]);
+
+  useEffect(() => {
+    wakeChrome();
+    const onMove = () => wakeChrome();
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("touchstart", onMove);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("touchstart", onMove);
+      if (hideTimer.current) window.clearTimeout(hideTimer.current);
+      setChromeHidden(false);
+    };
+  }, [wakeChrome, setChromeHidden]);
+
+  const [anyMenuOpen, setAnyMenuOpen] = useState(false);
+  useEffect(() => {
+    anyMenuOpenRef.current = anyMenuOpen;
+    if (anyMenuOpen) {
+      setChromeVisible(true);
+      if (hideTimer.current) window.clearTimeout(hideTimer.current);
+    } else {
+      wakeChrome();
+    }
+  }, [anyMenuOpen, wakeChrome]);
+
+  const cursorStyle: CSSProperties = drawMode
+    ? { cursor: "none" }
+    : !chromeVisible && playing
+      ? { cursor: "none" }
+      : { cursor: "default" };
+
+  return {
+    chromeVisible,
+    wakeChrome,
+    anyMenuOpen,
+    setAnyMenuOpen,
+    cursorStyle,
+  };
+}

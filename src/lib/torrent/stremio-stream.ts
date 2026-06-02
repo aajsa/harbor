@@ -1,0 +1,107 @@
+import { getStremioServerUrl } from "@/lib/stremio-server";
+
+export type TorrentFile = {
+  idx: number;
+  name: string;
+  length: number;
+};
+
+type RawFile = {
+  name?: string;
+  path?: string;
+  length?: number;
+  size?: number;
+  idx?: number;
+};
+
+const VIDEO_EXT = /\.(mkv|mp4|m4v|avi|mov|webm|ts|wmv|flv|mpg|mpeg|m2ts)$/i;
+
+export function trackersFromSources(sources?: string[]): string[] {
+  if (!sources) return [];
+  const out: string[] = [];
+  for (const s of sources) {
+    if (s.startsWith("tracker:")) out.push(s.slice(8));
+    else if (s.startsWith("dht:")) continue;
+    else if (/^(udp|https?|wss?):\/\//.test(s)) out.push(s);
+  }
+  return out;
+}
+
+export function buildTorrentStreamUrl(opts: {
+  infoHash: string;
+  fileIdx?: number | null;
+  sources?: string[];
+  trackers?: string[];
+  filename?: string | null;
+}): string {
+  const idx = opts.fileIdx == null || opts.fileIdx < 0 ? -1 : opts.fileIdx;
+  const params = new URLSearchParams();
+  const trackers = opts.trackers ?? trackersFromSources(opts.sources);
+  for (const t of trackers) params.append("tr", t);
+  if (opts.filename) params.set("f", opts.filename);
+  const qs = params.toString();
+  return `${getStremioServerUrl()}/${opts.infoHash.toLowerCase()}/${idx}${qs ? `?${qs}` : ""}`;
+}
+
+export function isVideoFile(f: TorrentFile): boolean {
+  return VIDEO_EXT.test(f.name);
+}
+
+export async function createAndListFiles(
+  infoHash: string,
+  trackers: string[],
+  timeoutMs = 7000,
+): Promise<TorrentFile[] | null> {
+  const hash = infoHash.toLowerCase();
+  const ctrl = new AbortController();
+  const timer = window.setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(`${getStremioServerUrl()}/${hash}/create`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        torrent: { infoHash: hash },
+        peerSearch: { sources: [`dht:${hash}`, ...trackers], min: 40, max: 150 },
+      }),
+      signal: ctrl.signal,
+    });
+    if (!res.ok) return null;
+    const json = (await res.json()) as { files?: RawFile[]; torrent?: { files?: RawFile[] } };
+    const raw = json.files ?? json.torrent?.files;
+    if (!Array.isArray(raw)) return null;
+    return raw.map((f, idx) => ({
+      idx: typeof f.idx === "number" ? f.idx : idx,
+      name: fileName(f),
+      length: Number(f.length ?? f.size ?? 0) || 0,
+    }));
+  } catch {
+    return null;
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
+
+function fileName(f: RawFile): string {
+  if (f.name) return f.name;
+  if (f.path) {
+    const parts = f.path.split(/[\\/]/);
+    return parts[parts.length - 1] || f.path;
+  }
+  return "Unknown file";
+}
+
+export function directTorrentEnabled(): boolean {
+  try {
+    const raw = localStorage.getItem("harbor.settings");
+    if (!raw) return true;
+    return (JSON.parse(raw) as { directTorrentStream?: boolean }).directTorrentStream !== false;
+  } catch {
+    return true;
+  }
+}
+
+export function directStreamAvailable(stream: { infoHash?: string | null }): boolean {
+  if (!stream.infoHash) return false;
+  if (!("__TAURI_INTERNALS__" in window)) return false;
+  return directTorrentEnabled();
+}
