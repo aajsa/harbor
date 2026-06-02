@@ -44,6 +44,30 @@ function nextVisit(): number {
   }
 }
 
+function readCachedPicks(): Meta[] {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw) as Meta[];
+    if (!Array.isArray(arr)) return [];
+    const watched = recentlyPlayed();
+    const blocked = new Set<string>([...getDownvotedIds(), ...getUpvotedIds()]);
+    return arr
+      .filter((m) => m && typeof m.id === "string" && typeof m.name === "string")
+      .filter((m) => !blocked.has(m.id))
+      .filter((m) => !watched.ids.has(m.id) && !watched.titles.has(watchTitleKey(m.name)))
+      .slice(0, CAP);
+  } catch {
+    return [];
+  }
+}
+
+function writeCachedPicks(metas: Meta[]): void {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(metas.slice(0, CAP)));
+  } catch {}
+}
+
 function cleanName(m: Meta): Meta {
   const name = stripFranchiseSuffix(m.name);
   return name === m.name ? m : { ...m, name };
