@@ -11,7 +11,7 @@ use tokio::io::AsyncWriteExt;
 #[allow(unused_imports)]
 use tokio::io::AsyncReadExt;
 use tokio::process::{Child, Command};
-use tokio::sync::{mpsc, oneshot, Mutex};
+use tokio::sync::{mpsc, oneshot, Mutex, Notify};
 use uuid::Uuid;
 
 #[cfg(windows)]
@@ -20,7 +20,8 @@ const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 const BUCKET_SECONDS: f64 = 2.0;
 const THUMB_WIDTH: u32 = 240;
 const SCREENSHOT_QUALITY: u32 = 72;
-const REQUEST_TIMEOUT_MS: u64 = 8000;
+const REQUEST_TIMEOUT_MS: u64 = 12000;
+const SEEK_WAIT_MS: u64 = 2500;
 
 type Pending = Arc<Mutex<HashMap<u64, oneshot::Sender<Result<(), String>>>>>;
 
@@ -42,6 +43,7 @@ struct Shadow {
     writer_tx: mpsc::Sender<Value>,
     cache_dir: PathBuf,
     pipe: String,
+    seek_notify: Arc<Notify>,
 }
 
 impl ThumbsState {
@@ -121,10 +123,25 @@ pub async fn thumbs_set_url(state: State<'_, ThumbsState>, url: String) -> Resul
 }
 
 #[tauri::command]
+pub async fn thumbs_spawn_eager(state: State<'_, ThumbsState>) -> Result<(), String> {
+    let mut inner = state.inner.lock().await;
+    if inner.shadow.is_some() {
+        return Ok(());
+    }
+    let url = inner.url.clone().ok_or_else(|| "no url".to_string())?;
+    let session = inner.session.clone().ok_or_else(|| "no session".to_string())?;
+    let pending = inner.pending.clone();
+    let s = spawn_shadow(&url, &session, pending).await?;
+    inner.shadow = Some(s);
+    Ok(())
+}
+
+#[tauri::command]
 pub async fn thumbs_get(
     state: State<'_, ThumbsState>,
     time_sec: f64,
 ) -> Result<Option<String>, String> {
+    use base64::{engine::general_purpose::STANDARD as B64, Engine as _};
     if !time_sec.is_finite() || time_sec < 0.0 {
         return Ok(None);
     }
@@ -137,7 +154,7 @@ pub async fn thumbs_get(
         }
     }
 
-    let (writer_tx, cache_dir, request_id, pending) = {
+    let (writer_tx, cache_dir, request_id, pending, seek_notify) = {
         let mut inner = state.inner.lock().await;
         let url = inner.url.clone().ok_or_else(|| "no url".to_string())?;
         let session = inner
@@ -152,25 +169,30 @@ pub async fn thumbs_get(
         let shadow = inner.shadow.as_ref().unwrap();
         let writer_tx = shadow.writer_tx.clone();
         let dir = shadow.cache_dir.clone();
+        let seek_notify = shadow.seek_notify.clone();
         let id = inner.next_request_id;
         inner.next_request_id += 1;
         let pending = inner.pending.clone();
-        (writer_tx, dir, id, pending)
+        (writer_tx, dir, id, pending, seek_notify)
     };
 
     let target_time = (bucket as f64) * BUCKET_SECONDS;
     let thumb_path = cache_dir.join(format!("{}.jpg", bucket));
     let thumb_str = thumb_path.to_string_lossy().to_string();
 
+    let restart = seek_notify.notified();
+    tokio::pin!(restart);
+    restart.as_mut().enable();
+    let _ = writer_tx
+        .send(json!({"command": ["seek", target_time, "absolute", "keyframes"]}))
+        .await;
+    let _ = tokio::time::timeout(Duration::from_millis(SEEK_WAIT_MS), restart).await;
+
     let (done_tx, done_rx) = oneshot::channel::<Result<(), String>>();
     {
         let mut p = pending.lock().await;
         p.insert(request_id, done_tx);
     }
-
-    let _ = writer_tx
-        .send(json!({"command": ["seek", target_time, "absolute", "exact"]}))
-        .await;
     let _ = writer_tx
         .send(json!({
             "command": ["screenshot-to-file", thumb_str.clone(), "video"],
@@ -186,12 +208,15 @@ pub async fn thumbs_get(
 
     match result {
         Ok(Ok(Ok(()))) => {
-            if !thumb_path.exists() {
-                return Err("screenshot file missing".to_string());
+            let bytes = std::fs::read(&thumb_path).map_err(|e| format!("read: {}", e))?;
+            let _ = std::fs::remove_file(&thumb_path);
+            if bytes.is_empty() {
+                return Err("screenshot empty".to_string());
             }
+            let uri = format!("data:image/jpeg;base64,{}", B64.encode(&bytes));
             let mut inner = state.inner.lock().await;
-            inner.cache.insert(bucket, thumb_str.clone());
-            Ok(Some(thumb_str))
+            inner.cache.insert(bucket, uri.clone());
+            Ok(Some(uri))
         }
         Ok(Ok(Err(e))) => Err(e),
         Ok(Err(_)) => Err("request canceled".to_string()),
@@ -228,12 +253,13 @@ async fn spawn_shadow(url: &str, session: &str, pending: Pending) -> Result<Shad
         "--idle=yes".into(),
         "--load-scripts=no".into(),
         "--ytdl=no".into(),
+        "--cache=yes".into(),
+        "--demuxer-max-bytes=32MiB".into(),
         format!("--vf=scale={}:-2", THUMB_WIDTH),
         "--screenshot-format=jpg".into(),
         format!("--screenshot-jpeg-quality={}", SCREENSHOT_QUALITY),
         "--screenshot-tag-colorspace=no".into(),
-        "--hr-seek=yes".into(),
-        "--hr-seek-framedrop=no".into(),
+        "--hr-seek=no".into(),
         url.to_string(),
     ];
 
@@ -251,21 +277,27 @@ async fn spawn_shadow(url: &str, session: &str, pending: Pending) -> Result<Shad
     tokio::time::sleep(Duration::from_millis(400)).await;
 
     let (writer_tx, writer_rx) = mpsc::channel::<Value>(64);
-    spawn_ipc(pipe.clone(), writer_rx, pending);
+    let seek_notify = Arc::new(Notify::new());
+    spawn_ipc(pipe.clone(), writer_rx, pending, seek_notify.clone());
 
     Ok(Shadow {
         child,
         writer_tx,
         cache_dir: dir,
         pipe,
+        seek_notify,
     })
 }
 
-fn handle_response(line: &str, pending: &Pending) {
+fn handle_line(line: &str, pending: &Pending, seek_notify: &Arc<Notify>) {
     let v: Value = match serde_json::from_str(line) {
         Ok(v) => v,
         Err(_) => return,
     };
+    if v.get("event").and_then(|x| x.as_str()) == Some("playback-restart") {
+        seek_notify.notify_waiters();
+        return;
+    }
     let id = match v.get("request_id").and_then(|x| x.as_u64()) {
         Some(id) => id,
         None => return,
@@ -289,7 +321,12 @@ fn handle_response(line: &str, pending: &Pending) {
 }
 
 #[cfg(windows)]
-fn spawn_ipc(pipe: String, mut writer_rx: mpsc::Receiver<Value>, pending: Pending) {
+fn spawn_ipc(
+    pipe: String,
+    mut writer_rx: mpsc::Receiver<Value>,
+    pending: Pending,
+    seek_notify: Arc<Notify>,
+) {
     use tokio::net::windows::named_pipe::ClientOptions;
     tokio::spawn(async move {
         let mut client = None;
@@ -309,6 +346,7 @@ fn spawn_ipc(pipe: String, mut writer_rx: mpsc::Receiver<Value>, pending: Pendin
 
         let read_client = client.clone();
         let read_pending = pending.clone();
+        let read_notify = seek_notify.clone();
         tokio::spawn(async move {
             let mut buf = vec![0u8; 8192];
             let mut acc = String::new();
@@ -338,7 +376,7 @@ fn spawn_ipc(pipe: String, mut writer_rx: mpsc::Receiver<Value>, pending: Pendin
                     if line.is_empty() {
                         continue;
                     }
-                    handle_response(&line, &read_pending);
+                    handle_line(&line, &read_pending, &read_notify);
                 }
             }
         });
@@ -356,7 +394,12 @@ fn spawn_ipc(pipe: String, mut writer_rx: mpsc::Receiver<Value>, pending: Pendin
 }
 
 #[cfg(not(windows))]
-fn spawn_ipc(pipe: String, mut writer_rx: mpsc::Receiver<Value>, pending: Pending) {
+fn spawn_ipc(
+    pipe: String,
+    mut writer_rx: mpsc::Receiver<Value>,
+    pending: Pending,
+    seek_notify: Arc<Notify>,
+) {
     use tokio::io::{AsyncBufReadExt, BufReader};
     use tokio::net::UnixStream;
     tokio::spawn(async move {
@@ -377,6 +420,7 @@ fn spawn_ipc(pipe: String, mut writer_rx: mpsc::Receiver<Value>, pending: Pendin
         let (r, mut w) = stream.into_split();
         let mut reader = BufReader::new(r);
         let read_pending = pending.clone();
+        let read_notify = seek_notify.clone();
         tokio::spawn(async move {
             let mut line = String::new();
             loop {
@@ -388,7 +432,7 @@ fn spawn_ipc(pipe: String, mut writer_rx: mpsc::Receiver<Value>, pending: Pendin
                         if trimmed.is_empty() {
                             continue;
                         }
-                        handle_response(trimmed, &read_pending);
+                        handle_line(trimmed, &read_pending, &read_notify);
                     }
                     Err(_) => break,
                 }

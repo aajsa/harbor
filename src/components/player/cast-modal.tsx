@@ -1,6 +1,8 @@
 import { Loader2, Star, Users, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { Meta } from "@/lib/cinemeta";
+import { useSettings } from "@/lib/settings";
+import { activeLayout } from "@/lib/theme";
 import { IMG } from "@/lib/providers/tmdb/tmdb-client";
 import { tmdbDetails, type CastEntry, type TmdbDetail } from "@/lib/providers/tmdb/tmdb-details";
 
@@ -147,11 +149,14 @@ function Header({
   genres: string[];
   overview: string;
 }) {
+  const { settings } = useSettings();
+  const ratingClass =
+    activeLayout(settings.theme) === "stremio" ? "text-amber-400" : "text-accent";
   const facts: React.ReactNode[] = [];
   if (year) facts.push(<span key="year">{year}</span>);
   if (rating) {
     facts.push(
-      <span key="rating" className="inline-flex items-center gap-1 text-accent">
+      <span key="rating" className={`inline-flex items-center gap-1 ${ratingClass}`}>
         <Star size={12} strokeWidth={2.4} fill="currentColor" />
         {rating}
       </span>,

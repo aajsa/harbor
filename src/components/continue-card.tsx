@@ -2,7 +2,7 @@ import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Check, Play } from "lucide-react";
 import { meta as fetchMeta, type Meta } from "@/lib/cinemeta";
 import { useContextMenu } from "@/lib/context-menu";
-import { readSnapshot } from "@/lib/snapshots";
+import { readSnapshot, useSnapshotVersion } from "@/lib/snapshots";
 import type { LibraryItem } from "@/lib/stremio";
 import { useView } from "@/lib/view";
 
@@ -14,6 +14,7 @@ type Props = {
 export const ContinueCard = memo(function ContinueCard({ item, watched = false }: Props) {
   const { openMeta } = useView();
   const { open: openContextMenu } = useContextMenu();
+  useSnapshotVersion();
   const snapshot = readSnapshot(item._id);
   const dur = item.state?.duration ?? 0;
   const off = item.state?.timeOffset ?? 0;

@@ -26,6 +26,26 @@ export function subscribePlaybackClock(cb: () => void): () => void {
   };
 }
 
+let seekHovering = false;
+const seekListeners = new Set<() => void>();
+
+export function setSeekHovering(v: boolean): void {
+  if (seekHovering === v) return;
+  seekHovering = v;
+  for (const l of seekListeners) l();
+}
+
+export function getSeekHovering(): boolean {
+  return seekHovering;
+}
+
+export function subscribeSeekHovering(cb: () => void): () => void {
+  seekListeners.add(cb);
+  return () => {
+    seekListeners.delete(cb);
+  };
+}
+
 export function usePlaybackPosition(): number {
   return useSyncExternalStore(
     subscribePlaybackClock,

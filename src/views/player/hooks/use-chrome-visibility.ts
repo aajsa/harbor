@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
+import { getSeekHovering, subscribeSeekHovering } from "@/lib/player/playback-clock";
 import { CHROME_HIDE_MS_PAUSED, CHROME_HIDE_MS_PLAYING } from "../player-utils";
 
 export function useChromeVisibility(params: {
@@ -21,7 +22,7 @@ export function useChromeVisibility(params: {
     setChromeVisible(true);
     setChromeHidden(pipMode);
     if (hideTimer.current) window.clearTimeout(hideTimer.current);
-    if (anyMenuOpenRef.current) return;
+    if (anyMenuOpenRef.current || getSeekHovering()) return;
     const wait = playing && !drawMode ? CHROME_HIDE_MS_PLAYING : CHROME_HIDE_MS_PAUSED;
     hideTimer.current = window.setTimeout(() => {
       setChromeVisible(false);
@@ -41,6 +42,19 @@ export function useChromeVisibility(params: {
       setChromeHidden(false);
     };
   }, [wakeChrome, setChromeHidden]);
+
+  useEffect(
+    () =>
+      subscribeSeekHovering(() => {
+        if (getSeekHovering()) {
+          setChromeVisible(true);
+          if (hideTimer.current) window.clearTimeout(hideTimer.current);
+        } else {
+          wakeChrome();
+        }
+      }),
+    [wakeChrome],
+  );
 
   const [anyMenuOpen, setAnyMenuOpen] = useState(false);
   useEffect(() => {

@@ -52,6 +52,7 @@ export type Settings = {
   badgePlacement: "top" | "bottom";
   harborAvatar: string | null;
   harborColor: string;
+  useTraktAvatar: boolean;
   traktClientId: string;
   traktClientSecret: string;
   traktAccessToken: string | null;
@@ -74,6 +75,7 @@ export type Settings = {
   discordShowPartyJoin: boolean;
   playerEngine: "auto" | "html5" | "mpv";
   playerShellId: string;
+  seekPreviewEnabled: boolean;
   instantPlay: boolean;
   playerHdrToSdr: boolean;
   playerAnime4k: boolean;
@@ -214,6 +216,7 @@ const DEFAULT: Settings = {
   badgePlacement: "bottom",
   harborAvatar: null,
   harborColor: "#7dd3fc",
+  useTraktAvatar: false,
   traktClientId: "",
   traktClientSecret: "",
   traktAccessToken: null,
@@ -245,6 +248,7 @@ const DEFAULT: Settings = {
   discordShowPartyJoin: false,
   playerEngine: "auto",
   playerShellId: "default",
+  seekPreviewEnabled: typeof navigator !== "undefined" && (navigator.hardwareConcurrency || 8) >= 4,
   instantPlay: true,
   playerHdrToSdr: true,
   playerAnime4k: false,

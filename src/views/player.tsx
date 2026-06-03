@@ -19,6 +19,7 @@ import { useSettings } from "@/lib/settings";
 import { saveResumeMs } from "@/lib/resume";
 import { savePlayback } from "@/lib/playback-history";
 import { captureFrame, captureMpvFrame, saveSnapshot } from "@/lib/snapshots";
+import { trickplayGet } from "@/lib/trickplay";
 import { readPlayerVolume, writePlayerVolume } from "@/lib/player-volume";
 import { nameColor } from "@/lib/together/colors";
 import { useTogether } from "@/lib/together/provider";
@@ -159,6 +160,7 @@ import { useChromeVisibility } from "./player/hooks/use-chrome-visibility";
 import { useKeyboardShortcuts } from "./player/hooks/use-keyboard-shortcuts";
 import { useAutoRetry } from "./player/hooks/use-auto-retry";
 import { useTrackAutoload } from "./player/hooks/use-track-autoload";
+import { useTrickplay } from "./player/hooks/use-trickplay";
 import { useTraktScrobble } from "@/lib/trakt/scrobble-hook";
 import { useVideoDownload } from "./player/hooks/use-video-download";
 import { setPlayerActions } from "@/lib/player-actions";
@@ -487,6 +489,8 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
     authKey,
   });
 
+  useTrickplay({ src, enabled: settings.seekPreviewEnabled });
+
   useTraktScrobble({ src, snap });
   const download = useVideoDownload({ url: src.url, meta: src.meta, episode: src.episode });
 
@@ -579,11 +583,14 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
         if (v) snapImg = captureFrame(v);
       } else if (engine === "mpv") {
         snapImg = await captureMpvFrame();
+        if (!snapImg && settings.seekPreviewEnabled) {
+          const cur = getPlaybackPosition();
+          if (Number.isFinite(cur) && cur > 0) snapImg = await trickplayGet(cur);
+        }
       }
       if (snapImg) {
-        saveSnapshot(src.meta.id, snapImg);
-        if (resolvedImdbId && resolvedImdbId !== src.meta.id) {
-          saveSnapshot(resolvedImdbId, snapImg);
+        for (const id of new Set([src.meta.id, src.imdbId, resolvedImdbId].filter(Boolean))) {
+          saveSnapshot(id as string, snapImg);
         }
       }
       const pos = getPlaybackPosition();

@@ -316,6 +316,7 @@ pub fn run() {
             browser::browser_open,
             browser::browser_close,
             thumbs::thumbs_set_url,
+            thumbs::thumbs_spawn_eager,
             thumbs::thumbs_get,
             thumbs::thumbs_stop,
             dvr::dvr_start,

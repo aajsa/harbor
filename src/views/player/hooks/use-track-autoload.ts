@@ -22,6 +22,10 @@ export function useTrackAutoload(params: {
   const [resolvedImdbId, setResolvedImdbId] = useState<string | null>(null);
   useEffect(() => {
     setResolvedImdbId(null);
+    if (src.imdbId) {
+      setResolvedImdbId(src.imdbId);
+      return;
+    }
     const raw = src.meta.id ?? "";
     if (raw.startsWith("tt")) {
       setResolvedImdbId(raw);
@@ -37,7 +41,7 @@ export function useTrackAutoload(params: {
     return () => {
       cancelled = true;
     };
-  }, [src.meta.id, settings.tmdbKey]);
+  }, [src.imdbId, src.meta.id, settings.tmdbKey]);
 
   const userAddonsRef = useRef<Addon[] | null>(null);
   useEffect(() => {

@@ -15,9 +15,11 @@ import { useSettings } from "@/lib/settings";
 import { useScrollMemory } from "@/lib/view";
 import { Rail } from "./discover/discover-rail";
 import { useDedupedRows } from "./discover/use-deduped-rows";
+import { ANCHOR_AWARDS, ANCHOR_TOP_RATED } from "@/lib/feed/daily-rows-anchors";
 
 const MAX_RAIL_PAGES = 10;
 const ROW_COUNT = 14;
+const DEDUP_PRIORITY = [ANCHOR_TOP_RATED, ANCHOR_AWARDS];
 
 export function Discover({ active = true }: { active?: boolean }) {
   const scrollRef = useRef<HTMLElement>(null);
@@ -192,7 +194,7 @@ export function Discover({ active = true }: { active?: boolean }) {
   }, [criticsPickList, featuredIds]);
 
   const order = useMemo(() => dailyRows.map((r) => r.id), [dailyRows]);
-  const deduped = useDedupedRows(rails, order, featuredIds, criticsPick?.id);
+  const deduped = useDedupedRows(rails, order, featuredIds, criticsPick?.id, DEDUP_PRIORITY);
 
   return (
     <main ref={scrollCb} className="flex-1 overflow-y-auto px-12 pb-20 pt-20">

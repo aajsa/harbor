@@ -1,4 +1,27 @@
-import { invoke, convertFileSrc } from "@tauri-apps/api/core";
+import { invoke } from "@tauri-apps/api/core";
+import { useSyncExternalStore } from "react";
+
+export type TrickplayState = { active: boolean; bufferedOnly: boolean };
+const IDLE: TrickplayState = { active: false, bufferedOnly: false };
+let state: TrickplayState = IDLE;
+const listeners = new Set<() => void>();
+
+export function setTrickplayState(next: TrickplayState): void {
+  if (state.active === next.active && state.bufferedOnly === next.bufferedOnly) return;
+  state = next;
+  for (const l of listeners) l();
+}
+
+export function useTrickplayState(): TrickplayState {
+  return useSyncExternalStore(
+    (cb) => {
+      listeners.add(cb);
+      return () => listeners.delete(cb);
+    },
+    () => state,
+    () => IDLE,
+  );
+}
 
 export async function trickplaySetUrl(url: string): Promise<void> {
   try {
@@ -6,10 +29,15 @@ export async function trickplaySetUrl(url: string): Promise<void> {
   } catch {}
 }
 
+export async function trickplaySpawnEager(): Promise<void> {
+  try {
+    await invoke("thumbs_spawn_eager");
+  } catch {}
+}
+
 export async function trickplayGet(timeSec: number): Promise<string | null> {
   try {
-    const path = await invoke<string | null>("thumbs_get", { timeSec });
-    return path ? convertFileSrc(path) : null;
+    return await invoke<string | null>("thumbs_get", { timeSec });
   } catch {
     return null;
   }

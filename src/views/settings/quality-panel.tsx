@@ -6,7 +6,6 @@ import {
   PlayModePanel,
   PlayerEnginePanel,
   SeekBarPanel,
-  ShellSection,
   SubtitleStylePanel,
 } from "./player-panel";
 import { Section, ToggleRow } from "./shared";
@@ -27,13 +26,6 @@ export function QualityPanel() {
         subtitle="HTML5 plays everything WebView2 supports. mpv handles TrueHD, DTS-HD, AV1, weird containers, and HDR. Auto picks based on the source."
       >
         <PlayerEnginePanel />
-      </Section>
-
-      <Section
-        title="Player skin"
-        subtitle="The chrome over the video: title bar, transport, menus. Built-in skins ship with Harbor. Custom skins can be dropped in later via the shell SDK."
-      >
-        <ShellSection />
       </Section>
 
       <Section

@@ -83,7 +83,7 @@ export function useEpisodeNavigation(params: {
             claimHost(true);
             sendInvite(buildPlayInvite(src.meta, ep));
           }
-          replacePlayerSrc(built);
+          replacePlayerSrc(built.imdbId ? built : { ...built, imdbId: src.imdbId });
           return;
         }
         const key = `${ep.season}:${ep.episode}`;

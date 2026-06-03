@@ -1,3 +1,24 @@
+import { useSyncExternalStore } from "react";
+
+let snapVersion = 0;
+const snapListeners = new Set<() => void>();
+
+function bumpSnapVersion(): void {
+  snapVersion += 1;
+  for (const l of snapListeners) l();
+}
+
+export function useSnapshotVersion(): number {
+  return useSyncExternalStore(
+    (cb) => {
+      snapListeners.add(cb);
+      return () => snapListeners.delete(cb);
+    },
+    () => snapVersion,
+    () => snapVersion,
+  );
+}
+
 const PREFIX = "harbor.snap.";
 const INDEX_KEY = "harbor.snap.index";
 const RETENTION_KEY = "harbor.snap.retention";
@@ -124,6 +145,7 @@ export function saveSnapshot(id: string, dataUrl: string): void {
     index = index.filter((e) => e.id !== id);
   }
   writeIndex(index);
+  if (saved) bumpSnapVersion();
 }
 
 export function setSnapshotRetentionDays(days: number): void {

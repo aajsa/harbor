@@ -20,6 +20,7 @@ export type PlayEpisode = {
 
 export type PlayerSrc = {
   meta: Meta;
+  imdbId?: string;
   episode?: PlayEpisode;
   url: string;
   title: string;

@@ -372,6 +372,7 @@ export function PlayPicker({
 
   const { onPlay, onCache, queuedHash, debridDown, resetDebridDown, abortResolve } = usePickHandler({
     meta,
+    imdbId,
     episode,
     attempt,
     debrids,

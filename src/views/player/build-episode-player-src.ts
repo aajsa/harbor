@@ -91,6 +91,7 @@ export async function buildEpisodePlayerSrc(
     if (!preflight.ok && preflight.reason === "stub") continue;
     return {
       meta,
+      imdbId: imdbId.startsWith("tt") ? imdbId : undefined,
       episode,
       url: playUrl,
       title: meta.name,

@@ -342,6 +342,12 @@ Awards laurels surface across detail pages, covering Oscar, Emmy, BAFTA, Golden 
 - **Custom CSS, JS, and HTML overlays** for power users.
 
 <p align="left">
+  <img src="https://harbor.site/readme-media/trickplay.jpg" width="720">
+  <br/>
+  <sub>Trickplay seek previews, generated live for torrents and local files.</sub>
+</p>
+
+<p align="left">
   <img src="https://harbor.site/readme-media/richactivity.gif" width="320">
   <br/>
   <sub>Discord Rich Presence, cycling live as you browse and watch.</sub>

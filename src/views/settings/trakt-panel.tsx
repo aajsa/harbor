@@ -1,14 +1,55 @@
 import { Check, ExternalLink, Link2, LogOut, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { TraktDeviceModal } from "@/components/trakt/trakt-device-modal";
+import { useProfiles } from "@/lib/profiles";
+import { useSettings } from "@/lib/settings";
+import { fetchTraktAvatar } from "@/lib/trakt/profile";
 import { useTrakt } from "@/lib/trakt/provider";
 import { openUrl } from "@/lib/window";
-import { Section } from "./shared";
+import { Section, ToggleRow } from "./shared";
 
 export function TraktPanel() {
   const { isConnected, username, disconnect, session } = useTrakt();
+  const { settings, update } = useSettings();
+  const { activeProfile, updateProfile } = useProfiles();
   const [modalOpen, setModalOpen] = useState(false);
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
+  const [traktAvatar, setTraktAvatar] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isConnected) {
+      setTraktAvatar(null);
+      return;
+    }
+    let live = true;
+    fetchTraktAvatar().then((url) => {
+      if (live) setTraktAvatar(url);
+    });
+    return () => {
+      live = false;
+    };
+  }, [isConnected]);
+
+  const pushAvatar = (url: string | null) => {
+    update({ harborAvatar: url });
+    if (activeProfile) updateProfile(activeProfile.id, { avatar: url });
+  };
+
+  useEffect(() => {
+    if (settings.useTraktAvatar && traktAvatar && settings.harborAvatar !== traktAvatar) {
+      pushAvatar(traktAvatar);
+    }
+  }, [settings.useTraktAvatar, traktAvatar]);
+
+  const toggleTraktAvatar = (on: boolean) => {
+    if (on) {
+      if (traktAvatar) pushAvatar(traktAvatar);
+      update({ useTraktAvatar: true });
+    } else {
+      update({ useTraktAvatar: false });
+      if (settings.harborAvatar === traktAvatar) pushAvatar(null);
+    }
+  };
 
   return (
     <>
@@ -47,9 +88,18 @@ export function TraktPanel() {
         >
           <div className="flex items-center justify-between gap-4 rounded-xl border border-edge-soft bg-canvas/40 px-4 py-3">
             <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-400/12 ring-1 ring-emerald-400/30 text-emerald-300">
-                <Check size={16} strokeWidth={2.4} />
-              </span>
+              {traktAvatar ? (
+                <img
+                  src={traktAvatar}
+                  alt=""
+                  draggable={false}
+                  className="h-10 w-10 shrink-0 rounded-full object-cover ring-1 ring-edge"
+                />
+              ) : (
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-400/12 ring-1 ring-emerald-400/30 text-emerald-300">
+                  <Check size={16} strokeWidth={2.4} />
+                </span>
+              )}
               <div className="flex flex-col gap-0.5">
                 <span className="text-[14px] font-medium text-ink">
                   {username ? `@${username}` : "Connected"}
@@ -71,6 +121,22 @@ export function TraktPanel() {
               </button>
             )}
           </div>
+          {traktAvatar && (
+            <ToggleRow
+              label="Use my Trakt avatar as my Harbor avatar"
+              sub="Wear your Trakt profile picture across Harbor instead of the default."
+              value={settings.useTraktAvatar}
+              onChange={toggleTraktAvatar}
+              leading={
+                <img
+                  src={traktAvatar}
+                  alt=""
+                  draggable={false}
+                  className="h-9 w-9 rounded-full object-cover"
+                />
+              }
+            />
+          )}
           {!confirmDisconnect ? (
             <button
               onClick={() => setConfirmDisconnect(true)}
@@ -93,6 +159,10 @@ export function TraktPanel() {
                 </button>
                 <button
                   onClick={() => {
+                    if (settings.useTraktAvatar && settings.harborAvatar === traktAvatar) {
+                      pushAvatar(null);
+                    }
+                    update({ useTraktAvatar: false });
                     disconnect();
                     setConfirmDisconnect(false);
                   }}

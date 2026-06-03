@@ -5,6 +5,7 @@ import { SeekBarVisual } from "@/components/player/transport/seek-bar-visual";
 import { useSettings, type Settings } from "@/lib/settings";
 import { ColorPopoverTrigger } from "../color-picker";
 import { SubField } from "./internals";
+import { ToggleRow } from "../shared";
 import { SeekImageUpload, openSeekImageDialog } from "./seek-image-upload";
 
 const STYLES: Array<{ id: "flat" | "glass" | "pinstripe" | "rainbow"; label: string; sub: string }> = [
@@ -45,6 +46,12 @@ export function SeekBarPanel() {
 
   return (
     <div className="flex flex-col gap-7">
+      <ToggleRow
+        label="Show thumbnail preview on hover"
+        sub="Generates a frame on the fly as you scrub the seek bar. Works on debrid streams and local files."
+        value={settings.seekPreviewEnabled}
+        onChange={(v) => update({ seekPreviewEnabled: v })}
+      />
       <Preview settings={settings} />
 
       <SubField label="Bar style">

@@ -68,7 +68,7 @@ export function LibraryPanel({
         />
         <ToggleRow
           label="Show every addon row"
-          sub="By default, addon rails that duplicate the built-in ones (Trending, Popular, Top Rated, etc.) are merged so you don't see the same row twice. Turn this on to keep them all, side by side."
+          sub="By default, addon rails that duplicate the built-in ones (Trending, Popular, Top Rated, etc.) are merged so you don't see the same row twice. Turn this on to show every one, duplicates and all."
           value={settings.homeShowAllAddonRows}
           onChange={(v) => update({ homeShowAllAddonRows: v })}
         />
@@ -253,12 +253,6 @@ export function LibraryPanel({
           sub="Removes the Anime tab and any Trending/Popular/Upcoming/New anime rows from Home."
           value={settings.hideContent.anime}
           onChange={(v) => pushHideContent("anime", v)}
-        />
-        <ToggleRow
-          label="Hide sports"
-          sub="Removes the Sports tab from the sidebar."
-          value={settings.hideContent.sports}
-          onChange={(v) => pushHideContent("sports", v)}
         />
         <ToggleRow
           label="Hide Live TV"

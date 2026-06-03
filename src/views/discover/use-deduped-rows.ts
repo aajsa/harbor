@@ -6,12 +6,15 @@ export function useDedupedRows(
   order: string[],
   featuredIds: Set<string>,
   criticsPickId?: string,
+  priority: string[] = [],
 ): Record<string, Meta[] | null> {
   return useMemo(() => {
     const seen = new Set<string>(featuredIds);
     if (criticsPickId) seen.add(criticsPickId);
+    const prio = priority.filter((id) => order.includes(id));
+    const claimOrder = [...prio, ...order.filter((id) => !prio.includes(id))];
     const out: Record<string, Meta[] | null> = {};
-    for (const id of order) {
+    for (const id of claimOrder) {
       const raw = rails[id];
       if (raw === undefined) {
         out[id] = null;
@@ -27,5 +30,5 @@ export function useDedupedRows(
       out[id] = taken;
     }
     return out;
-  }, [rails, order, featuredIds, criticsPickId]);
+  }, [rails, order, featuredIds, criticsPickId, priority]);
 }

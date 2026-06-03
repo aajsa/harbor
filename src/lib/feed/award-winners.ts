@@ -5,15 +5,20 @@ import { tmdbSearchMovie } from "@/lib/providers/tmdb";
 import type { AwardType } from "@/lib/providers/wikidata";
 
 const CACHE_KEY = "harbor.discover.awards.v1";
-const MAX_TITLES = 48;
+const MAX_TITLES = 150;
 const PER_PAGE = 24;
-const BATCH = 8;
+const BATCH = 12;
 
 const SOURCES: Array<[AwardType, AwardCategory]> = [
   ["oscar", { key: "best_picture", name: "Best Picture" }],
+  ["oscar", { key: "best_director", name: "Best Director" }],
+  ["oscar", { key: "best_international_feature", name: "Best International Feature" }],
+  ["oscar", { key: "best_animated_feature", name: "Best Animated Feature" }],
   ["bafta", { key: "best_film", name: "Best Film" }],
+  ["bafta", { key: "best_director", name: "Best Director" }],
   ["cannes", { key: "palme_dor", name: "Palme d'Or" }],
   ["golden_globe", { key: "best_picture_drama", name: "Best Drama" }],
+  ["golden_globe", { key: "best_picture_musical_comedy", name: "Best Musical or Comedy" }],
   ["critics_choice", { key: "best_picture", name: "Best Picture" }],
   ["venice", { key: "golden_lion", name: "Golden Lion" }],
 ];

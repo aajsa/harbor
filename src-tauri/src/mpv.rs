@@ -641,6 +641,7 @@ pub async fn mpv_save_screenshot(
     }
     let _ = mpv.set_property("screenshot-format", "png");
     let _ = mpv.set_property("screenshot-png-compression", "3");
+    let _ = mpv.set_property("screenshot-sw", "yes");
     mpv_argv_command(&mpv, &["screenshot-to-file", path.as_str(), "video"])
         .map_err(|e| format!("screenshot-to-file: {}", e))?;
     let target = std::path::Path::new(&path).to_path_buf();
@@ -672,6 +673,7 @@ pub async fn mpv_screenshot_data_url(
     let path_str = temp.to_string_lossy().to_string();
     let _ = mpv.set_property("screenshot-format", "jpg");
     let _ = mpv.set_property("screenshot-jpeg-quality", "72");
+    let _ = mpv.set_property("screenshot-sw", "yes");
     mpv_argv_command(&mpv, &["screenshot-to-file", path_str.as_str(), "video"])
         .map_err(|e| format!("screenshot-to-file: {}", e))?;
     let mut waited = 0u64;

@@ -14,6 +14,7 @@ import { humanError, isDebridFailure } from "./picker-utils";
 
 export function usePickHandler({
   meta,
+  imdbId,
   episode,
   attempt,
   debrids,
@@ -34,6 +35,7 @@ export function usePickHandler({
   setResolving,
 }: {
   meta: Meta;
+  imdbId?: string | null;
   episode?: PlayEpisode;
   attempt?: number;
   debrids: DebridStore[];
@@ -143,6 +145,7 @@ export function usePickHandler({
       }
       openPlayer({
         meta,
+        imdbId: imdbId ?? undefined,
         episode,
         url: playUrl,
         title: episode ? episode.name || `Episode ${episode.episode}` : meta.name,

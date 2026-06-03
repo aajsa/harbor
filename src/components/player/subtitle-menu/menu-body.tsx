@@ -134,8 +134,8 @@ export function MenuBody(props: SubtitleMenuProps & { onClose: () => void }) {
           })}
         </aside>
 
-        <section className="flex min-w-0 flex-1 flex-col">
-          {tracks.length > 0 && activeGroup && (
+        <section className="flex min-h-0 min-w-0 flex-1 flex-col">
+          {!searchOpen && tracks.length > 0 && activeGroup && (
             <div className="flex flex-wrap items-center gap-1.5 border-b border-edge-soft bg-canvas/15 px-3 py-2">
               <Tab
                 active={sourceFilter === "all"}
@@ -173,6 +173,11 @@ export function MenuBody(props: SubtitleMenuProps & { onClose: () => void }) {
             </div>
           )}
 
+          {searchOpen ? (
+            <div className="flex min-h-0 flex-1 flex-col">
+              <SearchSection {...props} />
+            </div>
+          ) : (
           <div className="flex-1 overflow-y-auto">
             {tracks.length === 0 ? (
               <EmptyState searchSettled={searchSettled} veryNewMovie={veryNewMovie} />
@@ -196,21 +201,15 @@ export function MenuBody(props: SubtitleMenuProps & { onClose: () => void }) {
               </div>
             )}
           </div>
+          )}
 
-          <div className="border-t border-edge-soft">
-            <button
-              onClick={() => setSearchOpen((v) => !v)}
-              className="flex w-full items-center gap-2 px-3 py-2 text-left text-[12px] font-semibold text-ink-muted transition-colors hover:bg-canvas/40 hover:text-ink"
-            >
-              <SearchIcon size={12} strokeWidth={2.2} />
-              {searchOpen ? "Hide search" : "Find more subtitles"}
-            </button>
-            {searchOpen && (
-              <div className="border-t border-edge-soft bg-canvas/20">
-                <SearchSection {...props} />
-              </div>
-            )}
-          </div>
+          <button
+            onClick={() => setSearchOpen((v) => !v)}
+            className="flex w-full shrink-0 items-center gap-2 border-t border-edge-soft px-3 py-2 text-left text-[12px] font-semibold text-ink-muted transition-colors hover:bg-canvas/40 hover:text-ink"
+          >
+            <SearchIcon size={12} strokeWidth={2.2} />
+            {searchOpen ? "Hide search" : "Find more subtitles"}
+          </button>
 
           <DelayRow delay={delaySec} onDelay={onDelay} />
         </section>

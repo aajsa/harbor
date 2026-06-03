@@ -1,6 +1,12 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSettings } from "@/lib/settings";
-import { usePlaybackPositionGated, usePlaybackBufferedGated } from "@/lib/player/playback-clock";
+import {
+  usePlaybackPositionGated,
+  usePlaybackBufferedGated,
+  setSeekHovering,
+} from "@/lib/player/playback-clock";
+import { useTrickplayState } from "@/lib/trickplay";
+import { ThumbPreview } from "@/components/player/thumb-preview";
 import { SeekBarVisual } from "./seek-bar-visual";
 import { fmtTime } from "./transport-utils";
 
@@ -17,12 +23,18 @@ export function SeekBar({
   const [hover, setHover] = useState<number | null>(null);
   const [scrub, setScrub] = useState<number | null>(null);
   const { settings } = useSettings();
+  const { active: trickplayActive, bufferedOnly } = useTrickplayState();
   const position = usePlaybackPositionGated(active);
   const buffered = usePlaybackBufferedGated(active);
   const dur = durationSec || 1;
   const value = scrub ?? position;
   const pct = Math.max(0, Math.min(1, value / dur)) * 100;
   const bufferedPct = Math.max(0, Math.min(1, (position + buffered) / dur)) * 100;
+
+  useEffect(() => {
+    setSeekHovering(hover != null || scrub != null);
+  }, [hover, scrub]);
+  useEffect(() => () => setSeekHovering(false), []);
 
   const fromEvent = (clientX: number): number => {
     const r = ref.current?.getBoundingClientRect();
@@ -63,14 +75,17 @@ export function SeekBar({
           scrubbing={scrub != null}
           hovered={hover != null}
         />
-        {hover != null && (
-          <div
-            className="pointer-events-none absolute -top-9 -translate-x-1/2 rounded-md border border-white/10 bg-black/90 px-2 py-1 font-mono text-[12px] font-semibold tabular-nums text-white shadow-lg backdrop-blur-md"
-            style={{ left: `${(hover / dur) * 100}%` }}
-          >
-            {fmtTime(hover)}
-          </div>
-        )}
+        {hover != null &&
+          (trickplayActive && (!bufferedOnly || hover <= position + buffered) ? (
+            <ThumbPreview time={hover} dur={dur} />
+          ) : (
+            <div
+              className="pointer-events-none absolute -top-9 -translate-x-1/2 rounded-md border border-white/10 bg-black/90 px-2 py-1 font-mono text-[12px] font-semibold tabular-nums text-white shadow-lg backdrop-blur-md"
+              style={{ left: `${(hover / dur) * 100}%` }}
+            >
+              {fmtTime(hover)}
+            </div>
+          ))}
       </div>
     </div>
   );

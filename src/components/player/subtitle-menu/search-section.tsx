@@ -95,8 +95,8 @@ export function SearchSection(props: SubtitleMenuProps) {
   }, [filtered]);
 
   return (
-    <div className="flex flex-col">
-      <div className="flex items-center gap-2 px-4 py-3">
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex shrink-0 items-center gap-2 px-4 py-3">
         <div className="relative flex-1">
           <SearchIcon
             size={14}
@@ -146,7 +146,7 @@ export function SearchSection(props: SubtitleMenuProps) {
             : "No subtitles found."}
         </p>
       )}
-      <div className="max-h-[280px] overflow-y-auto">
+      <div className="min-h-0 flex-1 overflow-y-auto">
         {grouped.map(({ lang, items }) => (
           <div key={lang} className="border-t border-edge-soft/60">
             <div className="flex items-center gap-2 bg-canvas/40 px-4 py-1.5">
