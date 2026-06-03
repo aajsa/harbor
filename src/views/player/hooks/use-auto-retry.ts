@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import type { PlayerBridge, PlayerSnapshot } from "@/lib/player/bridge";
+import { getPlaybackBuffered, getPlaybackPosition, usePlaybackFlag } from "@/lib/player/playback-clock";
 import { isLocalUrl } from "@/lib/player/local-url";
 import { clearOnePickerCache } from "@/lib/picker-cache";
 import { buildTranscodedUrl, probeStremioServer } from "@/lib/stremio-server";
@@ -27,16 +28,18 @@ export function useAutoRetry(params: {
   const isLocal = isLocalUrl(src.url);
   const isLive = src.meta.id.startsWith("iptv:");
 
+  const hasProgress = usePlaybackFlag(
+    () => getPlaybackPosition() > 0.5 || getPlaybackBuffered() > 0.5,
+  );
   const [slowLoad, setSlowLoad] = useState(false);
   useEffect(() => {
     setSlowLoad(false);
     if (isLocal) return;
-    const hasMeaningful =
-      snap.durationSec > 0 && (snap.bufferedSec > 0.5 || snap.positionSec > 0.5);
+    const hasMeaningful = snap.durationSec > 0 && hasProgress;
     if (hasMeaningful) return;
     const t = window.setTimeout(() => setSlowLoad(true), SLOW_LOAD_MS);
     return () => window.clearTimeout(t);
-  }, [src.url, snap.durationSec, snap.bufferedSec, snap.positionSec, isLocal]);
+  }, [src.url, snap.durationSec, hasProgress, isLocal]);
 
   const autoRetriedRef = useRef(false);
   const transcodedTriedRef = useRef(false);
@@ -114,7 +117,7 @@ export function useAutoRetry(params: {
       console.warn(`[player] live channel: ignoring "${snap.errorCode}", mpv handles reconnection`);
       return;
     }
-    if (snap.positionSec > 5) return;
+    if (getPlaybackPosition() > 5) return;
     if (!sameUrlRetriedRef.current) {
       sameUrlRetriedRef.current = true;
       const b = bridgeRef.current;
@@ -152,7 +155,7 @@ export function useAutoRetry(params: {
     triggerAutoRetry(`playback error "${snap.errorCode}"`);
   }, [
     snap.errorCode,
-    snap.positionSec,
+    snap.status,
     triggerAutoRetry,
     stremioServerTranscode,
     transcodedUrl,
@@ -169,28 +172,33 @@ export function useAutoRetry(params: {
   useEffect(() => {
     if (snap.status !== "playing") {
       lastPosRef.current.at = Date.now();
-      lastPosRef.current.pos = snap.positionSec;
+      lastPosRef.current.pos = getPlaybackPosition();
+      lastPosRef.current.started = false;
       return;
     }
-    const now = Date.now();
-    const ref = lastPosRef.current;
-    if (!ref.started) {
-      ref.started = true;
-      ref.at = now;
-      ref.pos = snap.positionSec;
-      return;
-    }
-    if (snap.positionSec > ref.pos + 0.3) {
-      ref.pos = snap.positionSec;
-      ref.at = now;
-      return;
-    }
-    if (now - ref.urlAt < 25_000) return;
-    if (ref.pos > 5) return;
-    if (now - ref.at > 18_000 && snap.positionSec < 5) {
-      triggerAutoRetry("position frozen for 18s without crossing 5s");
-    }
-  }, [snap.status, snap.positionSec, triggerAutoRetry, src.url]);
+    const id = window.setInterval(() => {
+      const now = Date.now();
+      const ref = lastPosRef.current;
+      const pos = getPlaybackPosition();
+      if (!ref.started) {
+        ref.started = true;
+        ref.at = now;
+        ref.pos = pos;
+        return;
+      }
+      if (pos > ref.pos + 0.3) {
+        ref.pos = pos;
+        ref.at = now;
+        return;
+      }
+      if (now - ref.urlAt < 25_000) return;
+      if (ref.pos > 5) return;
+      if (now - ref.at > 18_000 && pos < 5) {
+        triggerAutoRetry("position frozen for 18s without crossing 5s");
+      }
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [snap.status, triggerAutoRetry, src.url]);
 
   const noVideoSinceRef = useRef<number | null>(null);
   const videoSeenRef = useRef(false);
@@ -217,18 +225,18 @@ export function useAutoRetry(params: {
     if (Date.now() - noVideoSinceRef.current > BLACK_SCREEN_GRACE_MS) {
       triggerAutoRetry("audio plays but no video frames (black screen)");
     }
-  }, [snap.status, snap.positionSec, snap.videoWidth, snap.videoHeight, triggerAutoRetry, src.url]);
+  }, [snap.status, snap.videoWidth, snap.videoHeight, triggerAutoRetry, src.url]);
 
   useEffect(() => {
     if (snap.status === "ended") return;
-    if (snap.durationSec > 0 || snap.positionSec > 1) return;
+    if (snap.durationSec > 0 || getPlaybackPosition() > 1) return;
     const t = window.setTimeout(() => {
-      if (snap.durationSec === 0 && snap.positionSec === 0) {
+      if (snap.durationSec === 0 && getPlaybackPosition() === 0) {
         triggerAutoRetry("stuck on load");
       }
     }, STUCK_AUTORETRY_MS);
     return () => window.clearTimeout(t);
-  }, [src.url, snap.durationSec, snap.positionSec, snap.status, triggerAutoRetry]);
+  }, [src.url, snap.durationSec, snap.status, triggerAutoRetry]);
 
   useEffect(() => {
     if (!inRoom || isLocal || isLive) return;

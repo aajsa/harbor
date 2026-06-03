@@ -58,6 +58,7 @@ export function buildDefaultCtx(opts: MockOptions): ControlContext {
     mid: opts.mid,
     compact: opts.compact,
     tight: opts.tight,
+    active: true,
     isLiveChannel: isLive,
     showEpisodeNav: !isLive,
     hasPrevEp: !isLive,

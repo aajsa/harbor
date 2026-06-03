@@ -4,6 +4,7 @@ import { trackEvent } from "@/lib/discover/store";
 import { savePlayback } from "@/lib/playback-history";
 import { saveResumeMs } from "@/lib/resume";
 import type { PlayerSnapshot } from "@/lib/player/bridge";
+import { getPlaybackPosition } from "@/lib/player/playback-clock";
 import type { PlayerSrc } from "@/lib/view";
 
 const TICK_MS = 4000;
@@ -26,12 +27,13 @@ export function useResumeAutosave(params: {
   const record = (s: PlayerSrc, sn: PlayerSnapshot, se?: number, ep?: number): void => {
     const id = s.meta.id;
     if (!id || id.startsWith("iptv:")) return;
-    if (sn.positionSec < MIN_POSITION_SEC) return;
-    lastSavedRef.current = sn.positionSec * 1000;
-    saveResumeMs(id, sn.positionSec * 1000, se, ep);
+    const pos = getPlaybackPosition();
+    if (pos < MIN_POSITION_SEC) return;
+    lastSavedRef.current = pos * 1000;
+    saveResumeMs(id, pos * 1000, se, ep);
     savePlayback(id, { title: s.meta.name, parsedTitle: s.meta.name }, se, ep);
-    if (sn.positionSec < TASTE_MIN_SEC) return;
-    const ratio = sn.durationSec > 0 ? sn.positionSec / sn.durationSec : 0;
+    if (pos < TASTE_MIN_SEC) return;
+    const ratio = sn.durationSec > 0 ? pos / sn.durationSec : 0;
     const kind = ratio >= WATCHED_RATIO ? "watched" : "play";
     const key = `${id}|${kind}`;
     if (taughtRef.current.has(key)) return;
@@ -42,8 +44,9 @@ export function useResumeAutosave(params: {
   const persistNow = (force: boolean): void => {
     const { src: s, snap: sn, season: se, episode: ep } = latestRef.current;
     if (s.meta.id?.startsWith("iptv:")) return;
-    if (sn.positionSec < MIN_POSITION_SEC) return;
-    const ms = sn.positionSec * 1000;
+    const pos = getPlaybackPosition();
+    if (pos < MIN_POSITION_SEC) return;
+    const ms = pos * 1000;
     if (!force && Math.abs(ms - lastSavedRef.current) < 1500) return;
     record(s, sn, se, ep);
   };

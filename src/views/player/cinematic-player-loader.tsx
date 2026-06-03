@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { HarborLoader } from "@/components/harbor-loader";
 import type { PlayerSnapshot } from "@/lib/player/bridge";
+import { getPlaybackPosition, usePlaybackFlag } from "@/lib/player/playback-clock";
 import { isLocalUrl } from "@/lib/player/local-url";
 import type { PlayerSrc } from "@/lib/view";
 import { LoaderLogoOrText } from "./loader-logo-or-text";
@@ -18,7 +19,8 @@ export function CinematicPlayerLoader({
 }) {
   const isLocal = isLocalUrl(src.url);
   const everPlayedRef = useRef(false);
-  if (snap.durationSec > 0 && snap.positionSec > 0.3) {
+  const hasProgress = usePlaybackFlag(() => getPlaybackPosition() > 0.3);
+  if (snap.durationSec > 0 && hasProgress) {
     everPlayedRef.current = true;
   } else if (snap.status === "playing" || snap.status === "paused") {
     everPlayedRef.current = true;

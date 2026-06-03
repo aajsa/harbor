@@ -1,5 +1,6 @@
 import { useEffect, useRef, type RefObject } from "react";
 import type { PlayerBridge, PlayerSnapshot } from "@/lib/player/bridge";
+import { getPlaybackBuffered, getPlaybackPosition } from "@/lib/player/playback-clock";
 import type { PartialSyncState } from "@/lib/together/provider";
 import type { RoomSnapshot } from "@/lib/together/client";
 import type { SyncState } from "@/lib/together/protocol";
@@ -78,8 +79,6 @@ export function useRoomSync(params: {
   const isHostRef = useRef(isHost);
   isHostRef.current = isHost;
   const syncCatchUpRef = useRef(false);
-  const bufferedAheadRef = useRef(0);
-  bufferedAheadRef.current = snap.bufferedSec;
 
   useEffect(() => {
     syncCatchUpRef.current = false;
@@ -91,8 +90,6 @@ export function useRoomSync(params: {
     positionSec: 0,
     at: 0,
   });
-  const positionRef = useRef(snap.positionSec);
-  positionRef.current = snap.positionSec;
   const statusRef = useRef(snap.status);
   statusRef.current = snap.status;
   const durationRef = useRef(snap.durationSec);
@@ -107,7 +104,7 @@ export function useRoomSync(params: {
       if (cast?.activeRef.current) return;
       const status = statusRef.current;
       if (status !== "playing" && status !== "paused") return;
-      const pos = positionRef.current;
+      const pos = getPlaybackPosition();
       if (durationRef.current <= 0) return;
       if (pos <= 0) return;
       publishState({
@@ -153,19 +150,20 @@ export function useRoomSync(params: {
         return;
       }
       if (!state.mediaId) return;
+      const livePos = getPlaybackPosition();
       const ageS = Math.min(SYNC_MAX_AGE_S, Math.max(0, (Date.now() - state.updatedAt) / 1000));
       const target = state.playing
         ? state.positionSeconds + ageS + SYNC_PLAY_LOOKAHEAD_S
         : state.positionSeconds;
-      const drift = Math.abs(snap.positionSec - target);
+      const drift = Math.abs(livePos - target);
       const playStateChanged = state.playing !== (snap.status === "playing");
       const driftTooBig = drift > SYNC_DRIFT_TOLERANCE_S;
       if (syncCatchUpRef.current) {
         if (drift < SYNC_SEEK_JUMP_S) {
-          const buffered = bufferedAheadRef.current;
+          const buffered = getPlaybackBuffered();
           const playing = snap.status === "playing";
           const nearEof =
-            snap.durationSec > 0 && snap.positionSec + buffered >= snap.durationSec - 0.5;
+            snap.durationSec > 0 && livePos + buffered >= snap.durationSec - 0.5;
           if (!playing || (buffered < 2.0 && !nearEof)) {
             if (state.playing !== playing) {
               if (state.playing && !playing) b.play().catch(() => {});
@@ -184,7 +182,7 @@ export function useRoomSync(params: {
       if (state.playing && snap.status !== "playing") b.play().catch(() => {});
       if (!state.playing && snap.status === "playing") b.pause();
     });
-  }, [inRoom, onIncomingState, clientId, src.meta.id, suppressOutgoingFor, snap.positionSec, snap.status, cast]);
+  }, [inRoom, onIncomingState, clientId, src.meta.id, suppressOutgoingFor, snap.status, snap.durationSec, cast]);
 
   useEffect(() => {
     if (!inRoom || !cast) return;
@@ -267,12 +265,12 @@ export function useRoomSync(params: {
       !seed.playing &&
       !!hostId &&
       seed.updatedBy === hostId &&
-      Math.abs(snap.positionSec - seed.positionSeconds) > 1.5
+      Math.abs(getPlaybackPosition() - seed.positionSeconds) > 1.5
     ) {
       bridgeRef.current?.seek(seed.positionSeconds);
     }
     if (snap.status === "playing") bridgeRef.current?.pause();
-  }, [inRoom, hasStarted, snap.status, snap.positionSec, isHost, roomSnapshot.started, roomSnapshot.syncState, roomSnapshot.hostClientId]);
+  }, [inRoom, hasStarted, snap.status, isHost, roomSnapshot.started, roomSnapshot.syncState, roomSnapshot.hostClientId]);
 
   const lobbySeededRef = useRef(false);
   useEffect(() => {
@@ -289,7 +287,7 @@ export function useRoomSync(params: {
         ? { season: src.episode.season, episode: src.episode.episode, name: src.episode.name }
         : null,
       posterUrl: src.meta.poster ?? null,
-      positionSeconds: snap.positionSec,
+      positionSeconds: getPlaybackPosition(),
       playing: false,
     });
   }, [inRoom, isHost, hasStarted, snap.durationSec, publishState, src.meta.id, src.meta.name, src.meta.poster, src.episode]);

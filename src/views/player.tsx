@@ -25,11 +25,11 @@ import { useTogether } from "@/lib/together/provider";
 import { buildPlayInvite } from "@/lib/together/build-invite";
 import { useView, type PlayerSrc, type PlayEpisode } from "@/lib/view";
 import { writePlayerPrefs } from "@/lib/player-prefs";
-import { activeSegment, useSkipSegments } from "@/lib/skip-intro";
+import { useSkipSegments } from "@/lib/skip-intro";
 import { CastMenu } from "@/components/player/cast-menu";
 import { ResumePrompt } from "@/components/player/resume-prompt";
 import { QuickTools } from "@/components/player/quick-tools";
-import { SkipPill } from "@/components/player/skip-pill";
+import { SkipPillContainer } from "./player/skip-pill-container";
 import { StatsOverlay } from "@/components/player/stats-overlay";
 import { LiveChannelOverlay } from "@/components/player/live-channel-overlay/overlay";
 import { LiveChannelDvr } from "@/components/player/live-channel-dvr";
@@ -168,6 +168,11 @@ import { useStreamSwitcher } from "./player/hooks/use-stream-switcher";
 import { useMpvEmbed } from "./player/hooks/use-mpv-embed";
 import { setPlaybackPresence } from "@/lib/discord/presence";
 import { usePlayerBridge } from "./player/hooks/use-player-bridge";
+import {
+  getPlaybackBuffered,
+  getPlaybackPosition,
+  setPlaybackClock,
+} from "@/lib/player/playback-clock";
 import { useWebviewMemory } from "./player/hooks/use-webview-memory";
 import { useEpisodeNavigation } from "./player/hooks/use-episode-navigation";
 import { useAbLoop } from "./player/hooks/use-ab-loop";
@@ -335,7 +340,7 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
           ? { season: src.episode.season, episode: src.episode.episode, name: src.episode.name }
           : null,
         posterUrl: src.meta.poster ?? null,
-        positionSeconds: s.positionSec,
+        positionSeconds: getPlaybackPosition(),
         playing: s.status === "playing",
       });
     }
@@ -357,12 +362,11 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
       posterUrl: src.meta.poster ?? undefined,
       year,
       paused: snap.status === "paused",
-      positionSec: snap.positionSec,
+      positionSec: getPlaybackPosition(),
       durationSec: snap.durationSec,
     });
   }, [
     snap.status,
-    snap.positionSec,
     snap.durationSec,
     src.meta.id,
     src.meta.name,
@@ -458,7 +462,6 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
   const quickToolsEnabled = !inRoom || isHost;
   const ab = useAbLoop({
     bridgeRef,
-    positionSec: snap.positionSec,
     durationSec: snap.durationSec,
     enabled: quickToolsEnabled,
     resetKey: src.url,
@@ -466,14 +469,12 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
   const sleep = useSleepTimer({
     bridgeRef,
     status: snap.status,
-    positionSec: snap.positionSec,
     durationSec: snap.durationSec,
     srcUrl: src.url,
   });
   const frameGrab = useFrameGrab({
     bridgeRef,
     src,
-    positionSec: snap.positionSec,
     enabled: quickToolsEnabled,
   });
 
@@ -585,8 +586,9 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
           saveSnapshot(resolvedImdbId, snapImg);
         }
       }
-      if (Number.isFinite(snap.positionSec) && snap.positionSec > 0) {
-        saveResumeMs(src.meta.id, snap.positionSec * 1000, season, episode);
+      const pos = getPlaybackPosition();
+      if (Number.isFinite(pos) && pos > 0) {
+        saveResumeMs(src.meta.id, pos * 1000, season, episode);
         if (liveStreamRef) {
           savePlayback(
             src.meta.id,
@@ -612,7 +614,7 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
       clearInvite();
     }
     exitPlayback();
-  }, [exitPlayback, src.meta.id, season, episode, inRoom, isHost, notifyHostLeaving, clearInvite, publishState, snap.positionSec, exitPip, engine, liveStreamRef, liveUrl, src.url, resolvedImdbId, stopCast, castActiveRef]);
+  }, [exitPlayback, src.meta.id, season, episode, inRoom, isHost, notifyHostLeaving, clearInvite, publishState, exitPip, engine, liveStreamRef, liveUrl, src.url, resolvedImdbId, stopCast, castActiveRef]);
 
   useKeyboardShortcuts({
     bridgeRef,
@@ -735,16 +737,17 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
     else b.play().catch(() => {});
   };
   const seekStep = (delta: number) => {
+    const pos = getPlaybackPosition();
     if (castDevice) {
-      void seekCast(Math.max(0, snap.positionSec + delta));
+      void seekCast(Math.max(0, pos + delta));
       return;
     }
     if (!canControl) return;
     if (inRoom && !isHost) {
-      sendCommand({ action: "seek", positionSeconds: Math.max(0, snap.positionSec + delta) });
+      sendCommand({ action: "seek", positionSeconds: Math.max(0, pos + delta) });
       return;
     }
-    bridgeRef.current?.seek(snap.positionSec + delta);
+    bridgeRef.current?.seek(pos + delta);
   };
 
   useStubDetection({ src, snap, closePlayer });
@@ -758,9 +761,7 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
     closePlayer,
   });
 
-  const atEndOfStream =
-    snap.status === "ended" ||
-    (snap.durationSec > 0 && snap.positionSec >= snap.durationSec - 2);
+  const endedByStatus = snap.status === "ended";
   const isLocalSrc = isLocalUrl(src.url);
   const [pillSuppressed, setPillSuppressed] = useState(true);
   useEffect(() => {
@@ -769,7 +770,7 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
     return () => window.clearTimeout(t);
   }, [src.url]);
   const streamPillVariant: "check" | "stalled" | "failed" | null =
-    pipMode || showWaiting || atEndOfStream || isLocalSrc
+    pipMode || showWaiting || endedByStatus || isLocalSrc
       ? null
       : snap.errorCode != null && snap.status === "error" && !pillSuppressed
         ? "failed"
@@ -780,44 +781,19 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
             : null;
 
   const skipSegments = useSkipSegments(src.meta, src.episode, snap.chapters, snap.durationSec);
-  const realActiveSkip = activeSegment(skipSegments, snap.positionSec);
   const hasNextEpisodeNow = canChangeEpisode && !!adjacent.next;
-  const syntheticOutro = useMemo(() => {
-    if (realActiveSkip) return null;
-    if (!hasNextEpisodeNow) return null;
-    if (snap.durationSec <= 0) return null;
-    const remaining = snap.durationSec - snap.positionSec;
-    if (remaining > 90 || remaining < 0.5) return null;
-    const hasRealOutro = skipSegments.some((s) => s.kind === "outro");
-    if (hasRealOutro) return null;
-    return {
-      kind: "outro" as const,
-      startSec: Math.max(0, snap.durationSec - 90),
-      endSec: snap.durationSec,
-      source: "chapters" as const,
-    };
-  }, [
-    realActiveSkip,
-    hasNextEpisodeNow,
-    snap.durationSec,
-    snap.positionSec,
-    skipSegments,
-  ]);
-  const activeSkip = realActiveSkip ?? syntheticOutro;
-  const skipSegmentEnd = activeSkip?.endSec;
-  const onSkipSegment = useCallback(() => {
-    if (skipSegmentEnd == null) return;
+  const seekTo = useCallback((sec: number) => {
     if (castDevice) {
-      void seekCast(skipSegmentEnd);
+      void seekCast(sec);
       return;
     }
     if (!canControl) return;
     if (inRoom && !isHost) {
-      sendCommand({ action: "seek", positionSeconds: skipSegmentEnd });
+      sendCommand({ action: "seek", positionSeconds: sec });
       return;
     }
-    bridgeRef.current?.seek(skipSegmentEnd);
-  }, [skipSegmentEnd, castDevice, canControl, inRoom, isHost, sendCommand, seekCast]);
+    bridgeRef.current?.seek(sec);
+  }, [castDevice, canControl, inRoom, isHost, sendCommand, seekCast]);
 
   const overlayCovers = switcherOpen || showWaiting || foreignNotice != null;
   useMpvEmbed({
@@ -844,14 +820,16 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
     url: src.url,
     status: snap.status,
     durationSec: snap.durationSec,
-    positionSec: snap.positionSec,
     swappingEp,
     swapResolvingKey,
   });
   const showChrome = !loaderActive && (chromeVisible || drawMode);
   const ActiveShell = getPlayerShell(settings.playerShellId).Component;
+  useEffect(() => {
+    if (castDevice) setPlaybackClock(castPositionSec || getPlaybackPosition(), getPlaybackBuffered());
+  }, [castDevice, castPositionSec]);
   const liveShellSnap = castDevice
-    ? { ...snap, positionSec: castPositionSec || snap.positionSec, status: (castPlaying ? "playing" : "paused") as typeof snap.status }
+    ? { ...snap, status: (castPlaying ? "playing" : "paused") as typeof snap.status }
     : snap;
   if (showChrome) shellSnapRef.current = liveShellSnap;
   const shellSnap = showChrome ? liveShellSnap : shellSnapRef.current;
@@ -949,7 +927,7 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
               title: src.title,
               poster: src.meta.poster ?? undefined,
               contentType: forceTranscode ? "application/x-mpegURL" : guessContentType(resolved.url),
-              startTimeSec: isLiveIptv ? 0 : snap.positionSec,
+              startTimeSec: isLiveIptv ? 0 : getPlaybackPosition(),
               headers: isLiveIptv
                 ? { "user-agent": "VLC/3.0.20 LibVLC/3.0.20" }
                 : undefined,
@@ -980,7 +958,7 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
           <CastSessionBar
             device={castDevice}
             playing={castPlaying}
-            positionSec={castPositionSec || snap.positionSec}
+            positionSec={castPositionSec || getPlaybackPosition()}
             durationSec={snap.durationSec}
             onTogglePlay={togglePlayCast}
             onStop={() => {
@@ -1068,13 +1046,14 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
       )}
 
       {!pipMode && !drawMode && !showWaiting && pendingResumeSec == null && pendingSeekSec == null && (
-        <SkipPill
-          segment={activeSkip}
-          hasNextEp={canChangeEpisode && !autoNextCancelled && !!adjacent.next}
+        <SkipPillContainer
+          skipSegments={skipSegments}
+          durationSec={snap.durationSec}
+          hasNextEpisode={hasNextEpisodeNow}
+          hasNextEpDisplay={canChangeEpisode && !autoNextCancelled && !!adjacent.next}
           nextEp={canChangeEpisode && !autoNextCancelled ? adjacent.next : null}
-          remainingSec={Math.max(0, snap.durationSec - snap.positionSec)}
           visible={hasStarted || !inRoom}
-          onSkip={onSkipSegment}
+          onSkip={seekTo}
           onNextEpisode={() => goToEpisode(adjacent.next)}
           onCancelAutoNext={() => setAutoNextCancelled(true)}
         />

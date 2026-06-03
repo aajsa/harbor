@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { libraryGetOne, libraryPut, type LibraryItem } from "@/lib/stremio";
 import type { PlayerSnapshot } from "@/lib/player/bridge";
+import { getPlaybackPosition } from "@/lib/player/playback-clock";
 import type { PlayerSrc } from "@/lib/view";
 
 const TICK_MS = 5000;
@@ -54,13 +55,14 @@ export function useStremioSync(params: {
   const writeWithFreshBase = async () => {
     const { src: s, snap: sn, authKey: ak, canonicalId: cid } = latestRef.current;
     if (!ak || !cid) return;
-    if (sn.positionSec < MIN_POSITION_SEC || sn.durationSec <= 0) return;
+    const pos = getPlaybackPosition();
+    if (pos < MIN_POSITION_SEC || sn.durationSec <= 0) return;
     const fresh = await libraryGetOne(ak, cid).catch(() => null);
     if (fresh) baseItemRef.current = fresh;
     const base = fresh ?? baseItemRef.current;
     const remoteMs = (base?.state?.timeOffset ?? 0) as number;
     const remoteMtime = Date.parse((base as { _mtime?: string } | null)?._mtime ?? "");
-    const ourMs = Math.floor(sn.positionSec * 1000);
+    const ourMs = Math.floor(pos * 1000);
     if (
       Number.isFinite(remoteMtime) &&
       remoteMtime > sessionStartRef.current &&
@@ -69,7 +71,7 @@ export function useStremioSync(params: {
       return;
     }
     lastSyncedRef.current = ourMs;
-    void writeLibraryItem(ak, s, sn, base, cid);
+    void writeLibraryItem(ak, s, sn, base, cid, pos);
   };
 
   const flush = () => {
@@ -81,8 +83,9 @@ export function useStremioSync(params: {
     if (snap.status !== "playing") return;
     const id = window.setInterval(() => {
       const { snap: sn } = latestRef.current;
-      if (sn.positionSec < MIN_POSITION_SEC || sn.durationSec <= 0) return;
-      const ms = sn.positionSec * 1000;
+      const pos = getPlaybackPosition();
+      if (pos < MIN_POSITION_SEC || sn.durationSec <= 0) return;
+      const ms = pos * 1000;
       if (Math.abs(ms - lastSyncedRef.current) < 4000) return;
       void writeWithFreshBase();
     }, TICK_MS);
@@ -165,13 +168,14 @@ async function writeLibraryItem(
   snap: PlayerSnapshot,
   base: LibraryItem | null,
   canonicalId: string,
+  positionSec: number,
 ): Promise<void> {
   const now = new Date().toISOString();
   const baseRecord = base as unknown as Record<string, unknown> | null;
   const baseState = (baseRecord?.state ?? {}) as Record<string, unknown>;
-  const offsetMs = Math.max(0, Math.floor(snap.positionSec * 1000));
+  const offsetMs = Math.max(0, Math.floor(positionSec * 1000));
   const durationMs = Math.max(0, Math.floor(snap.durationSec * 1000));
-  const watchedRatio = snap.positionSec / Math.max(1, snap.durationSec);
+  const watchedRatio = positionSec / Math.max(1, snap.durationSec);
   const isSeries = src.meta.type === "series";
   const videoId = isSeries && src.episode
     ? `${canonicalId}:${src.episode.season}:${src.episode.episode}`

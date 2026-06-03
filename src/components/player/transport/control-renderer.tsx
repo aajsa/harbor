@@ -37,7 +37,7 @@ import { DrawToggle } from "./draw-toggle";
 import { CastButton } from "./cast-button";
 import { SeekStepBtn } from "./seek-step-btn";
 import { EpisodeNavBtn } from "./episode-nav-btn";
-import { fmtTime } from "./transport-utils";
+import { TimeStart, TimeEnd } from "./time-display";
 
 export type ControlContext = {
   snap: PlayerSnapshot;
@@ -51,6 +51,7 @@ export type ControlContext = {
   mid: boolean;
   compact: boolean;
   tight: boolean;
+  active: boolean;
   isLiveChannel: boolean;
   showEpisodeNav: boolean;
   hasPrevEp: boolean;
@@ -167,26 +168,24 @@ export function renderControl(id: PlayerControlId, ctx: ControlContext): ReactNo
       );
     }
     case "time-start": {
-      if (ctx.isLiveChannel || ctx.tight) return null;
       return (
-        <span className="shrink-0 font-mono text-[13px] tabular-nums text-white/85 drop-shadow-[0_1px_3px_rgba(0,0,0,0.7)]">
-          {fmtTime(ctx.snap.positionSec)}
-        </span>
+        <TimeStart
+          durationSec={ctx.snap.durationSec}
+          isLiveChannel={ctx.isLiveChannel}
+          tight={ctx.tight}
+          active={ctx.active}
+        />
       );
     }
     case "time-end": {
-      if (ctx.isLiveChannel || ctx.tight) return null;
-      const fmt: TimeFormat = ctx.timeFormat ?? "start-end";
-      if (fmt === "elapsed-only") return null;
-      const duration = ctx.snap.durationSec ?? 0;
-      const text =
-        fmt === "remaining"
-          ? `-${fmtTime(Math.max(0, duration - ctx.snap.positionSec))}`
-          : fmtTime(duration);
       return (
-        <span className="shrink-0 font-mono text-[13px] tabular-nums text-white/65 drop-shadow-[0_1px_3px_rgba(0,0,0,0.7)]">
-          {text}
-        </span>
+        <TimeEnd
+          durationSec={ctx.snap.durationSec}
+          timeFormat={ctx.timeFormat}
+          isLiveChannel={ctx.isLiveChannel}
+          tight={ctx.tight}
+          active={ctx.active}
+        />
       );
     }
     case "volume": {

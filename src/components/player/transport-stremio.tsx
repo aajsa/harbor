@@ -149,8 +149,6 @@ export function TransportStremio(p: TransportStremioProps) {
     };
   }, []);
 
-  const remaining = Math.max(0, (snap.durationSec ?? 0) - snap.positionSec);
-
   const ctx: StremioRenderCtx = {
     snap,
     capabilities,
@@ -162,7 +160,7 @@ export function TransportStremio(p: TransportStremioProps) {
     showEpisodeNav,
     isLiveChannel,
     showRemaining,
-    remaining,
+    active: visible,
     canPickAnother,
     hasPrevEp,
     hasNextEp,
@@ -245,13 +243,13 @@ export function TransportStremio(p: TransportStremioProps) {
             <>
               <LiveBadge />
               <div className="flex-1">
-                <LiveSeekBar snap={snap} onSeek={onSeek} />
+                <LiveSeekBar durationSec={snap.durationSec} onSeek={onSeek} active={visible} />
               </div>
-              <GoToLive snap={snap} onSeek={onSeek} />
+              <GoToLive durationSec={snap.durationSec} onSeek={onSeek} />
             </>
           ) : (
             <div className="min-w-0 flex-1">
-              <SeekBar snap={snap} onSeek={onSeek} />
+              <SeekBar durationSec={snap.durationSec} onSeek={onSeek} active={visible} />
             </div>
           )}
         </div>

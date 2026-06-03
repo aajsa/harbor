@@ -1,6 +1,7 @@
 import { ChevronLeft, Maximize, Minimize, Pause, Play } from "lucide-react";
 import { useRef, useState } from "react";
 import type { PlayerShellProps } from "@/lib/player-shells/types";
+import { usePlaybackPositionGated } from "@/lib/player/playback-clock";
 
 export function MinimalShell({
   snap,
@@ -16,17 +17,6 @@ export function MinimalShell({
   if (pipMode) return null;
 
   const playing = snap.status === "playing";
-  const duration = snap.durationSec || 1;
-  const ratio = Math.max(0, Math.min(1, snap.positionSec / duration));
-  const trackRef = useRef<HTMLDivElement>(null);
-  const [hoverRatio, setHoverRatio] = useState<number | null>(null);
-
-  const seekFromClient = (clientX: number) => {
-    const r = trackRef.current?.getBoundingClientRect();
-    if (!r) return;
-    const x = Math.max(0, Math.min(1, (clientX - r.left) / r.width));
-    onSeek(x * duration);
-  };
 
   return (
     <div
@@ -57,9 +47,7 @@ export function MinimalShell({
           <span className="truncate text-[14px] font-semibold text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.6)]">
             {title}
           </span>
-          <span className="font-mono text-[11.5px] tabular-nums text-white/70">
-            {fmt(snap.positionSec)} / {fmt(snap.durationSec)}
-          </span>
+          <MinimalTime durationSec={snap.durationSec} visible={visible} />
         </div>
         <button
           onClick={onFullscreen}
@@ -69,34 +57,70 @@ export function MinimalShell({
           {fullscreen ? <Minimize size={16} strokeWidth={2.2} /> : <Maximize size={16} strokeWidth={2.2} />}
         </button>
       </div>
+      <MinimalTrack durationSec={snap.durationSec} visible={visible} onSeek={onSeek} />
+    </div>
+  );
+}
+
+function MinimalTime({ durationSec, visible }: { durationSec: number; visible: boolean }) {
+  const positionSec = usePlaybackPositionGated(visible);
+  return (
+    <span className="font-mono text-[11.5px] tabular-nums text-white/70">
+      {fmt(positionSec)} / {fmt(durationSec)}
+    </span>
+  );
+}
+
+function MinimalTrack({
+  durationSec,
+  visible,
+  onSeek,
+}: {
+  durationSec: number;
+  visible: boolean;
+  onSeek: (sec: number) => void;
+}) {
+  const positionSec = usePlaybackPositionGated(visible);
+  const duration = durationSec || 1;
+  const ratio = Math.max(0, Math.min(1, positionSec / duration));
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [hoverRatio, setHoverRatio] = useState<number | null>(null);
+
+  const seekFromClient = (clientX: number) => {
+    const r = trackRef.current?.getBoundingClientRect();
+    if (!r) return;
+    const x = Math.max(0, Math.min(1, (clientX - r.left) / r.width));
+    onSeek(x * duration);
+  };
+
+  return (
+    <div
+      ref={trackRef}
+      onPointerDown={(e) => {
+        (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+        seekFromClient(e.clientX);
+      }}
+      onPointerMove={(e) => {
+        const r = trackRef.current?.getBoundingClientRect();
+        if (!r) return;
+        const x = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+        setHoverRatio(x);
+        if (e.buttons === 1) seekFromClient(e.clientX);
+      }}
+      onPointerLeave={() => setHoverRatio(null)}
+      className="pointer-events-auto relative h-1.5 cursor-pointer overflow-hidden rounded-full bg-white/12"
+    >
       <div
-        ref={trackRef}
-        onPointerDown={(e) => {
-          (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-          seekFromClient(e.clientX);
-        }}
-        onPointerMove={(e) => {
-          const r = trackRef.current?.getBoundingClientRect();
-          if (!r) return;
-          const x = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
-          setHoverRatio(x);
-          if (e.buttons === 1) seekFromClient(e.clientX);
-        }}
-        onPointerLeave={() => setHoverRatio(null)}
-        className="pointer-events-auto relative h-1.5 cursor-pointer overflow-hidden rounded-full bg-white/12"
-      >
+        className="absolute inset-y-0 left-0 bg-accent transition-[width] duration-150"
+        style={{ width: `${ratio * 100}%` }}
+      />
+      {hoverRatio != null && hoverRatio !== ratio && (
         <div
-          className="absolute inset-y-0 left-0 bg-accent transition-[width] duration-150"
-          style={{ width: `${ratio * 100}%` }}
+          aria-hidden
+          className="absolute inset-y-0 left-0 bg-white/25"
+          style={{ width: `${hoverRatio * 100}%` }}
         />
-        {hoverRatio != null && hoverRatio !== ratio && (
-          <div
-            aria-hidden
-            className="absolute inset-y-0 left-0 bg-white/25"
-            style={{ width: `${hoverRatio * 100}%` }}
-          />
-        )}
-      </div>
+      )}
     </div>
   );
 }

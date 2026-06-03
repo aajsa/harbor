@@ -23,7 +23,7 @@ import { DvrButton } from "./dvr-button";
 import { SpeedMenu } from "./speed-menu";
 import { DrawToggle } from "./draw-toggle";
 import { CastButton } from "./cast-button";
-import { fmtTime } from "./transport-utils";
+import { TimeStart } from "./time-display";
 import { StremioBtn } from "./stremio-btn";
 import { StremioVolume } from "./stremio-volume";
 import { renderCustomIconControlStremio } from "./custom-icon-renderer";
@@ -39,7 +39,7 @@ export type StremioRenderCtx = {
   showEpisodeNav: boolean;
   isLiveChannel: boolean;
   showRemaining: boolean;
-  remaining: number;
+  active: boolean;
   canPickAnother: boolean;
   hasPrevEp: boolean;
   hasNextEp: boolean;
@@ -201,26 +201,14 @@ export function RenderedStremioControl({
         />
       );
     case "time-start": {
-      if (ctx.isLiveChannel) return null;
-      const fmt: TimeFormat = ctx.timeFormat ?? "start-end";
-      const positionText = fmtTime(ctx.snap.positionSec);
-      if (fmt === "elapsed-only") {
-        return (
-          <span className="pointer-events-auto ml-2 shrink-0 font-medium tabular-nums text-[14px] text-white/90">
-            {positionText}
-          </span>
-        );
-      }
-      const endText =
-        fmt === "remaining"
-          ? `-${fmtTime(ctx.remaining)}`
-          : fmtTime(ctx.snap.durationSec ?? 0);
       return (
-        <span className="pointer-events-auto ml-2 shrink-0 font-medium tabular-nums text-[14px] text-white/90">
-          {positionText}
-          <span className="mx-1 text-white/55">/</span>
-          {endText}
-        </span>
+        <TimeStart
+          stremio
+          durationSec={ctx.snap.durationSec}
+          timeFormat={ctx.timeFormat}
+          isLiveChannel={ctx.isLiveChannel}
+          active={ctx.active}
+        />
       );
     }
     case "time-end":

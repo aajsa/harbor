@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import type { PlayerBridge } from "@/lib/player/bridge";
+import { getPlaybackPosition } from "@/lib/player/playback-clock";
 import type { PlayerSrc } from "@/lib/view";
 
 export type FrameGrabToast = {
@@ -54,13 +55,10 @@ async function joinPath(dir: string, name: string): Promise<string> {
 export function useFrameGrab(params: {
   bridgeRef: RefObject<PlayerBridge | null>;
   src: PlayerSrc;
-  positionSec: number;
   enabled: boolean;
 }): { toast: FrameGrabToast | null; trigger: () => void } {
-  const { bridgeRef, src, positionSec, enabled } = params;
+  const { bridgeRef, src, enabled } = params;
   const [toast, setToast] = useState<FrameGrabToast | null>(null);
-  const positionRef = useRef(positionSec);
-  positionRef.current = positionSec;
   const busyRef = useRef(false);
   const dismissTimer = useRef<number | null>(null);
 
@@ -75,7 +73,7 @@ export function useFrameGrab(params: {
           ? `${src.meta.name} S${String(src.episode.season).padStart(2, "0")}E${String(src.episode.episode).padStart(2, "0")}`
           : src.meta.name;
       const filename = `${safeName(baseTitle)} - ${formatStamp(new Date())} - ${formatPosition(
-        positionRef.current,
+        getPlaybackPosition(),
       )}.png`;
       const dir = await defaultDir();
       const fullPath = dir ? await joinPath(dir, filename) : filename;

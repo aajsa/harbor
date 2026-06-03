@@ -1,13 +1,21 @@
 import { useRef, useState } from "react";
-import type { PlayerSnapshot } from "@/lib/player/bridge";
+import { usePlaybackPosition, usePlaybackBuffered } from "@/lib/player/playback-clock";
 
-export function PipSeekBar({ snap, onSeek }: { snap: PlayerSnapshot; onSeek: (s: number) => void }) {
+export function PipSeekBar({
+  durationSec,
+  onSeek,
+}: {
+  durationSec: number;
+  onSeek: (s: number) => void;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const [scrub, setScrub] = useState<number | null>(null);
-  const dur = snap.durationSec || 1;
-  const value = scrub ?? snap.positionSec;
+  const position = usePlaybackPosition();
+  const buffered = usePlaybackBuffered();
+  const dur = durationSec || 1;
+  const value = scrub ?? position;
   const pct = Math.max(0, Math.min(1, value / dur)) * 100;
-  const bufferedPct = Math.max(0, Math.min(1, (snap.positionSec + snap.bufferedSec) / dur)) * 100;
+  const bufferedPct = Math.max(0, Math.min(1, (position + buffered) / dur)) * 100;
 
   const fromEvent = (clientX: number): number => {
     const r = ref.current?.getBoundingClientRect();

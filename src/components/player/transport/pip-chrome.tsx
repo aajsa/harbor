@@ -86,7 +86,7 @@ export function PipChrome({
           visible ? "opacity-100" : "opacity-0"
         }`}
       >
-        <PipSeekBar snap={snap} onSeek={onSeek} />
+        <PipSeekBar durationSec={snap.durationSec} onSeek={onSeek} />
         <div className="pointer-events-auto flex items-center justify-center gap-1">
           <PipIconBtn
             label="Previous episode"

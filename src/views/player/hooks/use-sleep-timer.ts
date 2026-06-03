@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import type { PlayerBridge } from "@/lib/player/bridge";
+import { getPlaybackPosition } from "@/lib/player/playback-clock";
 
 export type SleepMode =
   | { kind: "off" }
@@ -26,11 +27,10 @@ export const SLEEP_PRESETS: Array<{ id: string; label: string; mode: SleepMode }
 export function useSleepTimer(params: {
   bridgeRef: RefObject<PlayerBridge | null>;
   status: string;
-  positionSec: number;
   durationSec: number;
   srcUrl: string;
 }): SleepTimerState {
-  const { bridgeRef, status, positionSec, durationSec, srcUrl } = params;
+  const { bridgeRef, status, durationSec, srcUrl } = params;
   const [mode, setMode] = useState<SleepMode>({ kind: "off" });
   const [remainingMs, setRemainingMs] = useState<number | null>(null);
   const lastUrlRef = useRef(srcUrl);
@@ -73,7 +73,7 @@ export function useSleepTimer(params: {
     if (mode.kind !== "end_episode" && mode.kind !== "end_next_episode") return;
     if (status !== "ended") return;
     if (durationSec <= 0) return;
-    if (positionSec < durationSec - 2) return;
+    if (getPlaybackPosition() < durationSec - 2) return;
     if (mode.kind === "end_episode") {
       bridgeRef.current?.pause();
       setMode({ kind: "off" });
@@ -85,7 +85,7 @@ export function useSleepTimer(params: {
         : { kind: "off" },
     );
     if (mode.remaining <= 1) bridgeRef.current?.pause();
-  }, [status, positionSec, durationSec, mode, bridgeRef]);
+  }, [status, durationSec, mode, bridgeRef]);
 
   useEffect(() => {
     if (lastUrlRef.current === srcUrl) return;

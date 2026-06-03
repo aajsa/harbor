@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import type { PlayerBridge } from "@/lib/player/bridge";
+import { getPlaybackPosition, subscribePlaybackClock } from "@/lib/player/playback-clock";
 
 export type AbLoopState = {
   a: number | null;
@@ -12,16 +13,21 @@ export type AbLoopState = {
 
 export function useAbLoop(params: {
   bridgeRef: RefObject<PlayerBridge | null>;
-  positionSec: number;
   durationSec: number;
   enabled: boolean;
   resetKey: string;
 }): AbLoopState {
-  const { bridgeRef, positionSec, durationSec, enabled, resetKey } = params;
+  const { bridgeRef, durationSec, enabled, resetKey } = params;
   const [a, setAState] = useState<number | null>(null);
   const [b, setBState] = useState<number | null>(null);
-  const positionRef = useRef(positionSec);
-  positionRef.current = positionSec;
+  const positionRef = useRef(getPlaybackPosition());
+
+  useEffect(
+    () => subscribePlaybackClock(() => {
+      positionRef.current = getPlaybackPosition();
+    }),
+    [],
+  );
 
   useEffect(() => {
     setAState(null);
@@ -34,12 +40,11 @@ export function useAbLoop(params: {
   }, [a, b, bridgeRef]);
 
   useEffect(() => {
-    if (a == null || b == null) return;
-    if (b <= a) return;
-    if (positionSec >= b - 0.05) {
-      bridgeRef.current?.seek(a);
-    }
-  }, [a, b, positionSec, bridgeRef]);
+    if (a == null || b == null || b <= a) return;
+    return subscribePlaybackClock(() => {
+      if (getPlaybackPosition() >= b - 0.05) bridgeRef.current?.seek(a);
+    });
+  }, [a, b, bridgeRef]);
 
   const setA = useCallback(() => {
     const t = Math.max(0, positionRef.current);

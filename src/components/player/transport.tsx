@@ -260,6 +260,7 @@ export function Transport({
     mid,
     compact,
     tight,
+    active: visible,
     isLiveChannel,
     showEpisodeNav,
     hasPrevEp,
@@ -344,9 +345,9 @@ export function Transport({
             <>
               <LiveBadge />
               <div className="flex-1">
-                <LiveSeekBar snap={snap} onSeek={onSeek} />
+                <LiveSeekBar durationSec={snap.durationSec} onSeek={onSeek} active={visible} />
               </div>
-              <GoToLive snap={snap} onSeek={onSeek} />
+              <GoToLive durationSec={snap.durationSec} onSeek={onSeek} />
             </>
           ) : (
             <>
@@ -354,7 +355,7 @@ export function Transport({
                 <Fragment key={c.id}>{renderControl(c.id, ctx)}</Fragment>
               ))}
               <div className="flex-1">
-                <SeekBar snap={snap} onSeek={onSeek} />
+                <SeekBar durationSec={snap.durationSec} onSeek={onSeek} active={visible} />
               </div>
               {controlsInSlot(chromeConfig, "seek-trailing").map((c) => (
                 <Fragment key={c.id}>{renderControl(c.id, ctx)}</Fragment>

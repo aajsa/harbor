@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import type { PlayerBridge, PlayerSnapshot } from "@/lib/player/bridge";
+import { getPlaybackPosition, usePlaybackFlag } from "@/lib/player/playback-clock";
 import { pickerCacheMatches } from "@/lib/picker-cache";
 import { resolveStream } from "@/lib/streams/resolve";
 import type { ScoredStream } from "@/lib/streams/types";
@@ -26,6 +27,7 @@ export function useStreamSwitcher(params: {
   const checkShownRef = useRef(false);
   const [streamCheckOpen, setStreamCheckOpen] = useState(false);
   const isLive = src.meta.id?.startsWith("iptv:") ?? false;
+  const startedEnough = usePlaybackFlag(() => getPlaybackPosition() >= 1.5);
   useEffect(() => {
     checkShownRef.current = false;
     setStreamCheckOpen(false);
@@ -33,10 +35,10 @@ export function useStreamSwitcher(params: {
   useEffect(() => {
     if (checkShownRef.current) return;
     if (isLive) return;
-    if (snap.status !== "playing" || snap.positionSec < 1.5) return;
+    if (snap.status !== "playing" || !startedEnough) return;
     checkShownRef.current = true;
     setStreamCheckOpen(true);
-  }, [snap.status, snap.positionSec, src.url, isLive]);
+  }, [snap.status, startedEnough, src.url, isLive]);
   useEffect(() => {
     if (!streamCheckOpen) return;
     const t = window.setTimeout(() => setStreamCheckOpen(false), 5500);
@@ -92,11 +94,12 @@ export function useStreamSwitcher(params: {
         return;
       }
       try {
+        const resumeAt = getPlaybackPosition();
         await b.load({
           url: playUrl,
           subtitles: r.data.subtitles,
           notWebReady: r.data.notWebReady,
-          startAtSec: snap.positionSec > 5 ? snap.positionSec : undefined,
+          startAtSec: resumeAt > 5 ? resumeAt : undefined,
         });
         await b.play().catch(() => {});
       } catch (e) {
@@ -121,7 +124,7 @@ export function useStreamSwitcher(params: {
       checkShownRef.current = false;
       setStreamCheckOpen(false);
     },
-    [debrids, snap.positionSec],
+    [debrids],
   );
 
   useEffect(() => () => swapAcRef.current?.abort(), []);

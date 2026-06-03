@@ -1,6 +1,10 @@
 import { useRef, useState } from "react";
-import type { PlayerSnapshot } from "@/lib/player/bridge";
 import { useSettings } from "@/lib/settings";
+import {
+  usePlaybackPosition,
+  usePlaybackPositionGated,
+  usePlaybackBufferedGated,
+} from "@/lib/player/playback-clock";
 import { SeekBarVisual } from "./seek-bar-visual";
 
 const LIVE_BEHIND_THRESHOLD_SEC = 30;
@@ -18,20 +22,21 @@ export function LiveBadge() {
 }
 
 export function GoToLive({
-  snap,
+  durationSec,
   onSeek,
 }: {
-  snap: PlayerSnapshot;
+  durationSec: number;
   onSeek: (sec: number) => void;
 }) {
-  const offset = Math.max(0, snap.durationSec - snap.positionSec - LIVE_NEAR_EDGE_PAD_SEC);
-  if (!(snap.durationSec > 0 && offset > LIVE_BEHIND_THRESHOLD_SEC)) return null;
+  const position = usePlaybackPosition();
+  const offset = Math.max(0, durationSec - position - LIVE_NEAR_EDGE_PAD_SEC);
+  if (!(durationSec > 0 && offset > LIVE_BEHIND_THRESHOLD_SEC)) return null;
   const minutesBehind = Math.floor(offset / 60);
   const secondsBehind = Math.floor(offset % 60);
   const behindLabel = minutesBehind > 0 ? `${minutesBehind}m ${secondsBehind}s` : `${secondsBehind}s`;
   return (
     <button
-      onClick={() => onSeek(Math.max(0, snap.durationSec - LIVE_EDGE_PAD_SEC))}
+      onClick={() => onSeek(Math.max(0, durationSec - LIVE_EDGE_PAD_SEC))}
       className="shrink-0 text-[12px] font-semibold uppercase tracking-[0.2em] text-white/85 transition-colors hover:text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.7)]"
       title="Jump to live edge"
     >
@@ -52,24 +57,28 @@ function formatRewindLabel(secondsBack: number): string {
 }
 
 export function LiveSeekBar({
-  snap,
+  durationSec,
   onSeek,
+  active,
 }: {
-  snap: PlayerSnapshot;
+  durationSec: number;
   onSeek: (sec: number) => void;
+  active: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState<number | null>(null);
   const [scrub, setScrub] = useState<number | null>(null);
   const { settings } = useSettings();
-  const dur = snap.durationSec;
+  const position = usePlaybackPositionGated(active);
+  const buffered = usePlaybackBufferedGated(active);
+  const dur = durationSec;
 
   const rawOffset = scrub != null
     ? Math.max(0, dur - scrub)
-    : Math.max(0, dur - snap.positionSec - LIVE_NEAR_EDGE_PAD_SEC);
+    : Math.max(0, dur - position - LIVE_NEAR_EDGE_PAD_SEC);
   const pct = Math.max(0, Math.min(1, 1 - rawOffset / LIVE_WINDOW_SEC)) * 100;
 
-  const bufferOffset = Math.max(0, dur - (snap.positionSec + snap.bufferedSec) - LIVE_NEAR_EDGE_PAD_SEC);
+  const bufferOffset = Math.max(0, dur - (position + buffered) - LIVE_NEAR_EDGE_PAD_SEC);
   const bufferedPct = Math.max(0, Math.min(1, 1 - bufferOffset / LIVE_WINDOW_SEC)) * 100;
 
   const fromEvent = (clientX: number): number => {

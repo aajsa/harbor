@@ -15,6 +15,7 @@ import {
   RenderedStremioControl,
   type StremioRenderCtx,
 } from "@/components/player/transport/control-renderer-stremio";
+import { setPlaybackClock } from "@/lib/player/playback-clock";
 import { DefaultLayout, FauxBackdrop, StremioLayout, TopRow } from "./editor-chrome";
 import { buildDefaultCtx, buildStremioCtx, type PlayerMode } from "./editor-mock-ctx";
 import { EditorPanels } from "./editor-panels";
@@ -100,8 +101,10 @@ export function EditorOverlay({
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
+    setPlaybackClock(1342, 1500);
     return () => {
       document.body.style.overflow = "";
+      setPlaybackClock(0, 0);
     };
   }, []);
 
