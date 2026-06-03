@@ -1,9 +1,14 @@
+import { HarborMark } from "@/components/icons/harbor-mark";
+
 export function MobileNotice() {
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-7 bg-canvas px-8 text-center">
-      <span className="font-display text-[36px] font-semibold leading-none tracking-tight text-ink">
-        Harbor
-      </span>
+      <div className="flex items-center gap-3 text-ink">
+        <HarborMark className="h-9 w-9" />
+        <span className="font-display text-[36px] font-semibold leading-none tracking-tight">
+          Harbor
+        </span>
+      </div>
       <div className="flex max-w-md flex-col gap-3.5">
         <h1 className="text-[19px] font-semibold tracking-tight text-ink">
           Built for desktop resolutions

@@ -66,6 +66,7 @@ export function KeyField({
   help,
   iconSrc,
   headerExtra,
+  badge,
 }: {
   label: string;
   placeholder: string;
@@ -76,6 +77,7 @@ export function KeyField({
   help: React.ReactNode;
   iconSrc?: string;
   headerExtra?: React.ReactNode;
+  badge?: string;
 }) {
   const [reveal, setReveal] = useState(false);
   const [focused, setFocused] = useState(false);
@@ -108,9 +110,16 @@ export function KeyField({
   return (
     <div className="flex flex-col gap-2.5">
       <div className="flex items-center justify-between gap-3">
-        <label className="text-[12px] font-semibold uppercase tracking-[0.14em] text-ink-subtle">
-          {label}
-        </label>
+        <div className="flex items-center gap-2">
+          <label className="text-[12px] font-semibold uppercase tracking-[0.14em] text-ink-subtle">
+            {label}
+          </label>
+          {badge && (
+            <span className="rounded-full bg-accent/15 px-2 py-[3px] text-[9.5px] font-semibold uppercase tracking-wider text-accent">
+              {badge}
+            </span>
+          )}
+        </div>
         <div className="flex items-center gap-3">
           {headerExtra}
           {!headerExtra && value.length > 0 && !showSave && (

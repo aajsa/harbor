@@ -97,10 +97,11 @@ export function LibraryPanel({
 
       <Section
         title="Metadata providers"
-        subtitle="Optional API keys. Each one unlocks something different. None required. Cinemeta works out of the box."
+        subtitle="A free TMDB key is highly recommended. It unlocks the full Harbor experience. The rest are optional, and Cinemeta works out of the box without any."
       >
         <KeyField
           label="TMDB · catalogs and rails"
+          badge="Recommended"
           placeholder="v3 API key"
           value={tmdbDraft}
           onChange={setTmdbDraft}
@@ -109,7 +110,8 @@ export function LibraryPanel({
           iconSrc={tmdbLogo}
           help={
             <>
-              Drives Popular, Trending, In Theaters, and per-service rails. Free at{" "}
+              Highly recommended. This is what gives you the full Harbor experience: Popular,
+              Trending, In Theaters, and per-service rails. Free at{" "}
               <ExtLink href="https://www.themoviedb.org/settings/api">
                 themoviedb.org/settings/api
               </ExtLink>
