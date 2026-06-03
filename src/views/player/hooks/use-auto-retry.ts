@@ -191,10 +191,12 @@ export function useAutoRetry(params: {
         ref.at = now;
         return;
       }
-      if (now - ref.urlAt < 25_000) return;
       if (ref.pos > 5) return;
-      if (now - ref.at > 18_000 && pos < 5) {
-        triggerAutoRetry("position frozen for 18s without crossing 5s");
+      const neverStarted = ref.pos < 0.5;
+      const graceMs = neverStarted ? 75_000 : 18_000;
+      if (now - ref.urlAt < graceMs) return;
+      if (now - ref.at > graceMs && pos < 5) {
+        triggerAutoRetry(neverStarted ? "source did not start after 75s" : "position frozen for 18s");
       }
     }, 1000);
     return () => window.clearInterval(id);
