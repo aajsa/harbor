@@ -1,4 +1,4 @@
-import { Check, Copy, Download, Loader2, Power, Wifi, X } from "lucide-react";
+import { Check, Copy, Download, Loader2, Power, Radio, Wifi, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { fetch as tauriFetchImpl } from "@tauri-apps/plugin-http";
 import cloudflareLogo from "@/assets/cloudflare.webp";
@@ -20,6 +20,11 @@ type RelayTest = {
 };
 
 const REQUIRED_WORKER_VERSION = 5;
+const HARBOR_PUBLIC_RELAY = "wss://pub.harbor.site";
+
+function isCloudflareRelay(url: string): boolean {
+  return /workers\.dev|cloudflare/i.test(url);
+}
 
 
 export function TogetherRelayPanel({
@@ -35,10 +40,17 @@ export function TogetherRelayPanel({
   const [copied, setCopied] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<RelayTest | null>(null);
+  const [draftUrl, setDraftUrl] = useState("");
   const setShowDocs = (_: boolean) => onOpenDocs();
   const setShowDeploy = (_: boolean) => onOpenDeploy();
 
   const hasUrl = !!settings.togetherRelayUrl;
+  const isCfRelay = isCloudflareRelay(settings.togetherRelayUrl);
+
+  const commitDraftUrl = () => {
+    const v = draftUrl.trim();
+    if (v) update({ togetherRelayUrl: v });
+  };
   const isManaged = settings.togetherCfDeployed && !!settings.togetherCfToken && !!settings.togetherCfAccountId;
 
   useEffect(() => {
@@ -150,8 +162,16 @@ export function TogetherRelayPanel({
       {hasUrl ? (
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-3 rounded-xl border border-edge bg-canvas/60 p-4">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#f6821f]/15 ring-1 ring-[#f6821f]/30">
-              <img src={cloudflareLogo} alt="Cloudflare" className="h-5 w-5 object-contain" draggable={false} />
+            <span
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ring-1 ${
+                isCfRelay ? "bg-[#f6821f]/15 ring-[#f6821f]/30" : "bg-accent/15 ring-accent/30"
+              }`}
+            >
+              {isCfRelay ? (
+                <img src={cloudflareLogo} alt="Cloudflare" className="h-5 w-5 object-contain" draggable={false} />
+              ) : (
+                <Radio size={18} strokeWidth={1.9} className="text-accent" />
+              )}
             </span>
             <div className="flex min-w-0 flex-1 flex-col">
               <span className="text-[11px] uppercase tracking-wider text-ink-subtle">
@@ -316,16 +336,41 @@ export function TogetherRelayPanel({
           <p className="text-center text-[12px] text-ink-subtle">
             Enter an existing relay URL:
           </p>
-          <input
-            type="text"
-            value={settings.togetherRelayUrl}
-            onChange={(e) => update({ togetherRelayUrl: e.target.value.trim() })}
-            placeholder="wss://your-relay.workers.dev"
-            className="h-11 rounded-xl border border-edge bg-canvas px-3.5 text-[13px] text-ink transition-colors focus:border-accent"
-          />
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={draftUrl}
+              onChange={(e) => setDraftUrl(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") commitDraftUrl();
+              }}
+              onBlur={commitDraftUrl}
+              placeholder="wss://your-relay.workers.dev"
+              className="h-11 flex-1 rounded-xl border border-edge bg-canvas px-3.5 text-[13px] text-ink transition-colors focus:border-accent"
+            />
+            <button
+              onClick={commitDraftUrl}
+              disabled={!draftUrl.trim()}
+              className="h-11 rounded-xl bg-ink px-4 text-[13px] font-medium text-canvas transition-transform hover:scale-[1.01] disabled:opacity-40 disabled:hover:scale-100"
+            >
+              Save
+            </button>
+          </div>
           <p className="text-[11.5px] leading-relaxed text-ink-subtle">
-            Only enter URLs for relays you operate or trust. A relay sees your Watch Together messages. Debrid credentials are never routed through a non-Harbor relay.
+            Only enter URLs for relays you operate or trust. A relay only carries Watch Together sync messages (play, pause, seek). Nothing else passes through it.
           </p>
+          <div className="flex flex-col gap-2 rounded-xl border border-edge-soft bg-canvas/40 px-3.5 py-3">
+            <span className="text-[12px] text-ink-muted">
+              Hit your daily quota? Use Harbor's public relay, or host your own.
+            </span>
+            <button
+              onClick={() => update({ togetherRelayUrl: HARBOR_PUBLIC_RELAY })}
+              className="flex h-9 w-fit items-center gap-1.5 rounded-lg border border-edge px-3 text-[12.5px] text-ink-muted transition-colors hover:bg-elevated hover:text-ink"
+            >
+              <Radio size={13} strokeWidth={1.9} />
+              Use Harbor's public relay
+            </button>
+          </div>
         </div>
       )}
 
