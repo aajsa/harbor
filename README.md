@@ -340,6 +340,7 @@ Awards laurels surface across detail pages, covering Oscar, Emmy, BAFTA, Golden 
 - **Classic Stremio home mode** that renders every addon catalog row.
 - **Deep links** for `harbor://` and `stremio://`, with single instance focus.
 - **Custom CSS, JS, and HTML overlays** for power users.
+- **Trickplay scrub previews** decoded on the fly for torrents and local files, so the seek bar shows the exact frame you are hovering.
 
 <p align="left">
   <img src="https://harbor.site/readme-media/trickplay.jpg" width="720">
