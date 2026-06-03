@@ -326,8 +326,8 @@ Awards laurels surface across detail pages, covering Oscar, Emmy, BAFTA, Golden 
 ### Quality of life extras
 
 - **Multiple profiles**, each with its own parental settings, content hiding, and PIN. Switching profiles resets unlocks.
-- **Parental controls** that PIN gate any room and hide Anime, Live TV, or Sports per profile.
-- **A player layout editor** with drag and drop placement of the on screen HUD, plus a player skin/shell picker.
+- **Parental controls** that PIN gate any room and hide Anime or Live TV per profile.
+- **A player layout editor** with drag and drop placement of the on screen HUD.
 - **Languages** with 26 options and reordering.
 - **Hotkeys** with a rebind UI and conflict detection.
 - **Bandwidth** controls including a cap and a built in speed test.
@@ -605,7 +605,7 @@ Harbor stands on the shoulders of a generous open ecosystem and the people who b
 
 - The **Stremio addon protocol** and the **Stremio** team, for an open, well designed standard worth building on.
 - The **[Stremio-addons.net](https://stremio-addons.net) Team** and Sleeyax, for providing an excellent service (please consider supporting them).
-- [@stass_motion](https://pro.fiverr.com/freelancers/stass_motion) for the lottie animations, he is fantastic consider supporting him
+- [@stass_motion](https://pro.fiverr.com/freelancers/stass_motion) for the lottie animations, he is fantastic consider supporting him.
 - **Cinemeta** and the wider **addon community**, whose work makes the experience possible out of the box.
 - **TMDB**, **Trakt**, **OMDB**, **Fanart.tv**, **RPDB**, **Kitsu**, and **AniZip** for the metadata that brings catalogs to life.
 - **libmpv** for a world class playback engine, and the **Anime4K** project for its upscaling shaders.
