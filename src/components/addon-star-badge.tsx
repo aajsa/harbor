@@ -24,7 +24,7 @@ export function AddonStarBadge({
     <span className={`inline-flex shrink-0 items-center gap-1 ${className}`}>
       {community.stars > 0 && (
         <span
-          className={`${palette.bg} ${palette.fg} ${palette.ring} ${dims.pill} inline-flex shrink-0 items-center gap-1 rounded-full font-bold backdrop-blur-sm`}
+          className={`${palette.bg} ${palette.fg} ${palette.ring} ${dims.pill} inline-flex shrink-0 items-center gap-1 rounded-full font-bold`}
           title={`${community.stars.toLocaleString()} community ${community.stars === 1 ? "rating" : "ratings"} on stremio-addons.net`}
         >
           <Star size={dims.icon} strokeWidth={2.6} fill="currentColor" className="harbor-rating-star" />
@@ -33,7 +33,7 @@ export function AddonStarBadge({
       )}
       {isNew && (
         <span
-          className={`${dims.pill} inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-500/15 font-bold uppercase tracking-[0.14em] text-emerald-300 ring-1 ring-emerald-500/30 backdrop-blur-sm`}
+          className={`${dims.pill} inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-500/15 font-bold uppercase tracking-[0.14em] text-emerald-300 ring-1 ring-emerald-500/30`}
           title="Added to stremio-addons.net in the last 14 days"
         >
           <Sparkles size={dims.icon} strokeWidth={2.6} />

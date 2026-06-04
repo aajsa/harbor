@@ -282,7 +282,7 @@ export function PlayPicker({
   const [autoAttemptIdx, setAutoAttemptIdx] = useState(0);
   const [autoExhausted, setAutoExhausted] = useState(false);
   const [autoCancelled, setAutoCancelled] = useState(false);
-  const autoActive = !!(autoPlay || inSession) && !autoCancelled && !autoExhausted;
+  const autoActive = !!(autoPlay || wasInvitedTo(inviteKey)) && !autoCancelled && !autoExhausted;
   useEffect(() => {
     if (!autoActive) return;
     const t = window.setTimeout(() => setAutoCancelled(true), 45_000);

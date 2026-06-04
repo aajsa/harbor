@@ -204,11 +204,14 @@ export function useAddonsCatalog(adultsAllowed: boolean): {
       }
       for (const [, ids] of byNormalizedName) {
         if (ids.length <= 1) continue;
-        const installedIds = ids.filter((id) => map.get(id)?.installed);
+        const installedInBucket = ids.filter((id) => map.get(id)?.installed);
+        if (installedInBucket.length > 0) {
+          for (const id of ids) if (!map.get(id)?.installed) map.delete(id);
+          continue;
+        }
         const curatedIds = ids.filter((id) => map.get(id)?.curated);
         const saIdsHit = ids.filter((id) => saIds.has(id));
-        const winner =
-          installedIds[0] ?? curatedIds[0] ?? saIdsHit[0] ?? ids[0];
+        const winner = curatedIds[0] ?? saIdsHit[0] ?? ids[0];
         for (const id of ids) if (id !== winner) map.delete(id);
       }
 
@@ -250,6 +253,7 @@ export function useAddonsCatalog(adultsAllowed: boolean): {
         else out.delete(id);
         return out;
       });
+      setTick((t) => t + 1);
     };
     window.addEventListener("harbor:addons-changed", onChange);
     return () => window.removeEventListener("harbor:addons-changed", onChange);

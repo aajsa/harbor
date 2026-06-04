@@ -300,7 +300,7 @@ function InstallerViewport({
       <div className="relative flex-1 overflow-hidden bg-white">
         {!loaded && !blocked && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-canvas">
-            <HarborLoader size="lg" logos={logo ? [logo, logo, logo] : []} caption={`Loading ${title}`} />
+            <HarborLoader size="lg" caption={`Loading ${title}`} />
           </div>
         )}
         {blocked && (

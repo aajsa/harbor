@@ -262,6 +262,9 @@ export async function fetchInstalledAddons(): Promise<Addon[]> {
   const list = loadInstalled();
   if (list.length === 0) return [];
   const tasks = list.map(async (entry): Promise<Addon | null> => {
+    if (entry.manifest) {
+      return { manifest: entry.manifest, transportUrl: entry.transportUrl };
+    }
     try {
       const manifest = await fetchManifestAt(entry.transportUrl);
       const updated = loadInstalled().map((e) =>
@@ -270,9 +273,6 @@ export async function fetchInstalledAddons(): Promise<Addon[]> {
       saveInstalled(updated);
       return { manifest, transportUrl: entry.transportUrl };
     } catch {
-      if (entry.manifest) {
-        return { manifest: entry.manifest, transportUrl: entry.transportUrl };
-      }
       return null;
     }
   });

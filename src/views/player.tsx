@@ -18,8 +18,7 @@ import { useDebridClients } from "@/lib/debrid/registry";
 import { useSettings } from "@/lib/settings";
 import { saveResumeMs } from "@/lib/resume";
 import { savePlayback } from "@/lib/playback-history";
-import { captureFrame, captureMpvFrame, saveSnapshot } from "@/lib/snapshots";
-import { trickplayGet } from "@/lib/trickplay";
+import { useExitSnapshot } from "./player/hooks/use-exit-snapshot";
 import { readPlayerVolume, writePlayerVolume } from "@/lib/player-volume";
 import { nameColor } from "@/lib/together/colors";
 import { useTogether } from "@/lib/together/provider";
@@ -310,6 +309,7 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
     stremioServerTranscode: settings.stremioServerTranscode,
     instantPlay: settings.instantPlay,
     inRoom: roomSnapshot.state === "joined",
+    debrids,
     selfFrameReadyRef,
     openPicker,
   });
@@ -490,6 +490,15 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
   });
 
   useTrickplay({ src, enabled: settings.seekPreviewEnabled });
+  const { captureExitSnapshot } = useExitSnapshot({
+    src,
+    engine,
+    status: snap.status,
+    durationSec: snap.durationSec,
+    videoMountRef,
+    resolvedImdbId,
+    seekPreviewEnabled: settings.seekPreviewEnabled,
+  });
 
   useTraktScrobble({ src, snap });
   const download = useVideoDownload({ url: src.url, meta: src.meta, episode: src.episode });
@@ -575,35 +584,17 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
     src.notWebReady === true && engine === "html5" && (snap.status === "error" || snap.status === "loading");
 
   const closePlayer = useCallback(async () => {
-    const b = bridgeRef.current;
-    if (b && videoMountRef.current) {
-      let snapImg: string | null = null;
-      if (engine === "html5") {
-        const v = videoMountRef.current.querySelector("video") as HTMLVideoElement | null;
-        if (v) snapImg = captureFrame(v);
-      } else if (engine === "mpv") {
-        snapImg = await captureMpvFrame();
-        if (!snapImg && settings.seekPreviewEnabled) {
-          const cur = getPlaybackPosition();
-          if (Number.isFinite(cur) && cur > 0) snapImg = await trickplayGet(cur);
-        }
-      }
-      if (snapImg) {
-        for (const id of new Set([src.meta.id, src.imdbId, resolvedImdbId].filter(Boolean))) {
-          saveSnapshot(id as string, snapImg);
-        }
-      }
-      const pos = getPlaybackPosition();
-      if (Number.isFinite(pos) && pos > 0) {
-        saveResumeMs(src.meta.id, pos * 1000, season, episode);
-        if (liveStreamRef) {
-          savePlayback(
-            src.meta.id,
-            { ...liveStreamRef, url: liveUrl || src.url, title: src.meta.name },
-            season,
-            episode,
-          );
-        }
+    await captureExitSnapshot();
+    const pos = getPlaybackPosition();
+    if (Number.isFinite(pos) && pos > 0) {
+      saveResumeMs(src.meta.id, pos * 1000, season, episode);
+      if (liveStreamRef) {
+        savePlayback(
+          src.meta.id,
+          { ...liveStreamRef, url: liveUrl || src.url, title: src.meta.name },
+          season,
+          episode,
+        );
       }
     }
     await exitPip();
@@ -621,7 +612,7 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
       clearInvite();
     }
     exitPlayback();
-  }, [exitPlayback, src.meta.id, season, episode, inRoom, isHost, notifyHostLeaving, clearInvite, publishState, exitPip, engine, liveStreamRef, liveUrl, src.url, resolvedImdbId, stopCast, castActiveRef]);
+  }, [captureExitSnapshot, exitPlayback, src.meta.id, season, episode, inRoom, isHost, notifyHostLeaving, clearInvite, publishState, exitPip, liveStreamRef, liveUrl, src.url, stopCast, castActiveRef]);
 
   useKeyboardShortcuts({
     bridgeRef,

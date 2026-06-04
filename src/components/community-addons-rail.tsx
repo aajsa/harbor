@@ -85,7 +85,7 @@ export function CommunityAddonsRail({
               </button>
             </h3>
             <p className="max-w-[52ch] text-[12.5px] text-ink-muted">
-              Ranked by the {SITE_NAME} community. Without them, none of this is possible.
+              Ranked by the {SITE_NAME} community from their public index.
             </p>
           </div>
         </div>

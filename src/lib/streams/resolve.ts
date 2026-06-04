@@ -132,6 +132,33 @@ function sortDebridsForStream(stream: ParsedStream | ScoredStream, debrids: Debr
   });
 }
 
+export async function resolveViaDebrids(
+  hash: string,
+  fileIdx: number | undefined,
+  cached: Record<string, boolean>,
+  debrids: DebridStore[],
+  signal: AbortSignal,
+): Promise<ResolveResult> {
+  if (!hash || debrids.length === 0) return { ok: false, code: "no-debrid-configured", tried: [] };
+  const stream = { infoHash: hash, fileIdx, cached } as unknown as ScoredStream;
+  const sorted = sortDebridsForStream(stream, debrids);
+  const magnet = magnetFromHash(hash);
+  const tried: Array<{ slug: string; code: string }> = [];
+  for (const d of sorted) {
+    if (signal.aborted) return { ok: false, code: "aborted", tried };
+    const r: DebridResult<DirectLink> = await d.playableUrl(magnet, fileIdx, signal);
+    if (!r.ok) {
+      tried.push({ slug: d.slug, code: r.code });
+      if (r.code === "aborted") return { ok: false, code: "aborted", tried };
+      continue;
+    }
+    const ok = await validateLink(r.data, null, r.data.headers, signal);
+    if (ok) return { ok: true, data: r.data, via: d.slug };
+    tried.push({ slug: d.slug, code: "stub-or-error-video" });
+  }
+  return { ok: false, code: tried[tried.length - 1]?.code ?? "all-debrids-failed", tried };
+}
+
 async function tryStremioServer(stream: ParsedStream | ScoredStream): Promise<DirectLink | null> {
   if (!stream.infoHash || !directTorrentEnabled()) return null;
   const ready = await probeStremioServer();

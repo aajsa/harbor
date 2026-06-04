@@ -2,6 +2,7 @@ import { Check, Copy, Download, Loader2, Power, Radio, Wifi, X } from "lucide-re
 import { useEffect, useState } from "react";
 import { fetch as tauriFetchImpl } from "@tauri-apps/plugin-http";
 import cloudflareLogo from "@/assets/cloudflare.webp";
+import pubRelaySvg from "@/assets/pubrelay.svg";
 import { deleteRelay } from "@/lib/together/cf-deploy";
 import { useSettings } from "@/lib/settings";
 
@@ -46,6 +47,7 @@ export function TogetherRelayPanel({
 
   const hasUrl = !!settings.togetherRelayUrl;
   const isCfRelay = isCloudflareRelay(settings.togetherRelayUrl);
+  const isPubRelay = hasUrl && settings.togetherRelayUrl.includes("pub.harbor.site");
 
   const commitDraftUrl = () => {
     const v = draftUrl.trim();
@@ -162,17 +164,26 @@ export function TogetherRelayPanel({
       {hasUrl ? (
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-3 rounded-xl border border-edge bg-canvas/60 p-4">
-            <span
-              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ring-1 ${
-                isCfRelay ? "bg-[#f6821f]/15 ring-[#f6821f]/30" : "bg-accent/15 ring-accent/30"
-              }`}
-            >
-              {isCfRelay ? (
-                <img src={cloudflareLogo} alt="Cloudflare" className="h-5 w-5 object-contain" draggable={false} />
-              ) : (
-                <Radio size={18} strokeWidth={1.9} className="text-accent" />
-              )}
-            </span>
+            {isPubRelay ? (
+              <img
+                src={pubRelaySvg}
+                alt="Harbor public relay"
+                className="h-14 w-14 shrink-0 object-contain"
+                draggable={false}
+              />
+            ) : (
+              <span
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ring-1 ${
+                  isCfRelay ? "bg-[#f6821f]/15 ring-[#f6821f]/30" : "bg-accent/15 ring-accent/30"
+                }`}
+              >
+                {isCfRelay ? (
+                  <img src={cloudflareLogo} alt="Cloudflare" className="h-5 w-5 object-contain" draggable={false} />
+                ) : (
+                  <Radio size={18} strokeWidth={1.9} className="text-accent" />
+                )}
+              </span>
+            )}
             <div className="flex min-w-0 flex-1 flex-col">
               <span className="text-[11px] uppercase tracking-wider text-ink-subtle">
                 {isManaged ? "Your relay is live" : "Connected to relay"}

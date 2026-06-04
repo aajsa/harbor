@@ -32,9 +32,14 @@ export function TogetherHostLeavingPrompt() {
     if (triggeredRef.current === incomingHostLeaving.at) return;
     triggeredRef.current = incomingHostLeaving.at;
 
+    if (!inPlayback) {
+      dismissHostLeaving();
+      return;
+    }
+
     const pref = readPref();
     if (pref === "leave") {
-      if (inPlayback) exitPlayback();
+      exitPlayback();
       dismissHostLeaving();
     } else if (pref === "stay") {
       dismissHostLeaving();
@@ -42,6 +47,7 @@ export function TogetherHostLeavingPrompt() {
   }, [incomingHostLeaving, dismissHostLeaving, exitPlayback, inPlayback]);
 
   if (!incomingHostLeaving) return null;
+  if (!inPlayback) return null;
   if (snapshot.state !== "joined") return null;
   if (incomingHostLeaving.from === clientId) return null;
   if (readPref()) return null;

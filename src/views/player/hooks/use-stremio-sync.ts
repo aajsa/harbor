@@ -116,7 +116,7 @@ export function useStremioSync(params: {
   }, []);
 }
 
-function canonicalImdbId(metaId: string, resolved: string | null): string | null {
+export function canonicalImdbId(metaId: string, resolved: string | null): string | null {
   if (metaId.startsWith("tt")) return metaId;
   if (resolved && resolved.startsWith("tt")) return resolved;
   return null;

@@ -1,30 +1,15 @@
 import { Check, Copy, LogOut, MousePointer2, Plus, Send } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { Meta } from "@/lib/cinemeta";
 import { useSettings } from "@/lib/settings";
-import { buildInviteUrl } from "@/lib/together/invite";
 import { useTogether } from "@/lib/together/provider";
 import { useSelfIdentity } from "@/lib/together/use-self-identity";
 import { useView } from "@/lib/view";
 import { Tooltip } from "@/views/detail/tooltip";
-
-function LinkGlyph() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M10 13.5a3 3 0 0 0 4.243 0l3.182-3.182a3 3 0 1 0-4.243-4.243l-1.06 1.06"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-      />
-      <path
-        d="M14 10.5a3 3 0 0 0-4.243 0l-3.182 3.182a3 3 0 1 0 4.243 4.243l1.06-1.06"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
+import { Avatar } from "./together-modal/avatar";
+import { InvitePanel } from "./together-modal/invite-panel";
+import { LinkGlyph } from "./together-modal/link-glyph";
+import { ReturnToVideo } from "./together-modal/return-to-video";
 
 export function TogetherPopover({
   placement = "below-right",
@@ -34,7 +19,7 @@ export function TogetherPopover({
   connectStyle?: "tab" | "popover";
 } = {}) {
   const { enabled, snapshot, chat, displayName, setDisplayName, startSession, joinSession, leaveSession, retrySession, sendChat, closeModal, clientId } = useTogether();
-  const { openSettings } = useView();
+  const { openSettings, openPicker, topKind } = useView();
   const { settings, update } = useSettings();
   const { avatar: selfAvatar, color: selfColor } = useSelfIdentity();
   const [joinCode, setJoinCode] = useState("");
@@ -109,6 +94,21 @@ export function TogetherPopover({
   };
 
   const participants = useMemo(() => snapshot.participants.slice().sort((a, b) => a.joinedAt - b.joinedAt), [snapshot.participants]);
+
+  const roomMedia = snapshot.syncState;
+  const canReturn = inSession && !!roomMedia?.mediaId && topKind !== "player";
+
+  const returnToVideo = () => {
+    if (!roomMedia?.mediaId) return;
+    const meta: Meta = {
+      id: roomMedia.mediaId,
+      type: roomMedia.episode ? "series" : "movie",
+      name: roomMedia.mediaTitle ?? "Now playing",
+      poster: roomMedia.posterUrl ?? undefined,
+    };
+    openPicker(meta, roomMedia.episode ?? undefined, { autoPlay: true });
+    closeModal();
+  };
 
   return (
     <div
@@ -268,6 +268,8 @@ export function TogetherPopover({
 
       {view === "default" && enabled && inSession && (
         <>
+          {canReturn && roomMedia && <ReturnToVideo media={roomMedia} onReturn={returnToVideo} />}
+
           <div className="flex items-center justify-between rounded-xl border border-edge bg-canvas/60 px-3.5 py-2.5">
             <div className="flex flex-col">
               <span className="text-[10.5px] uppercase tracking-wider text-ink-subtle">Room code</span>
@@ -387,132 +389,5 @@ export function TogetherPopover({
       )}
       </div>
     </div>
-  );
-}
-
-function InvitePanel({
-  relayUrl,
-  room,
-  onClose,
-}: {
-  relayUrl: string;
-  room: string | null;
-  onClose: () => void;
-}) {
-  const [copied, setCopied] = useState(false);
-  const inviteUrl = useMemo(() => {
-    if (!relayUrl || !room) return "";
-    return buildInviteUrl(relayUrl, room);
-  }, [relayUrl, room]);
-
-  const copy = async () => {
-    if (!inviteUrl) return;
-    try {
-      await navigator.clipboard.writeText(inviteUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1400);
-    } catch {}
-  };
-
-  if (!room) {
-    return (
-      <div className="flex flex-col gap-3 rounded-xl border border-edge bg-canvas/60 p-3.5">
-        <p className="text-[13px] text-ink">Start a room first.</p>
-        <p className="text-[12px] leading-snug text-ink-muted">
-          Once you&apos;re in a room you can copy a link that joins anyone instantly: it sets the
-          relay URL and the room code in one click.
-        </p>
-        <button
-          onClick={onClose}
-          className="self-start text-[12.5px] font-medium text-ink-muted transition-colors hover:text-ink"
-        >
-          Back
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col gap-3 rounded-xl border border-edge bg-canvas/60 p-3.5">
-      <div className="flex flex-col gap-1.5">
-        <span className="text-[10.5px] uppercase tracking-wider text-ink-subtle">Invite link</span>
-        <input
-          readOnly
-          value={inviteUrl}
-          onFocus={(e) => e.currentTarget.select()}
-          className="h-10 rounded-lg border border-edge bg-canvas px-3 font-mono text-[11.5px] text-ink outline-none"
-        />
-      </div>
-      <button
-        onClick={copy}
-        className="flex h-10 items-center justify-center gap-2 rounded-lg bg-ink text-[13px] font-semibold text-canvas transition-transform hover:scale-[1.01]"
-      >
-        {copied ? (
-          <>
-            <Check size={14} strokeWidth={2.4} />
-            Link copied
-          </>
-        ) : (
-          <>
-            <LinkGlyph />
-            Copy invite link
-          </>
-        )}
-      </button>
-      <p className="text-[11.5px] leading-snug text-ink-subtle">
-        Anyone who opens this link gets the relay URL and room code set automatically. Works in the
-        browser too: no install required for the joiner.
-      </p>
-    </div>
-  );
-}
-
-function Avatar({
-  name,
-  src,
-  color,
-  size = 20,
-}: {
-  name: string;
-  src?: string | null;
-  color?: string | null;
-  size?: number;
-}) {
-  const initial = (name.trim()[0] || "?").toUpperCase();
-  const [failed, setFailed] = useState(false);
-  useEffect(() => setFailed(false), [src]);
-  const hue = useMemo(() => {
-    let h = 0;
-    for (const c of name) h = (h * 31 + c.charCodeAt(0)) % 360;
-    return h;
-  }, [name]);
-  if (src && !failed) {
-    return (
-      <span
-        className="overflow-hidden rounded-full"
-        style={{ width: size, height: size, boxShadow: color ? `0 0 0 1.5px ${color}` : undefined }}
-      >
-        <img
-          src={src}
-          alt=""
-          draggable={false}
-          onError={() => setFailed(true)}
-          className="h-full w-full object-cover"
-        />
-      </span>
-    );
-  }
-  return (
-    <span
-      className="flex items-center justify-center rounded-full font-semibold text-canvas"
-      style={{
-        width: size,
-        height: size,
-        fontSize: Math.max(9, Math.round(size * 0.5)),
-        backgroundColor: color ?? `oklch(0.78 0.13 ${hue})`,
-      }}
-    >
-      {initial}
-    </span>
   );
 }
