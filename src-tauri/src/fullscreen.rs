@@ -19,6 +19,9 @@ pub async fn window_fullscreen_enter(
 
     let already_fs = main.is_fullscreen().unwrap_or(false);
     if !already_fs {
+        if main.is_maximized().unwrap_or(false) {
+            let _ = main.unmaximize();
+        }
         main.set_fullscreen(true)
             .map_err(|e| format!("set_fullscreen(true): {}", e))?;
     }

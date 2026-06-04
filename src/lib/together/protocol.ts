@@ -26,6 +26,7 @@ export type SyncState = {
   posterUrl: string | null;
   positionSeconds: number;
   playing: boolean;
+  speed?: number;
   updatedAt: number;
   updatedBy: string;
   hostClientId: string | null;

@@ -254,6 +254,9 @@ pub fn run() {
                         if let Err(e) = mpv_render_mac::install_window_rounding(ns_window_ptr) {
                             eprintln!("[harbor::mac] rounding failed: {}", e);
                         }
+                        if let Err(e) = mpv_render_mac::make_resizable(ns_window_ptr) {
+                            eprintln!("[harbor::mac] resizable failed: {}", e);
+                        }
                     }
                 }
             }
