@@ -215,6 +215,21 @@ pub fn install_window_rounding(ns_window_ptr: i64) -> Result<(), String> {
     Ok(())
 }
 
+pub fn make_resizable(ns_window_ptr: i64) -> Result<(), String> {
+    let _mtm = MainThreadMarker::new()
+        .ok_or_else(|| "must run on main thread".to_string())?;
+    if ns_window_ptr == 0 {
+        return Err("ns_window_ptr is zero".into());
+    }
+    unsafe {
+        let raw_window: *mut AnyObject = ns_window_ptr as *mut AnyObject;
+        let ns_window: &NSWindow = &*(raw_window as *const NSWindow);
+        let current: usize = msg_send![ns_window, styleMask];
+        let _: () = msg_send![ns_window, setStyleMask: current | (1usize << 3)];
+    }
+    Ok(())
+}
+
 pub fn resize_to(x: f64, y: f64, w: f64, h: f64) -> Result<(), String> {
     let _mtm = MainThreadMarker::new()
         .ok_or_else(|| "resize_to must run on main thread".to_string())?;

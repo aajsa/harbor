@@ -1120,8 +1120,8 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
           void bridgeRef.current?.addSubtitle(url, lang, title);
         }}
         onRate={(r) => {
-          bridgeRef.current?.setRate(r);
           writePlayerPrefs(src.meta.id, { rate: r });
+          bridgeRef.current?.setRate(r);
         }}
         onPiP={() => togglePipMode()}
         onFullscreen={toggleFullscreen}

@@ -107,6 +107,7 @@ const OBSERVED_PROPS: &[(&str, u64, PropertyKind)] = &[
     ("af", 13, PropertyKind::String),
     ("dwidth", 14, PropertyKind::Int64),
     ("dheight", 15, PropertyKind::Int64),
+    ("speed", 16, PropertyKind::Double),
 ];
 
 #[derive(Clone, Copy)]

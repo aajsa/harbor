@@ -94,6 +94,8 @@ export function useRoomSync(params: {
   statusRef.current = snap.status;
   const durationRef = useRef(snap.durationSec);
   durationRef.current = snap.durationSec;
+  const rateRef = useRef(snap.rate);
+  rateRef.current = snap.rate;
   const expectedRoomPlayingRef = useRef<boolean | null>(null);
   const initialSyncDoneRef = useRef(false);
 
@@ -116,6 +118,7 @@ export function useRoomSync(params: {
         posterUrl: src.meta.poster ?? null,
         positionSeconds: pos,
         playing: status === "playing",
+        speed: rateRef.current,
       });
     };
     tick();
@@ -150,6 +153,9 @@ export function useRoomSync(params: {
         return;
       }
       if (!state.mediaId) return;
+      if (state.speed != null && Math.abs(state.speed - rateRef.current) > 0.01) {
+        b.setRate(state.speed);
+      }
       const livePos = getPlaybackPosition();
       const ageS = Math.min(SYNC_MAX_AGE_S, Math.max(0, (Date.now() - state.updatedAt) / 1000));
       const target = state.playing
@@ -289,6 +295,7 @@ export function useRoomSync(params: {
       posterUrl: src.meta.poster ?? null,
       positionSeconds: getPlaybackPosition(),
       playing: false,
+      speed: rateRef.current,
     });
   }, [inRoom, isHost, hasStarted, snap.durationSec, publishState, src.meta.id, src.meta.name, src.meta.poster, src.episode]);
 
@@ -341,6 +348,7 @@ export function useRoomSync(params: {
       : state.positionSeconds;
     expectedRoomPlayingRef.current = state.playing;
     suppressOutgoingFor(SYNC_SUPPRESS_MS);
+    if (state.speed != null) b.setRate(state.speed);
     b.seek(target);
     b.play().catch(() => {});
   }, [inRoom, isHost, hasStarted, roomSnapshot.syncState, src.meta.id, suppressOutgoingFor]);
