@@ -446,7 +446,17 @@ fn event_to_payload(event: Event) -> Option<Value> {
             };
             Some(json!({ "event": "property-change", "name": name, "data": data }))
         }
-        Event::EndFile(reason) => Some(json!({ "event": "end-file", "reason": format!("{:?}", reason) })),
+        Event::EndFile(reason) => {
+            let reason = match reason {
+                0 => "eof",
+                2 => "stop",
+                3 => "quit",
+                4 => "error",
+                5 => "redirect",
+                _ => "other",
+            };
+            Some(json!({ "event": "end-file", "reason": reason }))
+        }
         Event::FileLoaded => Some(json!({ "event": "file-loaded" })),
         Event::PlaybackRestart => Some(json!({ "event": "playback-restart" })),
         Event::Seek => Some(json!({ "event": "seek" })),
