@@ -1,10 +1,10 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { MOVIE_GENRES } from "@/lib/feed/tags";
 import { useParental } from "@/lib/parental";
-import { searchAll, searchAnime, searchLiveTvChannels, type SearchResults } from "@/lib/search";
-import { searchAddonCatalogs, mergeMetas } from "@/lib/search-addons";
-import { fetchInstalledAddons } from "@/lib/addon-store";
-import type { Addon } from "@/lib/addons";
+import { searchAll, searchAnime, searchCinemeta, searchLiveTvChannels, type SearchResults } from "@/lib/search";
+import { searchAddonCatalogs, searchAddonGroups, mergeMetas } from "@/lib/search-addons";
+import { gatherCatalogAddons, type Addon } from "@/lib/addons";
+import { useAuth } from "@/lib/auth";
 import { useSettings } from "@/lib/settings";
 
 type SearchState = {
@@ -48,6 +48,7 @@ function saveRecent(items: string[]): void {
 
 export function SearchProvider({ children }: { children: ReactNode }) {
   const { settings } = useSettings();
+  const { authKey } = useAuth();
   const { hiddenTabs } = useParental();
   const [open, setOpen] = useState(false);
   const [query, setQueryState] = useState("");
@@ -56,13 +57,13 @@ export function SearchProvider({ children }: { children: ReactNode }) {
   const [recent, setRecent] = useState<string[]>(() => loadRecent());
   const debounceRef = useRef<number | null>(null);
   const reqIdRef = useRef(0);
-  const addonsRef = useRef<Addon[] | null>(null);
+  const addonsRef = useRef<{ key: string | null; addons: Addon[] } | null>(null);
   const ensureAddons = useCallback(async (): Promise<Addon[]> => {
-    if (addonsRef.current) return addonsRef.current;
-    const a = await fetchInstalledAddons().catch(() => [] as Addon[]);
-    addonsRef.current = a;
+    if (addonsRef.current && addonsRef.current.key === authKey) return addonsRef.current.addons;
+    const a = await gatherCatalogAddons(authKey).catch(() => [] as Addon[]);
+    addonsRef.current = { key: authKey, addons: a };
     return a;
-  }, []);
+  }, [authKey]);
 
   const excludeGenres = useMemo(() => {
     const ids: number[] = [];
@@ -87,18 +88,30 @@ export function SearchProvider({ children }: { children: ReactNode }) {
       const liveTv = liveTvAllowed ? searchLiveTvChannels(trimmed, settings.iptvPlaylists) : [];
       const tmdbPromise = searchAll(settings.tmdbKey, trimmed, { excludeGenres });
       const animePromise = animeAllowed ? searchAnime(trimmed) : Promise.resolve([]);
-      const addonPromise = ensureAddons()
+      const addonsP = ensureAddons();
+      const addonPromise = addonsP
         .then((a) => searchAddonCatalogs(a, trimmed))
         .catch(() => ({ movies: [], series: [] }));
-      Promise.all([tmdbPromise, animePromise, addonPromise])
-        .then(([r, anime, addon]) => {
+      const addonGroupsPromise = addonsP
+        .then((a) => searchAddonGroups(a, trimmed))
+        .catch(() => []);
+      const cinemetaPromise = searchCinemeta(trimmed).catch(() => ({ movies: [], series: [] }));
+      Promise.all([tmdbPromise, animePromise, addonPromise, cinemetaPromise, addonGroupsPromise])
+        .then(([r, anime, addon, cine, addonGroups]) => {
           if (id !== reqIdRef.current) return;
+          const mergedMovies = mergeMetas(mergeMetas(r.movies, addon.movies), cine.movies);
+          const mergedSeries = mergeMetas(mergeMetas(r.series, addon.series), cine.series);
+          const shown = new Set<string>([...mergedMovies, ...mergedSeries].map((m) => m.id));
+          const dedupedGroups = addonGroups
+            .map((g) => ({ ...g, metas: g.metas.filter((m) => !shown.has(m.id)) }))
+            .filter((g) => g.metas.length > 0);
           setResults({
             ...r,
-            movies: mergeMetas(r.movies, addon.movies),
-            series: mergeMetas(r.series, addon.series),
+            movies: mergedMovies,
+            series: mergedSeries,
             liveTv,
             anime,
+            addonGroups: dedupedGroups,
           });
           setStatus("done");
         })
@@ -107,7 +120,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
           setStatus("done");
         });
     }, 180);
-  }, [query, settings.tmdbKey, settings.iptvPlaylists, excludeGenres, hiddenTabs.anime, hiddenTabs.liveTv]);
+  }, [query, settings.tmdbKey, settings.iptvPlaylists, excludeGenres, hiddenTabs.anime, hiddenTabs.liveTv, authKey]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

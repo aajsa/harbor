@@ -27,6 +27,9 @@ import {
 import { hashProfilePassword, verifyProfilePassword } from "@/lib/profile-password";
 import { fetchTraktAvatar } from "@/lib/trakt/profile";
 import { useTrakt } from "@/lib/trakt/provider";
+import { fetchAnilistAvatar } from "@/lib/anilist/profile";
+import { useAnilist } from "@/lib/anilist/provider";
+import { useSettings } from "@/lib/settings";
 import { AvatarRing } from "@/views/settings/account/avatar-ring";
 import { resizeAvatar } from "@/views/settings/account/avatar-utils";
 import { ColorPicker } from "@/views/settings/color-picker";
@@ -52,8 +55,12 @@ export function EditorView({
   const { profiles, activeProfile, createProfile, updateProfile, deleteProfile, selectProfile } =
     useProfiles();
   const { isConnected: traktConnected } = useTrakt();
+  const { isConnected: anilistConnected, avatar: anilistAvatar } = useAnilist();
+  const { update } = useSettings();
   const [loadingTraktAvatar, setLoadingTraktAvatar] = useState(false);
   const [traktAvatarError, setTraktAvatarError] = useState<string | null>(null);
+  const [loadingAnilistAvatar, setLoadingAnilistAvatar] = useState(false);
+  const [anilistAvatarError, setAnilistAvatarError] = useState<string | null>(null);
   const editing = mode.kind === "edit" ? mode.profile : null;
   const primary = profiles.find((p) => p.isPrimary);
   const activeIsPrimary = !!activeProfile?.isPrimary;
@@ -61,6 +68,9 @@ export function EditorView({
   const canEditAdvanced = activeIsPrimary;
   const [name, setName] = useState(editing?.name ?? "");
   const [avatar, setAvatar] = useState<string | null>(editing?.avatar ?? null);
+  const [avatarSource, setAvatarSource] = useState<
+    "trakt" | "anilist" | "upload" | "removed" | null
+  >(null);
   const [color, setColor] = useState<ProfileColor>(
     editing?.color ?? nextProfileColor(profiles),
   );
@@ -88,6 +98,7 @@ export function EditorView({
     try {
       const dataUrl = await resizeAvatar(file, 320);
       setAvatar(dataUrl);
+      setAvatarSource("upload");
     } catch (err) {
       console.warn("[profile] avatar resize failed", err);
     }
@@ -104,11 +115,32 @@ export function EditorView({
         return;
       }
       setAvatar(url);
+      setAvatarSource("trakt");
     } catch {
       setTraktAvatarError("Couldn't reach Trakt.");
       setTimeout(() => setTraktAvatarError(null), 4000);
     } finally {
       setLoadingTraktAvatar(false);
+    }
+  };
+
+  const onUseAnilistAvatar = async () => {
+    setLoadingAnilistAvatar(true);
+    setAnilistAvatarError(null);
+    try {
+      const url = await fetchAnilistAvatar();
+      if (!url) {
+        setAnilistAvatarError("Couldn't find an AniList avatar on your account.");
+        setTimeout(() => setAnilistAvatarError(null), 4000);
+        return;
+      }
+      setAvatar(url);
+      setAvatarSource("anilist");
+    } catch {
+      setAnilistAvatarError("Couldn't reach AniList.");
+      setTimeout(() => setAnilistAvatarError(null), 4000);
+    } finally {
+      setLoadingAnilistAvatar(false);
     }
   };
 
@@ -129,6 +161,12 @@ export function EditorView({
       if (anyTabLocked(draftLockedTabs)) patch.lockedTabs = draftLockedTabs;
       if (Object.keys(patch).length > 0) updateProfile(p.id, patch);
       selectProfile(p.id);
+    }
+    if (avatarSource && (isOwnProfile || mode.kind === "create")) {
+      update({
+        useAnilistAvatar: avatarSource === "anilist",
+        useTraktAvatar: avatarSource === "trakt",
+      });
     }
     onDone();
   };
@@ -285,10 +323,30 @@ export function EditorView({
                   Use Trakt avatar
                 </button>
               )}
+              {anilistConnected && (
+                <button
+                  type="button"
+                  onClick={() => void onUseAnilistAvatar()}
+                  disabled={loadingAnilistAvatar}
+                  className="flex h-8 items-center gap-1.5 rounded-lg border border-edge-soft px-2.5 text-[12px] font-medium text-ink-muted transition-colors hover:border-edge hover:text-ink disabled:opacity-60"
+                >
+                  {loadingAnilistAvatar ? (
+                    <Loader2 size={12} className="animate-spin" />
+                  ) : anilistAvatar ? (
+                    <img src={anilistAvatar} alt="" className="h-3.5 w-3.5 rounded-full object-cover" />
+                  ) : (
+                    <Link2 size={12} />
+                  )}
+                  Use AniList avatar
+                </button>
+              )}
               {avatar && (
                 <button
                   type="button"
-                  onClick={() => setAvatar(null)}
+                  onClick={() => {
+                    setAvatar(null);
+                    setAvatarSource("removed");
+                  }}
                   className="h-8 rounded-lg border border-edge-soft px-2.5 text-[12px] font-medium text-ink-subtle transition-colors hover:border-danger/40 hover:text-danger"
                 >
                   Remove
@@ -297,6 +355,9 @@ export function EditorView({
             </div>
             {traktAvatarError && (
               <p className="text-[11.5px] text-amber-200/85">{traktAvatarError}</p>
+            )}
+            {anilistAvatarError && (
+              <p className="text-[11.5px] text-amber-200/85">{anilistAvatarError}</p>
             )}
           </div>
         </div>

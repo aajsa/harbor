@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/lib/auth";
+import { useSettings } from "@/lib/settings";
 import { type Meta } from "@/lib/cinemeta";
 import { library, type LibraryItem } from "@/lib/stremio";
 import { fetchWatchlist } from "@/lib/trakt/watchlist";
@@ -21,6 +22,7 @@ import {
 
 export function WatchlistTab() {
   const { authKey } = useAuth();
+  const { settings } = useSettings();
   const { isConnected: traktConnected } = useTrakt();
   const [stremio, setStremio] = useState<LibraryItem[]>([]);
   const [trakt, setTrakt] = useState<TraktItem[]>([]);
@@ -44,6 +46,7 @@ export function WatchlistTab() {
       .then((items) => {
         if (cancelled) return;
         const filtered = items.filter((i) => {
+          if (settings.libraryBookmarkedOnly) return !i.removed && !i.temp;
           if (i.removed && !i.temp) return false;
           if (i.state?.flaggedWatched === 1) return false;
           if ((i.state?.timeOffset ?? 0) > 0) return false;
@@ -55,7 +58,7 @@ export function WatchlistTab() {
     return () => {
       cancelled = true;
     };
-  }, [authKey]);
+  }, [authKey, settings.libraryBookmarkedOnly]);
 
   useEffect(() => {
     if (!traktConnected) {

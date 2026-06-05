@@ -1,10 +1,13 @@
-import { Check, ChevronDown, Play } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Check, ChevronDown, GalleryHorizontal, List, Play } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { EpisodeJumper } from "@/components/episode-jumper";
+import { EpisodeWatchedMenu, type WatchedMenuTarget } from "@/components/episode-watched-menu";
+import { manualWatchedVersion, subscribeManualWatched } from "@/lib/manual-watched";
 import { Poster } from "@/components/poster";
 import type { Meta } from "@/lib/cinemeta";
 import { formatAirDate } from "@/lib/dates";
 import { formatRelativeWatched, getEpisodeProgress, resumeDefaultSeason } from "@/lib/episode-progress";
+import { getLastSeason, setLastSeason } from "@/lib/last-season";
 import {
   tmdbSeasonEpisodes,
   type Episode,
@@ -17,6 +20,7 @@ import { useTrakt } from "@/lib/trakt/provider";
 import { useView } from "@/lib/view";
 import { NewBadge, UpcomingBadge } from "./badges";
 import { CinemetaEpisodeRow } from "./cinemeta-episodes";
+import { EpisodeStrip } from "./episode-strip";
 import { isNewEpisode, isNewSeason, isUpcomingEpisode } from "./helpers";
 
 export function SeriesEpisodes({
@@ -38,13 +42,26 @@ export function SeriesEpisodes({
   cinemetaVideos?: NonNullable<Meta["videos"]>;
   stremioWatched?: Set<string>;
 }) {
-  const { settings } = useSettings();
+  const { settings, update } = useSettings();
   const { isConnected: traktConnected } = useTrakt();
+  useSyncExternalStore(subscribeManualWatched, manualWatchedVersion);
+  const [watchedMenu, setWatchedMenu] = useState<WatchedMenuTarget | null>(null);
+  const openWatchedMenu = (
+    e: React.MouseEvent,
+    season: number,
+    episode: number,
+    watched: boolean,
+  ) => {
+    e.preventDefault();
+    setWatchedMenu({ x: e.clientX, y: e.clientY, season, episode, watched });
+  };
   const userPickedRef = useRef(false);
   const autoSeasonRef = useRef(false);
-  const [active, setActive] = useState<number>(() =>
-    resumeDefaultSeason(meta.id, seasons, stremioWatched),
-  );
+  const [active, setActive] = useState<number>(() => {
+    const saved = getLastSeason(meta.id);
+    if (saved != null && seasons.some((s) => s.seasonNumber === saved)) return saved;
+    return resumeDefaultSeason(meta.id, seasons, stremioWatched);
+  });
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [tvdbBySeason, setTvdbBySeason] = useState<Map<number, Map<number, TvdbEpisode>>>(new Map());
   const [loading, setLoading] = useState(true);
@@ -73,6 +90,15 @@ export function SeriesEpisodes({
     userPickedRef.current = false;
     autoSeasonRef.current = false;
   }, [meta.id]);
+
+  useEffect(() => {
+    if (userPickedRef.current) return;
+    const saved = getLastSeason(meta.id);
+    if (saved != null && seasons.some((s) => s.seasonNumber === saved)) {
+      autoSeasonRef.current = true;
+      setActive(saved);
+    }
+  }, [meta.id, seasons]);
 
   useEffect(() => {
     if (userPickedRef.current || autoSeasonRef.current) return;
@@ -158,17 +184,24 @@ export function SeriesEpisodes({
     <div className="flex flex-col gap-6">
       <div className="flex items-end justify-between gap-6">
         <h3 className="text-[22px] font-medium tracking-tight text-ink">Episodes</h3>
-        {seasons.length > 1 && (
-          <SeasonPicker
-            seasons={seasons}
-            active={active}
-            onChange={(n) => {
-              userPickedRef.current = true;
-              setActive(n);
-            }}
-            lastEpisodeAir={lastEpisodeAir}
+        <div className="flex items-center gap-2.5">
+          <LayoutToggle
+            value={settings.episodeLayout}
+            onChange={(v) => update({ episodeLayout: v })}
           />
-        )}
+          {seasons.length > 1 && (
+            <SeasonPicker
+              seasons={seasons}
+              active={active}
+              onChange={(n) => {
+                userPickedRef.current = true;
+                setLastSeason(meta.id, n);
+                setActive(n);
+              }}
+              lastEpisodeAir={lastEpisodeAir}
+            />
+          )}
+        </div>
       </div>
 
       {activeSeason && (activeSeason.airDate || activeSeason.episodeCount > 0) && (
@@ -190,7 +223,31 @@ export function SeriesEpisodes({
         <CinemetaFallback meta={meta} videos={cinemetaVideos} season={active} />
       )}
 
-      {!loading && enrichedEpisodes.length > 0 && (
+      {!loading && enrichedEpisodes.length > 0 && settings.episodeLayout === "strip" && (
+        <EpisodeStrip
+          meta={meta}
+          episodes={enrichedEpisodes}
+          progressFor={(ep) =>
+            getEpisodeProgress(
+              meta.id,
+              ep.seasonNumber,
+              ep.episodeNumber,
+              ep.runtime,
+              traktKey,
+              traktWatched,
+              stremioWatched,
+            )
+          }
+          thumbnailFor={(ep) =>
+            cinemetaVideos?.find(
+              (v) => v.season === ep.seasonNumber && v.episode === ep.episodeNumber,
+            )?.thumbnail
+          }
+          onContextMenu={openWatchedMenu}
+        />
+      )}
+
+      {!loading && enrichedEpisodes.length > 0 && settings.episodeLayout !== "strip" && (
         <div className="flex flex-col gap-1">
           {enrichedEpisodes.map((ep) => (
             <EpisodeRow
@@ -211,11 +268,21 @@ export function SeriesEpisodes({
                 traktWatched,
                 stremioWatched,
               )}
+              onContextMenu={openWatchedMenu}
             />
           ))}
         </div>
       )}
-      <EpisodeJumper scrollRef={scrollRef} totalEpisodes={enrichedEpisodes.length} />
+      {settings.episodeLayout !== "strip" && (
+        <EpisodeJumper scrollRef={scrollRef} totalEpisodes={enrichedEpisodes.length} />
+      )}
+      {watchedMenu && (
+        <EpisodeWatchedMenu
+          metaId={meta.id}
+          target={watchedMenu}
+          onClose={() => setWatchedMenu(null)}
+        />
+      )}
     </div>
   );
 }
@@ -225,11 +292,13 @@ function EpisodeRow({
   ep,
   progress,
   cinemetaThumbnail,
+  onContextMenu,
 }: {
   meta: Meta;
   ep: Episode;
   progress: { ratio: number; watched: boolean; startedAt: number };
   cinemetaThumbnail?: string;
+  onContextMenu?: (e: React.MouseEvent, season: number, episode: number, watched: boolean) => void;
 }) {
   const { openPicker } = useView();
   const { settings } = useSettings();
@@ -254,6 +323,7 @@ function EpisodeRow({
     <button
       data-ep={ep.episodeNumber}
       data-no-card-ring
+      onContextMenu={(e) => onContextMenu?.(e, ep.seasonNumber, ep.episodeNumber, progress.watched)}
       onClick={() =>
         openPicker(
           meta,
@@ -329,6 +399,39 @@ function EpisodeRow({
         )}
       </div>
     </button>
+  );
+}
+
+function LayoutToggle({
+  value,
+  onChange,
+}: {
+  value: "list" | "strip";
+  onChange: (v: "list" | "strip") => void;
+}) {
+  return (
+    <div className="flex h-10 items-center gap-0.5 rounded-full border border-edge-soft bg-canvas/90 p-1">
+      <button
+        type="button"
+        aria-label="List view"
+        onClick={() => onChange("list")}
+        className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors ${
+          value === "list" ? "bg-ink text-canvas" : "text-ink-muted hover:text-ink"
+        }`}
+      >
+        <List size={15} strokeWidth={2.2} />
+      </button>
+      <button
+        type="button"
+        aria-label="Horizontal view"
+        onClick={() => onChange("strip")}
+        className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors ${
+          value === "strip" ? "bg-ink text-canvas" : "text-ink-muted hover:text-ink"
+        }`}
+      >
+        <GalleryHorizontal size={15} strokeWidth={2.2} />
+      </button>
+    </div>
   );
 }
 

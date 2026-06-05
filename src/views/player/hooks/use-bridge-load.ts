@@ -57,7 +57,7 @@ export function useBridgeLoad(params: {
     (async () => {
       const resolved = isLive
         ? { ms: 0, fromRemote: false }
-        : await resolveStartMs(src.meta.id, season, episode, authKey);
+        : await resolveStartMs(src.meta.id, season, episode, authKey, src.imdbId ?? null);
       const startMs = resolved.ms;
       const startSec = startMs / 1000;
       const guestInRoom = inRoomRef.current && !isHostRef.current;
@@ -123,6 +123,7 @@ async function resolveStartMs(
   season: number | undefined,
   episode: number | undefined,
   authKey: string | null,
+  imdbId: string | null,
 ): Promise<{ ms: number; fromRemote: boolean }> {
   const local = readResumeMs(metaId, season, episode);
   if (!authKey) return { ms: local, fromRemote: false };
@@ -131,7 +132,8 @@ async function resolveStartMs(
     if (typeof season !== "number" || typeof episode !== "number") return true;
     return item.state?.season === season && item.state?.episode === episode;
   };
-  const remote = await libraryGetOne(authKey, metaId).catch(() => null);
+  const lookupId = metaId.startsWith("tt") ? metaId : imdbId?.startsWith("tt") ? imdbId : metaId;
+  const remote = await libraryGetOne(authKey, lookupId).catch(() => null);
   if (!remote || !matchesEpisode(remote)) return { ms: local, fromRemote: false };
   const remoteMs = remote.state?.timeOffset ?? 0;
   if (remoteMs <= 0) return { ms: local, fromRemote: false };

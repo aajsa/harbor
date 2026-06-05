@@ -11,9 +11,10 @@ type Props = {
   signedIn: boolean;
   items: LibraryItem[];
   watchedSet?: Set<string>;
+  onDismiss: (id: string) => void;
 };
 
-export function CWSection({ signedIn, items, watchedSet }: Props) {
+export function CWSection({ signedIn, items, watchedSet, onDismiss }: Props) {
   if (items.length > 0) {
     return (
       <Row title="Continue Watching" min={260} shape="landscape" scrollKey="home:cw">
@@ -22,6 +23,7 @@ export function CWSection({ signedIn, items, watchedSet }: Props) {
             key={item._id}
             item={item}
             watched={watchedSet ? isLibraryItemWatched(item, watchedSet) : false}
+            onDismiss={onDismiss}
           />
         ))}
       </Row>

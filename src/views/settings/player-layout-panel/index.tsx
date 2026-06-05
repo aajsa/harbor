@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { alertDialog, confirmDialog } from "@/lib/dialog";
 import {
   DEFAULT_DEFAULT_CONFIG,
   DEFAULT_STREMIO_CONFIG,
@@ -201,7 +202,7 @@ export function PlayerLayoutPanel() {
   const onSave = useCallback(() => {
     const res = writePlayerChromeConfig(theme, draft);
     if (!res.ok) {
-      window.alert(`Couldn't save your layout. ${res.error}`);
+      void alertDialog(`Couldn't save your layout. ${res.error}`);
       return;
     }
     setSaved(draft);
@@ -212,16 +213,16 @@ export function PlayerLayoutPanel() {
   }, [draft, theme, bumpProfiles]);
 
   const onSwitchProfile = useCallback(
-    (id: string) => {
+    async (id: string) => {
       if (!sameConfig(draft, saved)) {
-        const ok = window.confirm(
+        const ok = await confirmDialog(
           "You have unsaved changes that will be lost when switching profiles. Continue?",
         );
         if (!ok) return;
       }
       const res = setActiveProfile(theme, id);
       if (!res.ok) {
-        window.alert(`Couldn't switch profile. ${res.error}`);
+        void alertDialog(`Couldn't switch profile. ${res.error}`);
         return;
       }
       bumpProfiles();
@@ -234,7 +235,7 @@ export function PlayerLayoutPanel() {
     (name: string) => {
       const res = createProfile(theme, name, draft);
       if (!res.ok) {
-        window.alert(`Couldn't create the profile. ${res.error}`);
+        void alertDialog(`Couldn't create the profile. ${res.error}`);
         return;
       }
       bumpProfiles();
@@ -250,7 +251,7 @@ export function PlayerLayoutPanel() {
       if (!activeProfileId) return;
       const res = renameProfileApi(activeProfileId, newName);
       if (!res.ok) {
-        window.alert(`Couldn't rename the profile. ${res.error}`);
+        void alertDialog(`Couldn't rename the profile. ${res.error}`);
         return;
       }
       bumpProfiles();
@@ -258,13 +259,13 @@ export function PlayerLayoutPanel() {
     [activeProfileId, bumpProfiles],
   );
 
-  const onDeleteProfile = useCallback(() => {
+  const onDeleteProfile = useCallback(async () => {
     if (!activeProfileId) return;
-    const ok = window.confirm("Delete this profile permanently? This cannot be undone.");
+    const ok = await confirmDialog("Delete this profile permanently? This cannot be undone.");
     if (!ok) return;
     const res = deleteProfileApi(activeProfileId);
     if (!res.ok) {
-      window.alert(`Couldn't delete the profile. ${res.error}`);
+      void alertDialog(`Couldn't delete the profile. ${res.error}`);
       return;
     }
     bumpProfiles();
@@ -292,7 +293,7 @@ export function PlayerLayoutPanel() {
     (text: string) => {
       const res = importProfileJson(text);
       if (!res.ok) {
-        window.alert(`Couldn't import that file. ${res.error}`);
+        void alertDialog(`Couldn't import that file. ${res.error}`);
         return;
       }
       bumpProfiles();
@@ -373,9 +374,9 @@ export function PlayerLayoutPanel() {
           onSelectPanel={setSelectedPanelId}
           onSetPanelCorner={setPanelCorner}
           onTogglePanelHidden={togglePanelHidden}
-          onClose={() => {
+          onClose={async () => {
             if (!sameConfig(draft, saved)) {
-              const ok = window.confirm(
+              const ok = await confirmDialog(
                 "You have unsaved changes. Close the editor and discard them?",
               );
               if (!ok) return;

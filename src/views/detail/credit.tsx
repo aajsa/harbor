@@ -15,6 +15,7 @@ export function Credit({ label, people }: { label: string; people: PersonRef[] }
             <span key={`${p.id}-${i}`}>
               {resolved ? (
                 <button
+                  data-person-card
                   onClick={() => openPerson(p.id)}
                   className="cursor-pointer rounded text-ink underline-offset-4 transition-colors hover:text-accent hover:underline"
                 >

@@ -80,6 +80,8 @@ export function ContextMenu() {
         open(e, { kind: "edit", element: el, selection });
         return;
       }
+      if (topKind === "person") return;
+      if (e.target instanceof HTMLElement && e.target.closest("[data-person-card]")) return;
       if (currentMeta) {
         e.preventDefault();
         open(e, { kind: "meta", meta: currentMeta });

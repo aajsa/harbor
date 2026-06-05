@@ -41,7 +41,7 @@ function writeProfileSession(id: string, session: Session | null): void {
     if (session) localStorage.setItem(profileAuthKey(id), JSON.stringify(session));
     else localStorage.removeItem(profileAuthKey(id));
   } catch {
-    /* ignore */
+    return;
   }
 }
 

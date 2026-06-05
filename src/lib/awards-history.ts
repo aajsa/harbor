@@ -163,7 +163,7 @@ export function dedupePersonAwards(entries: AwardEntry[]): AwardEntry[] {
   const order: string[] = [];
   for (const e of entries) {
     const work = normTitle(e.workTitle ?? e.recipient ?? "");
-    const key = `${e.type}|${work}|${normCategoryKey(e.category ?? "")}`;
+    const key = `${e.type}|${work}|${normCategoryKey(e.category ?? "")}|${e.year ?? ""}`;
     const prev = best.get(key);
     if (!prev) {
       best.set(key, e);
@@ -173,7 +173,13 @@ export function dedupePersonAwards(entries: AwardEntry[]): AwardEntry[] {
     const prevWon = prev.result === "won" ? 1 : 0;
     const curWon = e.result === "won" ? 1 : 0;
     const take = curWon !== prevWon ? curWon > prevWon : (e.year ?? 0) > (prev.year ?? 0);
-    if (take) best.set(key, e);
+    const base = take ? e : prev;
+    const other = take ? prev : e;
+    best.set(key, {
+      ...base,
+      workImdb: base.workImdb ?? other.workImdb,
+      workTitle: base.workTitle ?? other.workTitle,
+    });
   }
   return order.map((k) => best.get(k)!);
 }
@@ -184,5 +190,18 @@ export function mergeBundledPersonAwards(
 ): AwardEntry[] {
   const liveList = live ?? [];
   const bundled = bundledAwardsForPerson(name);
-  return dedupePersonAwards([...liveList, ...bundled]);
+  const k3 = (e: AwardEntry) =>
+    `${e.type}|${normTitle(e.workTitle ?? e.recipient ?? "")}|${normCategoryKey(e.category ?? "")}`;
+  const liveImdb = new Map<string, string>();
+  for (const e of liveList) {
+    const k = k3(e);
+    if (e.workImdb && !liveImdb.has(k)) liveImdb.set(k, e.workImdb);
+  }
+  const enriched = bundled.map((b) => {
+    const imdb = liveImdb.get(k3(b));
+    return imdb && !b.workImdb ? { ...b, workImdb: imdb } : b;
+  });
+  const bundledKeys = new Set(bundled.map(k3));
+  const liveExtra = liveList.filter((e) => !bundledKeys.has(k3(e)));
+  return dedupePersonAwards([...enriched, ...liveExtra]);
 }

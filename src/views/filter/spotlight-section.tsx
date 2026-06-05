@@ -192,6 +192,7 @@ export function SpotlightSection({
         type="button"
         onClick={() => personId != null && openPerson(personId)}
         disabled={personId == null}
+        style={{ gridColumn: "span 2" }}
         className="group relative h-[216px] w-[280px] shrink-0 overflow-hidden rounded-xl border border-edge-soft text-left transition-transform duration-300 hover:-translate-y-0.5"
       >
         {profileUrl ? (

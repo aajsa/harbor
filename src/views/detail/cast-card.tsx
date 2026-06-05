@@ -21,6 +21,7 @@ export function CastCard({ cast }: { cast: CastEntry }) {
   return (
     <Wrap
       {...wrapProps}
+      data-person-card
       className={`group flex w-full min-w-0 flex-col gap-2.5 text-left ${isResolved ? "" : "cursor-default"}`}
     >
       <div

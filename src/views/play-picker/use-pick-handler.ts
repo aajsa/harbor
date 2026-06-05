@@ -116,7 +116,7 @@ export function usePickHandler({
           ? ({ ok: true } as const)
           : await preflightCheck(playUrl, ac.signal);
       if (ac.signal.aborted) return;
-      if (!preflight.ok && (preflight.reason === "stub" || preflight.reason === "unreachable" || preflight.reason === "http-error")) {
+      if (!preflight.ok && preflight.reason === "stub") {
         setFailedStreams((prev) => new Set(prev).add(stream));
         const sf = {
           infoHash: stream.infoHash ?? undefined,

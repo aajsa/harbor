@@ -23,7 +23,18 @@ export function useTrickplayState(): TrickplayState {
   );
 }
 
+const thumbCache = new Map<number, string>();
+
+export function thumbCacheGet(bucket: number): string | undefined {
+  return thumbCache.get(bucket);
+}
+
+export function thumbCacheSet(bucket: number, dataUri: string): void {
+  thumbCache.set(bucket, dataUri);
+}
+
 export async function trickplaySetUrl(url: string): Promise<void> {
+  thumbCache.clear();
   try {
     await invoke("thumbs_set_url", { url });
   } catch {}
@@ -44,6 +55,7 @@ export async function trickplayGet(timeSec: number): Promise<string | null> {
 }
 
 export async function trickplayStop(): Promise<void> {
+  thumbCache.clear();
   try {
     await invoke("thumbs_stop");
   } catch {}

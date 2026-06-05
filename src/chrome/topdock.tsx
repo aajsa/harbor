@@ -137,7 +137,7 @@ export function TopDock() {
               <Search size={15} strokeWidth={2.2} />
             </IconBtn>
             <ProfileChipCompact onOpenSettings={() => setView("settings")} settingsActive={view === "settings"} />
-            {IS_TAURI && (
+            {IS_TAURI && !settings.useNativeTitleBar && (
               <div className="ml-1 flex items-center gap-0.5">
                 <WinBtn onClick={minimize} label="Minimize">
                   <path d="M3 6.5h7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />

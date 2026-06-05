@@ -1,10 +1,15 @@
 import { Loader2, Star, Users, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { Meta } from "@/lib/cinemeta";
+import { animeDetails } from "@/lib/providers/anime-detail";
 import { useSettings } from "@/lib/settings";
 import { activeLayout } from "@/lib/theme";
 import { IMG } from "@/lib/providers/tmdb/tmdb-client";
 import { tmdbDetails, type CastEntry, type TmdbDetail } from "@/lib/providers/tmdb/tmdb-details";
+
+function isAnimeId(id: string): boolean {
+  return id.startsWith("kitsu:") || id.startsWith("mal:") || id.startsWith("anilist:");
+}
 
 export function CastModal({
   open,
@@ -17,18 +22,23 @@ export function CastModal({
   meta: Meta;
   tmdbKey: string | null;
 }) {
+  const { settings } = useSettings();
   const [detail, setDetail] = useState<TmdbDetail | null>(null);
   const [loading, setLoading] = useState(false);
+  const anime = isAnimeId(meta.id);
 
   useEffect(() => {
     if (!open) return;
-    if (!tmdbKey) {
+    if (!anime && !tmdbKey) {
       setDetail(null);
       return;
     }
     let cancelled = false;
     setLoading(true);
-    tmdbDetails(tmdbKey, meta)
+    const fetch: Promise<TmdbDetail | null> = anime
+      ? animeDetails(settings, meta).then((r) => r?.detail ?? null)
+      : tmdbDetails(tmdbKey as string, meta);
+    fetch
       .then((d) => {
         if (!cancelled) setDetail(d);
       })
@@ -41,7 +51,7 @@ export function CastModal({
     return () => {
       cancelled = true;
     };
-  }, [open, tmdbKey, meta]);
+  }, [open, tmdbKey, meta, anime, settings]);
 
   useEffect(() => {
     if (!open) return;
@@ -117,7 +127,7 @@ export function CastModal({
 
           {detail && detail.cast.length > 0 ? (
             <CastStrip cast={detail.cast} />
-          ) : !tmdbKey ? (
+          ) : !anime && !tmdbKey ? (
             <div className="px-6 pb-5 text-[13.5px] leading-relaxed text-ink-muted">
               Add a TMDB key in Settings to see the cast for every title.
             </div>

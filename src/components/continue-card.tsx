@@ -1,18 +1,21 @@
 import { memo, useEffect, useMemo, useRef, useState } from "react";
-import { Check, Play } from "lucide-react";
+import { Check, Play, X } from "lucide-react";
 import { meta as fetchMeta, type Meta } from "@/lib/cinemeta";
 import { useContextMenu } from "@/lib/context-menu";
 import { readSnapshot, useSnapshotVersion } from "@/lib/snapshots";
 import type { LibraryItem } from "@/lib/stremio";
+import { useSettings } from "@/lib/settings";
 import { useView } from "@/lib/view";
 
 type Props = {
   item: LibraryItem;
   watched?: boolean;
+  onDismiss?: (id: string) => void;
 };
 
-export const ContinueCard = memo(function ContinueCard({ item, watched = false }: Props) {
-  const { openMeta } = useView();
+export const ContinueCard = memo(function ContinueCard({ item, watched = false, onDismiss }: Props) {
+  const { openPicker } = useView();
+  const { settings } = useSettings();
   const { open: openContextMenu } = useContextMenu();
   useSnapshotVersion();
   const snapshot = readSnapshot(item._id);
@@ -93,15 +96,22 @@ export const ContinueCard = memo(function ContinueCard({ item, watched = false }
         background: item.background,
       };
 
-  const onClick = () => openMeta(meta);
+  const onClick = () => {
+    const episode =
+      item.type === "series" && item.state?.season && item.state?.episode
+        ? { season: item.state.season, episode: item.state.episode }
+        : undefined;
+    openPicker(meta, episode, { autoPlay: settings.instantPlay });
+  };
 
   return (
-    <button
-      ref={cardRef}
-      onClick={onClick}
-      onContextMenu={(e) => openContextMenu(e, { kind: "meta", meta })}
-      className="group flex w-full min-w-0 flex-col gap-2.5 text-left"
-    >
+    <div className="group relative w-full min-w-0">
+      <button
+        ref={cardRef}
+        onClick={onClick}
+        onContextMenu={(e) => openContextMenu(e, { kind: "meta", meta })}
+        className="flex w-full min-w-0 flex-col gap-2.5 text-left"
+      >
       <div className="harbor-poster relative aspect-[16/9] overflow-hidden rounded-xl bg-elevated shadow-[0_2px_8px_-2px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.06)] transition-transform duration-[220ms] ease-[cubic-bezier(0.22,0.61,0.36,1)] group-hover:scale-[1.02]">
         <div className="absolute inset-0 bg-gradient-to-br from-raised via-elevated to-surface" />
         {src && (
@@ -118,7 +128,7 @@ export const ContinueCard = memo(function ContinueCard({ item, watched = false }
         <div className="absolute inset-0 shadow-[inset_0_0_100px_rgba(0,0,0,0.45)]" />
         {watched && (
           <span
-            className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-400/22 text-emerald-200 ring-1 ring-emerald-400/40 backdrop-blur-sm"
+            className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-400/22 text-emerald-200 ring-1 ring-emerald-400/40 backdrop-blur-sm"
             title="Watched on Trakt"
           >
             <Check size={12} strokeWidth={3} />
@@ -154,7 +164,23 @@ export const ContinueCard = memo(function ContinueCard({ item, watched = false }
         </div>
       </div>
       <p className="truncate text-[13px] font-medium text-ink">{item.name}</p>
-    </button>
+      </button>
+      {onDismiss && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDismiss(item._id);
+          }}
+          aria-label="Remove from Continue Watching"
+          className="group/x absolute right-0.5 top-0.5 z-10 flex h-11 w-11 items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-visible:opacity-100"
+        >
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-canvas/85 text-ink-muted ring-1 ring-white/12 backdrop-blur-sm transition-colors group-hover/x:bg-canvas group-hover/x:text-ink">
+            <X size={20} strokeWidth={2.4} />
+          </span>
+        </button>
+      )}
+    </div>
   );
 });
 

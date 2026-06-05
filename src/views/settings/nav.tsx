@@ -169,6 +169,17 @@ function IconTrakt(p: IconProps) {
   );
 }
 
+function IconAnilist(p: IconProps) {
+  return (
+    <IconBase {...p}>
+      <rect x="3.5" y="3.5" width="17" height="17" rx="3.5" />
+      <path d="M8 16.5l3-9 3 9" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M9 13.5h4" strokeLinecap="round" />
+      <path d="M15.5 7.5v9h2" strokeLinecap="round" strokeLinejoin="round" />
+    </IconBase>
+  );
+}
+
 const LANG_ABBR: Record<string, string> = {
   English: "EN",
   Spanish: "ES",
@@ -226,6 +237,12 @@ const NAV_GROUPS: Array<{ heading: string | null; items: NavItem[] }> = [
         label: "Trakt",
         Icon: IconTrakt,
         keywords: ["scrobble", "history", "sync", "watchlist"],
+      },
+      {
+        id: "anilist",
+        label: "AniList",
+        Icon: IconAnilist,
+        keywords: ["anime", "lists", "watching", "mal", "kitsu"],
       },
     ],
   },
@@ -390,6 +407,7 @@ export function SettingsNav({
     account: null,
     library: libraryKeys > 0 ? `${libraryKeys}/5` : null,
     trakt: null,
+    anilist: null,
     relay: relayLive,
     streaming: debridChip,
     language: langChip,

@@ -1,12 +1,12 @@
 const EVENT = "harbor:deeplink-install";
 
-type DeepLinkInstallDetail = { rawUrl: string };
+type DeepLinkDetail = { rawUrl: string };
 
 let pendingUrl: string | null = null;
 
 export function emitDeepLinkInstall(rawUrl: string): void {
   pendingUrl = rawUrl;
-  window.dispatchEvent(new CustomEvent<DeepLinkInstallDetail>(EVENT, { detail: { rawUrl } }));
+  window.dispatchEvent(new CustomEvent<DeepLinkDetail>(EVENT, { detail: { rawUrl } }));
 }
 
 export function consumePendingDeepLink(): string | null {
@@ -25,7 +25,7 @@ export function clearPendingDeepLink(): void {
 
 export function onDeepLinkInstall(handler: (rawUrl: string) => void): () => void {
   const listener = (e: Event) => {
-    const ev = e as CustomEvent<DeepLinkInstallDetail>;
+    const ev = e as CustomEvent<DeepLinkDetail>;
     if (ev.detail?.rawUrl) handler(ev.detail.rawUrl);
   };
   window.addEventListener(EVENT, listener);
@@ -50,24 +50,20 @@ export async function startDeepLinkBridge(): Promise<() => void> {
     const mod = await import("@tauri-apps/plugin-deep-link");
     const handle = (urls: string[]) => {
       for (const u of urls) {
-        if (typeof u === "string" && u.length > 0 && shouldForward(u)) {
-          emitDeepLinkInstall(u);
-        }
+        if (typeof u !== "string" || u.length === 0) continue;
+        if (shouldForward(u)) emitDeepLinkInstall(u);
       }
     };
     const unlisten = await mod.onOpenUrl(handle);
     const { listen } = await import("@tauri-apps/api/event");
     const unlistenNative = await listen<string>("harbor:stremio-deeplink", (e) => {
       const u = e.payload;
-      if (typeof u === "string" && u && shouldForward(u)) emitDeepLinkInstall(u);
+      if (typeof u !== "string" || !u) return;
+      if (shouldForward(u)) emitDeepLinkInstall(u);
     });
-    // Linux: the in-app Harbor Browser can't open stremio://, so browser.rs
-    // intercepts the install link and emits it here. This is a trusted capture
-    // (the user clicked Install inside our own browser), so it bypasses the
-    // shouldForward gate and routes straight into the shared install path.
     let lastCap = "";
     let lastCapAt = 0;
-    const unlistenBrowserCap = await listen<string>("harbor://browser-stremio-capture", (e) => {
+    const forwardLinuxBrowserInstall = async (e: { payload: string }) => {
       const u = e.payload;
       if (typeof u !== "string" || !u) return;
       const now = Date.now();
@@ -75,32 +71,27 @@ export async function startDeepLinkBridge(): Promise<() => void> {
       lastCap = u;
       lastCapAt = now;
       emitDeepLinkInstall(u);
-      void import("@tauri-apps/api/core").then(({ invoke }) =>
-        invoke("browser_close").catch(() => {}),
-      );
-    });
+      const { invoke } = await import("@tauri-apps/api/core");
+      invoke("browser_close").catch(() => {});
+    };
+    const unlistenBrowserCap = await listen<string>(
+      "harbor://browser-stremio-capture",
+      forwardLinuxBrowserInstall,
+    );
     try {
       const initial = await mod.getCurrent();
       if (initial && initial.length > 0) handle(initial);
-    } catch {
-      /* noop */
-    }
+    } catch {}
     return () => {
       try {
         unlisten();
-      } catch {
-        /* noop */
-      }
+      } catch {}
       try {
         unlistenNative();
-      } catch {
-        /* noop */
-      }
+      } catch {}
       try {
         unlistenBrowserCap();
-      } catch {
-        /* noop */
-      }
+      } catch {}
     };
   } catch (e) {
     console.warn("[harbor] deep-link bridge failed", e);

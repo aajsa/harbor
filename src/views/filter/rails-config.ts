@@ -1,4 +1,4 @@
-import { GENRE_SPOTLIGHTS, type Spotlight } from "@/lib/feed/genre-spotlights";
+import { selectSpotlights, type Spotlight } from "@/lib/feed/genre-spotlights";
 import { GENRE_TOPICS, type Topic } from "@/lib/feed/genre-topics";
 import { MOVIE_GENRES } from "@/lib/feed/tags";
 import type { MetaFilter } from "@/lib/view";
@@ -277,7 +277,7 @@ export function railsForFilter(f: MetaFilter): AnyRail[] {
   }
 
   const g = String(f.id);
-  const spotlights = GENRE_SPOTLIGHTS[f.name] ?? [];
+  const spotlights = selectSpotlights(f.name);
   const dateField = f.mediaType === "movie" ? "primary_release_date" : "first_air_date";
   const fiveYearsAgo = new Date(Date.now() - 5 * 365 * 24 * 60 * 60 * 1000)
     .toISOString()

@@ -5,6 +5,7 @@ import { ProfileBlock } from "@/chrome/siderail/profile-block";
 import { RecordingPill } from "@/chrome/recording-pill";
 import { TogetherButton } from "@/chrome/topbar";
 import { useSearch } from "@/lib/search-context";
+import { useSettings } from "@/lib/settings";
 import { useParental, type LockableTab } from "@/lib/parental";
 import { useView, type View } from "@/lib/view";
 import { ParentalPinModal } from "@/components/parental-pin-modal";
@@ -35,6 +36,7 @@ const SECONDARY: Tab[] = [
 
 export function SideRail() {
   const { view, setView, chromeHidden } = useView();
+  const { settings } = useSettings();
   const { locked, unlock, hiddenTabs } = useParental();
   const { setOpen: setSearchOpen } = useSearch();
   const [pinFor, setPinFor] = useState<View | null>(null);
@@ -124,7 +126,7 @@ export function SideRail() {
             {view !== "live" && <TogetherButton variant="ghost" popoverPlacement="above-left" />}
           </div>
           <ProfileBlock onOpenSettings={() => setView("settings")} />
-          {IS_TAURI && (
+          {IS_TAURI && !settings.useNativeTitleBar && (
             <div className="flex items-center justify-end gap-0.5 pt-1">
               <WinBtn onClick={minimize} label="Minimize">
                 <path d="M3 6.5h7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />

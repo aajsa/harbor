@@ -69,6 +69,7 @@ const SLIM_MANIFEST_KEYS = [
   "types",
   "idPrefixes",
   "resources",
+  "catalogs",
   "behaviorHints",
 ] as const;
 
@@ -87,6 +88,20 @@ function slimManifest(manifest: Addon["manifest"] | undefined): Addon["manifest"
       continue;
     }
     if (k === "background" && typeof v === "string" && v.startsWith("data:")) {
+      continue;
+    }
+    if (k === "catalogs" && Array.isArray(v)) {
+      out[k] = (v as Array<Record<string, unknown>>).map((c) => ({
+        id: c.id,
+        type: c.type,
+        name: c.name,
+        extra: Array.isArray(c.extra)
+          ? (c.extra as Array<Record<string, unknown>>).map((e) => ({
+              name: e.name,
+              isRequired: e.isRequired,
+            }))
+          : undefined,
+      }));
       continue;
     }
     out[k] = v;

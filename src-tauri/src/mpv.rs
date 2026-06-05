@@ -107,7 +107,6 @@ const OBSERVED_PROPS: &[(&str, u64, PropertyKind)] = &[
     ("af", 13, PropertyKind::String),
     ("dwidth", 14, PropertyKind::Int64),
     ("dheight", 15, PropertyKind::Int64),
-    ("speed", 16, PropertyKind::Double),
 ];
 
 #[derive(Clone, Copy)]
@@ -669,6 +668,177 @@ pub async fn mpv_save_screenshot(
         waited += 40;
     }
     Err("screenshot did not finish writing".to_string())
+}
+
+struct GifSession {
+    dir: PathBuf,
+    stop: Arc<std::sync::atomic::AtomicBool>,
+    handle: tokio::task::JoinHandle<()>,
+    captured_ms: Arc<std::sync::atomic::AtomicU64>,
+}
+
+static GIF_SESSION: std::sync::OnceLock<std::sync::Mutex<Option<GifSession>>> =
+    std::sync::OnceLock::new();
+
+fn gif_slot() -> &'static std::sync::Mutex<Option<GifSession>> {
+    GIF_SESSION.get_or_init(|| std::sync::Mutex::new(None))
+}
+
+const GIF_FRAME_INTERVAL_MS: u64 = 50;
+const GIF_MAX_FRAMES: u32 = 600;
+const GIF_FALLBACK_FPS: f64 = 12.0;
+
+#[derive(Serialize)]
+pub struct GifResult {
+    path: String,
+    frames: u32,
+}
+
+#[tauri::command]
+pub async fn mpv_gif_start(state: State<'_, MpvState>) -> Result<(), String> {
+    let mpv = {
+        let g = state.inner.lock().await;
+        g.as_ref().map(|s| s.mpv.clone()).ok_or_else(|| "mpv not started".to_string())?
+    };
+    {
+        let g = gif_slot().lock().map_err(|e| format!("gif lock: {}", e))?;
+        if g.is_some() {
+            return Err("already recording".into());
+        }
+    }
+    let dir = std::env::temp_dir().join(format!("harbor-gif-{}", Uuid::new_v4()));
+    std::fs::create_dir_all(&dir).map_err(|e| format!("create temp dir: {}", e))?;
+    let stop = Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let stop_task = stop.clone();
+    let dir_task = dir.clone();
+    let captured_ms = Arc::new(std::sync::atomic::AtomicU64::new(0));
+    let captured_task = captured_ms.clone();
+    let handle = tokio::spawn(async move {
+        let started = std::time::Instant::now();
+        let _ = mpv.set_property("screenshot-format", "jpg");
+        let _ = mpv.set_property("screenshot-jpeg-quality", "92");
+        let _ = mpv.set_property("screenshot-sw", "yes");
+        let mut frame: u32 = 0;
+        while !stop_task.load(std::sync::atomic::Ordering::Relaxed) && frame < GIF_MAX_FRAMES {
+            let path = dir_task.join(format!("f{:05}.jpg", frame));
+            let p = path.to_string_lossy().to_string();
+            if mpv_argv_command(&mpv, &["screenshot-to-file", p.as_str(), "video"]).is_ok() {
+                frame += 1;
+                captured_task
+                    .store(started.elapsed().as_millis() as u64, std::sync::atomic::Ordering::Relaxed);
+            }
+            tokio::time::sleep(Duration::from_millis(GIF_FRAME_INTERVAL_MS)).await;
+        }
+    });
+    *gif_slot().lock().map_err(|e| format!("gif lock: {}", e))? =
+        Some(GifSession { dir, stop, handle, captured_ms });
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn mpv_gif_abort() -> Result<(), String> {
+    let session = { gif_slot().lock().map_err(|e| format!("gif lock: {}", e))?.take() };
+    if let Some(session) = session {
+        session.stop.store(true, std::sync::atomic::Ordering::Relaxed);
+        let _ = session.handle.await;
+        let _ = std::fs::remove_dir_all(&session.dir);
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn mpv_gif_stop(out_path: String) -> Result<GifResult, String> {
+    let session = { gif_slot().lock().map_err(|e| format!("gif lock: {}", e))?.take() };
+    let Some(session) = session else {
+        return Err("not recording".into());
+    };
+    session.stop.store(true, std::sync::atomic::Ordering::Relaxed);
+    let _ = session.handle.await;
+    tokio::time::sleep(Duration::from_millis(300)).await;
+
+    let mut frames: Vec<PathBuf> = std::fs::read_dir(&session.dir)
+        .map_err(|e| format!("read temp dir: {}", e))?
+        .filter_map(|e| e.ok().map(|e| e.path()))
+        .filter(|p| p.extension().and_then(|x| x.to_str()) == Some("jpg"))
+        .collect();
+    frames.sort();
+    if frames.is_empty() {
+        let _ = std::fs::remove_dir_all(&session.dir);
+        return Err("no frames captured".into());
+    }
+
+    let window_ms = session.captured_ms.load(std::sync::atomic::Ordering::Relaxed);
+    let n = frames.len() as f64;
+    let fps = if n >= 2.0 && window_ms >= 200 {
+        (n / (window_ms as f64 / 1000.0)).clamp(2.0, 30.0)
+    } else {
+        GIF_FALLBACK_FPS
+    };
+    let dur = 1.0_f64 / fps;
+
+    let ffmpeg = crate::transcode::locate_ffmpeg().ok_or_else(|| "ffmpeg not found".to_string())?;
+
+    let list_path = session.dir.join("frames.txt");
+    let mut list = String::new();
+    for f in &frames {
+        let name = f.file_name().and_then(|n| n.to_str()).unwrap_or_default();
+        list.push_str(&format!("file '{}'\nduration {:.4}\n", name, dur));
+    }
+    if let Some(last) = frames.last() {
+        let name = last.file_name().and_then(|n| n.to_str()).unwrap_or_default();
+        list.push_str(&format!("file '{}'\n", name));
+    }
+    std::fs::write(&list_path, list).map_err(|e| format!("write list: {}", e))?;
+
+    if let Some(parent) = std::path::Path::new(&out_path).parent() {
+        let _ = std::fs::create_dir_all(parent);
+    }
+    let palette = session.dir.join("palette.png");
+    let list_str = list_path.to_string_lossy().to_string();
+    let palette_str = palette.to_string_lossy().to_string();
+    let vf_pal = format!("fps={:.3},scale=640:-2:flags=lanczos,palettegen=stats_mode=diff", fps);
+    let lavfi = format!(
+        "fps={:.3},scale=640:-2:flags=lanczos[x];[x][1:v]paletteuse=dither=bayer:bayer_scale=3",
+        fps
+    );
+
+    let pass1 = run_gif_ffmpeg(
+        &ffmpeg,
+        &["-y", "-f", "concat", "-safe", "0", "-i", &list_str, "-vf", &vf_pal, &palette_str],
+    )
+    .await;
+    if let Err(e) = pass1 {
+        let _ = std::fs::remove_dir_all(&session.dir);
+        return Err(format!("palettegen: {}", e));
+    }
+    let pass2 = run_gif_ffmpeg(
+        &ffmpeg,
+        &[
+            "-y", "-f", "concat", "-safe", "0", "-i", &list_str, "-i", &palette_str, "-lavfi",
+            &lavfi, out_path.as_str(),
+        ],
+    )
+    .await;
+    let _ = std::fs::remove_dir_all(&session.dir);
+    if let Err(e) = pass2 {
+        return Err(format!("paletteuse: {}", e));
+    }
+    Ok(GifResult { path: out_path, frames: frames.len() as u32 })
+}
+
+async fn run_gif_ffmpeg(ffmpeg: &std::path::Path, args: &[&str]) -> Result<(), String> {
+    let mut cmd = tokio::process::Command::new(ffmpeg);
+    cmd.args(args)
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null());
+    #[cfg(windows)]
+    cmd.creation_flags(0x0800_0000);
+    let status = cmd.status().await.map_err(|e| format!("spawn ffmpeg: {}", e))?;
+    if !status.success() {
+        return Err(format!("ffmpeg exit {:?}", status.code()));
+    }
+    Ok(())
 }
 
 #[tauri::command]

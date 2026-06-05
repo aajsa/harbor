@@ -66,3 +66,61 @@ export function mergeMetas(primary: Meta[], extra: Meta[], cap = 20): Meta[] {
   }
   return out.slice(0, cap);
 }
+
+export type AddonResultGroup = {
+  id: string;
+  name: string;
+  logo?: string;
+  metas: Meta[];
+};
+
+const MAX_GROUPS = 8;
+const CAP_PER_GROUP = 14;
+
+export async function searchAddonGroups(addons: Addon[], query: string): Promise<AddonResultGroup[]> {
+  const q = query.trim();
+  if (!q) return [];
+
+  const byAddon = new Map<string, { addon: Addon; targets: Array<{ type: string; id: string }> }>();
+  for (const addon of addons) {
+    for (const c of addon.manifest.catalogs ?? []) {
+      if (!c?.type || !c?.id) continue;
+      if (c.type !== "movie" && c.type !== "series") continue;
+      if (!c.extra?.some((e) => e.name === "search")) continue;
+      const entry = byAddon.get(addon.manifest.id) ?? { addon, targets: [] };
+      entry.targets.push({ type: c.type, id: c.id });
+      byAddon.set(addon.manifest.id, entry);
+    }
+  }
+  if (byAddon.size === 0) return [];
+
+  const entries = [...byAddon.values()].slice(0, MAX_GROUPS);
+  const groups = await Promise.all(
+    entries.map(async ({ addon, targets }): Promise<AddonResultGroup> => {
+      const base = addon.transportUrl.replace(/\/manifest\.json$/, "");
+      const origin = addonOrigin(addon);
+      const settled = await Promise.allSettled(
+        targets.map(async ({ type, id }) => {
+          const url = `${base}/catalog/${type}/${id}/search=${encodeURIComponent(q)}.json`;
+          const res = await safeFetch(url, { headers: { Accept: "application/json" } });
+          if (!res.ok) return [] as Meta[];
+          const json = (await res.json()) as { metas?: Meta[] };
+          return (json.metas ?? []).slice(0, CAP_PER_GROUP);
+        }),
+      );
+      const seen = new Set<string>();
+      const metas: Meta[] = [];
+      for (const r of settled) {
+        if (r.status !== "fulfilled") continue;
+        for (const m of r.value) {
+          if (!m?.id || seen.has(m.id)) continue;
+          seen.add(m.id);
+          metas.push({ ...m, addonOrigin: origin });
+          if (metas.length >= CAP_PER_GROUP) break;
+        }
+      }
+      return { id: origin.id, name: origin.name, logo: origin.logo, metas };
+    }),
+  );
+  return groups.filter((g) => g.metas.length > 0);
+}

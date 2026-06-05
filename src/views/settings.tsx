@@ -9,6 +9,7 @@ import { HotkeysPanel } from "./settings/hotkeys-panel";
 import { PlayerLayoutPanel } from "./settings/player-layout-panel";
 import { QualityPanel } from "./settings/quality-panel";
 import { TraktPanel } from "./settings/trakt-panel";
+import { AnilistPanel } from "./settings/anilist-panel";
 import { RelaySection, type RelayMode } from "./settings/relay-section";
 import { SettingsActiveContext, type SectionId } from "./settings/shared";
 import { StreamingSourcesPanel, type DebridKey } from "./settings/streaming-sources-panel";
@@ -33,6 +34,10 @@ const SECTION_META: Record<SectionId, { label: string; sub: string }> = {
   trakt: {
     label: "Trakt",
     sub: "Connect your Trakt account to scrobble playback, sync your watchlist, and pull personalized recommendations.",
+  },
+  anilist: {
+    label: "AniList",
+    sub: "Connect your AniList account to show your anime lists as rails on the Anime page.",
   },
   relay: {
     label: "Harbor Relay",
@@ -199,6 +204,8 @@ export function Settings() {
           {active === "hotkeys" && <HotkeysPanel />}
 
           {active === "trakt" && <TraktPanel />}
+
+          {active === "anilist" && <AnilistPanel />}
 
           {active === "theme" && <ThemePanel />}
 

@@ -29,8 +29,10 @@ import { useSkipSegments } from "@/lib/skip-intro";
 import { CastMenu } from "@/components/player/cast-menu";
 import { ResumePrompt } from "@/components/player/resume-prompt";
 import { QuickTools } from "@/components/player/quick-tools";
+import { GifRecordPill } from "@/components/player/gif-record-pill";
 import { SkipPillContainer } from "./player/skip-pill-container";
 import { StatsOverlay } from "@/components/player/stats-overlay";
+import { SubStyleBar } from "@/components/player/sub-style-bar";
 import { LiveChannelOverlay } from "@/components/player/live-channel-overlay/overlay";
 import { LiveChannelDvr } from "@/components/player/live-channel-dvr";
 import { StreamCheckPill } from "@/components/player/stream-check-pill";
@@ -160,6 +162,7 @@ import { useKeyboardShortcuts } from "./player/hooks/use-keyboard-shortcuts";
 import { useAutoRetry } from "./player/hooks/use-auto-retry";
 import { useTrackAutoload } from "./player/hooks/use-track-autoload";
 import { useTrickplay } from "./player/hooks/use-trickplay";
+import { applySubStyle } from "@/lib/player/sub-style";
 import { useTraktScrobble } from "@/lib/trakt/scrobble-hook";
 import { useVideoDownload } from "./player/hooks/use-video-download";
 import { setPlayerActions } from "@/lib/player-actions";
@@ -179,6 +182,7 @@ import { useEpisodeNavigation } from "./player/hooks/use-episode-navigation";
 import { useAbLoop } from "./player/hooks/use-ab-loop";
 import { useAutoNextEpisode } from "./player/hooks/use-auto-next-episode";
 import { useFrameGrab } from "./player/hooks/use-frame-grab";
+import { useGifRecorder } from "./player/hooks/use-gif-recorder";
 import { useSleepTimer } from "./player/hooks/use-sleep-timer";
 import { useAutoEndExit } from "./player/hooks/use-auto-end-exit";
 import { usePipMode } from "./player/hooks/use-pip-mode";
@@ -477,8 +481,8 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
   const frameGrab = useFrameGrab({
     bridgeRef,
     src,
-    enabled: quickToolsEnabled,
   });
+  const gif = useGifRecorder({ src });
 
   const { resolvedImdbId } = useTrackAutoload({
     bridgeRef,
@@ -490,6 +494,22 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
   });
 
   useTrickplay({ src, enabled: settings.seekPreviewEnabled });
+  useEffect(() => {
+    if (engine !== "mpv") return;
+    void applySubStyle(settings);
+  }, [
+    engine,
+    settings.subFontSize,
+    settings.subFontColor,
+    settings.subBorderColor,
+    settings.subBorderSize,
+    settings.subMarginY,
+    settings.subAlignX,
+    settings.subAssOverride,
+    settings.subStyle,
+    settings.subFontFamily,
+    settings.subLineSpacing,
+  ]);
   const { captureExitSnapshot } = useExitSnapshot({
     src,
     engine,
@@ -527,7 +547,6 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
     src,
     snap,
     debrids,
-    openPicker,
   });
   const liveOverlay = useLiveChannelOverlay({
     src,
@@ -640,6 +659,8 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
     },
     toggleSleep: () =>
       sleep.mode.kind === "off" ? sleep.set({ kind: "end_episode" }) : sleep.cancel(),
+    onScreenshot: quickToolsEnabled ? () => frameGrab.trigger() : undefined,
+    onGifRecord: quickToolsEnabled ? () => gif.toggle() : undefined,
   });
 
   const cycleSubtitles = () => {
@@ -853,6 +874,7 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
         <SubtitleOverlay text={snap.subText} startSec={snap.subStartSec} scale={pipMode ? 0.45 : 1} />
       )}
       {showStats && !pipMode && <StatsOverlay snap={snap} engine={engine} />}
+      {!pipMode && <SubStyleBar />}
       <CastMenu
         open={castMenuOpen}
         anchor={castMenuAnchor}
@@ -1062,6 +1084,15 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
           visible={showChrome}
           ab={ab}
           toast={frameGrab.toast}
+          gifToast={gif.toast}
+        />
+      )}
+      {!pipMode && !drawMode && (
+        <GifRecordPill
+          state={gif.state}
+          elapsedSec={gif.elapsedSec}
+          onStop={gif.stop}
+          onAbort={gif.abort}
         />
       )}
 
@@ -1120,8 +1151,8 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
           void bridgeRef.current?.addSubtitle(url, lang, title);
         }}
         onRate={(r) => {
-          writePlayerPrefs(src.meta.id, { rate: r });
           bridgeRef.current?.setRate(r);
+          writePlayerPrefs(src.meta.id, { rate: r });
         }}
         onPiP={() => togglePipMode()}
         onFullscreen={toggleFullscreen}

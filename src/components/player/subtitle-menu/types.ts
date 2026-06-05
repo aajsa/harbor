@@ -14,6 +14,7 @@ export type SubtitleMenuProps = {
   episode?: number | null;
   useOverlayPopup?: boolean;
   onOpenChange?: (open: boolean) => void;
+  onOpenStyleBar?: () => void;
 };
 
 export type Group = { langKey: string; langDisplay: string; variants: TrackInfo[] };

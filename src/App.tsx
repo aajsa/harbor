@@ -33,6 +33,8 @@ import { TogetherHostLeavingPrompt } from "@/components/together-host-leaving-pr
 import { TogetherInviteToast } from "@/components/together-invite-toast";
 import { TogetherSummonToast } from "@/components/together-summon-toast";
 import { TogetherParticipantLeftToast } from "@/components/together-participant-left-toast";
+import { AnilistSyncToast } from "@/components/anilist/anilist-sync-toast";
+import { AnilistAvatarSync } from "@/components/anilist/anilist-avatar-sync";
 import { TogetherLeaveForLiveModal } from "@/components/together-leave-for-live-modal";
 import { ThemeBackdrop } from "@/components/theme-backdrop";
 import { TopRankModal } from "@/components/top-rank-modal";
@@ -57,6 +59,7 @@ import { useDiscordPresence } from "@/lib/discord/use-discord-presence";
 import { Home } from "@/views/home";
 import { ParentalProvider } from "@/lib/parental";
 import { TraktProvider } from "@/lib/trakt/provider";
+import { AnilistProvider } from "@/lib/anilist/provider";
 
 const importAnime = () => import("@/views/anime");
 const importCalendar = () => import("@/views/calendar");
@@ -142,6 +145,7 @@ const PRESSURE_EVICT_MS = 1500;
 
 function useKeepAlive(active: boolean, requested: boolean): boolean {
   const [mounted, setMounted] = useState(active && requested);
+  if (requested && active && !mounted) setMounted(true);
   useEffect(() => {
     if (!requested) {
       setMounted(false);
@@ -160,6 +164,7 @@ function useKeepAlive(active: boolean, requested: boolean): boolean {
 function useIdleEvict(active: boolean, pin = false): boolean {
   const [alive, setAlive] = useState(active);
   const [pressure, setPressure] = useState(false);
+  if ((active || pin) && !alive) setAlive(true);
   useEffect(() => subscribeMemoryPressure(setPressure), []);
   useEffect(() => {
     if (active || pin) {
@@ -180,6 +185,7 @@ export function App() {
       <ProfilesProvider>
       <ParentalProvider>
       <TraktProvider>
+      <AnilistProvider>
       <RankingsProvider>
         <AuthProvider>
           <OnboardingProvider>
@@ -192,6 +198,7 @@ export function App() {
                   <TopRankModalProvider>
                     <HarborErrorBoundary>
                       <ProfileIdentitySync />
+                      <AnilistAvatarSync />
                       <ThemeBackdrop />
                       <WatchlistSync />
                       <Shell />
@@ -203,6 +210,7 @@ export function App() {
                       <TogetherHostLeavingPrompt />
                       <TogetherSummonToast />
                       <TogetherParticipantLeftToast />
+                      <AnilistSyncToast />
                       <TogetherLeaveForLiveModal />
                       <TogetherLocationPublisher />
                       <DiscordPresence />
@@ -226,6 +234,7 @@ export function App() {
           </OnboardingProvider>
         </AuthProvider>
       </RankingsProvider>
+      </AnilistProvider>
       </TraktProvider>
       </ParentalProvider>
       </ProfilesProvider>

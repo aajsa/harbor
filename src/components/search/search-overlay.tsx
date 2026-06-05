@@ -11,6 +11,7 @@ import { LiveTvRow } from "./live-tv-row";
 import { TopMatch } from "./top-match";
 import { PeopleRow } from "./people-row";
 import { MetaList } from "./meta-list";
+import { AddonResults } from "./addon-results";
 import { MagnetCard } from "./magnet-card";
 import { isMagnetInput } from "@/lib/torrent/magnet";
 
@@ -66,7 +67,8 @@ export function SearchOverlay() {
       results.movies.length ||
       results.series.length ||
       results.liveTv.length ||
-      results.anime.length);
+      results.anime.length ||
+      results.addonGroups.length);
   const noResults =
     results &&
     trimmed &&
@@ -76,7 +78,8 @@ export function SearchOverlay() {
     results.movies.length === 0 &&
     results.series.length === 0 &&
     results.liveTv.length === 0 &&
-    results.anime.length === 0;
+    results.anime.length === 0 &&
+    results.addonGroups.length === 0;
 
   return createPortal(
     <div className="fixed inset-0 z-[200] flex flex-col">
@@ -163,6 +166,7 @@ export function SearchOverlay() {
                 <MetaList title="Series" items={results.series} onClose={close} />
               </div>
               <AnimeRow items={results.anime} onClose={close} />
+              <AddonResults groups={results.addonGroups} onClose={close} />
             </div>
           )}
 

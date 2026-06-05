@@ -24,16 +24,14 @@ export async function cinemetaImdbFallback(
     const data = (await res.json()) as { metas?: Array<{ id: string; name: string; releaseInfo?: string }> };
     const metas = Array.isArray(data?.metas) ? data.metas : [];
     const wantNorm = name.trim().toLowerCase();
-    let best: { id: string; score: number } | null = null;
     for (const m of metas) {
       if (!m.id?.startsWith("tt")) continue;
-      const nameMatch = (m.name ?? "").trim().toLowerCase() === wantNorm ? 2 : 0;
-      const yearMatch =
-        targetYear && m.releaseInfo && parseInt(m.releaseInfo, 10) === targetYear ? 1 : 0;
-      const score = nameMatch + yearMatch;
-      if (!best || score > best.score) best = { id: m.id, score };
+      if ((m.name ?? "").trim().toLowerCase() !== wantNorm) continue;
+      const entryYear = m.releaseInfo ? parseInt(m.releaseInfo, 10) : null;
+      if (targetYear != null && entryYear != null && Math.abs(entryYear - targetYear) > 1) continue;
+      return m.id;
     }
-    return best?.id ?? metas[0]?.id ?? null;
+    return null;
   } catch {
     return null;
   }

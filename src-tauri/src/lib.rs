@@ -46,6 +46,17 @@ async fn deeplink_is_stremio_registered(app: tauri::AppHandle) -> Result<bool, S
         .map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+async fn save_text_file(path: String, contents: String) -> Result<(), String> {
+    let target = std::path::PathBuf::from(&path);
+    if let Some(parent) = target.parent() {
+        if !parent.as_os_str().is_empty() {
+            std::fs::create_dir_all(parent).map_err(|e| format!("create folder: {}", e))?;
+        }
+    }
+    std::fs::write(&target, contents.as_bytes()).map_err(|e| format!("write file: {}", e))
+}
+
 #[cfg(windows)]
 fn make_main_transparent(app: &tauri::AppHandle) {
     use tauri::Manager;
@@ -197,11 +208,14 @@ pub fn run() {
     let multiview_state = multiview::MultiviewState::new();
     let modal_overlay_state = modal_overlay::ModalOverlayState::new();
     let app_builder = tauri::Builder::default()
-        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
-            use tauri::Manager;
+        .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
+            use tauri::{Emitter, Manager};
             if let Some(w) = app.get_webview_window("main") {
                 let _ = w.unminimize();
                 let _ = w.set_focus();
+            }
+            if let Some(url) = args.iter().find(|a| a.starts_with("harbor://")) {
+                let _ = app.emit("harbor:stremio-deeplink", url.clone());
             }
         }))
         .plugin(tauri_plugin_opener::init())
@@ -279,6 +293,7 @@ pub fn run() {
             harbor_set_webview_visible,
             harbor_try_suspend_webview,
             harbor_resume_webview,
+            save_text_file,
             proc_mem::harbor_process_memory,
             trailer::fetch_trailer,
             stream_proxy::proxy_register,
@@ -299,6 +314,9 @@ pub fn run() {
             mpv::mpv_on_pip_changed,
             mpv::mpv_screenshot_data_url,
             mpv::mpv_save_screenshot,
+            mpv::mpv_gif_start,
+            mpv::mpv_gif_stop,
+            mpv::mpv_gif_abort,
             modal_overlay::modal_overlay_open,
             modal_overlay::modal_overlay_close,
             modal_overlay::modal_overlay_emit_state,

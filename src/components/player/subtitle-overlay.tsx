@@ -26,7 +26,7 @@ export function SubtitleOverlay({ text, startSec, scale = 1 }: Props) {
     fontWeight: 600,
     fontSize: `${fontSize}px`,
     lineHeight: 1.2,
-    letterSpacing: "-0.005em",
+    letterSpacing: `${(-0.005 + (settings.subLineSpacing ?? 0) * 0.06).toFixed(3)}em`,
     whiteSpace: "pre-wrap",
     textAlign: align as "left" | "center" | "right",
   };

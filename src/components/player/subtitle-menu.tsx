@@ -2,6 +2,7 @@ import { Subtitles as SubsIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { modalOverlayClose, modalOverlayEmitState, modalOverlayOpen } from "@/lib/modal-overlay";
+import { openStyleBar } from "@/lib/player/sub-presets";
 import { MenuBody } from "./subtitle-menu/menu-body";
 import type { SubtitleMenuProps } from "./subtitle-menu/types";
 import { buildOverlayState } from "./subtitle-menu/utils";
@@ -107,7 +108,7 @@ export function SubtitleMenu(props: Props) {
 
   return (
     <div ref={wrap} className="relative">
-      <Tooltip label="Subtitles (S)">
+      <Tooltip label="Subtitles">
         <button
           type="button"
           onClick={handleClick}
@@ -124,7 +125,7 @@ export function SubtitleMenu(props: Props) {
       </Tooltip>
       {open && (forceInline || !useOverlay) && (
         <div className="absolute bottom-[calc(100%+10px)] right-0 flex h-[400px] max-h-[72vh] w-[500px] max-w-[calc(100vw-32px)] flex-col overflow-hidden rounded-2xl border border-edge bg-elevated/97 shadow-[0_24px_60px_-18px_rgba(0,0,0,0.8)] backdrop-blur-xl">
-          <MenuBody {...props} onClose={() => setOpen(false)} />
+          <MenuBody {...props} onClose={() => setOpen(false)} onOpenStyleBar={openStyleBar} />
         </div>
       )}
     </div>

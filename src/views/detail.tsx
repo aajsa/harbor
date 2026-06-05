@@ -37,6 +37,7 @@ import { openUrl } from "@/lib/window";
 import { profileFromDetail, trackEvent } from "@/lib/discover";
 import { MOVIE_GENRES, TV_GENRES } from "@/lib/feed/tags";
 import { useScrollMemory, useView } from "@/lib/view";
+import { AddToAnilistButton } from "./detail/add-to-anilist-button";
 import { isTitleUpcoming } from "./detail/helpers";
 import { HeroAwardsCorner } from "./detail/hero-awards";
 import { CrunchyrollAwardsCorner } from "./detail/crunchyroll-corner";
@@ -149,10 +150,13 @@ export function DetailView({ meta, liveContext = false }: { meta: Meta; liveCont
   }, [idAnime, detectedKitsu, addonNative, meta.id, detail?.imdbId]);
 
   useEffect(() => {
-    if (!detail?.imdbId || !detail.imdbId.startsWith("tt")) return;
+    if (meta.type !== "series") return;
+    const imdb =
+      meta.id.startsWith("tt") ? meta.id : detail?.imdbId?.startsWith("tt") ? detail.imdbId : null;
+    if (!imdb) return;
     if (cinemetaFull?.videos && cinemetaFull.videos.length > 0) return;
     let cancelled = false;
-    fetchCinemetaMeta(narrowMediaType(meta.type), detail.imdbId)
+    fetchCinemetaMeta(narrowMediaType(meta.type), imdb)
       .then((full) => {
         if (cancelled || !full) return;
         setCinemetaFull(full);
@@ -161,7 +165,7 @@ export function DetailView({ meta, liveContext = false }: { meta: Meta; liveCont
     return () => {
       cancelled = true;
     };
-  }, [detail?.imdbId, meta.type, cinemetaFull?.videos?.length]);
+  }, [meta.id, detail?.imdbId, meta.type, cinemetaFull?.videos?.length]);
 
   useEffect(() => {
     setLibraryItem(null);
@@ -196,7 +200,8 @@ export function DetailView({ meta, liveContext = false }: { meta: Meta; liveCont
       const local = readResumeEntry(meta.id);
       if (!local || stremioT > local.t) {
         saveResumeMs(meta.id, st.timeOffset);
-        console.info(`[stremio-resume] movie ${meta.id}: synced ${st.timeOffset}ms from Stremio (mtime=${libraryItem._mtime})`);
+        if (import.meta.env.DEV)
+          console.info(`[stremio-resume] movie ${meta.id}: synced ${st.timeOffset}ms from Stremio (mtime=${libraryItem._mtime})`);
       }
       return;
     }
@@ -204,7 +209,8 @@ export function DetailView({ meta, liveContext = false }: { meta: Meta; liveCont
       const local = readResumeEntry(meta.id, st.season, st.episode);
       if (!local || stremioT > local.t) {
         saveResumeMs(meta.id, st.timeOffset, st.season, st.episode);
-        console.info(`[stremio-resume] series ${meta.id} S${st.season}E${st.episode}: synced ${st.timeOffset}ms from Stremio (mtime=${libraryItem._mtime})`);
+        if (import.meta.env.DEV)
+          console.info(`[stremio-resume] series ${meta.id} S${st.season}E${st.episode}: synced ${st.timeOffset}ms from Stremio (mtime=${libraryItem._mtime})`);
       }
     }
   }, [libraryItem, meta.id]);
@@ -348,8 +354,23 @@ export function DetailView({ meta, liveContext = false }: { meta: Meta; liveCont
         ? `Season ${seasonPillTag.seasonNum} of ${seasonPillCount}`
         : `Season ${seasonPillTag.seasonNum}`;
 
-  const lastPlay = useMemo(() => lastPlayedEpisode(meta.id), [meta.id]);
-  const smartPlay = useCallback(() => {
+  const lastPlay = useMemo(() => {
+    const st = libraryItem?.state;
+    if (
+      !isAnime &&
+      libraryItem?.type === "series" &&
+      st &&
+      typeof st.season === "number" &&
+      typeof st.episode === "number" &&
+      st.season >= 1 &&
+      st.episode >= 1 &&
+      (st.timeOffset ?? 0) > 0
+    ) {
+      return { season: st.season, episode: st.episode };
+    }
+    return lastPlayedEpisode(meta.id);
+  }, [meta.id, libraryItem, isAnime]);
+  const smartPlay = useCallback(async () => {
     if (inSession) claimHost(true);
     if (!isSeries) {
       openPicker(playMeta, undefined, { autoPlay: settings.instantPlay });
@@ -390,8 +411,27 @@ export function DetailView({ meta, liveContext = false }: { meta: Meta; liveCont
       );
       return;
     }
+    if (authKey) {
+      const lookupId =
+        meta.id.startsWith("tt") ? meta.id : detail?.imdbId?.startsWith("tt") ? detail.imdbId : null;
+      if (lookupId) {
+        const item = await libraryGetOne(authKey, lookupId).catch(() => null);
+        const st = item?.state;
+        if (
+          st &&
+          typeof st.season === "number" &&
+          typeof st.episode === "number" &&
+          st.season >= 1 &&
+          st.episode >= 1 &&
+          (st.timeOffset ?? 0) > 0
+        ) {
+          openPicker(playMeta, { season: st.season, episode: st.episode }, { autoPlay: settings.instantPlay });
+          return;
+        }
+      }
+    }
     openPicker(playMeta, { season: 1, episode: 1 }, { autoPlay: settings.instantPlay });
-  }, [isSeries, isAnime, animeEpisodes, lastPlay, openPicker, playMeta, settings.instantPlay, inSession, claimHost]);
+  }, [isSeries, isAnime, animeEpisodes, lastPlay, openPicker, playMeta, settings.instantPlay, inSession, claimHost, authKey, meta.id, detail?.imdbId]);
   const smartPlayLabel = inSession && !liveContext
     ? "Play Together"
     : isSeries && lastPlay
@@ -576,6 +616,12 @@ export function DetailView({ meta, liveContext = false }: { meta: Meta; liveCont
                     </>
                   )}
                 </button>
+                {isAnime && (
+                  <AddToAnilistButton
+                    harborId={animeCanonicalId ?? meta.id}
+                    title={title || meta.name}
+                  />
+                )}
                 {trailerCandidate && (
                   <button
                     type="button"
@@ -660,7 +706,7 @@ export function DetailView({ meta, liveContext = false }: { meta: Meta; liveCont
         )}
 
         {!liveContext &&
-          !detail &&
+          (!detail || detail.seasons.length === 0) &&
           !isAnime &&
           isSeries &&
           !addonNative &&

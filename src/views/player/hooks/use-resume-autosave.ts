@@ -1,16 +1,21 @@
 import { useEffect, useRef } from "react";
+import { markAnimeWatching, syncAnimeProgress } from "@/lib/anilist/sync";
 import { profileFromMeta } from "@/lib/discover/profile";
 import { trackEvent } from "@/lib/discover/store";
 import { savePlayback } from "@/lib/playback-history";
 import { saveResumeMs } from "@/lib/resume";
 import type { PlayerSnapshot } from "@/lib/player/bridge";
 import { getPlaybackPosition } from "@/lib/player/playback-clock";
+import { useSettings } from "@/lib/settings";
 import type { PlayerSrc } from "@/lib/view";
 
 const TICK_MS = 4000;
 const MIN_POSITION_SEC = 5;
 const TASTE_MIN_SEC = 90;
 const WATCHED_RATIO = 0.85;
+
+const isAnimeId = (id: string) =>
+  id.startsWith("kitsu:") || id.startsWith("mal:") || id.startsWith("anilist:");
 
 export function useResumeAutosave(params: {
   src: PlayerSrc;
@@ -19,8 +24,11 @@ export function useResumeAutosave(params: {
   episode: number | undefined;
 }) {
   const { src, snap, season, episode } = params;
+  const { settings } = useSettings();
   const lastSavedRef = useRef(0);
   const taughtRef = useRef<Set<string>>(new Set());
+  const autoSyncRef = useRef(settings.anilistAutoSync);
+  autoSyncRef.current = settings.anilistAutoSync;
   const latestRef = useRef({ src, snap, season, episode });
   latestRef.current = { src, snap, season, episode };
 
@@ -33,7 +41,13 @@ export function useResumeAutosave(params: {
     saveResumeMs(id, pos * 1000, se, ep);
     savePlayback(id, { title: s.meta.name, parsedTitle: s.meta.name }, se, ep);
     if (pos < TASTE_MIN_SEC) return;
+    if (autoSyncRef.current && isAnimeId(id)) {
+      void markAnimeWatching(id, s.meta.name);
+    }
     const ratio = sn.durationSec > 0 ? pos / sn.durationSec : 0;
+    if (ratio >= WATCHED_RATIO && autoSyncRef.current && isAnimeId(id)) {
+      void syncAnimeProgress(id, ep, s.meta.name);
+    }
     const kind = ratio >= WATCHED_RATIO ? "watched" : "play";
     const key = `${id}|${kind}`;
     if (taughtRef.current.has(key)) return;

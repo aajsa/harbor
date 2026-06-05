@@ -1,17 +1,22 @@
+use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Emitter, Manager, State};
 
-pub struct FullscreenState;
+pub struct FullscreenState {
+    saved: Arc<Mutex<Option<(i32, i32, u32, u32)>>>,
+}
 
 impl FullscreenState {
     pub fn new() -> Self {
-        Self
+        Self {
+            saved: Arc::new(Mutex::new(None)),
+        }
     }
 }
 
 #[tauri::command]
 pub async fn window_fullscreen_enter(
     app: AppHandle,
-    _state: State<'_, FullscreenState>,
+    state: State<'_, FullscreenState>,
 ) -> Result<(), String> {
     let main = app
         .get_webview_window("main")
@@ -19,8 +24,20 @@ pub async fn window_fullscreen_enter(
 
     let already_fs = main.is_fullscreen().unwrap_or(false);
     if !already_fs {
+        if let (Ok(pos), Ok(sz)) = (main.outer_position(), main.inner_size()) {
+            *state.saved.lock().unwrap() = Some((pos.x, pos.y, sz.width, sz.height));
+        }
         if main.is_maximized().unwrap_or(false) {
             let _ = main.unmaximize();
+        }
+        if let Ok(Some(mon)) = main.current_monitor() {
+            let pos = mon.position();
+            let size = mon.size();
+            let _ = main.set_position(tauri::PhysicalPosition { x: pos.x, y: pos.y });
+            let _ = main.set_size(tauri::PhysicalSize {
+                width: size.width,
+                height: size.height,
+            });
         }
         main.set_fullscreen(true)
             .map_err(|e| format!("set_fullscreen(true): {}", e))?;
@@ -33,7 +50,7 @@ pub async fn window_fullscreen_enter(
 #[tauri::command]
 pub async fn window_fullscreen_exit(
     app: AppHandle,
-    _state: State<'_, FullscreenState>,
+    state: State<'_, FullscreenState>,
 ) -> Result<(), String> {
     let main = app
         .get_webview_window("main")
@@ -43,6 +60,10 @@ pub async fn window_fullscreen_exit(
     if is_fs {
         main.set_fullscreen(false)
             .map_err(|e| format!("set_fullscreen(false): {}", e))?;
+        if let Some((x, y, w, h)) = state.saved.lock().unwrap().take() {
+            let _ = main.set_size(tauri::PhysicalSize { width: w, height: h });
+            let _ = main.set_position(tauri::PhysicalPosition { x, y });
+        }
     }
     let _ = app.emit_to("main", "fs://exited", ());
     Ok(())

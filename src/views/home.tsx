@@ -21,7 +21,7 @@ import { type Meta } from "@/lib/cinemeta";
 import { useSettings, type StreamingService } from "@/lib/settings";
 import { trackEvent } from "@/lib/discover";
 import { saveResumeMs } from "@/lib/resume";
-import { library, type LibraryItem } from "@/lib/stremio";
+import { library, libraryPut, type LibraryItem } from "@/lib/stremio";
 import { useTrakt } from "@/lib/trakt/provider";
 import { buildTraktHomeRows } from "@/lib/trakt/home-rails";
 import { fetchWatchedKeySet } from "@/lib/trakt/history";
@@ -50,6 +50,7 @@ export function Home({ active = true }: { active?: boolean }) {
   const [traktWatched, setTraktWatched] = useState<Set<string>>(() => new Set());
   const [heroPool, setHeroPool] = useState<Meta[]>([]);
   const [items, setItems] = useState<LibraryItem[]>([]);
+  const [dismissed, setDismissed] = useState<Set<string>>(() => new Set());
   const [tmdbProvidedByAddon, setTmdbProvidedByAddon] = useState(false);
   const { isConnected: traktConnected } = useTrakt();
   const rowsRef = useRef<HomeRow[]>([]);
@@ -222,6 +223,7 @@ export function Home({ active = true }: { active?: boolean }) {
     const eligible = items
       .filter(
         (i) =>
+          !dismissed.has(i._id) &&
           (!i.removed || i.temp) &&
           i.state &&
           i.state.timeOffset > 0,
@@ -241,7 +243,23 @@ export function Home({ active = true }: { active?: boolean }) {
       if (out.length >= 20) break;
     }
     return out;
-  }, [items]);
+  }, [items, dismissed]);
+
+  const onDismissCw = useCallback(
+    (id: string) => {
+      setDismissed((prev) => new Set(prev).add(id));
+      if (!authKey) return;
+      const target = items.find((i) => i._id === id);
+      if (!target) return;
+      void libraryPut(authKey, {
+        ...target,
+        removed: true,
+        temp: false,
+        _mtime: new Date().toISOString(),
+      }).catch(() => {});
+    },
+    [authKey, items],
+  );
 
   const heroSlides = useMemo<Slide[]>(() => {
     const seen = new Set<string>();
@@ -397,6 +415,7 @@ export function Home({ active = true }: { active?: boolean }) {
               signedIn={!!authKey}
               items={continueWatching}
               watchedSet={traktWatched}
+              onDismiss={onDismissCw}
             />
           </div>
           {settings.homeMode !== "classic" && (

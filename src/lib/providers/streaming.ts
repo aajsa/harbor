@@ -28,7 +28,7 @@ export const SERVICES: Record<StreamingService, Service> = {
   },
   hulu: { id: 15, name: "Hulu", logo: "/services/hulu.svg", tint: "#1CE783" },
   prime: { id: 9, providerIds: [9, 119], name: "Prime Video", logo: "/services/prime.svg", tint: "#00A8E1" },
-  apple: { id: 350, providerIds: [350, 2], name: "Apple TV+", logo: "/services/apple.svg", tint: "#FFFFFF" },
+  apple: { id: 350, name: "Apple TV+", logo: "/services/apple.svg", tint: "#FFFFFF" },
   max: { id: 1899, providerIds: [1899, 384], name: "Max", logo: "/services/max.svg", tint: "#9B6CFF" },
   paramount: {
     id: 531,

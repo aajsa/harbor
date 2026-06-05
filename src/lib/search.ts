@@ -2,6 +2,7 @@ import { get } from "@/lib/providers/tmdb/tmdb-client";
 import { movieMeta, seriesMeta, type Page, type RawMovie, type RawSeries } from "@/lib/providers/tmdb/tmdb-meta-mappers";
 import { MOVIE_GENRES, TV_GENRES } from "@/lib/feed/tags";
 import type { Meta } from "@/lib/cinemeta";
+import type { AddonResultGroup } from "@/lib/search-addons";
 import { getCachedPlaylist } from "@/lib/iptv/store";
 import type { Settings } from "@/lib/settings";
 import { safeFetch } from "@/lib/safe-fetch";
@@ -57,6 +58,7 @@ export type SearchResults = {
   series: Meta[];
   liveTv: LiveTvHit[];
   anime: AnimeHit[];
+  addonGroups: AddonResultGroup[];
   intent: SearchIntent;
 };
 
@@ -137,6 +139,20 @@ export async function searchAnime(query: string, limit = 8): Promise<AnimeHit[]>
   }
 }
 
+export async function searchCinemeta(query: string): Promise<{ movies: Meta[]; series: Meta[] }> {
+  const q = query.trim();
+  if (q.length < 2) return { movies: [], series: [] };
+  const fetchKind = async (type: "movie" | "series"): Promise<Meta[]> => {
+    const url = `https://v3-cinemeta.strem.io/catalog/${type}/top/search=${encodeURIComponent(q)}.json`;
+    const res = await safeFetch(url, { headers: { Accept: "application/json" } }).catch(() => null);
+    if (!res || !res.ok) return [];
+    const data = (await res.json().catch(() => null)) as { metas?: Meta[] } | null;
+    return (data?.metas ?? []).slice(0, 12);
+  };
+  const [movies, series] = await Promise.all([fetchKind("movie"), fetchKind("series")]);
+  return { movies, series };
+}
+
 export async function searchAll(
   key: string,
   query: string,
@@ -144,10 +160,10 @@ export async function searchAll(
 ): Promise<SearchResults> {
   const trimmed = query.trim();
   if (!trimmed) {
-    return { query: "", topMatch: null, people: [], movies: [], series: [], liveTv: [], anime: [], intent: null };
+    return { query: "", topMatch: null, people: [], movies: [], series: [], liveTv: [], anime: [], addonGroups: [], intent: null };
   }
   if (!key) {
-    return { query: trimmed, topMatch: null, people: [], movies: [], series: [], liveTv: [], anime: [], intent: detectIntent(trimmed) };
+    return { query: trimmed, topMatch: null, people: [], movies: [], series: [], liveTv: [], anime: [], addonGroups: [], intent: detectIntent(trimmed) };
   }
 
   const data = await get<Page<MultiItem>>(key, "search/multi", {
@@ -234,6 +250,7 @@ export async function searchAll(
     series: series.slice(0, 12),
     liveTv: [],
     anime: [],
+    addonGroups: [],
     intent: detectIntent(trimmed),
   };
 }

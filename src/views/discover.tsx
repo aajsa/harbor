@@ -18,6 +18,7 @@ import { useDedupedRows } from "./discover/use-deduped-rows";
 import { ANCHOR_AWARDS, ANCHOR_TOP_RATED } from "@/lib/feed/daily-rows-anchors";
 
 const MAX_RAIL_PAGES = 10;
+const MIN_PAGE_YIELD = 4;
 const ROW_COUNT = 14;
 const DEDUP_PRIORITY = [ANCHOR_TOP_RATED, ANCHOR_AWARDS];
 
@@ -137,7 +138,7 @@ export function Discover({ active = true }: { active?: boolean }) {
         .then((list) => {
           if (cancelled) return;
           railPagesRef.current[rail.id] = 1;
-          if (list.length < 18) railExhaustedRef.current[rail.id] = true;
+          if (list.length < MIN_PAGE_YIELD) railExhaustedRef.current[rail.id] = true;
           setRails((prev) => ({ ...prev, [rail.id]: list }));
         })
         .catch(() => {
@@ -167,7 +168,7 @@ export function Discover({ active = true }: { active?: boolean }) {
         .fetch(next)
         .then((list) => {
           railPagesRef.current[railId] = next;
-          if (list.length < 18) railExhaustedRef.current[railId] = true;
+          if (list.length < MIN_PAGE_YIELD) railExhaustedRef.current[railId] = true;
           setRails((prev) => ({ ...prev, [railId]: [...(prev[railId] ?? []), ...list] }));
         })
         .catch(() => {})

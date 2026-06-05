@@ -2,7 +2,7 @@
 
 use std::ffi::{c_char, c_void, CString};
 use std::ptr::NonNull;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
 
 use libmpv2::render::{OpenGLInitParams, RenderContext, RenderParam, RenderParamApiType};
@@ -120,8 +120,6 @@ pub fn install(mpv_ctx: NonNull<mpv_handle>, ns_window_ptr: i64) -> Result<(), S
         let view = view.ok_or_else(|| "NSOpenGLView init failed".to_string())?;
         let _: () = msg_send![&*view, setWantsBestResolutionOpenGLSurface: true];
         let view_as_view: &NSView = view.as_super();
-        let mask = NS_VIEW_AUTORESIZE_WIDTH | NS_VIEW_AUTORESIZE_HEIGHT;
-        let _: () = msg_send![view_as_view, setAutoresizingMask: mask];
 
         let subviews = content_view.subviews();
         let first_subview: Option<Retained<NSView>> = subviews.firstObject();
@@ -134,6 +132,8 @@ pub fn install(mpv_ctx: NonNull<mpv_handle>, ns_window_ptr: i64) -> Result<(), S
         } else {
             content_view.addSubview(view_as_view);
         }
+        let mask = NS_VIEW_AUTORESIZE_WIDTH | NS_VIEW_AUTORESIZE_HEIGHT;
+        let _: () = msg_send![view_as_view, setAutoresizingMask: mask];
 
         let gl_ctx = view
             .openGLContext()
@@ -225,7 +225,9 @@ pub fn make_resizable(ns_window_ptr: i64) -> Result<(), String> {
         let raw_window: *mut AnyObject = ns_window_ptr as *mut AnyObject;
         let ns_window: &NSWindow = &*(raw_window as *const NSWindow);
         let current: usize = msg_send![ns_window, styleMask];
-        let _: () = msg_send![ns_window, setStyleMask: current | (1usize << 3)];
+        let resizable = 1usize << 3;
+        let miniaturizable = 1usize << 2;
+        let _: () = msg_send![ns_window, setStyleMask: current | resizable | miniaturizable];
     }
     Ok(())
 }
@@ -242,6 +244,15 @@ pub fn resize_to(x: f64, y: f64, w: f64, h: f64) -> Result<(), String> {
         let parent = view_as_view
             .superview()
             .ok_or_else(|| "GL view has no superview".to_string())?;
+        let scale = parent
+            .window()
+            .map(|win| win.backingScaleFactor())
+            .filter(|s| *s > 0.0)
+            .unwrap_or(1.0);
+        let x = x / scale;
+        let y = y / scale;
+        let w = w / scale;
+        let h = h / scale;
         let parent_h = parent.bounds().size.height;
         let flipped_y = parent_h - y - h;
         let frame = objc2_foundation::NSRect {
@@ -251,7 +262,11 @@ pub fn resize_to(x: f64, y: f64, w: f64, h: f64) -> Result<(), String> {
         view_as_view.setFrame(frame);
         let mask: usize = 0;
         let _: () = msg_send![view_as_view, setAutoresizingMask: mask];
+        if let Some(gl_ctx) = embed.view.openGLContext() {
+            let _: () = msg_send![&*gl_ctx, update];
+        }
     }
+    schedule_redraw();
     Ok(())
 }
 
@@ -268,14 +283,27 @@ pub fn render_now() -> Result<(), String> {
         gl_ctx.makeCurrentContext();
         let view_as_view: &NSView = embed.view.as_super();
         let bounds = view_as_view.bounds();
-        let scale = view_as_view
-            .window()
-            .map(|w| w.backingScaleFactor())
-            .unwrap_or(1.0);
-        let w = (bounds.size.width * scale) as i32;
-        let h = (bounds.size.height * scale) as i32;
+        let backing: objc2_foundation::NSRect = msg_send![view_as_view, convertRectToBacking: bounds];
+        let mut w = backing.size.width as i32;
+        let mut h = backing.size.height as i32;
+        if w <= 0 || h <= 0 {
+            let scale = view_as_view
+                .window()
+                .map(|win| win.backingScaleFactor())
+                .filter(|s| *s > 0.0)
+                .unwrap_or(2.0);
+            w = (bounds.size.width * scale) as i32;
+            h = (bounds.size.height * scale) as i32;
+        }
         if w <= 0 || h <= 0 {
             return Ok(());
+        }
+        let packed = ((w as u64) << 32) | (h as u32 as u64);
+        if LAST_SURFACE.swap(packed, Ordering::Relaxed) != packed {
+            eprintln!(
+                "[harbor::mpv_mac] render surface {}x{} px (bounds {}x{} pt)",
+                w, h, bounds.size.width as i32, bounds.size.height as i32
+            );
         }
         let render = embed
             .render
@@ -320,6 +348,7 @@ fn get_proc_address(_ctx: &(), name: &str) -> *mut c_void {
 }
 
 static REDRAW_PENDING: AtomicBool = AtomicBool::new(false);
+static LAST_SURFACE: AtomicU64 = AtomicU64::new(0);
 
 fn schedule_redraw() {
     if REDRAW_PENDING.swap(true, Ordering::AcqRel) {

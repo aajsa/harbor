@@ -23,8 +23,9 @@ export function useTopStreamVerify(params: {
   useEffect(() => {
     if (!enabled) return;
     const targets = candidates
-      .slice(0, VERIFY_COUNT)
-      .filter((s): s is ScoredStream & { url: string } => typeof s.url === "string" && s.url.length > 0);
+      .filter((s): s is ScoredStream & { url: string } =>
+        typeof s.url === "string" && s.url.length > 0 && !s.infoHash)
+      .slice(0, VERIFY_COUNT);
     if (targets.length === 0) return;
     const ac = new AbortController();
     let cancelled = false;

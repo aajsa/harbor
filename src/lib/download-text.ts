@@ -9,10 +9,10 @@ export async function downloadText(
   if (IS_TAURI) {
     try {
       const { save } = await import("@tauri-apps/plugin-dialog");
-      const { writeTextFile } = await import("@tauri-apps/plugin-fs");
+      const { invoke } = await import("@tauri-apps/api/core");
       const path = await save({ defaultPath: filename, filters: [{ name: label, extensions }] });
       if (!path) return false;
-      await writeTextFile(path, text);
+      await invoke("save_text_file", { path, contents: text });
       return true;
     } catch (err) {
       console.warn("[harbor] native save failed, falling back", err);

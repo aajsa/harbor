@@ -1,4 +1,4 @@
-import { Check, Loader2, Search as SearchIcon, X } from "lucide-react";
+import { Check, Loader2, Search as SearchIcon, SlidersHorizontal, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Flag } from "@/components/flag";
 import type { TrackInfo } from "@/lib/player/bridge";
@@ -11,7 +11,7 @@ import { groupByLang, isVeryNewRelease } from "./utils";
 type SourceFilter = "all" | "embedded" | "external";
 
 export function MenuBody(props: SubtitleMenuProps & { onClose: () => void }) {
-  const { tracks, selectedId, onSelect, onClose, delaySec, onDelay, metaReleaseDate } = props;
+  const { tracks, selectedId, onSelect, onClose, delaySec, onDelay, metaReleaseDate, onOpenStyleBar } = props;
   const groups = useMemo(() => groupByLang(tracks), [tracks]);
   const [searchSettled, setSearchSettled] = useState(false);
   const [activeLang, setActiveLang] = useState<string | null>(null);
@@ -69,13 +69,28 @@ export function MenuBody(props: SubtitleMenuProps & { onClose: () => void }) {
             </span>
           )}
         </div>
-        <button
-          onClick={onClose}
-          aria-label="Close"
-          className="flex h-7 w-7 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-raised hover:text-ink"
-        >
-          <X size={13} strokeWidth={2.2} />
-        </button>
+        <div className="flex items-center gap-1">
+          {onOpenStyleBar && (
+            <button
+              type="button"
+              onClick={() => {
+                onOpenStyleBar();
+                onClose();
+              }}
+              aria-label="Subtitle appearance"
+              className="flex h-9 w-9 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-raised hover:text-ink"
+            >
+              <SlidersHorizontal size={18} strokeWidth={2} />
+            </button>
+          )}
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-raised hover:text-ink"
+          >
+            <X size={16} strokeWidth={2.2} />
+          </button>
+        </div>
       </header>
 
       <div className="flex min-h-0 flex-1">

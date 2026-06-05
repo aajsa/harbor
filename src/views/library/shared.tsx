@@ -7,7 +7,7 @@ import { useSettings } from "@/lib/settings";
 import { useView } from "@/lib/view";
 import { useInWatchlist } from "@/lib/watchlist";
 
-export type Tab = "watchlist" | "history" | "local" | "trakt";
+export type Tab = "watchlist" | "history" | "local" | "trakt" | "anilist";
 
 export type TypeKey = "all" | "movie" | "series";
 

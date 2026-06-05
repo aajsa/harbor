@@ -27,6 +27,8 @@ export function useKeyboardShortcuts(params: {
   toggleGuide?: () => void;
   toggleDvr?: () => void;
   toggleSleep?: () => void;
+  onScreenshot?: () => void;
+  onGifRecord?: () => void;
 }) {
   const {
     bridgeRef,
@@ -49,6 +51,8 @@ export function useKeyboardShortcuts(params: {
     toggleGuide,
     toggleDvr,
     toggleSleep,
+    onScreenshot,
+    onGifRecord,
   } = params;
   const { settings } = useSettings();
   const overrides = settings.hotkeys ?? {};
@@ -217,6 +221,16 @@ export function useKeyboardShortcuts(params: {
         toggleSleep();
         return;
       }
+      if (match("playerScreenshot") && onScreenshot) {
+        e.preventDefault();
+        onScreenshot();
+        return;
+      }
+      if (match("playerGifRecord") && onGifRecord) {
+        e.preventDefault();
+        onGifRecord();
+        return;
+      }
       if (e.key === "0") {
         e.preventDefault();
         bridgeRef.current?.seek(0);
@@ -234,5 +248,5 @@ export function useKeyboardShortcuts(params: {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [closePlayer, drawMode, snap.muted, snap.volume, snap.rate, snap.durationSec, snap.subDelaySec, overrides, toggleSwitcher, toggleEpisodePanel, toggleGuide, toggleDvr, toggleSleep]);
+  }, [closePlayer, drawMode, snap.muted, snap.volume, snap.rate, snap.durationSec, snap.subDelaySec, overrides, toggleSwitcher, toggleEpisodePanel, toggleGuide, toggleDvr, toggleSleep, onScreenshot, onGifRecord]);
 }

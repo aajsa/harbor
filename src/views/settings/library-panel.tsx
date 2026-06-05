@@ -72,6 +72,12 @@ export function LibraryPanel({
           value={settings.homeShowAllAddonRows}
           onChange={(v) => update({ homeShowAllAddonRows: v })}
         />
+        <ToggleRow
+          label="Watchlist shows only saved titles"
+          sub="Keep the Library Watchlist tab limited to titles you added in Stremio. Turn this off to also include anything Stremio auto-added when you pressed play."
+          value={settings.libraryBookmarkedOnly}
+          onChange={(v) => update({ libraryBookmarkedOnly: v })}
+        />
       </Section>
 
       <Section

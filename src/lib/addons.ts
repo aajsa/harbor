@@ -205,7 +205,7 @@ export function withDebridKeys(addons: Addon[], keys: DebridKeySet): Addon[] {
   });
 }
 
-async function gatherCatalogAddons(authKey: string | null): Promise<Addon[]> {
+export async function gatherCatalogAddons(authKey: string | null): Promise<Addon[]> {
   const stremio = authKey ? await userAddons(authKey).catch(() => [] as Addon[]) : [];
   const seen = new Set(stremio.map((a) => a.transportUrl));
   const localOnly = loadInstalled().filter((l) => !seen.has(l.transportUrl));
@@ -219,6 +219,8 @@ async function gatherCatalogAddons(authKey: string | null): Promise<Addon[]> {
   return [...stremio, ...localFull.filter((a): a is Addon => a != null)];
 }
 
+const HOME_CONTENT_TYPES = new Set(["movie", "series", "anime", "tv", "channel"]);
+
 export async function loadAddonRows(
   authKey: string | null,
   opts: { dedup?: boolean; cap?: number } = {},
@@ -228,7 +230,7 @@ export async function loadAddonRows(
   const addons = await gatherCatalogAddons(authKey);
   const tasks = addons.flatMap((addon) =>
     (addon.manifest.catalogs ?? [])
-      .filter((c) => c && c.name && c.type && c.id && !c.extra?.some((e) => e.isRequired))
+      .filter((c) => c && c.name && c.type && c.id && HOME_CONTENT_TYPES.has(c.type.toLowerCase()) && !c.extra?.some((e) => e.isRequired))
       .map(async (cat): Promise<AddonRow | null> => {
         const base = addon.transportUrl.replace(/\/manifest\.json$/, "");
         const res = await fetchWithTimeout(`${base}/catalog/${cat.type}/${cat.id}.json`);

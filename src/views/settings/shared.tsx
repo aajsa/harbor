@@ -6,6 +6,7 @@ export type SectionId =
   | "account"
   | "library"
   | "trakt"
+  | "anilist"
   | "relay"
   | "streaming"
   | "language"

@@ -1,27 +1,25 @@
-import { Check, X } from "lucide-react";
+import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { GENRE } from "@/lib/providers/jikan";
 
-type GenreOption = { id: number; label: string; tagline: string };
-
-const OPTIONS: GenreOption[] = [
-  { id: GENRE.Action, label: "Action", tagline: "Fights, chases, kinetic" },
-  { id: GENRE.Adventure, label: "Adventure", tagline: "Quests and journeys" },
-  { id: GENRE.Comedy, label: "Comedy", tagline: "Light, funny, easy watches" },
-  { id: GENRE.Drama, label: "Drama", tagline: "Heavy, emotional arcs" },
-  { id: GENRE.Fantasy, label: "Fantasy", tagline: "Magic, kingdoms, isekai" },
-  { id: GENRE.SciFi, label: "Sci-Fi", tagline: "Future, tech, space" },
-  { id: GENRE.Romance, label: "Romance", tagline: "Love stories" },
-  { id: GENRE.SliceOfLife, label: "Slice of Life", tagline: "Everyday, calm" },
-  { id: GENRE.Supernatural, label: "Supernatural", tagline: "Spirits, demons, weird" },
-  { id: GENRE.Mystery, label: "Mystery", tagline: "Puzzles and reveals" },
-  { id: GENRE.Psychological, label: "Psychological", tagline: "Mind games, tension" },
-  { id: GENRE.Horror, label: "Horror", tagline: "Dread and fear" },
-  { id: GENRE.Thriller, label: "Thriller", tagline: "Edge of seat" },
-  { id: GENRE.Mecha, label: "Mecha", tagline: "Giant robots" },
-  { id: GENRE.Sports, label: "Sports", tagline: "Teams, training, wins" },
-  { id: GENRE.Music, label: "Music", tagline: "Idols and bands" },
+const OPTIONS: Array<{ id: number; label: string }> = [
+  { id: GENRE.Action, label: "Action" },
+  { id: GENRE.Adventure, label: "Adventure" },
+  { id: GENRE.Comedy, label: "Comedy" },
+  { id: GENRE.Drama, label: "Drama" },
+  { id: GENRE.Fantasy, label: "Fantasy" },
+  { id: GENRE.SciFi, label: "Sci-Fi" },
+  { id: GENRE.Romance, label: "Romance" },
+  { id: GENRE.SliceOfLife, label: "Slice of Life" },
+  { id: GENRE.Supernatural, label: "Supernatural" },
+  { id: GENRE.Mystery, label: "Mystery" },
+  { id: GENRE.Psychological, label: "Psychological" },
+  { id: GENRE.Horror, label: "Horror" },
+  { id: GENRE.Thriller, label: "Thriller" },
+  { id: GENRE.Mecha, label: "Mecha" },
+  { id: GENRE.Sports, label: "Sports" },
+  { id: GENRE.Music, label: "Music" },
 ];
 
 export function AnimeGenrePicker({
@@ -67,30 +65,32 @@ export function AnimeGenrePicker({
       <button
         aria-label="Close"
         onClick={onClose}
-        className="absolute inset-0 -z-10 cursor-default bg-canvas/80 backdrop-blur-xl"
+        className="absolute inset-0 -z-10 cursor-default bg-canvas/88"
       />
-      <div className="relative flex max-h-full w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-edge-soft/70 bg-elevated/95 shadow-[0_40px_120px_-30px_rgba(0,0,0,0.85)]">
-        <header className="flex items-start gap-4 border-b border-edge-soft/45 px-7 pt-6 pb-5">
-          <div className="flex flex-1 flex-col gap-1">
-            <h2 className="font-display text-[24px] font-medium leading-tight tracking-tight text-ink">
-              Find your next watch
-            </h2>
-            <p className="text-[13.5px] text-ink-muted">
-              Pick the genres you actually want more of. We'll mix them into your Top Picks.
-            </p>
-          </div>
-          <button
-            type="button"
-            aria-label="Close"
-            onClick={onClose}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-subtle transition-colors hover:bg-canvas/60 hover:text-ink"
-          >
-            <X size={16} strokeWidth={2.2} />
-          </button>
-        </header>
+      <div className="relative flex max-h-full w-full max-w-xl flex-col overflow-hidden rounded-[26px] border border-edge-soft/70 bg-elevated shadow-[0_40px_120px_-30px_rgba(0,0,0,0.85)]">
+        <button
+          type="button"
+          aria-label="Close"
+          onClick={onClose}
+          className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full text-ink-subtle transition-colors hover:bg-canvas/60 hover:text-ink"
+        >
+          <X size={16} strokeWidth={2.2} />
+        </button>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-7 py-5">
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <div className="flex flex-col gap-1.5 px-8 pt-8">
+          <span className="text-[11px] font-bold uppercase tracking-[0.28em] text-ink-subtle">
+            Tune your picks
+          </span>
+          <h2 className="font-display text-[27px] font-medium leading-tight tracking-tight text-ink">
+            More of what you love.
+          </h2>
+          <p className="text-[13.5px] text-ink-muted">
+            Tap the genres you want more of. They steer the Top Picks row at the top of this page.
+          </p>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto px-8 py-7">
+          <div className="flex flex-wrap gap-2.5">
             {OPTIONS.map((opt) => {
               const on = selected.has(opt.id);
               return (
@@ -98,55 +98,42 @@ export function AnimeGenrePicker({
                   key={opt.id}
                   type="button"
                   onClick={() => toggle(opt.id)}
-                  className={`group flex items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-colors duration-150 ${
+                  className={`h-11 rounded-full px-5 text-[14px] font-semibold transition-[background-color,color,box-shadow,transform] duration-150 active:scale-[0.97] ${
                     on
-                      ? "border-accent/55 bg-accent/10"
-                      : "border-edge-soft/60 bg-canvas/40 hover:border-edge hover:bg-canvas/70"
+                      ? "bg-ink text-canvas shadow-[0_6px_18px_-8px_rgba(0,0,0,0.55)]"
+                      : "bg-canvas/50 text-ink-muted ring-1 ring-edge-soft hover:text-ink hover:ring-edge"
                   }`}
                 >
-                  <span
-                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md border transition-colors ${
-                      on
-                        ? "border-accent bg-accent text-canvas"
-                        : "border-edge bg-canvas/60 text-transparent group-hover:border-ink-subtle"
-                    }`}
-                  >
-                    <Check size={13} strokeWidth={3} />
-                  </span>
-                  <span className="flex min-w-0 flex-1 flex-col">
-                    <span className="text-[14px] font-semibold text-ink">{opt.label}</span>
-                    <span className="text-[11.5px] text-ink-subtle">{opt.tagline}</span>
-                  </span>
+                  {opt.label}
                 </button>
               );
             })}
           </div>
         </div>
 
-        <footer className="flex items-center justify-between gap-3 border-t border-edge-soft/45 bg-canvas/40 px-7 py-4">
-          <span className="text-[12px] text-ink-subtle">
-            {selected.size === 0
-              ? "Pick at least one or skip for now"
-              : `${selected.size} selected`}
-          </span>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-full px-4 py-2 text-[13px] font-medium text-ink-muted transition-colors hover:bg-canvas/60 hover:text-ink"
-            >
-              Maybe later
-            </button>
+        <div className="flex items-center justify-between gap-3 border-t border-edge-soft/45 px-8 py-5">
+          <button
+            type="button"
+            onClick={() => setSelected(new Set())}
+            className={`text-[12.5px] font-medium transition-colors ${
+              selected.size > 0 ? "text-ink-subtle hover:text-ink" : "pointer-events-none text-transparent"
+            }`}
+          >
+            Clear all
+          </button>
+          <div className="flex items-center gap-4">
+            <span className="text-[12.5px] tabular-nums text-ink-subtle">
+              {selected.size > 0 ? `${selected.size} selected` : "None yet"}
+            </span>
             <button
               type="button"
               onClick={save}
-              disabled={selected.size === 0 && initial.length === 0}
-              className="rounded-full bg-ink px-5 py-2 text-[13px] font-semibold text-canvas transition-colors hover:bg-ink/90 disabled:cursor-not-allowed disabled:opacity-50"
+              className="h-11 rounded-full bg-ink px-7 text-[14px] font-semibold text-canvas transition-transform hover:scale-[1.02] active:scale-[0.98]"
             >
-              Save picks
+              Done
             </button>
           </div>
-        </footer>
+        </div>
       </div>
     </div>,
     document.body,

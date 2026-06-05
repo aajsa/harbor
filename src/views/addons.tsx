@@ -82,6 +82,9 @@ export function AddonsView() {
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: 0, behavior: "auto" });
   }, [tab, categoryFilter]);
+  useEffect(() => {
+    if (!settings.showAdultAddons && categoryFilter === "nsfw") setCategoryFilter(null);
+  }, [settings.showAdultAddons, categoryFilter]);
   const [query, setQuery] = useState("");
   const goToCategory = (cat: string) => {
     setCategoryFilter(cat);
@@ -388,7 +391,7 @@ export function AddonsView() {
                 >
                   All
                 </button>
-                {saCategories.map((c) => {
+                {saCategories.filter((c) => settings.showAdultAddons || c.slug !== "nsfw").map((c) => {
                   const active = categoryFilter === c.slug;
                   return (
                     <button

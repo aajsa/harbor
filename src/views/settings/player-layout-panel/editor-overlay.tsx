@@ -186,6 +186,11 @@ export function EditorOverlay({
     return renderControl(id, ctx as ControlContext);
   };
 
+  const selectControl = (id: PlayerControlId | null) => {
+    onSelect(id);
+    if (id) onSelectPanel(null);
+  };
+
   const toggleFullscreen = async () => {
     try {
       const { getCurrentWindow } = await import("@tauri-apps/api/window");
@@ -274,7 +279,7 @@ export function EditorOverlay({
           theme={theme}
           config={config}
           selectedId={selectedId}
-          onSelect={onSelect}
+          onSelect={selectControl}
           renderOne={renderOne}
         />
 
@@ -323,7 +328,7 @@ export function EditorOverlay({
             <DefaultLayout
               config={config}
               selectedId={selectedId}
-              onSelect={onSelect}
+              onSelect={selectControl}
               renderOne={renderOne}
               isLive={mode === "live"}
               compact={compact}
@@ -332,7 +337,7 @@ export function EditorOverlay({
             <StremioLayout
               config={config}
               selectedId={selectedId}
-              onSelect={onSelect}
+              onSelect={selectControl}
               renderOne={renderOne}
               isLive={mode === "live"}
             />

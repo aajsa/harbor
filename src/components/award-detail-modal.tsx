@@ -272,8 +272,13 @@ function pickByYear(metas: Meta[], year?: number): Meta | null {
   return bestDiff === 0 ? best : null;
 }
 
+function normMatch(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
 async function cinemetaSearch(title: string, year: number | undefined, preferSeries: boolean): Promise<Meta | null> {
   const order = preferSeries ? (["series", "movie"] as const) : (["movie", "series"] as const);
+  const want = normMatch(title);
   for (const type of order) {
     try {
       const res = await fetch(`${CINEMETA}/catalog/${type}/top/search=${encodeURIComponent(title)}.json`);
@@ -281,8 +286,10 @@ async function cinemetaSearch(title: string, year: number | undefined, preferSer
       const json = await res.json();
       const metas: Meta[] = json?.metas ?? [];
       if (!metas.length) continue;
-      const pick = pickByYear(metas, year) ?? metas[0];
-      if (pick?.id) return { ...pick, type };
+      const exact = pickByYear(metas, year);
+      if (exact && normMatch(exact.name) === want) return { ...exact, type };
+      const byTitle = metas.find((m) => normMatch(m.name) === want);
+      if (byTitle?.id) return { ...byTitle, type };
     } catch {
       continue;
     }

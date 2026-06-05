@@ -1,6 +1,7 @@
 import {
   Children,
   createContext,
+  isValidElement,
   useCallback,
   useContext,
   useEffect,
@@ -25,10 +26,12 @@ function LazyChild({
   children,
   eager,
   shape,
+  span,
 }: {
   children: ReactNode;
   eager: boolean;
   shape: RowShape;
+  span?: string;
 }) {
   const root = useContext(RowTrackContext);
   const [visible, setVisible] = useState(eager);
@@ -64,7 +67,7 @@ function LazyChild({
   }, [root, visible]);
 
   return (
-    <div ref={ref} className="h-full">
+    <div ref={ref} className="h-full" style={span ? { gridColumn: span } : undefined}>
       {visible ? children : <Skeleton shape={shape} />}
     </div>
   );
@@ -367,11 +370,16 @@ export function Row({
             className="grid grid-flow-col gap-5 overflow-x-auto p-5 -m-5 scroll-pl-5 scroll-pr-5 [scroll-snap-type:x_mandatory] [&>*]:[scroll-snap-align:start] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] [overflow-anchor:none] [&_img]:select-none [&_img]:[-webkit-user-drag:none] [will-change:transform]"
             style={{ gridAutoColumns: cellWidth != null ? `${cellWidth}px` : `${min}px` }}
           >
-            {Children.map(children, (child, i) => (
-              <LazyChild eager={i < EAGER_COUNT} shape={shape}>
-                {child}
-              </LazyChild>
-            ))}
+            {Children.map(children, (child, i) => {
+              const span = isValidElement(child)
+                ? (child.props as { style?: { gridColumn?: string } }).style?.gridColumn
+                : undefined;
+              return (
+                <LazyChild eager={i < EAGER_COUNT} shape={shape} span={span}>
+                  {child}
+                </LazyChild>
+              );
+            })}
           </div>
         </RowTrackContext.Provider>
         <EdgeArrow side="left" visible={canPrev} onClick={() => scroll(-1)} />

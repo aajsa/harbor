@@ -11,6 +11,7 @@ import { useSettings } from "@/lib/settings";
 import { fetchWatchedKeySet } from "@/lib/trakt/history";
 import { useTrakt } from "@/lib/trakt/provider";
 import { useView } from "@/lib/view";
+import { useAnilistWatched } from "@/lib/anilist/use-anilist-watched";
 import { UpcomingBadge } from "./badges";
 import { isUpcomingDate } from "./helpers";
 
@@ -46,6 +47,11 @@ export function AnimeEpisodes({
     };
   }, [traktConnected]);
 
+  const { watchedKeys: anilistWatched, completed: anilistCompleted } = useAnilistWatched(
+    meta.id,
+    episodes,
+  );
+
   const isOneOff = meta.type === "movie" || episodes.length <= 1;
   return (
     <div data-anime-episodes className="flex flex-col gap-6 scroll-mt-24">
@@ -65,7 +71,7 @@ export function AnimeEpisodes({
         </div>
       </div>
       {isOneOff ? (
-        <MovieEntryCard meta={meta} ep={episodes[0]} />
+        <MovieEntryCard meta={meta} ep={episodes[0]} watched={anilistCompleted} />
       ) : (
         <>
           <div className="flex flex-col gap-1">
@@ -78,6 +84,8 @@ export function AnimeEpisodes({
                 ep.length ?? null,
                 ep.imdbId ?? null,
                 traktWatched,
+                undefined,
+                anilistWatched,
               );
               return <AnimeEpisodeRow key={ep.id} meta={meta} ep={ep} progress={progress} />;
             })}
@@ -89,7 +97,15 @@ export function AnimeEpisodes({
   );
 }
 
-function MovieEntryCard({ meta, ep }: { meta: Meta; ep: KitsuEpisode | undefined }) {
+function MovieEntryCard({
+  meta,
+  ep,
+  watched = false,
+}: {
+  meta: Meta;
+  ep: KitsuEpisode | undefined;
+  watched?: boolean;
+}) {
   const { openPicker } = useView();
   const { settings } = useSettings();
   const banner = meta.background || meta.poster;
@@ -130,6 +146,12 @@ function MovieEntryCard({ meta, ep }: { meta: Meta; ep: KitsuEpisode | undefined
       <span className="absolute bottom-5 left-6 text-[15px] font-semibold text-ink drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
         Play movie
       </span>
+      {watched && (
+        <span className="absolute right-4 top-4 flex items-center gap-1.5 rounded-full bg-emerald-400/22 px-2.5 py-1 text-[12px] font-semibold text-emerald-200 ring-1 ring-emerald-400/40 backdrop-blur-sm">
+          <Check size={13} strokeWidth={3} />
+          Watched
+        </span>
+      )}
     </button>
   );
 }

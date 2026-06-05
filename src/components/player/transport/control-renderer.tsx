@@ -7,6 +7,8 @@ import type { DownloadStatus } from "@/views/player/hooks/use-video-download";
 import { renderCustomIconControl } from "./custom-icon-renderer";
 
 function getControlState(id: PlayerControlId, ctx: ControlContext): string | undefined {
+  const preview = ctx.previewStates?.[id];
+  if (preview) return preview;
   switch (id) {
     case "play-pause":
       return ctx.playing ? "playing" : "paused";
@@ -60,6 +62,7 @@ export type ControlContext = {
   engine: "html5" | "mpv";
   useOverlayPopups?: boolean;
   customIcons?: CustomIconMap;
+  previewStates?: Partial<Record<PlayerControlId, string>>;
   controlVariants?: Partial<Record<PlayerControlId, ControlVariant>>;
   timeFormat?: TimeFormat;
   volumeStyle?: VolumeStyle;

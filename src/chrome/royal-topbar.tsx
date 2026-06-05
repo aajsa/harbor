@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Command, LogIn, LogOut, Pencil, Search, Settings as SettingsLucide, Users } from "lucide-react";
+import { LogIn, LogOut, Pencil, Search, Settings as SettingsLucide, Users } from "lucide-react";
 import { HarborMark } from "@/components/icons/harbor-mark";
 import { CatAvatar } from "@/components/icons/cat-avatar";
 import { AddonsIcon } from "@/components/icons/addons-icon";
@@ -18,6 +18,7 @@ import { TogetherButton } from "@/chrome/topbar";
 import { useAuth } from "@/lib/auth";
 import { useProfiles } from "@/lib/profiles";
 import { useSearch } from "@/lib/search-context";
+import { effectiveBinding, eventToBinding, formatBindingForDisplay, isTypingTarget } from "@/lib/hotkeys";
 import { useSettings } from "@/lib/settings";
 import { getThemeById } from "@/lib/theme";
 import { useParental, type LockableTab } from "@/lib/parental";
@@ -159,7 +160,7 @@ export function RoyalTopbar() {
               onOpenSettings={() => setView("settings")}
               settingsActive={view === "settings"}
             />
-            {IS_TAURI && (
+            {IS_TAURI && !settings.useNativeTitleBar && (
               <div className="ml-0.5 flex items-center gap-1">
                 <WinBtn onClick={minimize} label="Minimize">
                   <path d="M3 6.5h7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
@@ -215,6 +216,20 @@ function Filigree() {
 }
 
 function SearchPill({ onOpen }: { onOpen: () => void }) {
+  const { settings } = useSettings();
+  const binding = effectiveBinding("globalSearchFocus", settings.hotkeys ?? {});
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (isTypingTarget(e)) return;
+      if (eventToBinding(e) !== binding) return;
+      e.preventDefault();
+      onOpen();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [binding, onOpen]);
+
   return (
     <button
       type="button"
@@ -224,8 +239,8 @@ function SearchPill({ onOpen }: { onOpen: () => void }) {
     >
       <Search size={14} strokeWidth={2.2} />
       <span className="hidden text-[12.5px] leading-none md:inline">Search</span>
-      <kbd className="ml-2 hidden items-center gap-0.5 rounded-[5px] border border-edge-soft bg-elevated/60 px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase leading-none text-ink-subtle md:flex">
-        <Command size={9} strokeWidth={2.6} />K
+      <kbd className="ml-2 hidden items-center rounded-[5px] border border-edge-soft bg-elevated/60 px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase leading-none text-ink-subtle md:flex">
+        {formatBindingForDisplay(binding)}
       </kbd>
     </button>
   );

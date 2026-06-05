@@ -5,11 +5,14 @@ import { Poster } from "@/components/poster";
 import { extendPool, getPool, type FeedItem } from "@/lib/feed";
 import { rankByAffinity } from "@/lib/feed/rank";
 import { blockQueueItem, filterQueuePool, shuffleQueuePool, snoozeQueueItem } from "@/lib/feed/skipped";
+import { getDownvotedIds, getUpvotedIds } from "@/lib/feed/preferences";
 import { rpdbPoster } from "@/lib/providers/rpdb";
 import { useSettings } from "@/lib/settings";
 import { useInWatchlist } from "@/lib/watchlist";
 
 const LOW_WATER_MARK = 6;
+
+let savedActiveId: string | null = null;
 
 type LeaveAnim = "skip" | "block" | "back" | null;
 
@@ -17,7 +20,7 @@ export function QueueView() {
   const { settings } = useSettings();
   const [pool, setPool] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(() => savedActiveId);
   const [leaveAnim, setLeaveAnim] = useState<LeaveAnim>(null);
 
   useEffect(() => {
@@ -25,7 +28,8 @@ export function QueueView() {
     getPool(settings.tmdbKey)
       .then((items) => {
         if (cancelled) return;
-        const filtered = filterQueuePool(items);
+        const blocked = new Set<string>([...getDownvotedIds(), ...getUpvotedIds()]);
+        const filtered = filterQueuePool(items).filter((it) => !blocked.has(it.meta.id));
         const shuffled = shuffleQueuePool(filtered);
         setPool(rankByAffinity(shuffled));
         setLoading(false);
@@ -39,6 +43,10 @@ export function QueueView() {
       cancelled = true;
     };
   }, [settings.tmdbKey]);
+
+  useEffect(() => {
+    savedActiveId = activeId;
+  }, [activeId]);
 
   const activeIndex = useMemo(() => {
     if (activeId) {

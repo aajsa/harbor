@@ -46,6 +46,7 @@ export type StremioRenderCtx = {
   engine: "html5" | "mpv";
   useOverlayPopups?: boolean;
   customIcons?: CustomIconMap;
+  previewStates?: Partial<Record<PlayerControlId, string>>;
   timeFormat?: TimeFormat;
   volumeStyle?: VolumeStyle;
   fullscreen?: boolean;
@@ -91,6 +92,8 @@ export type StremioRenderCtx = {
 };
 
 function getStremioState(id: PlayerControlId, ctx: StremioRenderCtx): string | undefined {
+  const preview = ctx.previewStates?.[id];
+  if (preview) return preview;
   switch (id) {
     case "play-pause":
       return ctx.playing ? "playing" : "paused";

@@ -1,43 +1,72 @@
 import { Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { trickplayGet } from "@/lib/trickplay";
+import { thumbCacheGet, thumbCacheSet, trickplayGet } from "@/lib/trickplay";
 
 const BUCKET_SECONDS = 2;
 const CARD_WIDTH = 192;
 const CARD_HEIGHT = 108;
-
-const cache = new Map<number, string>();
+const MAX_ATTEMPTS = 12;
+const RETRY_MS = 320;
 
 export function ThumbPreview({ time, dur }: { time: number; dur: number }) {
   const bucket = Math.round(time / BUCKET_SECONDS);
   const liveBucketRef = useRef(bucket);
   liveBucketRef.current = bucket;
-  const [src, setSrc] = useState<string | null>(() => cache.get(bucket) ?? null);
+  const [src, setSrc] = useState<string | null>(() => thumbCacheGet(bucket) ?? null);
   const [loading, setLoading] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    const cached = cache.get(bucket);
+    const cached = thumbCacheGet(bucket);
     if (cached) {
       setSrc(cached);
       setLoading(false);
+      setFailed(false);
       return;
     }
+    setFailed(false);
     setLoading(true);
-    const raf = requestAnimationFrame(async () => {
-      if (liveBucketRef.current !== bucket) return;
+    let cancelled = false;
+    let attempts = 0;
+    let timer = 0;
+    const attempt = async () => {
+      if (cancelled || liveBucketRef.current !== bucket) return;
       const url = await trickplayGet(bucket * BUCKET_SECONDS);
-      if (liveBucketRef.current !== bucket) return;
+      if (cancelled || liveBucketRef.current !== bucket) return;
       if (url) {
-        cache.set(bucket, url);
+        thumbCacheSet(bucket, url);
         setSrc(url);
+        setLoading(false);
+        return;
       }
-      setLoading(false);
-    });
-    return () => cancelAnimationFrame(raf);
+      attempts += 1;
+      if (attempts >= MAX_ATTEMPTS) {
+        setLoading(false);
+        setFailed(true);
+        return;
+      }
+      timer = window.setTimeout(attempt, RETRY_MS);
+    };
+    timer = window.setTimeout(attempt, 0);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
   }, [bucket]);
 
   const pct = (time / dur) * 100;
   const label = fmtTime(time);
+
+  if (failed && !src) {
+    return (
+      <div
+        className="pointer-events-none absolute -top-9 -translate-x-1/2 rounded-md border border-white/10 bg-black/90 px-2 py-1 font-mono text-[12px] font-semibold tabular-nums text-white shadow-lg backdrop-blur-md"
+        style={{ left: `${pct}%` }}
+      >
+        {label}
+      </div>
+    );
+  }
 
   return (
     <div

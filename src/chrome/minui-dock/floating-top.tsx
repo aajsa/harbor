@@ -64,7 +64,7 @@ export function FloatingTop() {
           <span className="hidden sm:inline">Search</span>
         </PillBtn>
         <ProfilePill onOpenSettings={() => setView("settings")} settingsActive={view === "settings"} />
-        {IS_TAURI && (
+        {IS_TAURI && !settings.useNativeTitleBar && (
           <div className="ml-1 flex items-center gap-1">
             <WinBtn onClick={minimize} label="Minimize">
               <path d="M3 6.5h7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />

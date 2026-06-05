@@ -363,6 +363,24 @@ export function createHtml5Bridge(): PlayerBridge {
     async play() {
       if (!video) return;
       const v = video;
+      if (pendingStart != null && v.readyState < 1) {
+        await new Promise<void>((resolve) => {
+          let done = false;
+          const finish = () => {
+            if (done) return;
+            done = true;
+            v.removeEventListener("loadedmetadata", finish);
+            resolve();
+          };
+          v.addEventListener("loadedmetadata", finish, { once: true });
+          setTimeout(finish, 4000);
+        });
+      }
+      if (pendingStart != null && Number.isFinite(v.duration)) {
+        const max = v.duration - 5;
+        if (pendingStart > 5 && pendingStart < max) v.currentTime = pendingStart;
+        pendingStart = null;
+      }
       v.muted = false;
       try {
         await v.play();

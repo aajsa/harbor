@@ -1,3 +1,4 @@
+import { isManuallyWatched } from "@/lib/manual-watched";
 import { lastPlayedEpisode, readResumeEntry } from "@/lib/resume";
 
 export type EpisodeProgress = {
@@ -54,6 +55,7 @@ export function getEpisodeProgress(
   traktImdbId: string | null,
   traktWatched: Set<string>,
   stremioWatched?: Set<string>,
+  anilistWatched?: Set<string>,
 ): EpisodeProgress {
   const entry = readResumeEntry(resumeId, season, episode);
   const ms = entry?.ms ?? 0;
@@ -64,7 +66,9 @@ export function getEpisodeProgress(
   const traktKey = traktImdbId ? `imdb:${traktImdbId}:${season}:${episode}` : null;
   const traktDone = traktKey ? traktWatched.has(traktKey) : false;
   const stremioDone = stremioWatched ? stremioWatched.has(`${season}:${episode}`) : false;
-  const done = traktDone || stremioDone;
+  const anilistDone = anilistWatched ? anilistWatched.has(`${season}:${episode}`) : false;
+  const manualDone = isManuallyWatched(resumeId, season, episode);
+  const done = traktDone || stremioDone || manualDone || anilistDone;
 
   return {
     ratio: done ? 1 : ratio,

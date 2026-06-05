@@ -86,7 +86,7 @@ export function Topbar() {
         >
           <RecordingPill />
           {!onLiveRoot && <TogetherButton />}
-          {IS_TAURI && (
+          {IS_TAURI && !settings.useNativeTitleBar && (
             <div className="ml-1 flex items-center gap-1.5">
               <Control label="Minimize" onClick={minimize}>
                 <svg width="13" height="13" viewBox="0 0 13 13" fill="none">

@@ -11,11 +11,11 @@ export function useTrickplay({ src, enabled }: { src: PlayerSrc; enabled: boolea
       return;
     }
     const isTorrent = url.startsWith(getStremioServerUrl());
+    setTrickplayState({ active: true, bufferedOnly: isTorrent });
     let alive = true;
     void trickplaySetUrl(url).then(() => {
       if (!alive) return;
       void trickplaySpawnEager();
-      setTrickplayState({ active: true, bufferedOnly: isTorrent });
     });
     return () => {
       alive = false;

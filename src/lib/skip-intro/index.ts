@@ -9,6 +9,8 @@ import type { SkipSegment } from "./types";
 
 export type { SkipSegment, SkipKind, SkipSource } from "./types";
 
+const MIN_OUTRO_START_FRACTION = 0.5;
+
 function parseKitsuId(id: string): number | null {
   if (!id.startsWith("kitsu:")) return null;
   const n = parseInt(id.slice("kitsu:".length).split(":")[0], 10);
@@ -64,10 +66,11 @@ export function useSkipSegments(
   );
 
   return useMemo(() => {
-    if (aniSkip.length > 0) return aniSkip;
-    if (introDb.length > 0) return introDb;
-    return fromChapters;
-  }, [aniSkip, introDb, fromChapters]);
+    const chosen = aniSkip.length > 0 ? aniSkip : introDb.length > 0 ? introDb : fromChapters;
+    if (durationSec <= 0) return chosen;
+    const minOutroStart = durationSec * MIN_OUTRO_START_FRACTION;
+    return chosen.filter((s) => s.kind !== "outro" || s.startSec >= minOutroStart);
+  }, [aniSkip, introDb, fromChapters, durationSec]);
 }
 
 export function activeSegment(

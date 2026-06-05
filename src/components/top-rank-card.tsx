@@ -51,7 +51,6 @@ export const TopRankCard = memo(function TopRankCard({ meta, rank }: { meta: Met
   const resolvedImdb = useTmdbImdbId(meta.id);
   const altIds = useMemo(() => [resolvedImdb], [resolvedImdb]);
   const inWatchlist = useInWatchlist(meta.id, altIds);
-  const isWide = rank >= 10;
   return (
     <button
       onClick={() => openMeta(meta)}
@@ -61,17 +60,17 @@ export const TopRankCard = memo(function TopRankCard({ meta, rank }: { meta: Met
     >
       <span
         aria-hidden
-        className="pointer-events-none absolute left-0 top-0 font-bold leading-[0.85] text-transparent"
+        className="pointer-events-none absolute -left-[3%] top-0 font-bold leading-[0.85] text-transparent"
         style={{
           fontFamily: '"Fraunces", "Iowan Old Style", "Georgia", serif',
-          fontSize: `calc(100cqw * ${isWide ? 196 : 240} / 228)`,
-          letterSpacing: isWide ? "-0.09em" : "-0.05em",
-          WebkitTextStroke: `${isWide ? 1.3 : 1.5}px var(--color-ink-subtle)`,
+          fontSize: "calc(100cqw * 240 / 228)",
+          letterSpacing: "-0.05em",
+          WebkitTextStroke: "2.4px var(--color-ink-muted)",
         }}
       >
         {rank}
       </span>
-      <div className="absolute right-0 top-0 z-10 w-[63%] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0.24,1)] group-hover:-translate-y-2">
+      <div className="absolute right-0 top-0 z-10 w-[60%] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0.24,1)] group-hover:-translate-y-2">
         <Poster
           src={rpdbPoster(settings.rpdbKey, meta.id, meta.poster)}
           seed={meta.id}
@@ -95,7 +94,6 @@ export const AnimeRankCard = memo(function AnimeRankCard({ meta, rank }: { meta:
   const resolvedImdb = useTmdbImdbId(meta.id);
   const altIds = useMemo(() => [resolvedImdb], [resolvedImdb]);
   const inWatchlist = useInWatchlist(meta.id, altIds);
-  const isWide = rank >= 10;
   return (
     <button
       onClick={() => openMeta(meta)}
@@ -105,16 +103,16 @@ export const AnimeRankCard = memo(function AnimeRankCard({ meta, rank }: { meta:
     >
       <span
         aria-hidden
-        className="font-anime pointer-events-none absolute left-0 top-0 font-bold leading-[0.85] text-transparent"
+        className="font-anime pointer-events-none absolute -left-[3%] top-0 font-bold leading-[0.85] text-transparent"
         style={{
-          fontSize: `calc(100cqw * ${isWide ? 196 : 240} / 228)`,
-          letterSpacing: isWide ? "-0.04em" : "-0.02em",
-          WebkitTextStroke: `${isWide ? 1.6 : 1.9}px var(--color-ink-subtle)`,
+          fontSize: "calc(100cqw * 240 / 228)",
+          letterSpacing: "-0.02em",
+          WebkitTextStroke: "2.6px var(--color-ink-muted)",
         }}
       >
         {rank}
       </span>
-      <div className="absolute right-0 top-0 z-10 w-[63%] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0.24,1)] group-hover:-translate-y-2">
+      <div className="absolute right-0 top-0 z-10 w-[60%] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0.24,1)] group-hover:-translate-y-2">
         <Poster
           src={rpdbPoster(settings.rpdbKey, meta.id, meta.poster)}
           seed={meta.id}

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 export const HARBOR_COLOR_SWATCHES = [
   "#7dd3fc",
@@ -63,6 +64,7 @@ export function ColorPopoverTrigger({
   highlighted,
   align = "left",
   direction = "down",
+  portal = false,
 }: {
   value: string;
   onChange: (hex: string) => void;
@@ -70,14 +72,19 @@ export function ColorPopoverTrigger({
   highlighted?: boolean;
   align?: "left" | "right";
   direction?: "up" | "down";
+  portal?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
 
   useEffect(() => {
     if (!open) return;
     const close = (e: MouseEvent) => {
-      if (!wrapRef.current?.contains(e.target as Node)) setOpen(false);
+      const t = e.target as Node;
+      if (wrapRef.current?.contains(t) || panelRef.current?.contains(t)) return;
+      setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
@@ -89,6 +96,37 @@ export function ColorPopoverTrigger({
       window.removeEventListener("keydown", onKey);
     };
   }, [open]);
+
+  useEffect(() => {
+    if (!open || !portal) return;
+    const place = () => {
+      const r = wrapRef.current?.getBoundingClientRect();
+      if (!r) return;
+      const width = 280;
+      const left =
+        align === "right"
+          ? Math.max(8, r.right - width)
+          : Math.min(Math.max(8, r.left), window.innerWidth - width - 8);
+      const top = direction === "up" ? r.top - 8 : r.bottom + 8;
+      setPos({ top, left });
+    };
+    place();
+    window.addEventListener("resize", place);
+    window.addEventListener("scroll", place, true);
+    return () => {
+      window.removeEventListener("resize", place);
+      window.removeEventListener("scroll", place, true);
+    };
+  }, [open, portal, align, direction]);
+
+  const panel = (
+    <div
+      ref={panelRef}
+      className="animate-nudge-in w-[280px] rounded-2xl border border-edge bg-elevated/95 p-3 shadow-[0_24px_60px_-15px_rgba(0,0,0,0.65)] backdrop-blur-md"
+    >
+      <CustomColorPanel value={value} onChange={onChange} />
+    </div>
+  );
 
   return (
     <div ref={wrapRef} className="relative">
@@ -108,7 +146,7 @@ export function ColorPopoverTrigger({
         />
         {label}
       </button>
-      {open && (
+      {open && !portal && (
         <>
           <div
             className="fixed inset-0 z-20"
@@ -122,12 +160,35 @@ export function ColorPopoverTrigger({
               direction === "up" ? "bottom-[calc(100%+8px)]" : "top-[calc(100%+8px)]"
             } ${align === "right" ? "right-0" : "left-0"}`}
           >
-            <div className="animate-nudge-in w-[280px] rounded-2xl border border-edge bg-elevated/95 p-3 shadow-[0_24px_60px_-15px_rgba(0,0,0,0.65)] backdrop-blur-md">
-              <CustomColorPanel value={value} onChange={onChange} />
-            </div>
+            {panel}
           </div>
         </>
       )}
+      {open &&
+        portal &&
+        pos &&
+        createPortal(
+          <>
+            <div
+              className="fixed inset-0 z-[310]"
+              onMouseDown={(e) => {
+                e.stopPropagation();
+                setOpen(false);
+              }}
+            />
+            <div
+              className="fixed z-[320]"
+              style={{
+                top: pos.top,
+                left: pos.left,
+                ...(direction === "up" ? { transform: "translateY(-100%)" } : null),
+              }}
+            >
+              {panel}
+            </div>
+          </>,
+          document.body,
+        )}
     </div>
   );
 }

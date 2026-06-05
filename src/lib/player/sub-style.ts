@@ -14,6 +14,7 @@ export async function applySubStyle(s: Settings): Promise<void> {
     ["sub-margin-y", s.subMarginY],
     ["sub-align-x", s.subAlignX],
     ["sub-ass-override", s.subAssOverride],
+    ["sub-spacing", s.subLineSpacing],
   ];
   await Promise.all(
     props.map(([name, value]) =>

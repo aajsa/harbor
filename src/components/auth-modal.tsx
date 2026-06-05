@@ -99,7 +99,7 @@ export function AuthModal({ onClose }: { onClose: () => void }) {
           {busy ? (
             <>
               <Loader2 size={15} className="animate-spin" />
-              Signing in…
+              Signing in...
             </>
           ) : (
             "Sign in"

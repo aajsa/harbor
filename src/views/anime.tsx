@@ -14,6 +14,9 @@ import { findTopAward, parseAwardYear, uniqueWinnerFranchisesAcrossSources } fro
 import { useAnimeTopPicks } from "@/lib/use-anime-top-picks";
 import { useCrunchyrollAwardMetas } from "@/lib/use-crunchyroll-award-metas";
 import { useWatchHistoryRecommendations } from "@/lib/use-watch-history-recs";
+import { AnilistRows } from "./anime/anilist-rows";
+import { AnilistRowControls } from "./anime/anilist-row-controls";
+import { AnilistTopRow, AnilistTrendingRow } from "./anime/anilist-top-row";
 import {
   animeFranchiseKey,
   GENRE,
@@ -223,6 +226,7 @@ export function AnimeView({ active = true }: { active?: boolean }) {
 
   const { settings, update } = useSettings();
   const favoriteGenres = settings.animeFavoriteGenres;
+  const anilistHidden = settings.animeAnilistRowsHidden;
   const [showPicker, setShowPicker] = useState(false);
 
   const { authKey } = useAuth();
@@ -423,6 +427,7 @@ export function AnimeView({ active = true }: { active?: boolean }) {
               </button>
             </div>
           )}
+          {!anilistHidden.includes("yourLists") && <AnilistRows />}
           {continueWatching.length > 0 && (
             <Row title="Continue Watching" min={260} shape="landscape" scrollKey="anime:cw">
               {continueWatching.map((item) => (
@@ -430,6 +435,9 @@ export function AnimeView({ active = true }: { active?: boolean }) {
               ))}
             </Row>
           )}
+          <AnilistRowControls />
+          {!anilistHidden.includes("trending") && <AnilistTrendingRow />}
+          {!anilistHidden.includes("top100") && <AnilistTopRow />}
           {awardWinnerMetas.length > 0 && (
             <div data-scroll-anchor="row:anime-awards">
               <Row title="Award Winning Anime" scrollKey="anime:awards">

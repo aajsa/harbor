@@ -22,12 +22,13 @@ export function SeekBar({
   const ref = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState<number | null>(null);
   const [scrub, setScrub] = useState<number | null>(null);
+  const [pending, setPending] = useState<number | null>(null);
   const { settings } = useSettings();
   const { active: trickplayActive, bufferedOnly } = useTrickplayState();
   const position = usePlaybackPositionGated(active);
   const buffered = usePlaybackBufferedGated(active);
   const dur = durationSec || 1;
-  const value = scrub ?? position;
+  const value = scrub ?? pending ?? position;
   const pct = Math.max(0, Math.min(1, value / dur)) * 100;
   const bufferedPct = Math.max(0, Math.min(1, (position + buffered) / dur)) * 100;
 
@@ -35,6 +36,10 @@ export function SeekBar({
     setSeekHovering(hover != null || scrub != null);
   }, [hover, scrub]);
   useEffect(() => () => setSeekHovering(false), []);
+  useEffect(() => {
+    if (pending == null) return;
+    if (Math.abs(position - pending) < 0.75) setPending(null);
+  }, [pending, position]);
 
   const fromEvent = (clientX: number): number => {
     const r = ref.current?.getBoundingClientRect();
@@ -50,11 +55,15 @@ export function SeekBar({
   const onLeave = () => setHover(null);
   const onDown = (e: React.PointerEvent) => {
     e.currentTarget.setPointerCapture(e.pointerId);
+    setPending(null);
     setScrub(fromEvent(e.clientX));
   };
   const onUp = (e: React.PointerEvent) => {
     e.currentTarget.releasePointerCapture(e.pointerId);
-    if (scrub != null) onSeek(scrub);
+    if (scrub != null) {
+      onSeek(scrub);
+      setPending(scrub);
+    }
     setScrub(null);
   };
 

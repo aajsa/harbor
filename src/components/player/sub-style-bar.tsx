@@ -1,0 +1,426 @@
+import { Check, ChevronDown, ChevronLeft, ChevronRight, Minus, Plus, X } from "lucide-react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
+import { ColorPopoverTrigger } from "@/views/settings/color-picker";
+import { previewFamily } from "@/views/settings/player-panel/internals";
+import { useSettings, type Settings } from "@/lib/settings";
+import {
+  closeStyleBar,
+  loadSubPresets,
+  saveSubPresets,
+  snapshotSub,
+  useStyleBarOpen,
+  type SubPreset,
+} from "@/lib/player/sub-presets";
+
+const SWATCHES = ["#FFFFFF", "#FFE45E", "#9AE6B4", "#93C5FD", "#FCA5A5", "#C4B5FD"];
+const IDLE_MS = 7000;
+
+function clamp(n: number, lo: number, hi: number): number {
+  return Math.max(lo, Math.min(hi, n));
+}
+
+export function SubStyleBar() {
+  const open = useStyleBarOpen();
+  const { settings, update } = useSettings();
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeStyleBar();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    let timer = window.setTimeout(closeStyleBar, IDLE_MS);
+    const bump = () => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(closeStyleBar, IDLE_MS);
+    };
+    window.addEventListener("pointermove", bump);
+    window.addEventListener("pointerdown", bump);
+    window.addEventListener("keydown", bump);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("pointermove", bump);
+      window.removeEventListener("pointerdown", bump);
+      window.removeEventListener("keydown", bump);
+    };
+  }, [open]);
+
+  if (!open) return null;
+
+  return (
+    <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex justify-center px-7 pt-[68px] animate-in fade-in slide-in-from-top-2 duration-200">
+      <div
+        role="toolbar"
+        aria-label="Subtitle appearance"
+        className="pointer-events-auto flex max-w-[calc(100vw-56px)] items-stretch gap-1.5 overflow-x-auto rounded-[14px] border border-edge bg-elevated/95 px-1.5 py-1.5 shadow-[0_18px_44px_-22px_rgba(0,0,0,0.85)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        <FontMenu value={settings.subFontFamily} fonts={settings.customFonts} onChange={(f) => update({ subFontFamily: f })} />
+        <Divider />
+        <SizeStepper value={settings.subFontSize} onChange={(n) => update({ subFontSize: clamp(n, 16, 56) })} />
+        <Divider />
+        <ColorRow value={settings.subFontColor} onChange={(c) => update({ subFontColor: c })} portal />
+        <Divider />
+        <OutlineToggle settings={settings} update={update} />
+        <Divider />
+        <SpacingStepper value={settings.subLineSpacing ?? 0} onChange={(n) => update({ subLineSpacing: clamp(n, 0, 12) })} />
+        <Divider />
+        <PlacementPad settings={settings} update={update} />
+        <Divider />
+        <PresetCluster settings={settings} update={update} />
+        <button
+          type="button"
+          onClick={closeStyleBar}
+          aria-label="Done"
+          className="ml-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] text-ink-subtle transition-colors hover:bg-raised hover:text-ink"
+        >
+          <X size={18} strokeWidth={2.2} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function Divider() {
+  return <span aria-hidden className="my-1 w-px shrink-0 self-stretch bg-edge-soft" />;
+}
+
+const BUILT_IN_FONTS: Array<{ id: string; label: string }> = [
+  { id: "inter", label: "Inter" },
+  { id: "system", label: "System" },
+  { id: "rounded", label: "Rounded" },
+  { id: "serif", label: "Serif" },
+];
+
+function FontMenu({
+  value,
+  fonts,
+  onChange,
+}: {
+  value: string;
+  fonts: Settings["customFonts"];
+  onChange: (f: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+
+  const items = [...BUILT_IN_FONTS, ...(fonts ?? []).map((f) => ({ id: `custom:${f.id}`, label: f.name }))];
+  const current = items.find((i) => i.id === value) ?? items[0];
+
+  useEffect(() => {
+    if (!open) return;
+    const place = () => {
+      const r = btnRef.current?.getBoundingClientRect();
+      if (r) setPos({ top: r.bottom + 8, left: r.left });
+    };
+    place();
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (btnRef.current?.contains(t) || menuRef.current?.contains(t)) return;
+      setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("resize", place);
+    window.addEventListener("scroll", place, true);
+    window.addEventListener("mousedown", onDown);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("resize", place);
+      window.removeEventListener("scroll", place, true);
+      window.removeEventListener("mousedown", onDown);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        onClick={() => setOpen((v) => !v)}
+        className="flex h-11 min-w-[124px] shrink-0 items-center justify-between gap-2 rounded-[10px] bg-raised px-3 text-[14px] font-semibold text-ink transition-colors hover:bg-elevated"
+        style={{ fontFamily: previewFamily(value) }}
+      >
+        <span className="truncate">{current.label}</span>
+        <ChevronDown size={15} className="shrink-0 text-ink-subtle" />
+      </button>
+      {open &&
+        pos &&
+        createPortal(
+          <>
+            <div
+              className="fixed inset-0 z-[310]"
+              onMouseDown={(e) => {
+                e.stopPropagation();
+                setOpen(false);
+              }}
+            />
+            <div
+              ref={menuRef}
+              className="fixed z-[320] max-h-[min(60vh,380px)] w-[208px] overflow-y-auto rounded-[14px] border border-edge bg-elevated/95 p-1.5 shadow-[0_24px_60px_-14px_rgba(0,0,0,0.8)] backdrop-blur-md [scrollbar-width:thin]"
+              style={{ top: pos.top, left: pos.left }}
+            >
+            {items.map((it) => {
+              const active = it.id === value;
+              return (
+                <button
+                  key={it.id}
+                  onClick={() => {
+                    onChange(it.id);
+                    setOpen(false);
+                  }}
+                  className={`flex w-full items-center justify-between gap-2 rounded-[9px] px-3 py-2.5 text-left text-[15px] transition-colors ${
+                    active ? "bg-raised text-ink" : "text-ink-muted hover:bg-raised/60 hover:text-ink"
+                  }`}
+                  style={{ fontFamily: previewFamily(it.id) }}
+                >
+                  <span className="truncate">{it.label}</span>
+                  {active && <Check size={15} className="shrink-0 text-ink" />}
+                </button>
+              );
+            })}
+            </div>
+          </>,
+          document.body,
+        )}
+    </>
+  );
+}
+
+function SizeStepper({ value, onChange }: { value: number; onChange: (n: number) => void }) {
+  const drag = useRef({ active: false, startX: 0, startVal: 0 });
+  const onDown = (e: React.PointerEvent) => {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    drag.current = { active: true, startX: e.clientX, startVal: value };
+  };
+  const onMove = (e: React.PointerEvent) => {
+    if (!drag.current.active) return;
+    onChange(Math.round(drag.current.startVal + (e.clientX - drag.current.startX) / 6));
+  };
+  const onUp = (e: React.PointerEvent) => {
+    e.currentTarget.releasePointerCapture(e.pointerId);
+    drag.current.active = false;
+  };
+  return (
+    <div className="flex h-11 shrink-0 items-stretch gap-px overflow-hidden rounded-[10px] bg-raised">
+      <button aria-label="Smaller" onClick={() => onChange(value - 1)} className="flex w-9 items-center justify-center text-ink-muted transition-colors hover:bg-elevated hover:text-ink">
+        <span className="text-[13px] font-bold">A</span>
+      </button>
+      <button
+        onPointerDown={onDown}
+        onPointerMove={onMove}
+        onPointerUp={onUp}
+        onPointerCancel={onUp}
+        className="flex min-w-[52px] cursor-ew-resize touch-none items-center justify-center px-2 font-mono text-[14px] tabular-nums text-ink"
+      >
+        {value}
+      </button>
+      <button aria-label="Larger" onClick={() => onChange(value + 1)} className="flex w-9 items-center justify-center text-ink-muted transition-colors hover:bg-elevated hover:text-ink">
+        <span className="text-[17px] font-bold">A</span>
+      </button>
+    </div>
+  );
+}
+
+function ColorRow({ value, onChange, portal }: { value: string; onChange: (c: string) => void; portal?: boolean }) {
+  return (
+    <div className="flex h-11 shrink-0 items-center gap-1 rounded-[10px] bg-raised px-1.5">
+      {SWATCHES.map((c) => (
+        <button
+          key={c}
+          aria-label={`Subtitle color ${c}`}
+          onClick={() => onChange(c)}
+          className={`h-6 w-6 rounded-full transition-transform hover:scale-110 ${
+            value.toUpperCase() === c ? "ring-2 ring-ink" : "ring-1 ring-edge-soft"
+          }`}
+          style={{ background: c }}
+        />
+      ))}
+      <ColorPopoverTrigger value={value} onChange={onChange} label="" direction="down" portal={portal} />
+    </div>
+  );
+}
+
+const OUTLINE_MODES: Array<{ id: "shadow" | "outline" | "box"; label: string }> = [
+  { id: "shadow", label: "Shadow" },
+  { id: "outline", label: "Outline" },
+  { id: "box", label: "Box" },
+];
+
+function OutlineToggle({ settings, update }: { settings: Settings; update: (p: Partial<Settings>) => void }) {
+  const idx = Math.max(0, OUTLINE_MODES.findIndex((m) => m.id === settings.subStyle));
+  const mode = OUTLINE_MODES[idx];
+  return (
+    <div className="flex h-11 shrink-0 items-stretch overflow-hidden rounded-[10px] bg-raised">
+      <button
+        onClick={() => update({ subStyle: OUTLINE_MODES[(idx + 1) % OUTLINE_MODES.length].id })}
+        className="flex min-w-[78px] items-center justify-center px-3 text-[13px] font-semibold text-ink"
+      >
+        {mode.label}
+      </button>
+      {settings.subStyle === "outline" && (
+        <div className="flex items-stretch border-l border-edge-soft">
+          <button aria-label="Thinner outline" onClick={() => update({ subBorderSize: clamp(settings.subBorderSize - 1, 1, 6) })} className="flex w-7 items-center justify-center text-ink-muted transition-colors hover:bg-elevated hover:text-ink">
+            <Minus size={13} />
+          </button>
+          <button aria-label="Thicker outline" onClick={() => update({ subBorderSize: clamp(Math.max(1, settings.subBorderSize) + 1, 1, 6) })} className="flex w-7 items-center justify-center text-ink-muted transition-colors hover:bg-elevated hover:text-ink">
+            <Plus size={13} />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SpacingStepper({ value, onChange }: { value: number; onChange: (n: number) => void }) {
+  return (
+    <div className="flex h-11 shrink-0 items-stretch overflow-hidden rounded-[10px] bg-raised">
+      <button aria-label="Tighter spacing" onClick={() => onChange(value - 1)} className="flex w-9 items-center justify-center text-ink-muted transition-colors hover:bg-elevated hover:text-ink">
+        <Minus size={14} />
+      </button>
+      <span className="flex min-w-[40px] items-center justify-center font-mono text-[13px] tabular-nums text-ink-muted" title="Letter spacing">
+        {value}
+      </span>
+      <button aria-label="Wider spacing" onClick={() => onChange(value + 1)} className="flex w-9 items-center justify-center text-ink-muted transition-colors hover:bg-elevated hover:text-ink">
+        <Plus size={14} />
+      </button>
+    </div>
+  );
+}
+
+function PlacementPad({ settings, update }: { settings: Settings; update: (p: Partial<Settings>) => void }) {
+  const aligns: Array<"left" | "center" | "right"> = ["left", "center", "right"];
+  return (
+    <div className="flex h-11 shrink-0 items-center gap-1.5 rounded-[10px] bg-raised px-2">
+      <div className="flex flex-col">
+        <button aria-label="Raise subtitles" onClick={() => update({ subMarginY: clamp(settings.subMarginY + 2, 0, 40) })} className="flex h-[18px] w-7 items-center justify-center text-ink-muted transition-colors hover:text-ink">
+          <ChevronLeft size={13} className="rotate-90" />
+        </button>
+        <button aria-label="Lower subtitles" onClick={() => update({ subMarginY: clamp(settings.subMarginY - 2, 0, 40) })} className="flex h-[18px] w-7 items-center justify-center text-ink-muted transition-colors hover:text-ink">
+          <ChevronRight size={13} className="rotate-90" />
+        </button>
+      </div>
+      <div className="flex items-center gap-1">
+        {aligns.map((a) => (
+          <button
+            key={a}
+            aria-label={`Align ${a}`}
+            onClick={() => update({ subAlignX: a })}
+            className={`h-2 w-2 rounded-full transition-colors ${settings.subAlignX === a ? "bg-ink" : "bg-edge"}`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function styleMatches(s: Settings, p: SubPreset): boolean {
+  const v = snapshotSub(s);
+  return (Object.keys(p.values) as Array<keyof SubPreset["values"]>).every((k) => v[k] === p.values[k]);
+}
+
+function PresetCluster({ settings, update }: { settings: Settings; update: (p: Partial<Settings>) => void }) {
+  const [list, setList] = useState<SubPreset[]>(() => loadSubPresets());
+  const [naming, setNaming] = useState(false);
+  const [draft, setDraft] = useState("");
+
+  const commit = (next: SubPreset[]) => {
+    setList(next);
+    saveSubPresets(next);
+  };
+  const save = () => {
+    const name = draft.trim();
+    if (!name) {
+      setNaming(false);
+      return;
+    }
+    commit([...list, { id: `${name.toLowerCase()}-${list.length}`, name, values: snapshotSub(settings) }]);
+    setDraft("");
+    setNaming(false);
+  };
+
+  if (naming) {
+    return (
+      <div className="flex h-11 shrink-0 items-center rounded-[10px] bg-raised px-1.5">
+        <input
+          autoFocus
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") save();
+            if (e.key === "Escape") setNaming(false);
+          }}
+          placeholder="Preset name"
+          className="h-8 w-[120px] rounded-[8px] bg-elevated px-2.5 text-[13px] text-ink outline-none ring-1 ring-edge placeholder:text-ink-subtle focus:ring-ink"
+        />
+        <button onClick={save} className="ml-1 flex h-8 items-center rounded-[8px] px-2.5 text-[13px] font-semibold text-ink-muted transition-colors hover:bg-elevated hover:text-ink">
+          Save
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-11 shrink-0 items-center gap-1 rounded-[10px] bg-raised px-1.5">
+      {list.map((p) => {
+        const active = styleMatches(settings, p);
+        return (
+          <PresetTip key={p.id} label="Click to apply · Right-click to delete">
+            <button
+              onClick={() => update(p.values)}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                commit(list.filter((x) => x.id !== p.id));
+              }}
+              className={`flex h-8 items-center rounded-[8px] px-2.5 text-[13px] font-semibold transition-colors ${
+                active ? "bg-elevated text-ink ring-1 ring-edge" : "text-ink-muted hover:bg-elevated/60 hover:text-ink"
+              }`}
+            >
+              {p.name}
+            </button>
+          </PresetTip>
+        );
+      })}
+      <button aria-label="Save current as preset" onClick={() => setNaming(true)} className="flex h-8 w-8 items-center justify-center rounded-[8px] text-ink-subtle transition-colors hover:bg-elevated hover:text-ink">
+        <Plus size={16} />
+      </button>
+    </div>
+  );
+}
+
+function PresetTip({ label, children }: { label: string; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  return (
+    <div
+      ref={ref}
+      className="inline-flex"
+      onMouseEnter={() => {
+        const r = ref.current?.getBoundingClientRect();
+        if (r) setPos({ top: r.top - 8, left: r.left + r.width / 2 });
+      }}
+      onMouseLeave={() => setPos(null)}
+    >
+      {children}
+      {pos &&
+        createPortal(
+          <div
+            role="tooltip"
+            className="pointer-events-none fixed z-[330] -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-lg border border-white/10 bg-black/90 px-2.5 py-1 text-[12px] font-medium text-white shadow-[0_10px_30px_-12px_rgba(0,0,0,0.7)] backdrop-blur-md"
+            style={{ top: pos.top, left: pos.left }}
+          >
+            {label}
+          </div>,
+          document.body,
+        )}
+    </div>
+  );
+}

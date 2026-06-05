@@ -67,6 +67,7 @@ export function buildDefaultCtx(opts: MockOptions): ControlContext {
     engine: "mpv",
     useOverlayPopups: false,
     customIcons: opts.customIcons,
+    previewStates: opts.previewStates,
     controlVariants: opts.controlVariants,
     timeFormat: opts.timeFormat,
     volumeStyle: opts.volumeStyle,

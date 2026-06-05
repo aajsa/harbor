@@ -330,6 +330,23 @@ export async function animeDetails(
         }
       }
     }
+    if (cast.length === 0 && settings.tmdbKey && franchise.length > 0) {
+      const root = franchise[0];
+      const hit = await tmdbAnimeLogo(settings.tmdbKey, root.meta.name, root.meta.releaseInfo, kind).catch(
+        () => null,
+      );
+      if (hit?.tmdbId) {
+        const full = await tmdbDetails(settings.tmdbKey, {
+          id: `tmdb:${kind === "movie" ? "movie" : "tv"}:${hit.tmdbId}`,
+          type: kind === "movie" ? "movie" : "series",
+          name: root.meta.name,
+        } as Meta).catch(() => null);
+        if (full?.cast?.length) {
+          cast = full.cast;
+          for (const k of castKeys) FRANCHISE_CAST_CACHE.set(k, cast);
+        }
+      }
+    }
   }
 
   const franchiseIds = new Set<string>([meta.id, `kitsu:${kitsuId}`]);

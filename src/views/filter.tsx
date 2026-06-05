@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BackToTop } from "@/components/back-to-top";
-import { GENRE_SPOTLIGHTS } from "@/lib/feed/genre-spotlights";
+import { selectSpotlights } from "@/lib/feed/genre-spotlights";
 import { SeenIdsProvider } from "@/lib/feed/seen-ids";
 import { useScrollMemory, type MetaFilter } from "@/lib/view";
 import { Header } from "./filter/header";
@@ -15,7 +15,7 @@ export function FilterView({ filter }: { filter: MetaFilter }) {
   const scrollRef = useRef<HTMLElement>(null);
   const seenRef = useRef(new Set<string>());
   const expectedSpotlights = useMemo(
-    () => (filter.kind === "genre" ? (GENRE_SPOTLIGHTS[filter.name] ?? []).length : 0),
+    () => (filter.kind === "genre" ? selectSpotlights(filter.name).length : 0),
     [filter],
   );
   const [doneSpotlights, setDoneSpotlights] = useState(0);

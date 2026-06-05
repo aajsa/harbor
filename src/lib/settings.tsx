@@ -50,8 +50,11 @@ export type Settings = {
   showMalBadge: boolean;
   showQualityBadge: boolean;
   badgePlacement: "top" | "bottom";
+  episodeLayout: "list" | "strip";
   harborAvatar: string | null;
   harborColor: string;
+  anilistAutoSync: boolean;
+  useAnilistAvatar: boolean;
   useTraktAvatar: boolean;
   traktClientId: string;
   traktClientSecret: string;
@@ -99,6 +102,7 @@ export type Settings = {
   subBoxOpacity: number;
   subBoxColor: string;
   subOpacity: number;
+  subLineSpacing: number;
   subProvidersEnabled: { wyzie: boolean; opensubtitles: boolean; jimaku: boolean; addons: boolean };
   subShowInPip: boolean;
   opensubtitlesApiKey: string;
@@ -109,6 +113,8 @@ export type Settings = {
   theme: ThemeSettings;
   homeMode: "harbor" | "classic";
   homeShowAllAddonRows: boolean;
+  libraryBookmarkedOnly: boolean;
+  useNativeTitleBar: boolean;
   cwSnapshotRetentionDays: number;
   streamFilterLevel: "strict" | "balanced" | "off";
   blockTrackers: boolean;
@@ -120,6 +126,7 @@ export type Settings = {
   hotkeys: Record<string, string>;
   animeFavoriteGenres: number[];
   animePicksDismissedAt: number;
+  animeAnilistRowsHidden: string[];
   pickerLayout: "condensed" | "stremio";
   seekBarStyle: "flat" | "glass" | "pinstripe" | "rainbow" | "image";
   seekBarHeight: number;
@@ -214,8 +221,11 @@ const DEFAULT: Settings = {
   showMalBadge: true,
   showQualityBadge: true,
   badgePlacement: "bottom",
+  episodeLayout: "list",
   harborAvatar: null,
   harborColor: "#7dd3fc",
+  anilistAutoSync: true,
+  useAnilistAvatar: false,
   useTraktAvatar: false,
   traktClientId: "",
   traktClientSecret: "",
@@ -272,6 +282,7 @@ const DEFAULT: Settings = {
   subBoxOpacity: 0.6,
   subBoxColor: "#000000",
   subOpacity: 1,
+  subLineSpacing: 0,
   subProvidersEnabled: { wyzie: false, opensubtitles: true, jimaku: false, addons: true },
   subShowInPip: true,
   opensubtitlesApiKey: "",
@@ -287,6 +298,8 @@ const DEFAULT: Settings = {
   theme: DEFAULT_THEME,
   homeMode: "harbor",
   homeShowAllAddonRows: false,
+  libraryBookmarkedOnly: true,
+  useNativeTitleBar: false,
   cwSnapshotRetentionDays: 30,
   streamFilterLevel: "strict",
   blockTrackers: true,
@@ -294,6 +307,7 @@ const DEFAULT: Settings = {
   hotkeys: {},
   animeFavoriteGenres: [],
   animePicksDismissedAt: 0,
+  animeAnilistRowsHidden: [],
   pickerLayout: "stremio",
   seekBarStyle: "flat",
   seekBarHeight: 6,
@@ -399,6 +413,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         _mpvEmbedV3?: boolean;
         _pickerLayoutStremio?: boolean;
         _stremioDeeplinkOnByDefault?: boolean;
+        _anilistSyncOnV1?: boolean;
         scrapers?: unknown;
         scrapersAcknowledged?: boolean;
         _scrapersV2?: boolean;
@@ -410,6 +425,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       if (!parsed._stremioDeeplinkOnByDefault) {
         parsed.stremioDeeplinkInstall = true;
         parsed._stremioDeeplinkOnByDefault = true;
+      }
+      if (!parsed._anilistSyncOnV1) {
+        parsed.anilistAutoSync = true;
+        parsed._anilistSyncOnV1 = true;
       }
       if (!parsed._mpvEmbedV3) {
         parsed.playerMpvEmbed = true;
@@ -496,6 +515,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
           typeof parsed.animePicksDismissedAt === "number"
             ? parsed.animePicksDismissedAt
             : DEFAULT.animePicksDismissedAt,
+        animeAnilistRowsHidden: Array.isArray(parsed.animeAnilistRowsHidden)
+          ? parsed.animeAnilistRowsHidden.filter((k): k is string => typeof k === "string")
+          : DEFAULT.animeAnilistRowsHidden,
       };
     } catch {
       return DEFAULT;
@@ -598,6 +620,15 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       );
     });
   }, [settings.stremioDeeplinkInstall]);
+
+  useEffect(() => {
+    if (!("__TAURI_INTERNALS__" in window)) return;
+    void import("@tauri-apps/api/window").then(({ getCurrentWindow }) => {
+      getCurrentWindow()
+        .setDecorations(settings.useNativeTitleBar)
+        .catch((e) => console.warn("[harbor] setDecorations failed", e));
+    });
+  }, [settings.useNativeTitleBar]);
 
   const update = useCallback((patch: Partial<Settings>) => {
     setSettings((s) => ({ ...s, ...patch }));

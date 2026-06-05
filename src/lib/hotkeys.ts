@@ -18,6 +18,8 @@ export type HotkeyId =
   | "playerStart"
   | "playerEnd"
   | "playerStats"
+  | "playerScreenshot"
+  | "playerGifRecord"
   | "playerSpeedDown"
   | "playerSpeedUp"
   | "playerSubDelayDown"
@@ -45,6 +47,8 @@ export const HOTKEYS: HotkeyDef[] = [
   { id: "playerPlayPause", scope: "Player", group: "Playback", label: "Play / pause", description: "Toggle playback.", defaultBinding: "Space" },
   { id: "playerFullscreen", scope: "Player", group: "Playback", label: "Toggle fullscreen", description: "Enter or exit fullscreen.", defaultBinding: "f" },
   { id: "playerStats", scope: "Player", group: "Playback", label: "Toggle stats overlay", description: "Show or hide the playback stats overlay.", defaultBinding: "i" },
+  { id: "playerScreenshot", scope: "Player", group: "Playback", label: "Screenshot", description: "Save the current frame (video only, no subtitles) as a PNG to Pictures/Harbor.", defaultBinding: "p" },
+  { id: "playerGifRecord", scope: "Player", group: "Playback", label: "Record GIF", description: "Start or stop recording a GIF of the video (no subtitles). Saves to Pictures/Harbor.", defaultBinding: "o" },
 
   { id: "playerSeekBack10", scope: "Player", group: "Seeking", label: "Seek back 10s", description: "Jump back ten seconds.", defaultBinding: "ArrowLeft" },
   { id: "playerSeekForward10", scope: "Player", group: "Seeking", label: "Seek forward 10s", description: "Jump forward ten seconds.", defaultBinding: "ArrowRight" },
@@ -63,7 +67,7 @@ export const HOTKEYS: HotkeyDef[] = [
   { id: "playerSubDelayUp", scope: "Player", group: "Tracks", label: "Subtitle delay +0.1s", description: "Shift subtitle timing later (Shift for fine steps).", defaultBinding: "x" },
 
   { id: "playerNextEpisode", scope: "Player", group: "Navigation", label: "Next episode", description: "Skip to the next episode if available.", defaultBinding: "n" },
-  { id: "playerPrevEpisode", scope: "Player", group: "Navigation", label: "Previous episode", description: "Skip to the previous episode if available.", defaultBinding: "p" },
+  { id: "playerPrevEpisode", scope: "Player", group: "Navigation", label: "Previous episode", description: "Skip to the previous episode if available.", defaultBinding: "b" },
 
   { id: "playerSpeedDown", scope: "Player", group: "Speed", label: "Speed down", description: "Slow playback by 0.25x.", defaultBinding: "[" },
   { id: "playerSpeedUp", scope: "Player", group: "Speed", label: "Speed up", description: "Speed playback up by 0.25x.", defaultBinding: "]" },
