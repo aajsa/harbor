@@ -49,28 +49,67 @@ export async function fetchAndParseXmltv(
     console.info(
       `[epg] response status=${res.status} type=${res.headers.get("content-type") ?? "?"} len=${res.headers.get("content-length") ?? "?"} enc=${res.headers.get("content-encoding") ?? "none"}`,
     );
-    const reader = res.body?.getReader();
-    if (!reader) {
+    const rawReader = res.body?.getReader();
+    if (!rawReader) {
       const text = await res.text();
       console.info(`[epg] non-stream body head: ${text.slice(0, 200).replace(/\s+/g, " ")}`);
       const out = parseXmltv(text);
       console.info(`[epg] parsed ${out.length} programs (non-stream) from ${url}`);
       return out;
     }
+    let received = 0;
+    const first = await rawReader.read();
+    armStall();
+    let reader = rawReader;
+    if (!first.done && first.value) {
+      received += first.value.byteLength;
+      if (first.value[0] === 0x1f && first.value[1] === 0x8b) {
+        console.info("[epg] gzip payload detected, inflating");
+        const firstChunk = first.value;
+        reader = new ReadableStream<Uint8Array>({
+          start(c) {
+            c.enqueue(firstChunk);
+          },
+          async pull(c) {
+            const { value, done } = await rawReader.read();
+            armStall();
+            if (done) {
+              c.close();
+              return;
+            }
+            if (value) {
+              received += value.byteLength;
+              if (received > MAX_BYTES) {
+                c.error(new Error("EPG exceeds 200MB limit"));
+                return;
+              }
+              c.enqueue(value);
+            }
+          },
+        })
+          .pipeThrough(new DecompressionStream("gzip"))
+          .getReader();
+      }
+    }
+    const passthrough = reader === rawReader;
     const decoder = new TextDecoder("utf-8");
     let buffer = "";
-    let received = 0;
     let lastLog = Date.now();
     let headLogged = false;
     const startedAt = Date.now();
     const out: EpgProgram[] = [];
+    if (passthrough && !first.done && first.value) {
+      buffer += decoder.decode(first.value, { stream: true });
+    }
     while (true) {
       const { value, done } = await reader.read();
       armStall();
       if (done) break;
       if (!value) continue;
-      received += value.byteLength;
-      if (received > MAX_BYTES) throw new Error("EPG exceeds 200MB limit");
+      if (passthrough) {
+        received += value.byteLength;
+        if (received > MAX_BYTES) throw new Error("EPG exceeds 200MB limit");
+      }
       buffer += decoder.decode(value, { stream: true });
       if (!headLogged && buffer.length >= 200) {
         headLogged = true;

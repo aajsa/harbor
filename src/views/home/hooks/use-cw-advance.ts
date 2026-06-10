@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { fetchAdjacentEpisodes } from "@/lib/series-episodes";
 import type { Meta } from "@/lib/cinemeta";
-import type { LibraryItem } from "@/lib/stremio";
+import { episodeFromVideoId, libraryMetaType, type LibraryItem } from "@/lib/stremio";
 
 const FINISHED_RATIO = 0.9;
 
@@ -17,7 +17,9 @@ function currentEpisode(i: LibraryItem): { season: number; episode: number } | n
   const season = i.state?.season;
   const episode = i.state?.episode;
   if (season && episode) return { season, episode };
-  return null;
+  const vid = i.state?.video_id ?? "";
+  if (/^(kitsu|mal|anilist|anidb):/.test(i._id) && vid.split(":").length === 3) return null;
+  return episodeFromVideoId(vid);
 }
 
 function sameMap(a: Map<string, LibraryItem>, b: Map<string, LibraryItem>): boolean {
@@ -50,7 +52,7 @@ export function useCwAdvance(
         if (nx === undefined) {
           const meta: Meta = {
             id: i._id,
-            type: i.type,
+            type: libraryMetaType(i.type),
             name: i.name,
             poster: i.poster,
             background: i.background,

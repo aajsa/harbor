@@ -34,7 +34,9 @@ import {
 } from "@/lib/providers/jikan";
 import { useSettings } from "@/lib/settings";
 import { isAdultAnime } from "@/lib/addons-store/adult-filter";
-import { library, type LibraryItem } from "@/lib/stremio";
+import { isAnimeCwItem, library, type LibraryItem } from "@/lib/stremio";
+import { fetchSimklPlaybackItems } from "@/lib/simkl/playback";
+import { useSimkl } from "@/lib/simkl/provider";
 import { useScrollMemory } from "@/lib/view";
 
 type Spec = {
@@ -231,7 +233,9 @@ export function AnimeView({ active = true }: { active?: boolean }) {
   const [showPicker, setShowPicker] = useState(false);
 
   const { authKey } = useAuth();
+  const { isConnected: simklConnected } = useSimkl();
   const [libItems, setLibItems] = useState<LibraryItem[]>([]);
+  const [simklCw, setSimklCw] = useState<LibraryItem[]>([]);
   const [addonRows, setAddonRows] = useState<AddonRow[]>([]);
   useEffect(() => {
     if (!authKey) {
@@ -239,26 +243,52 @@ export function AnimeView({ active = true }: { active?: boolean }) {
       setAddonRows([]);
       return;
     }
-    library(authKey)
-      .then(setLibItems)
-      .catch(() => setLibItems([]));
+    const load = () => {
+      library(authKey)
+        .then(setLibItems)
+        .catch(() => setLibItems([]));
+    };
+    load();
     loadAddonRows(authKey)
       .then((rows) => setAddonRows(rows.filter(isAnimeRow)))
       .catch(() => setAddonRows([]));
+    const refresh = () => {
+      if (document.visibilityState === "visible") load();
+    };
+    window.addEventListener("focus", refresh);
+    return () => window.removeEventListener("focus", refresh);
   }, [authKey]);
 
+  useEffect(() => {
+    if (!simklConnected) {
+      setSimklCw([]);
+      return;
+    }
+    let cancelled = false;
+    fetchSimklPlaybackItems()
+      .then((cw) => {
+        if (!cancelled) setSimklCw(cw.filter(isAnimeCwItem));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [simklConnected]);
+
   const continueWatching = useMemo(() => {
-    return libItems
-      .filter(
-        (i) =>
-          (!i.removed || i.temp) &&
-          i.state &&
-          i.state.timeOffset > 0 &&
-          (i._id.startsWith("kitsu:") || i._id.startsWith("mal:")),
-      )
+    const seen = new Set<string>();
+    return [...libItems, ...simklCw]
+      .filter((i) => {
+        if (!(!i.removed || i.temp)) return false;
+        if (!i.state || i.state.timeOffset <= 0) return false;
+        if (!isAnimeCwItem(i)) return false;
+        if (seen.has(i._id)) return false;
+        seen.add(i._id);
+        return true;
+      })
       .sort((a, b) => Date.parse(b._mtime) - Date.parse(a._mtime))
       .slice(0, 20);
-  }, [libItems]);
+  }, [libItems, simklCw]);
 
   const watchHistoryRecs = useWatchHistoryRecommendations(continueWatching);
 

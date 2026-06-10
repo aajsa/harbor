@@ -295,6 +295,7 @@ export function renderControl(id: PlayerControlId, ctx: ControlContext): ReactNo
     }
     case "audio-menu": {
       if (ctx.tight || ctx.engine === "html5") return null;
+      if (ctx.isLiveChannel && ctx.snap.audioTracks.length < 2) return null;
       return (
         <AudioMenu
           tracks={ctx.snap.audioTracks}
@@ -309,6 +310,7 @@ export function renderControl(id: PlayerControlId, ctx: ControlContext): ReactNo
       );
     }
     case "subtitle-menu": {
+      if (ctx.isLiveChannel && ctx.snap.subtitleTracks.length === 0) return null;
       return (
         <SubtitleMenu
           tracks={ctx.snap.subtitleTracks}

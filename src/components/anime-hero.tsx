@@ -8,7 +8,7 @@ import { resolveAnimeBackdrop, resolveLogo } from "@/lib/logo";
 import { useSettings } from "@/lib/settings";
 import { useView } from "@/lib/view";
 import { observe, usePageVisible } from "@/lib/visibility";
-import { ImdbIcon } from "./icons/imdb-icon";
+import { MalLogo } from "./icons/mal-logo";
 import { PickCard } from "./pick-card";
 import { Row } from "./row";
 
@@ -213,7 +213,7 @@ export function AnimeHero({
             <span className="ml-1 hidden items-center gap-1.5 text-[13px] text-ink-muted sm:inline-flex">
               {current.imdbRating && (
                 <>
-                  <ImdbIcon className="h-[12px] w-auto rounded-[2px]" />
+                  <MalLogo className="h-[12px] w-auto text-ink-muted" />
                   <span className="font-semibold text-ink">{current.imdbRating}</span>
                 </>
               )}

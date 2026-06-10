@@ -11,6 +11,7 @@ import { StremioRail } from "@/chrome/stremio-rail";
 import { TopDock } from "@/chrome/topdock";
 import { Topbar } from "@/chrome/topbar";
 import { startMaintenance, subscribeMemoryPressure } from "@/lib/maintenance";
+import { flushCloudSync } from "@/views/player/hooks/use-stremio-sync";
 import { setNativeMemoryActive } from "@/lib/native-memory";
 import { useOverlayPinned } from "@/lib/overlay-pin";
 import { isMobileDevice, isWeb } from "@/lib/platform";
@@ -365,6 +366,26 @@ function Shell() {
   useViewPreloader();
 
   useEffect(() => startMaintenance(), []);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !("__TAURI_INTERNALS__" in window)) return;
+    let unlisten: (() => void) | undefined;
+    let cancelled = false;
+    void import("@tauri-apps/api/event").then(({ listen }) =>
+      listen("harbor://app-closing", async () => {
+        await flushCloudSync().catch(() => {});
+        const { invoke } = await import("@tauri-apps/api/core");
+        await invoke("harbor_flush_done").catch(() => {});
+      }).then((u) => {
+        if (cancelled) u();
+        else unlisten = u;
+      }),
+    );
+    return () => {
+      cancelled = true;
+      unlisten?.();
+    };
+  }, []);
 
   useEffect(() => {
     const w = window as unknown as { harbor?: Record<string, unknown> };

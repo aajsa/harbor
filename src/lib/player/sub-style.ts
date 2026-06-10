@@ -6,7 +6,8 @@ function hexToBgr(hex: string): string {
 }
 
 export async function applySubStyle(s: Settings, assActive = false): Promise<void> {
-  const override = assActive && s.subAssOverride === "no" ? "scale" : s.subAssOverride;
+  const override = s.subAssOverride;
+  const assMargins = assActive && override !== "no" ? "yes" : "no";
   const props: Array<[string, unknown]> = [
     ["sub-font-size", s.subFontSize],
     ["sub-color", hexToBgr(s.subFontColor)],
@@ -15,8 +16,8 @@ export async function applySubStyle(s: Settings, assActive = false): Promise<voi
     ["sub-margin-y", s.subMarginY],
     ["sub-align-x", s.subAlignX],
     ["sub-ass-override", override],
-    ["sub-ass-force-margins", assActive ? "yes" : "no"],
-    ["sub-use-margins", assActive ? "yes" : "no"],
+    ["sub-ass-force-margins", assMargins],
+    ["sub-use-margins", assMargins],
     ["sub-spacing", s.subLineSpacing],
   ];
   await Promise.all(

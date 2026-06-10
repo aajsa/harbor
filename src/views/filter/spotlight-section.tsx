@@ -3,7 +3,7 @@ import { PickCard } from "@/components/pick-card";
 import { Row } from "@/components/row";
 import type { Meta } from "@/lib/cinemeta";
 import { type Spotlight } from "@/lib/feed/genre-spotlights";
-import { useSeenIdsRef } from "@/lib/feed/seen-ids";
+import { useClaimSeenIds } from "@/lib/feed/seen-ids";
 import { genreEquivalents } from "@/lib/feed/tags";
 import {
   creditToMeta,
@@ -92,7 +92,7 @@ export function SpotlightSection({
 }) {
   const { settings } = useSettings();
   const { openPerson } = useView();
-  const seenIdsRef = useSeenIdsRef();
+  const claim = useClaimSeenIds(`spotlight:${spotlight.name}`);
   const { markDone } = useContext(SpotlightGateContext);
   const [personId, setPersonId] = useState<number | null>(null);
   const [personLookupDone, setPersonLookupDone] = useState(false);
@@ -161,7 +161,7 @@ export function SpotlightSection({
         );
         const credits = spotlightCredits(p, spotlight, genreId);
         const metas = credits.map(creditToMeta);
-        for (const m of metas) seenIdsRef.current.add(m.id);
+        claim(metas);
         setItems(metas);
         reportDone();
       })
@@ -173,7 +173,7 @@ export function SpotlightSection({
     return () => {
       cancelled = true;
     };
-  }, [settings.tmdbKey, personId, personLookupDone, genreId, spotlight, seenIdsRef, reportDone]);
+  }, [settings.tmdbKey, personId, personLookupDone, genreId, spotlight, claim, reportDone]);
 
   if (items && items.length === 0) return null;
 

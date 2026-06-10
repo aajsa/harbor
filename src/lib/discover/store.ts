@@ -52,9 +52,9 @@ function notify() {
   subs.forEach((fn) => fn());
 }
 
-export function trackEvent(id: string, kind: EventKind, meta?: ProfileSnapshot) {
+export function trackEvent(id: string, kind: EventKind, meta?: ProfileSnapshot, ts?: number) {
   if (!id) return;
-  const now = Date.now();
+  const now = ts ?? Date.now();
   const recent = mem.events[mem.events.length - 1];
   if (recent && recent.id === id && recent.kind === kind && now - recent.ts < DUP_WINDOW_MS) {
     if (meta) recent.meta = meta;

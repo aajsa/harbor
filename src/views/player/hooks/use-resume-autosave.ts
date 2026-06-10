@@ -5,7 +5,7 @@ import { trackEvent } from "@/lib/discover/store";
 import { savePlayback } from "@/lib/playback-history";
 import { saveResumeMs } from "@/lib/resume";
 import type { PlayerSnapshot } from "@/lib/player/bridge";
-import { getPlaybackPosition } from "@/lib/player/playback-clock";
+import { getPlaybackPosition, subscribePlaybackClock } from "@/lib/player/playback-clock";
 import { useSettings } from "@/lib/settings";
 import type { PlayerSrc } from "@/lib/view";
 
@@ -31,11 +31,25 @@ export function useResumeAutosave(params: {
   autoSyncRef.current = settings.anilistAutoSync;
   const latestRef = useRef({ src, snap, season, episode });
   latestRef.current = { src, snap, season, episode };
+  const lastGoodPosRef = useRef(0);
+
+  useEffect(() => {
+    lastGoodPosRef.current = 0;
+  }, [src.url, src.meta.id, season, episode]);
+
+  useEffect(
+    () =>
+      subscribePlaybackClock(() => {
+        const pos = getPlaybackPosition();
+        if (pos >= MIN_POSITION_SEC) lastGoodPosRef.current = pos;
+      }),
+    [],
+  );
 
   const record = (s: PlayerSrc, sn: PlayerSnapshot, se?: number, ep?: number): void => {
     const id = s.meta.id;
     if (!id || id.startsWith("iptv:")) return;
-    const pos = getPlaybackPosition();
+    const pos = getPlaybackPosition() || lastGoodPosRef.current;
     if (pos < MIN_POSITION_SEC) return;
     lastSavedRef.current = pos * 1000;
     saveResumeMs(id, pos * 1000, se, ep);
@@ -58,7 +72,7 @@ export function useResumeAutosave(params: {
   const persistNow = (force: boolean): void => {
     const { src: s, snap: sn, season: se, episode: ep } = latestRef.current;
     if (s.meta.id?.startsWith("iptv:")) return;
-    const pos = getPlaybackPosition();
+    const pos = getPlaybackPosition() || lastGoodPosRef.current;
     if (pos < MIN_POSITION_SEC) return;
     const ms = pos * 1000;
     if (!force && Math.abs(ms - lastSavedRef.current) < 1500) return;

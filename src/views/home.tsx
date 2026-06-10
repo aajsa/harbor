@@ -21,8 +21,9 @@ import { useAuth } from "@/lib/auth";
 import { type Meta } from "@/lib/cinemeta";
 import { useSettings, type StreamingService } from "@/lib/settings";
 import { trackEvent } from "@/lib/discover";
-import { saveResumeMs } from "@/lib/resume";
-import { episodeFromVideoId, library, libraryPut, type LibraryItem } from "@/lib/stremio";
+import { readResumeEntry, saveResumeBatch } from "@/lib/resume";
+import { repairLibraryNames } from "@/lib/stremio-repair";
+import { episodeFromVideoId, isAnimeCwItem, library, libraryPut, type LibraryItem } from "@/lib/stremio";
 import { useTrakt } from "@/lib/trakt/provider";
 import { buildTraktHomeRows } from "@/lib/trakt/home-rails";
 import { fetchWatchedKeySet } from "@/lib/trakt/history";
@@ -48,7 +49,7 @@ import type { HomeRow } from "./home/home-types";
 import { RowSkeleton } from "./home/row-skeleton";
 
 export function Home({ active = true }: { active?: boolean }) {
-  const { authKey } = useAuth();
+  const { authKey, user } = useAuth();
   const { settings, update } = useSettings();
   const [editMode, setEditMode] = useState(false);
   const [rows, setRows] = useState<HomeRow[]>([]);
@@ -59,7 +60,19 @@ export function Home({ active = true }: { active?: boolean }) {
   const [traktWatched, setTraktWatched] = useState<Set<string>>(() => new Set());
   const [heroPool, setHeroPool] = useState<Meta[]>([]);
   const [items, setItems] = useState<LibraryItem[]>([]);
-  const [dismissed, setDismissed] = useState<Set<string>>(() => new Set());
+  const [dismissed, setDismissed] = useState<Set<string>>(() => {
+    try {
+      const raw = JSON.parse(localStorage.getItem("harbor.cw.dismissed.simkl") ?? "[]");
+      const arr = Array.isArray(raw) ? (raw as string[]) : [];
+      const migrated = arr.map((v) => (v.startsWith("simkl|") ? v : `simkl|${v}`));
+      if (migrated.some((v, i) => v !== arr[i])) {
+        localStorage.setItem("harbor.cw.dismissed.simkl", JSON.stringify(migrated));
+      }
+      return new Set(migrated);
+    } catch {
+      return new Set();
+    }
+  });
   const [tmdbProvidedByAddon, setTmdbProvidedByAddon] = useState(false);
   const { isConnected: traktConnected } = useTrakt();
   const { isConnected: simklConnected } = useSimkl();
@@ -222,26 +235,46 @@ export function Home({ active = true }: { active?: boolean }) {
         .then((libItems) => {
           if (cancelled) return;
           setItems(libItems);
+          const importKey = `harbor.discover.libImported.${user?._id ?? "anon"}`;
+          let importedSince = 0;
+          try {
+            importedSince = Number(localStorage.getItem(importKey) ?? 0) || 0;
+          } catch {}
+          const resumeEntries: { id: string; ms: number; season?: number; episode?: number; t?: number }[] = [];
           for (const i of libItems) {
+            const mt = Date.parse(i._mtime ?? "");
             if (i.state?.timeOffset && i.state.timeOffset > 0) {
               const se = episodeFromVideoId(i.state.video_id);
-              saveResumeMs(
-                i._id,
-                i.state.timeOffset,
-                i.state.season ?? se?.season,
-                i.state.episode ?? se?.episode,
-              );
+              const s = i.state.season ?? se?.season;
+              const e = i.state.episode ?? se?.episode;
+              const local = readResumeEntry(i._id, s, e);
+              if (!local || (Number.isFinite(mt) && mt > local.t)) {
+                resumeEntries.push({
+                  id: i._id,
+                  ms: i.state.timeOffset,
+                  season: s,
+                  episode: e,
+                  t: Number.isFinite(mt) ? mt : undefined,
+                });
+              }
             }
             if ((i.removed && !i.temp) || trackedRef.current.has(i._id)) continue;
             trackedRef.current.add(i._id);
+            if (!Number.isFinite(mt) || Date.now() - mt > 14 * 864e5) continue;
+            if (importedSince > 0 && mt <= importedSince) continue;
             const offset = i.state?.timeOffset ?? 0;
             const duration = i.state?.duration ?? 0;
             const progress = duration > 0 ? offset / duration : 0;
             const flagged = (i.state?.flaggedWatched ?? 0) > 0;
-            if (flagged || progress > 0.85) trackEvent(i._id, "watched");
-            else if (progress > 0.05) trackEvent(i._id, "play");
-            else if (!i.temp) trackEvent(i._id, "watchlist");
+            if (flagged || progress > 0.85) trackEvent(i._id, "watched", undefined, mt);
+            else if (progress > 0.05) trackEvent(i._id, "play", undefined, mt);
+            else if (!i.temp) trackEvent(i._id, "watchlist", undefined, mt);
           }
+          saveResumeBatch(resumeEntries);
+          try {
+            localStorage.setItem(importKey, String(Date.now()));
+          } catch {}
+          void repairLibraryNames(authKey, libItems, user?._id ?? "", settings.tmdbKey);
         })
         .catch(console.error);
     };
@@ -275,31 +308,31 @@ export function Home({ active = true }: { active?: boolean }) {
     const eligible = [...items, ...simklCw]
       .filter(
         (i) =>
-          ((i.type as string) === "movie" || (i.type as string) === "series" || (i.type as string) === "anime") &&
+          (i.type as string) !== "other" &&
+          !i._id.startsWith("iptv:") &&
           !dismissed.has(i._id) &&
+          !(i.external === "simkl" && dismissed.has(`simkl|${i._id}`)) &&
           (!i.removed || i.temp) &&
           i.state &&
           i.state.timeOffset > 0 &&
-          !(
-            settings.animeOnlyInAnimeRoom &&
-            (i._id.startsWith("kitsu:") || i._id.startsWith("mal:") || i.isAnime === true)
-          ),
+          !(settings.animeOnlyInAnimeRoom && isAnimeCwItem(i)),
       )
       .sort((a, b) => ts(b._mtime) - ts(a._mtime));
     const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "").trim();
     const ns = (id: string) => (id.startsWith("tt") ? "tt" : id.split(":")[0]);
     const seenId = new Set<string>();
-    const seenKey = new Map<string, string>();
+    const seenKey = new Map<string, { ns: string; vid: string }>();
     const out: typeof eligible = [];
     for (const i of eligible) {
       if (seenId.has(i._id)) continue;
       const key = `${i.type}:${norm(i.name ?? "")}`;
-      const keptNs = seenKey.get(key);
-      if (keptNs !== undefined && keptNs !== ns(i._id)) continue;
+      const kept = seenKey.get(key);
+      const vid = i.state?.video_id ?? "";
+      if (kept !== undefined && kept.ns !== ns(i._id) && kept.vid === vid) continue;
       seenId.add(i._id);
-      if (keptNs === undefined) seenKey.set(key, ns(i._id));
+      if (kept === undefined) seenKey.set(key, { ns: ns(i._id), vid });
       out.push(i);
-      if (out.length >= 20) break;
+      if (out.length >= 100) break;
     }
     return out;
   }, [items, simklCw, dismissed, settings.animeOnlyInAnimeRoom]);
@@ -308,17 +341,26 @@ export function Home({ active = true }: { active?: boolean }) {
   const onDismissCw = useCallback(
     (id: string) => {
       setDismissed((prev) => new Set(prev).add(id));
-      if (!authKey) return;
-      const target = items.find((i) => i._id === id);
+      const target = [...items, ...simklCw].find((i) => i._id === id);
       if (!target) return;
+      if ((target as { external?: string }).external === "simkl") {
+        setDismissed((prev) => new Set(prev).add(`simkl|${id}`));
+        try {
+          const raw = JSON.parse(localStorage.getItem("harbor.cw.dismissed.simkl") ?? "[]");
+          const set = new Set(Array.isArray(raw) ? (raw as string[]) : []);
+          set.add(`simkl|${id}`);
+          localStorage.setItem("harbor.cw.dismissed.simkl", JSON.stringify([...set]));
+        } catch {}
+        return;
+      }
+      if (!authKey || !target.state) return;
       void libraryPut(authKey, {
         ...target,
-        removed: true,
-        temp: false,
+        state: { ...target.state, timeOffset: 0 },
         _mtime: new Date().toISOString(),
       }).catch(() => {});
     },
-    [authKey, items],
+    [authKey, items, simklCw],
   );
 
   const heroSlides = useMemo<Slide[]>(() => {

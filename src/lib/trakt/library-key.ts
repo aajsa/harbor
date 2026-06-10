@@ -1,4 +1,11 @@
-import type { LibraryItem } from "@/lib/stremio";
+import { episodeFromVideoId, type LibraryItem } from "@/lib/stremio";
+
+function itemEpisode(item: LibraryItem): { season: number; episode: number } | null {
+  const s = item.state?.season;
+  const e = item.state?.episode;
+  if (s != null && e != null) return { season: s, episode: e };
+  return episodeFromVideoId(item.state?.video_id);
+}
 
 export function libraryItemWatchedKeys(item: LibraryItem): string[] {
   const id = item._id;
@@ -6,10 +13,9 @@ export function libraryItemWatchedKeys(item: LibraryItem): string[] {
 
   if (/^tt\d+$/.test(id)) {
     if (item.type === "movie") return [`imdb:${id}`];
-    const s = item.state?.season;
-    const e = item.state?.episode;
-    if (item.type === "series" && s != null && e != null) {
-      return [`imdb:${id}:${s}:${e}`];
+    const se = itemEpisode(item);
+    if (item.type === "series" && se) {
+      return [`imdb:${id}:${se.season}:${se.episode}`];
     }
     return [];
   }
@@ -20,9 +26,8 @@ export function libraryItemWatchedKeys(item: LibraryItem): string[] {
     if (!Number.isFinite(num)) return [];
     if (parts[1] === "movie") return [`tmdb:${num}`];
     if (parts[1] === "tv") {
-      const s = item.state?.season;
-      const e = item.state?.episode;
-      if (s != null && e != null) return [`tmdb:${num}:${s}:${e}`];
+      const se = itemEpisode(item);
+      if (se) return [`tmdb:${num}:${se.season}:${se.episode}`];
     }
   }
 

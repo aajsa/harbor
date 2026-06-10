@@ -525,7 +525,7 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
   });
   const gif = useGifRecorder({ src });
 
-  const { resolvedImdbId, resolvedImdbVerified } = useTrackAutoload({
+  const { resolvedImdbId, resolvedImdbVerified, resolutionSettled } = useTrackAutoload({
     bridgeRef,
     src,
     snap,
@@ -741,6 +741,9 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
     onScreenshot: quickToolsEnabled ? () => frameGrab.trigger() : undefined,
     onGifRecord: quickToolsEnabled ? () => gif.toggle() : undefined,
     onToggleCrop: () => videoFill.toggle(),
+    onPanscanUp: () => videoFill.step(0.1),
+    onPanscanDown: () => videoFill.step(-0.1),
+    onPrevChannel: liveOverlay.isLive ? liveOverlay.goPrevChannel : undefined,
   });
 
   const cycleSubtitles = () => {
@@ -817,7 +820,7 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
   }, [pendingSeekSec, snap.durationSec, clearPendingSeek]);
 
   useResumeAutosave({ src, snap, season, episode });
-  useStremioSync({ src, snap, authKey, resolvedImdbId, resolvedImdbVerified });
+  useStremioSync({ src, snap, authKey, resolvedImdbId, resolvedImdbVerified, resolutionSettled, castActiveRef });
   usePowerInhibit(snap);
   const subDropToast = useSubDrop(bridgeRef);
 

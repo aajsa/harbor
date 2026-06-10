@@ -1,4 +1,4 @@
-import { Bookmark, RefreshCcw } from "lucide-react";
+import { Bookmark, RefreshCcw, Star } from "lucide-react";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { awardSourceMeta, findTopAward, parseAwardYear, type AwardWin } from "@/lib/anime-awards";
 import { meta as fetchMeta, narrowMediaType, type Meta } from "@/lib/cinemeta";
@@ -29,6 +29,7 @@ export const PickCard = memo(function PickCard({
   const { openMeta } = useView();
   const { open: openContextMenu } = useContextMenu();
   const { settings } = useSettings();
+  const isAnimeCardId = /^(kitsu|mal|anilist|anidb):/.test(meta.id);
   const inCinema = isInCinema(meta);
   const rerun = (inCinema || flagRerun) && isRerun(meta);
   const showCinema = inCinema && !rerun;
@@ -128,7 +129,9 @@ export const PickCard = memo(function PickCard({
         />
         {inWatchlist && (
           <span
-            className="pointer-events-none absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-canvas/85 text-ink ring-1 ring-edge-soft/70 backdrop-blur-sm"
+            className={`pointer-events-none absolute right-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-canvas/85 text-ink ring-1 ring-edge-soft/70 backdrop-blur-sm ${
+              settings.badgePlacement === "top" ? "bottom-1.5" : "top-1.5"
+            }`}
             title="In your watchlist"
             aria-label="In watchlist"
           >
@@ -136,9 +139,24 @@ export const PickCard = memo(function PickCard({
           </span>
         )}
         <ScoreStack
-          rating={settings.showImdbBadge ? meta.imdbRating : undefined}
+          rating={
+            isAnimeCardId
+              ? settings.showMalBadge
+                ? meta.imdbRating
+                : undefined
+              : settings.showImdbBadge
+                ? cached?.imdbRating ?? meta.imdbRating
+                : undefined
+          }
           rt={settings.showRtBadge ? cached?.rtCritics : undefined}
-          source={meta.id.startsWith("kitsu:") || meta.id.startsWith("mal:") ? "mal" : "imdb"}
+          source={
+            isAnimeCardId
+              ? "mal"
+              : cached?.imdbRating != null || meta.id.startsWith("tt")
+                ? "imdb"
+                : "generic"
+          }
+          placement={settings.badgePlacement}
         />
       </div>
       {!settings.hidePosterTitles && (
@@ -150,14 +168,30 @@ export const PickCard = memo(function PickCard({
   );
 });
 
-function ScoreStack({ rating, rt, source = "imdb" }: { rating?: string; rt?: number; source?: "imdb" | "mal" }) {
+function ScoreStack({
+  rating,
+  rt,
+  source = "imdb",
+  placement = "bottom",
+}: {
+  rating?: string;
+  rt?: number;
+  source?: "imdb" | "mal" | "generic";
+  placement?: "top" | "bottom";
+}) {
   if (!rating && rt == null) return null;
   return (
-    <div className="absolute bottom-1.5 right-1.5 flex items-center gap-1 rounded-md bg-canvas/95 px-1.5 py-0.5 text-[10px] font-semibold text-ink">
+    <div
+      className={`absolute right-1.5 flex items-center gap-1 rounded-md bg-canvas/95 px-1.5 py-0.5 text-[10px] font-semibold text-ink ${
+        placement === "top" ? "top-1.5" : "bottom-1.5"
+      }`}
+    >
       {rating && (
         <span className="flex items-center gap-1">
           {source === "mal" ? (
             <MalLogo className="h-[11px] w-auto text-ink-muted" />
+          ) : source === "generic" ? (
+            <Star size={10} strokeWidth={0} fill="currentColor" className="text-accent" />
           ) : (
             <ImdbIcon className="h-[11px] w-auto rounded-[2px]" />
           )}

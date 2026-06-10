@@ -95,7 +95,11 @@ export function LiveView({ active }: { active: boolean }) {
 
   const { state, refresh } = useIptvPlaylist(active ? activeSource : null);
   const playlist = state.kind === "ready" ? state.playlist : getCachedPlaylist(activeSource?.id ?? "");
-  const { index: epg } = useEpg(active ? activeSource : null);
+  const epgOnlyUrls = useMemo(
+    () => sources.filter((s) => s.kind === "epg").map((s) => s.epgUrl || s.url),
+    [sources],
+  );
+  const { index: epg, error: epgError } = useEpg(active ? activeSource : null, epgOnlyUrls);
   const nowMs = useNowTick(30_000);
 
   const favorites = useFavorites();
@@ -400,6 +404,12 @@ export function LiveView({ active }: { active: boolean }) {
           )}
           <ViewModeToggle mode={mode} onChange={setMode} />
         </header>
+        )}
+        {epgError && !epg && (
+          <div className="mx-6 mt-2 flex items-center gap-2 rounded-xl border border-danger/40 bg-danger/10 px-4 py-2 text-[12.5px] text-ink-muted">
+            <span className="font-semibold text-danger">EPG failed:</span>
+            <span className="min-w-0 flex-1 truncate">{epgError}</span>
+          </div>
         )}
         {mode === "multiview" ? (
           <div className="flex min-h-0 flex-1 flex-col pt-2">

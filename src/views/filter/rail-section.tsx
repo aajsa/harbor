@@ -2,7 +2,7 @@ import { useContext, useEffect, useRef, useState } from "react";
 import { PickCard } from "@/components/pick-card";
 import { Row } from "@/components/row";
 import type { Meta } from "@/lib/cinemeta";
-import { useDedupOnSeenIds, useSeenIdsRef } from "@/lib/feed/seen-ids";
+import { useClaimSeenIds, useDedupOnSeenIds } from "@/lib/feed/seen-ids";
 import { tmdbDiscover } from "@/lib/providers/tmdb";
 import { useSettings } from "@/lib/settings";
 import type { MetaFilter } from "@/lib/view";
@@ -11,11 +11,12 @@ import { MAX_PAGES, MIN_INITIAL_FILL, SpotlightGateContext } from "./spotlight-g
 
 export function RailSection({ filter, rail }: { filter: MetaFilter; rail: StandardRail }) {
   const { settings } = useSettings();
-  const seenIdsRef = useSeenIdsRef();
-  const dedup = useDedupOnSeenIds();
   const gate = useContext(SpotlightGateContext);
   const noDedup = rail.noDedup === true;
   const mediaType = rail.mediaType ?? filter.mediaType;
+  const owner = `rail:${mediaType}:${rail.id}`;
+  const dedup = useDedupOnSeenIds(owner);
+  const claim = useClaimSeenIds(owner);
   const [items, setItems] = useState<Meta[] | null>(null);
   const [page, setPage] = useState(1);
   const [exhausted, setExhausted] = useState(false);
@@ -46,7 +47,7 @@ export function RailSection({ filter, rail }: { filter: MetaFilter; rail: Standa
           const filtered = res.filter((m) => m.poster);
           let fresh: typeof filtered;
           if (noDedup) {
-            for (const m of filtered) seenIdsRef.current.add(m.id);
+            claim(filtered);
             fresh = filtered;
           } else {
             fresh = dedup(filtered);
@@ -70,7 +71,7 @@ export function RailSection({ filter, rail }: { filter: MetaFilter; rail: Standa
     return () => {
       cancelled = true;
     };
-  }, [settings.tmdbKey, mediaType, rail.params, dedup, seenIdsRef, noDedup, gate.ready]);
+  }, [settings.tmdbKey, mediaType, rail.params, dedup, claim, noDedup, gate.ready]);
 
   const onEndReached = () => {
     if (loadingRef.current || exhausted || !settings.tmdbKey) return;
@@ -82,7 +83,7 @@ export function RailSection({ filter, rail }: { filter: MetaFilter; rail: Standa
         const filtered = res.filter((m) => m.poster);
         let fresh: typeof filtered;
         if (noDedup) {
-          for (const m of filtered) seenIdsRef.current.add(m.id);
+          claim(filtered);
           fresh = filtered;
         } else {
           fresh = dedup(filtered);

@@ -5,6 +5,7 @@ export type MdblistScores = {
   letterboxd: number | null;
   trakt: number | null;
   metacritic: number | null;
+  rtAudience: number | null;
 };
 
 type RatingRow = { source?: string; value?: number | null };
@@ -28,6 +29,7 @@ async function fetchScores(key: string, imdbId: string): Promise<MdblistScores |
       letterboxd: val("letterboxd"),
       trakt: val("trakt"),
       metacritic: val("metacritic"),
+      rtAudience: val("tomatoesaudience") ?? val("audience") ?? val("popcorn"),
     };
   } catch {
     return null;

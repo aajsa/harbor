@@ -70,6 +70,35 @@ export function QualityPanel() {
       </Section>
 
       <Section
+        title="Accessibility"
+        subtitle="Make everything bigger and easier to read: sidebar, menus, popups, every page. The whole interface scales live as you drag, so you can see the change right here. Great on 4K and ultrawide monitors, or whenever the text feels small."
+      >
+        <div className="flex items-center gap-4 px-1 py-1.5">
+          <span className="w-32 shrink-0 text-[13.5px] font-medium text-ink">Interface scale</span>
+          <input
+            type="range"
+            min={0.8}
+            max={1.6}
+            step={0.05}
+            value={settings.uiScale}
+            onChange={(e) => update({ uiScale: parseFloat(e.target.value) })}
+            className="h-1 flex-1 appearance-none rounded-full bg-edge-soft accent-ink"
+          />
+          <span className="w-14 shrink-0 text-right text-[13px] tabular-nums text-ink-muted">
+            {Math.round(settings.uiScale * 100)}%
+          </span>
+          {settings.uiScale !== 1 && (
+            <button
+              onClick={() => update({ uiScale: 1 })}
+              className="shrink-0 text-[12.5px] font-medium text-ink-subtle transition-colors hover:text-ink"
+            >
+              Reset
+            </button>
+          )}
+        </div>
+      </Section>
+
+      <Section
         title="Trailer quality"
         subtitle="How sharp the trailer is when you hit the preview button. Auto picks from your connection speed. 1080p and Best merge separate video and audio with the bundled ffmpeg, so they take a beat longer to start."
       >

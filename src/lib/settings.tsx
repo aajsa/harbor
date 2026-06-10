@@ -53,6 +53,7 @@ export type Settings = {
   showMalBadge: boolean;
   showQualityBadge: boolean;
   posterScale: number;
+  uiScale: number;
   trailerQuality: "auto" | "360p" | "720p" | "1080p" | "best";
   badgePlacement: "top" | "bottom";
   episodeLayout: "list" | "strip";
@@ -259,6 +260,7 @@ const DEFAULT: Settings = {
   showMalBadge: true,
   showQualityBadge: true,
   posterScale: 1,
+  uiScale: 1,
   trailerQuality: "auto",
   badgePlacement: "bottom",
   episodeLayout: "list",
@@ -631,6 +633,19 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     applyTheme(settings.theme);
   }, [settings.theme]);
+
+  useEffect(() => {
+    const scale = settings.uiScale > 0 ? settings.uiScale : 1;
+    const root = document.getElementById("root") as (HTMLElement & { style: CSSStyleDeclaration & { zoom?: string } }) | null;
+    if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
+      void import("@tauri-apps/api/webview")
+        .then(({ getCurrentWebview }) => getCurrentWebview().setZoom(scale))
+        .catch(() => {});
+      if (root) root.style.zoom = scale !== 1 ? "1" : "";
+    } else if (root) {
+      root.style.zoom = scale !== 1 ? String(scale) : "";
+    }
+  }, [settings.uiScale]);
 
   useEffect(() => {
     setTmdbLanguage(settings.tmdbLanguage);

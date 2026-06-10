@@ -1,3 +1,4 @@
+import { getEpgOverride } from "./epg-map";
 import type { EpgIndex, EpgProgram, IptvChannel } from "./types";
 
 const NOISE_WORDS = new Set([
@@ -31,7 +32,10 @@ export function epgProgramsForChannel(
   epg: EpgIndex | null,
   tvgIdCounts: ReadonlyMap<string, number>,
 ): EpgProgram[] | undefined {
-  if (!channel.tvgId || !epg) return undefined;
+  if (!epg) return undefined;
+  const override = getEpgOverride(channel.id);
+  if (override) return epg.byChannel.get(override);
+  if (!channel.tvgId) return undefined;
   const programs = epg.byChannel.get(channel.tvgId);
   if (!programs || programs.length === 0) return undefined;
   const count = tvgIdCounts.get(channel.tvgId) ?? 0;

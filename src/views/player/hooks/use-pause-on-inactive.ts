@@ -18,6 +18,24 @@ export function usePauseOnInactive({
 
   useEffect(() => {
     if (!isTauri) return;
+    let unlisten: (() => void) | undefined;
+    let cancelled = false;
+    void import("@tauri-apps/api/event").then(({ listen }) =>
+      listen("harbor://window-activity", () => {
+        window.dispatchEvent(new Event("harbor:mpv-force-geom"));
+      }).then((u) => {
+        if (cancelled) u();
+        else unlisten = u;
+      }),
+    );
+    return () => {
+      cancelled = true;
+      unlisten?.();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isTauri) return;
     if (!pauseMinimized && !pauseUnfocused) return;
     let unlisten: (() => void) | undefined;
     let cancelled = false;

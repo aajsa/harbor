@@ -1,7 +1,7 @@
 import { Clock } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/lib/auth";
-import { library, removeStremioLibraryItem, type LibraryItem } from "@/lib/stremio";
+import { library, libraryMetaType, removeStremioLibraryItem, type LibraryItem } from "@/lib/stremio";
 import { fetchWatchedHistory, type HistoryItem } from "@/lib/trakt/history";
 import { useTrakt } from "@/lib/trakt/provider";
 import {
@@ -139,7 +139,7 @@ function mergeHistory(stremio: LibraryItem[], trakt: HistoryItem[]): WatchlistMe
       key: item._id,
       meta: {
         id: item._id,
-        type: item.type,
+        type: libraryMetaType(item.type),
         name: item.name,
         poster: item.poster,
         background: item.background,

@@ -15,10 +15,13 @@ export type HotkeyId =
   | "playerSubtitleCycleAlt"
   | "playerNextEpisode"
   | "playerPrevEpisode"
+  | "playerPrevChannel"
   | "playerStart"
   | "playerEnd"
   | "playerStats"
   | "playerCrop"
+  | "playerPanscanUp"
+  | "playerPanscanDown"
   | "playerScreenshot"
   | "playerGifRecord"
   | "playerSpeedDown"
@@ -49,6 +52,8 @@ export const HOTKEYS: HotkeyDef[] = [
   { id: "playerFullscreen", scope: "Player", group: "Playback", label: "Toggle fullscreen", description: "Enter or exit fullscreen.", defaultBinding: "f" },
   { id: "playerStats", scope: "Player", group: "Playback", label: "Toggle stats overlay", description: "Show or hide the playback stats overlay.", defaultBinding: "i" },
   { id: "playerCrop", scope: "Player", group: "Playback", label: "Crop to fill", description: "Toggle between fit (letterboxed) and crop-to-fill for the current video.", defaultBinding: "v" },
+  { id: "playerPanscanDown", scope: "Player", group: "Playback", label: "Panscan out", description: "Zoom the video out step by step, restoring black bars (lower panscan).", defaultBinding: "-" },
+  { id: "playerPanscanUp", scope: "Player", group: "Playback", label: "Panscan in", description: "Zoom the video in step by step to crop black bars (raise panscan).", defaultBinding: "=" },
   { id: "playerScreenshot", scope: "Player", group: "Playback", label: "Screenshot", description: "Save the current frame (video only, no subtitles) as a PNG to Pictures/Harbor.", defaultBinding: "p" },
   { id: "playerGifRecord", scope: "Player", group: "Playback", label: "Record GIF", description: "Start or stop recording a GIF of the video (no subtitles). Saves to Pictures/Harbor.", defaultBinding: "o" },
 
@@ -70,6 +75,7 @@ export const HOTKEYS: HotkeyDef[] = [
 
   { id: "playerNextEpisode", scope: "Player", group: "Navigation", label: "Next episode", description: "Skip to the next episode if available.", defaultBinding: "n" },
   { id: "playerPrevEpisode", scope: "Player", group: "Navigation", label: "Previous episode", description: "Skip to the previous episode if available.", defaultBinding: "b" },
+  { id: "playerPrevChannel", scope: "Player", group: "Navigation", label: "Previous channel", description: "Jump back to the last live channel you watched (live TV only).", defaultBinding: "h" },
 
   { id: "playerSpeedDown", scope: "Player", group: "Speed", label: "Speed down", description: "Slow playback by 0.25x.", defaultBinding: "[" },
   { id: "playerSpeedUp", scope: "Player", group: "Speed", label: "Speed up", description: "Speed playback up by 0.25x.", defaultBinding: "]" },

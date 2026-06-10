@@ -191,13 +191,15 @@ fn apply_pre_init(
     set("osd-level", "0")?;
     set("cursor-autohide", "200")?;
     set("volume-max", "600")?;
+    let _ = init.set_property("background-color", "#000000");
+    let _ = init.set_property("background", "color");
 
     if let Some(hwnd) = embed_hwnd {
         #[cfg(windows)]
         {
             let hwnd_i64: i64 = hwnd.parse().map_err(|e| format!("parse wid {}: {}", hwnd, e))?;
             init.set_property("wid", hwnd_i64).map_err(|e| format!("set wid={}: {}", hwnd_i64, e))?;
-            if !args.d3d11_flip.unwrap_or(false) {
+            if args.d3d11_flip.unwrap_or(false) {
                 set("d3d11-flip", "no")?;
             }
         }

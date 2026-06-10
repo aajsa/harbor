@@ -4,7 +4,10 @@ import { deriveEpgUrls } from "@/lib/iptv/m3u";
 import { findCurrent } from "@/lib/iptv/xmltv";
 import type { EpgIndex, EpgProgram, IptvPlaylistSource } from "@/lib/iptv/types";
 
-export function useEpg(source: IptvPlaylistSource | null): {
+export function useEpg(
+  source: IptvPlaylistSource | null,
+  extraUrls: string[] = [],
+): {
   index: EpgIndex | null;
   loading: boolean;
   error: string | null;
@@ -14,13 +17,15 @@ export function useEpg(source: IptvPlaylistSource | null): {
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const extraKey = extraUrls.join("|");
 
   useEffect(() => {
     if (!source) {
       setIndex(null);
       return;
     }
-    const urls = source.epgUrl ? [source.epgUrl] : deriveEpgUrls(source.url);
+    const own = source.epgUrl ? [source.epgUrl] : deriveEpgUrls(source.url);
+    const urls = [...new Set([...own, ...extraUrls.filter(Boolean)])];
     if (urls.length === 0) {
       setIndex(null);
       return;
@@ -48,7 +53,8 @@ export function useEpg(source: IptvPlaylistSource | null): {
       cancelled = true;
       unsub();
     };
-  }, [source?.id, source?.url, source?.epgUrl]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [source?.id, source?.url, source?.epgUrl, extraKey]);
 
   return { index, loading, error };
 }

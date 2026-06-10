@@ -87,8 +87,8 @@ export function PlayerEnginePanel() {
             onChange={(v) => update({ playerHdrToSdr: v })}
           />
           <ToggleRow
-            label="Flip-model presentation"
-            sub="Lets Windows promote video to a hardware overlay plane. Slightly more efficient, but draws a thin bright line at the screen edge on some monitors. Leave off if you saw that line. Restart playback to apply."
+            label="Line-free video mode"
+            sub="Forces a compatibility present mode that removes a thin bright line some monitors show at the screen edge. Leave OFF unless you see that line: on some GPUs it can cause a white screen. Restart playback to apply."
             value={settings.playerD3d11Flip}
             onChange={(v) => update({ playerD3d11Flip: v })}
           />

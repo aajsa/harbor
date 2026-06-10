@@ -1,12 +1,21 @@
 import { useEffect, useRef } from "react";
 import { libraryGetOne, libraryPut, type LibraryItem } from "@/lib/stremio";
 import type { PlayerSnapshot } from "@/lib/player/bridge";
-import { getPlaybackPosition } from "@/lib/player/playback-clock";
+import { getPlaybackPosition, subscribePlaybackClock } from "@/lib/player/playback-clock";
 import type { PlayerSrc } from "@/lib/view";
 
-const TICK_MS = 5000;
+const TICK_MS = 30000;
 const BASE_REFRESH_MS = 30000;
 const MIN_POSITION_SEC = 6;
+const CREDITS_RATIO = 0.9;
+
+export const CLOUD_OK = /^(tt\d|kitsu:|mal:|anilist:|anidb:|tmdb:)/;
+
+let activeFlusher: (() => Promise<void>) | null = null;
+
+export async function flushCloudSync(): Promise<void> {
+  if (activeFlusher) await activeFlusher().catch(() => {});
+}
 
 export function useStremioSync(params: {
   src: PlayerSrc;
@@ -14,19 +23,68 @@ export function useStremioSync(params: {
   authKey: string | null;
   resolvedImdbId: string | null;
   resolvedImdbVerified: boolean;
+  resolutionSettled: boolean;
+  castActiveRef?: { current: boolean };
 }) {
-  const { src, snap, authKey, resolvedImdbId, resolvedImdbVerified } = params;
+  const { src, snap, authKey, resolvedImdbId, resolvedImdbVerified, resolutionSettled, castActiveRef } = params;
   const canonicalId = cloudWriteId(src.meta.id, resolvedImdbId, resolvedImdbVerified);
   const sessionStartRef = useRef<number>(Date.now());
   const lastSyncedRef = useRef(0);
   const baseItemRef = useRef<LibraryItem | null>(null);
   const fetchedRef = useRef<string | null>(null);
-  const latestRef = useRef({ src, snap, authKey, canonicalId });
-  latestRef.current = { src, snap, authKey, canonicalId };
+  const lastWrittenMtimesRef = useRef<Set<string>>(new Set());
+  const sessionCidRef = useRef<string | null>(null);
+  const lastGoodPosRef = useRef(0);
+  const wroteOnceRef = useRef(false);
+  const latestRef = useRef({ src, snap, authKey, canonicalId, resolutionSettled });
+  latestRef.current = { src, snap, authKey, canonicalId, resolutionSettled };
+
+  const ourVideoId = videoIdFor(src, canonicalId);
+
+  useEffect(() => {
+    const vid = ourVideoId;
+    if (vid && baseItemRef.current) {
+      const { src: s, snap: sn, authKey: ak } = latestRef.current;
+      const cid = sessionCidRef.current ?? latestRef.current.canonicalId;
+      const base = baseItemRef.current?._id === cid ? baseItemRef.current : null;
+      if (ak && cid && base) {
+        void writeLibraryItem(ak, s, sn, base, cid, 0.001, false, vid).then((mt) => {
+          if (mt) lastWrittenMtimesRef.current.add(mt);
+        });
+      }
+    }
+    return () => {
+      const { src: s, snap: sn, authKey: ak } = latestRef.current;
+      const cid = sessionCidRef.current ?? latestRef.current.canonicalId;
+      if (!ak || !cid || !vid) return;
+      const pos = getPlaybackPosition() || lastGoodPosRef.current;
+      if (pos < MIN_POSITION_SEC) return;
+      const base = baseItemRef.current?._id === cid ? baseItemRef.current : null;
+      void writeLibraryItem(ak, s, sn, base, cid, pos, false, vid).then((mt) => {
+        if (mt) lastWrittenMtimesRef.current.add(mt);
+      });
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ourVideoId, src.url]);
 
   useEffect(() => {
     sessionStartRef.current = Date.now();
-  }, [canonicalId]);
+    lastGoodPosRef.current = 0;
+  }, [ourVideoId, src.url]);
+
+  useEffect(() => {
+    sessionCidRef.current = null;
+    wroteOnceRef.current = false;
+  }, [src.meta.id]);
+
+  useEffect(
+    () =>
+      subscribePlaybackClock(() => {
+        const pos = getPlaybackPosition();
+        if (pos >= MIN_POSITION_SEC) lastGoodPosRef.current = pos;
+      }),
+    [],
+  );
 
   useEffect(() => {
     if (!authKey) return;
@@ -47,24 +105,33 @@ export function useStremioSync(params: {
     if (!authKey || !canonicalId) return;
     const id = window.setInterval(() => {
       void libraryGetOne(authKey, canonicalId).then((item) => {
-        if (item) baseItemRef.current = item;
+        if (item && item._id === latestRef.current.canonicalId) baseItemRef.current = item;
       });
     }, BASE_REFRESH_MS);
     return () => window.clearInterval(id);
   }, [authKey, canonicalId]);
 
-  const writeWithFreshBase = async () => {
-    const { src: s, snap: sn, authKey: ak, canonicalId: cid } = latestRef.current;
-    if (!ak || !cid) return;
-    const pos = getPlaybackPosition();
+  const writeWithFreshBase = async (isTerminal: boolean, withGet: boolean) => {
+    const { src: s, snap: sn, authKey: ak, canonicalId: liveCid, resolutionSettled: settled } = latestRef.current;
+    if (!ak || !settled) return;
+    const cid = sessionCidRef.current ?? liveCid;
+    if (!cid) return;
+    const pos = getPlaybackPosition() || lastGoodPosRef.current;
     if (pos < MIN_POSITION_SEC || sn.durationSec <= 0) return;
-    const fresh = await libraryGetOne(ak, cid).catch(() => null);
+    const vid = videoIdFor(s, cid);
+    const fresh =
+      withGet || !wroteOnceRef.current ? await libraryGetOne(ak, cid).catch(() => null) : null;
     if (fresh) baseItemRef.current = fresh;
-    const base = fresh ?? baseItemRef.current;
+    const base = fresh ?? (baseItemRef.current?._id === cid ? baseItemRef.current : null);
     const remoteMs = (base?.state?.timeOffset ?? 0) as number;
-    const remoteMtime = Date.parse((base as { _mtime?: string } | null)?._mtime ?? "");
+    const remoteMtimeStr = (base as { _mtime?: string } | null)?._mtime ?? "";
+    const remoteMtime = Date.parse(remoteMtimeStr);
+    const remoteVid =
+      ((base?.state as Record<string, unknown> | undefined)?.video_id as string | undefined) ?? cid;
     const ourMs = Math.floor(pos * 1000);
     if (
+      !lastWrittenMtimesRef.current.has(remoteMtimeStr) &&
+      remoteVid === vid &&
       Number.isFinite(remoteMtime) &&
       remoteMtime > sessionStartRef.current &&
       remoteMs > ourMs + 60_000
@@ -72,48 +139,79 @@ export function useStremioSync(params: {
       return;
     }
     lastSyncedRef.current = ourMs;
-    void writeLibraryItem(ak, s, sn, base, cid, pos);
+    const wroteMtime = await writeLibraryItem(ak, s, sn, base, cid, pos, isTerminal);
+    if (wroteMtime) {
+      lastWrittenMtimesRef.current.add(wroteMtime);
+      sessionCidRef.current = cid;
+      wroteOnceRef.current = true;
+    }
   };
 
-  const flush = () => {
-    void writeWithFreshBase();
+  const writeFlushFast = (): Promise<void> => {
+    const { src: s, snap: sn, authKey: ak, canonicalId: liveCid, resolutionSettled: settled } = latestRef.current;
+    if (!ak || !settled) return Promise.resolve();
+    const cid = sessionCidRef.current ?? liveCid;
+    if (!cid) return Promise.resolve();
+    const pos = getPlaybackPosition() || lastGoodPosRef.current;
+    if (pos < MIN_POSITION_SEC || sn.durationSec <= 0) return Promise.resolve();
+    const base = baseItemRef.current?._id === cid ? baseItemRef.current : null;
+    return writeLibraryItem(ak, s, sn, base, cid, pos, true).then((mt) => {
+      if (mt) lastWrittenMtimesRef.current.add(mt);
+    });
   };
+  const writeFlushFastRef = useRef(writeFlushFast);
+  writeFlushFastRef.current = writeFlushFast;
+
+  useEffect(() => {
+    const flusher = () => writeFlushFastRef.current();
+    activeFlusher = flusher;
+    return () => {
+      if (activeFlusher === flusher) activeFlusher = null;
+    };
+  }, []);
 
   useEffect(() => {
     if (!authKey) return;
-    if (snap.status !== "playing") return;
     const id = window.setInterval(() => {
       const { snap: sn } = latestRef.current;
+      const active = sn.status === "playing" || castActiveRef?.current === true;
+      if (!active) return;
       const pos = getPlaybackPosition();
       if (pos < MIN_POSITION_SEC || sn.durationSec <= 0) return;
+      if (import.meta.env.DEV && Date.now() - sessionStartRef.current > 30000 && !wroteOnceRef.current) {
+        console.warn("[stremio-sync] playing >30s with zero successful cloud writes");
+      }
       const ms = pos * 1000;
       if (Math.abs(ms - lastSyncedRef.current) < 4000) return;
-      void writeWithFreshBase();
+      void writeWithFreshBase(false, false);
     }, TICK_MS);
     return () => window.clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authKey, snap.status]);
+  }, [authKey]);
 
   useEffect(() => {
-    if (snap.status === "paused") flush();
+    if (snap.status === "paused") void writeWithFreshBase(false, true);
+    if (snap.status === "ended" || snap.status === "error") void writeWithFreshBase(true, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [snap.status]);
 
   useEffect(() => {
     return () => {
-      flush();
+      void writeWithFreshBase(true, true);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    window.addEventListener("pagehide", flush);
-    window.addEventListener("beforeunload", flush);
-    return () => {
-      window.removeEventListener("pagehide", flush);
-      window.removeEventListener("beforeunload", flush);
+    const onHide = () => {
+      void writeFlushFastRef.current();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    window.addEventListener("pagehide", onHide);
+    window.addEventListener("beforeunload", onHide);
+    return () => {
+      window.removeEventListener("pagehide", onHide);
+      window.removeEventListener("beforeunload", onHide);
+    };
   }, []);
 }
 
@@ -124,7 +222,16 @@ export function cloudWriteId(
 ): string | null {
   if (metaId.startsWith("tt")) return metaId;
   if (verified && resolved && resolved.startsWith("tt")) return resolved;
-  return null;
+  return CLOUD_OK.test(metaId) ? metaId : null;
+}
+
+function videoIdFor(s: PlayerSrc, cid: string | null): string | null {
+  if (!cid) return null;
+  const isSeries = s.meta.type === "series" || !!s.episode;
+  if (!isSeries || !s.episode) return cid;
+  const threaded = s.episode.videoId ?? s.episode.kitsuStreamId;
+  if (threaded && threaded.split(":")[0] === cid.split(":")[0]) return threaded;
+  return `${cid}:${s.episode.season}:${s.episode.episode}`;
 }
 
 type StremioBehaviorHints = {
@@ -174,12 +281,14 @@ async function writeLibraryItem(
   base: LibraryItem | null,
   canonicalId: string,
   positionSec: number,
-): Promise<void> {
-  if (!canonicalId.startsWith("tt")) return;
+  isTerminal: boolean,
+  vidOverride?: string,
+): Promise<string | null> {
   const baseName = typeof base?.name === "string" ? base.name.trim() : "";
-  const ourName = (src.meta.name ?? src.title ?? "").trim();
-  const name = baseName || ourName;
-  if (!base && !name) return;
+  const metaName = (src.meta.name ?? "").trim();
+  const isAnimeWrite = /^(kitsu|mal|anilist|anidb):/.test(canonicalId) || src.meta.type === "anime";
+  const name = isAnimeWrite ? baseName || metaName : metaName || baseName;
+  if (!name) return null;
 
   const now = new Date().toISOString();
   const baseRecord = base as unknown as Record<string, unknown> | null;
@@ -188,30 +297,33 @@ async function writeLibraryItem(
   const durationMs = Math.max(0, Math.floor(snap.durationSec * 1000));
   const watchedRatio = positionSec / Math.max(1, snap.durationSec);
   const isSeries = src.meta.type === "series" || !!src.episode;
-  const videoId = isSeries && src.episode
-    ? `${canonicalId}:${src.episode.season}:${src.episode.episode}`
-    : canonicalId;
+  const videoId = vidOverride ?? videoIdFor(src, canonicalId) ?? canonicalId;
+  const prevVideoId = typeof baseState.video_id === "string" ? baseState.video_id : null;
+  const videoChanged = prevVideoId !== null && prevVideoId !== videoId;
   const prevTimesWatched = typeof baseState.timesWatched === "number" ? baseState.timesWatched : 0;
+  const prevTimeWatched = typeof baseState.timeWatched === "number" ? baseState.timeWatched : 0;
   const prevOverall = typeof baseState.overallTimeWatched === "number" ? baseState.overallTimeWatched : 0;
   const prevWatched =
     typeof baseState.watched === "string" && baseState.watched.length > 0 ? baseState.watched : null;
   const prevLastVidReleased =
     typeof baseState.lastVidReleased === "string" ? baseState.lastVidReleased : null;
   const prevFlagged = typeof baseState.flaggedWatched === "number" ? baseState.flaggedWatched : 0;
-  const nowFlagged = watchedRatio > 0.7;
+  const effPrevFlagged = videoChanged ? 0 : prevFlagged;
+  const nowFlagged = durationMs > 0 && watchedRatio > 0.7;
+  const creditsReset = isTerminal && watchedRatio > CREDITS_RATIO && !src.episode;
 
   const state: StremioLibraryItemState = {
     lastWatched: now,
     timeWatched: offsetMs,
-    timeOffset: offsetMs,
-    overallTimeWatched: Math.max(prevOverall, offsetMs),
-    timesWatched: nowFlagged && prevFlagged === 0 ? prevTimesWatched + 1 : prevTimesWatched,
-    flaggedWatched: nowFlagged ? 1 : prevFlagged,
+    timeOffset: creditsReset ? 0 : offsetMs,
+    overallTimeWatched: prevOverall + (videoChanged ? prevTimeWatched : 0),
+    timesWatched: nowFlagged && effPrevFlagged === 0 ? prevTimesWatched + 1 : prevTimesWatched,
+    flaggedWatched: nowFlagged ? 1 : effPrevFlagged,
     duration: durationMs,
     video_id: videoId,
     watched: prevWatched,
     lastVidReleased: prevLastVidReleased,
-    noNotif: false,
+    noNotif: baseState.noNotif === true,
   };
 
   const baseBehaviorHints =
@@ -225,16 +337,22 @@ async function writeLibraryItem(
   const baseCtime = typeof baseRecord?._ctime === "string" ? (baseRecord._ctime as string) : null;
   const ctime = baseCtime ?? now;
 
+  const metaPoster =
+    typeof src.meta.poster === "string" && src.meta.poster.length > 0 ? src.meta.poster : null;
   const basePoster = typeof base?.poster === "string" && base.poster.length > 0 ? base.poster : null;
   const baseType = base?.type === "series" || base?.type === "movie" ? base.type : null;
+  let removed = base ? base.removed === true : true;
+  let temp = base ? base.temp === true : true;
+  if (temp && state.timesWatched === 0) removed = true;
+  if (removed) temp = true;
   const item: StremioLibraryItem = {
     _id: canonicalId,
     name,
     type: src.episode ? "series" : baseType ?? (isSeries ? "series" : "movie"),
-    poster: basePoster ?? src.meta.poster ?? null,
+    poster: metaPoster ?? basePoster,
     posterShape: pickPosterShape(baseRecord?.posterShape),
-    removed: base?.removed === true,
-    temp: base ? base.temp === true : true,
+    removed,
+    temp,
     _ctime: ctime,
     _mtime: now,
     state,
@@ -243,7 +361,9 @@ async function writeLibraryItem(
 
   try {
     await libraryPut(authKey, item as unknown as LibraryItem);
+    return now;
   } catch (e) {
     console.warn("[stremio-sync] put failed", e);
+    return null;
   }
 }

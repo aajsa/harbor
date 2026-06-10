@@ -21,6 +21,12 @@ export function SubtitleStylePanel() {
     { id: "right", label: "Right" },
   ];
 
+  const assModes: Array<{ id: "no" | "scale" | "force"; label: string; sub: string }> = [
+    { id: "no", label: "Keep original", sub: "Styled (ASS) subs keep their own fonts, colors, and effects. Truest to the release." },
+    { id: "scale", label: "Resize only", sub: "Keep the original look but apply your size and position." },
+    { id: "force", label: "Use my style", sub: "Replace the embedded style with everything set here. Can break karaoke and signs." },
+  ];
+
   const isDefault =
     settings.subStyle === "shadow" &&
     settings.subFontFamily === "inter" &&
@@ -76,6 +82,28 @@ export function SubtitleStylePanel() {
         </div>
       </div>
 
+      <div className="flex flex-col gap-2.5">
+        <Label>Styled (ASS) subtitles</Label>
+        <div className="grid grid-cols-3 gap-2">
+          {assModes.map((m) => {
+            const sel = settings.subAssOverride === m.id;
+            return (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => update({ subAssOverride: m.id })}
+                className={`flex flex-col items-start gap-0.5 rounded-xl border px-3.5 py-2.5 text-left transition-colors ${
+                  sel ? "border-ink bg-elevated" : "border-edge-soft bg-canvas/40 hover:border-edge"
+                }`}
+              >
+                <span className="text-[13px] font-semibold text-ink">{m.label}</span>
+                <span className="text-[11.5px] leading-snug text-ink-muted">{m.sub}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {settings.subStyle === "box" && (
         <SubField label="Background opacity" value={`${Math.round(settings.subBoxOpacity * 100)}%`}>
           <input
@@ -117,7 +145,7 @@ export function SubtitleStylePanel() {
         <input
           type="range"
           min={16}
-          max={56}
+          max={120}
           step={1}
           value={settings.subFontSize}
           onChange={(e) => update({ subFontSize: parseInt(e.target.value, 10) })}

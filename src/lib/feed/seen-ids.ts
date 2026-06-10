@@ -1,27 +1,40 @@
 import { createContext, useCallback, useContext, useRef, type MutableRefObject } from "react";
 import type { Meta } from "@/lib/cinemeta";
 
-const SeenIdsContext = createContext<MutableRefObject<Set<string>> | null>(null);
+const SeenIdsContext = createContext<MutableRefObject<Map<string, string>> | null>(null);
 
-export function useSeenIdsRef(): MutableRefObject<Set<string>> {
+export function useSeenIdsRef(): MutableRefObject<Map<string, string>> {
   const ref = useContext(SeenIdsContext);
-  const fallback = useRef(new Set<string>());
+  const fallback = useRef(new Map<string, string>());
   return ref ?? fallback;
 }
 
-export function useDedupOnSeenIds() {
+export function useDedupOnSeenIds(owner: string) {
   const ref = useSeenIdsRef();
   return useCallback(
     (incoming: Meta[]): Meta[] => {
       const out: Meta[] = [];
       for (const m of incoming) {
-        if (ref.current.has(m.id)) continue;
-        ref.current.add(m.id);
+        const claimedBy = ref.current.get(m.id);
+        if (claimedBy !== undefined && claimedBy !== owner) continue;
+        ref.current.set(m.id, owner);
         out.push(m);
       }
       return out;
     },
-    [ref],
+    [ref, owner],
+  );
+}
+
+export function useClaimSeenIds(owner: string) {
+  const ref = useSeenIdsRef();
+  return useCallback(
+    (incoming: Meta[]): void => {
+      for (const m of incoming) {
+        if (!ref.current.has(m.id)) ref.current.set(m.id, owner);
+      }
+    },
+    [ref, owner],
   );
 }
 

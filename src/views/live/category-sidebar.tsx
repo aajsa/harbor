@@ -261,6 +261,7 @@ function CategoryItem({
               e.stopPropagation();
               toggleGroupPin(sourceId!, groupName!);
             }}
+            title={pinned ? "Unpin from top" : "Pin category to top"}
             aria-label={pinned ? "Unpin category" : "Pin category to top"}
             className={`flex h-6 w-6 items-center justify-center rounded-md ${
               pinned ? "bg-accent text-canvas" : "bg-canvas/90 text-ink-muted hover:text-ink"
@@ -274,6 +275,7 @@ function CategoryItem({
               e.stopPropagation();
               toggleGroupHidden(sourceId!, groupName!);
             }}
+            title="Hide category"
             aria-label="Hide category"
             className="flex h-6 w-6 items-center justify-center rounded-md bg-canvas/90 text-ink-muted hover:text-ink"
           >

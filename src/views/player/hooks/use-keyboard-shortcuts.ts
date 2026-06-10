@@ -30,6 +30,9 @@ export function useKeyboardShortcuts(params: {
   onScreenshot?: () => void;
   onGifRecord?: () => void;
   onToggleCrop?: () => void;
+  onPanscanUp?: () => void;
+  onPanscanDown?: () => void;
+  onPrevChannel?: () => void;
 }) {
   const {
     bridgeRef,
@@ -55,6 +58,9 @@ export function useKeyboardShortcuts(params: {
     onScreenshot,
     onGifRecord,
     onToggleCrop,
+    onPanscanUp,
+    onPanscanDown,
+    onPrevChannel,
   } = params;
   const { settings } = useSettings();
   const overrides = settings.hotkeys ?? {};
@@ -157,6 +163,21 @@ export function useKeyboardShortcuts(params: {
       if (match("playerCrop") && onToggleCrop) {
         e.preventDefault();
         onToggleCrop();
+        return;
+      }
+      if (match("playerPanscanUp") && onPanscanUp) {
+        e.preventDefault();
+        onPanscanUp();
+        return;
+      }
+      if (match("playerPanscanDown") && onPanscanDown) {
+        e.preventDefault();
+        onPanscanDown();
+        return;
+      }
+      if (match("playerPrevChannel") && onPrevChannel) {
+        e.preventDefault();
+        onPrevChannel();
         return;
       }
       if (match("playerSubtitleCycle") || match("playerSubtitleCycleAlt")) {
@@ -300,7 +321,7 @@ export function useKeyboardShortcuts(params: {
       window.removeEventListener("blur", onBlur);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [closePlayer, drawMode, snap.muted, snap.volume, snap.rate, snap.durationSec, snap.subDelaySec, overrides, toggleSwitcher, toggleEpisodePanel, toggleGuide, toggleDvr, toggleSleep, onScreenshot, onGifRecord, onToggleCrop]);
+  }, [closePlayer, drawMode, snap.muted, snap.volume, snap.rate, snap.durationSec, snap.subDelaySec, overrides, toggleSwitcher, toggleEpisodePanel, toggleGuide, toggleDvr, toggleSleep, onScreenshot, onGifRecord, onToggleCrop, onPanscanUp, onPanscanDown, onPrevChannel]);
 
   return { holdSpeedActive };
 }

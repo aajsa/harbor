@@ -256,6 +256,7 @@ export function RenderedStremioControl({
     case "cast":
       return <CastButton onClick={ctx.onCast} capabilities={ctx.capabilities} />;
     case "subtitle-menu":
+      if (ctx.isLiveChannel && ctx.snap.subtitleTracks.length === 0) return null;
       return (
         <SubtitleMenu
           tracks={ctx.snap.subtitleTracks}
@@ -275,6 +276,7 @@ export function RenderedStremioControl({
       );
     case "audio-menu":
       if (ctx.engine === "html5") return null;
+      if (ctx.isLiveChannel && ctx.snap.audioTracks.length < 2) return null;
       return (
         <AudioMenu
           tracks={ctx.snap.audioTracks}

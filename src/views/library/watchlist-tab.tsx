@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { useSettings } from "@/lib/settings";
 import { type Meta } from "@/lib/cinemeta";
-import { library, removeStremioLibraryItem, type LibraryItem } from "@/lib/stremio";
+import { library, libraryMetaType, removeStremioLibraryItem, type LibraryItem } from "@/lib/stremio";
 import { fetchWatchlist } from "@/lib/trakt/watchlist";
 import { useTrakt } from "@/lib/trakt/provider";
 import { traktItemToMeta } from "@/lib/trakt/to-meta";
@@ -184,7 +184,7 @@ function mergeWatchlist(
   for (const item of stremio) {
     const meta: Meta = {
       id: item._id,
-      type: item.type,
+      type: libraryMetaType(item.type),
       name: item.name,
       poster: item.poster,
       background: item.background,

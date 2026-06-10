@@ -1,5 +1,5 @@
-import { Loader2, Search, X } from "lucide-react";
-import { useEffect, useMemo, useRef } from "react";
+import { CalendarRange, List, Loader2, Search, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CategorySidebar } from "@/views/live/category-sidebar";
 import { GuideView } from "@/views/live/guide/guide-view";
 import {
@@ -161,11 +161,28 @@ export function LiveChannelOverlay({
   const defaultedGroupRef = useRef(false);
   useEffect(() => {
     if (defaultedGroupRef.current) return;
-    if (currentChannel?.group) {
-      setGroup(currentChannel.group);
-      defaultedGroupRef.current = true;
+    if (!playlist) return;
+    defaultedGroupRef.current = true;
+    if (currentChannel?.group) setGroup(currentChannel.group);
+    else if (favorites.count > 0) setGroup(FAVORITES_GROUP_KEY);
+  }, [playlist, currentChannel, favorites.count, setGroup]);
+
+  const [guideStyle, setGuideStyle] = useState<"timeline" | "list">(() => {
+    try {
+      return localStorage.getItem("harbor.guide.style") === "list" ? "list" : "timeline";
+    } catch {
+      return "timeline";
     }
-  }, [currentChannel, setGroup]);
+  });
+  const toggleGuideStyle = () => {
+    setGuideStyle((s) => {
+      const next = s === "timeline" ? "list" : "timeline";
+      try {
+        localStorage.setItem("harbor.guide.style", next);
+      } catch {}
+      return next;
+    });
+  };
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -220,6 +237,15 @@ export function LiveChannelOverlay({
             </button>
           )}
         </div>
+        <button
+          onClick={toggleGuideStyle}
+          title={guideStyle === "timeline" ? "Switch to channel list (hide program guide)" : "Switch to program guide"}
+          aria-label="Toggle guide layout"
+          className="flex h-11 shrink-0 items-center gap-2 rounded-xl border border-edge-soft/55 bg-elevated px-3.5 text-[13px] font-medium text-ink-muted transition-colors hover:text-ink"
+        >
+          {guideStyle === "timeline" ? <List size={15} strokeWidth={2} /> : <CalendarRange size={15} strokeWidth={2} />}
+          {guideStyle === "timeline" ? "List" : "Guide"}
+        </button>
       </div>
       <div className="flex min-h-0 flex-1">
         {playlist && sortedGroups.length > 0 && (
@@ -245,11 +271,12 @@ export function LiveChannelOverlay({
               channels={visible}
               epg={epg}
               nowMs={nowMs}
+              showPrograms={guideStyle === "timeline"}
               onPlay={(channel) => {
                 const programs = epgProgramsForChannel(channel, epg, tvgIdCounts);
                 onSwitch(channel, findCurrent(programs, nowMs).current?.title);
               }}
-              resetKey={`${source.id}|${group ?? ""}|${query}`}
+              resetKey={`${source.id}|${group ?? ""}|${query}|${guideStyle}`}
             />
           )}
           {visible.length === 0 && playlist && (

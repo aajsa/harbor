@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, Play, Plus, Star } from "lucide-react";
+import { Check, Play, Plus, Popcorn, Star } from "lucide-react";
 import { animeDetails, franchiseTags, type FranchiseEntry } from "@/lib/providers/anime-detail";
 import { imdbToKitsu, tmdbTvToKitsu } from "@/lib/providers/anime-mapping";
 import { stripFranchiseSuffix } from "@/lib/providers/jikan";
@@ -31,6 +31,7 @@ import { cinemetaDetails } from "@/lib/providers/cinemeta-details";
 import { useAuth } from "@/lib/auth";
 import { useSettings } from "@/lib/settings";
 import { episodeFromVideoId, libraryGetOne, type LibraryItem } from "@/lib/stremio";
+import { CLOUD_OK } from "./player/hooks/use-stremio-sync";
 import { decodeWatchedEpisodes } from "@/lib/stremio-watched";
 import { useTogether } from "@/lib/together/provider";
 import { useTrakt } from "@/lib/trakt/provider";
@@ -210,16 +211,24 @@ export function DetailView({
   useEffect(() => {
     setLibraryItem(null);
     if (!authKey) return;
-    const lookupId =
-      meta.id.startsWith("tt") ? meta.id : detail?.imdbId?.startsWith("tt") ? detail.imdbId : null;
-    if (!lookupId) return;
+    const candidates: string[] = [];
+    if (meta.id.startsWith("tt")) candidates.push(meta.id);
+    if (detail?.imdbId?.startsWith("tt") && !candidates.includes(detail.imdbId)) {
+      candidates.push(detail.imdbId);
+    }
+    if (!meta.id.startsWith("tt") && CLOUD_OK.test(meta.id)) candidates.push(meta.id);
+    if (candidates.length === 0) return;
     let cancelled = false;
-    libraryGetOne(authKey, lookupId)
-      .then((item) => {
+    void (async () => {
+      for (const cid of candidates) {
+        const item = await libraryGetOne(authKey, cid).catch(() => null);
         if (cancelled) return;
-        setLibraryItem(item);
-      })
-      .catch(() => {});
+        if (item) {
+          setLibraryItem(item);
+          return;
+        }
+      }
+    })();
     return () => {
       cancelled = true;
     };
@@ -373,7 +382,9 @@ export function DetailView({
   const logo = detail?.logo ?? meta.logo;
   const year = detail?.year ?? meta.releaseInfo;
   const releaseYearNum = parseAwardYear(year);
-  const rating = detail?.rating ?? meta.imdbRating;
+  const ratingIsImdb = scores?.imdbRating != null || meta.id.startsWith("tt");
+  const rating =
+    scores?.imdbRating ?? (meta.id.startsWith("tt") ? meta.imdbRating : undefined) ?? detail?.rating ?? meta.imdbRating;
   const runtime = detail?.runtime;
   const genres = detail?.genres ?? meta.genres ?? [];
   const recommendations = detail?.recommendations ?? [];
@@ -474,10 +485,14 @@ export function DetailView({
       return;
     }
     if (authKey) {
-      const lookupId =
-        meta.id.startsWith("tt") ? meta.id : detail?.imdbId?.startsWith("tt") ? detail.imdbId : null;
-      if (lookupId) {
-        const item = await libraryGetOne(authKey, lookupId).catch(() => null);
+      const candidates: string[] = [];
+      if (meta.id.startsWith("tt")) candidates.push(meta.id);
+      if (detail?.imdbId?.startsWith("tt") && !candidates.includes(detail.imdbId)) {
+        candidates.push(detail.imdbId);
+      }
+      if (!meta.id.startsWith("tt") && CLOUD_OK.test(meta.id)) candidates.push(meta.id);
+      for (const cid of candidates) {
+        const item = await libraryGetOne(authKey, cid).catch(() => null);
         const st = item?.state;
         if (st && (st.timeOffset ?? 0) > 0) {
           const se = episodeFromVideoId(st.video_id);
@@ -493,6 +508,7 @@ export function DetailView({
             return;
           }
         }
+        if (item) break;
       }
     }
     openPicker(playMeta, { season: 1, episode: 1 }, { autoPlay: settings.instantPlay });
@@ -560,15 +576,21 @@ export function DetailView({
                 )}
                 {rating && (
                   <Pill
-                    onClick={() => {
-                      const id = detail?.imdbId ?? (meta.id.startsWith("tt") ? meta.id : null);
-                      if (id) openUrl(`https://www.imdb.com/title/${id}/`);
-                    }}
+                    onClick={
+                      isAnime || ratingIsImdb
+                        ? () => {
+                            const id = detail?.imdbId ?? (meta.id.startsWith("tt") ? meta.id : null);
+                            if (id) openUrl(`https://www.imdb.com/title/${id}/`);
+                          }
+                        : undefined
+                    }
                   >
                     {isAnime ? (
                       <MalLogo className="h-[14px] w-auto text-ink-muted" />
-                    ) : (
+                    ) : ratingIsImdb ? (
                       <ImdbIcon className="h-[15px] w-auto rounded-[3px]" />
+                    ) : (
+                      <Star size={14} strokeWidth={0} fill="currentColor" className="text-accent" />
                     )}
                     <span className="font-semibold text-ink">{rating}</span>
                   </Pill>
@@ -577,6 +599,16 @@ export function DetailView({
                   <Pill>
                     <RtBadge score={scores.rtCritics} className="h-[16px] w-auto" />
                     <span className="font-semibold text-ink">{scores.rtCritics}%</span>
+                  </Pill>
+                )}
+                {settings.showRtBadge && mdblist?.rtAudience != null && (
+                  <Pill>
+                    <Popcorn
+                      size={15}
+                      strokeWidth={2}
+                      className={mdblist.rtAudience >= 60 ? "text-accent" : "text-ink-subtle"}
+                    />
+                    <span className="font-semibold text-ink">{Math.round(mdblist.rtAudience)}%</span>
                   </Pill>
                 )}
                 {mdblist?.letterboxd != null && (

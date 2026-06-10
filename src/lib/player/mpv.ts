@@ -61,6 +61,7 @@ export function createMpvBridge(mpvOptions?: MpvOptions): PlayerBridge {
   let pendingTracks: Record<string, unknown[]> = {};
   let geomTimer: number | null = null;
   let geomKickHandler: ((e?: Event) => void) | null = null;
+  let geomForceHandler: (() => void) | null = null;
   let geomResizeObserver: ResizeObserver | null = null;
   let geomTauriUnlisten: Array<() => void> = [];
   let mpvStarted = false;
@@ -305,8 +306,13 @@ export function createMpvBridge(mpvOptions?: MpvOptions): PlayerBridge {
             window.setTimeout(() => void tick(), 1000);
             window.setTimeout(() => void tick(), 1800);
           };
+          geomForceHandler = () => {
+            lastRect = null;
+            geomKickHandler?.();
+          };
           window.addEventListener("resize", geomKickHandler);
           window.addEventListener("harbor:mpv-refresh-geom", geomKickHandler);
+          window.addEventListener("harbor:mpv-force-geom", geomForceHandler);
           if (host && typeof ResizeObserver !== "undefined") {
             try {
               geomResizeObserver = new ResizeObserver(() => void tick());
@@ -378,8 +384,9 @@ export function createMpvBridge(mpvOptions?: MpvOptions): PlayerBridge {
     setAudioDelay(sec) {
       invoke("mpv_set_property", { name: "audio-delay", value: sec }).catch(() => {});
     },
-    setVideoFill(on) {
-      invoke("mpv_set_property", { name: "panscan", value: on ? 1.0 : 0.0 }).catch(() => {});
+    setPanscan(value) {
+      const v = Math.max(0, Math.min(1, value));
+      invoke("mpv_set_property", { name: "panscan", value: v }).catch(() => {});
     },
     async addSubtitle(url, lang, title, select): Promise<boolean> {
       let mpvUrl = url;
@@ -455,6 +462,10 @@ export function createMpvBridge(mpvOptions?: MpvOptions): PlayerBridge {
         window.removeEventListener("resize", geomKickHandler);
         window.removeEventListener("harbor:mpv-refresh-geom", geomKickHandler);
         geomKickHandler = null;
+      }
+      if (geomForceHandler) {
+        window.removeEventListener("harbor:mpv-force-geom", geomForceHandler);
+        geomForceHandler = null;
       }
       if (geomResizeObserver) {
         try {

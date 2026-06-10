@@ -41,6 +41,22 @@ export function saveResumeMs(
   writeAll(all);
 }
 
+export function saveResumeBatch(
+  entries: { id: string; ms: number; season?: number; episode?: number; t?: number }[],
+): void {
+  if (entries.length === 0) return;
+  const all = readAll();
+  const now = Date.now();
+  for (const e of entries) {
+    if (!Number.isFinite(e.ms) || e.ms < 0) continue;
+    if (typeof e.season === "number" && typeof e.episode === "number") {
+      if (e.season < 1 || e.episode < 1) continue;
+    }
+    all[entryKey(e.id, e.season, e.episode)] = { ms: e.ms, t: e.t ?? now };
+  }
+  writeAll(all);
+}
+
 export function readResumeMs(
   id: string,
   season?: number,

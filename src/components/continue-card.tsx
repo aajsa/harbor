@@ -1,11 +1,12 @@
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Check, Play, X } from "lucide-react";
 import simklLogo from "@/assets/simkl.png";
-import { meta as fetchMeta, type Meta } from "@/lib/cinemeta";
+import { meta as fetchMeta, narrowMediaType, type Meta } from "@/lib/cinemeta";
 import { animeKitsuMeta } from "@/lib/providers/anime-kitsu-addon";
+import { tmdbLiteMeta } from "@/lib/providers/tmdb/tmdb-lite";
 import { useContextMenu } from "@/lib/context-menu";
 import { readSnapshot, useSnapshotVersion } from "@/lib/snapshots";
-import { episodeFromVideoId, type LibraryItem } from "@/lib/stremio";
+import { episodeFromVideoId, libraryMetaType, type LibraryItem } from "@/lib/stremio";
 import { useSettings } from "@/lib/settings";
 import { useView } from "@/lib/view";
 
@@ -18,6 +19,8 @@ type Props = {
 export const ContinueCard = memo(function ContinueCard({ item, watched = false, onDismiss }: Props) {
   const { openMeta, openPicker } = useView();
   const { settings } = useSettings();
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
   const { open: openContextMenu } = useContextMenu();
   useSnapshotVersion();
   const snapshot = readSnapshot(item._id);
@@ -27,10 +30,15 @@ export const ContinueCard = memo(function ContinueCard({ item, watched = false, 
   const progress = dur > 0 ? Math.min(1, off / dur) : 0;
   const remaining = dur > 0 && !isExternal ? formatRemaining(dur - off) : "";
   const upNext = item.upNext === true;
+  const kitsuThreeSeg =
+    /^(kitsu|mal|anilist|anidb):/.test(item._id) &&
+    (item.state?.video_id ?? "").split(":").length === 3;
   const ep =
     item.state?.season && item.state?.episode
       ? { season: item.state.season, episode: item.state.episode }
-      : episodeFromVideoId(item.state?.video_id);
+      : kitsuThreeSeg
+        ? null
+        : episodeFromVideoId(item.state?.video_id);
   const sub = ep ? `S${ep.season}E${ep.episode}` : "";
   const [logo, setLogo] = useState<string | undefined>();
   const [metaBg, setMetaBg] = useState<string | undefined>();
@@ -70,6 +78,14 @@ export const ContinueCard = memo(function ContinueCard({ item, watched = false, 
         animeKitsuMeta(item._id)
           .then((m) => {
             if (cancelled || !m) return;
+            setHydratedMeta({
+              id: item._id,
+              type: libraryMetaType(item.type),
+              name: m.name?.trim() ? m.name : item.name,
+              poster: m.poster,
+              background: m.background,
+              logo: m.logo,
+            });
             if (m.logo) setLogo(m.logo);
             const bg = m.background || m.poster;
             if (bg) setMetaBg(bg);
@@ -77,9 +93,25 @@ export const ContinueCard = memo(function ContinueCard({ item, watched = false, 
           .catch(() => {});
         return;
       }
-      const typeCoherent = !(item.type === "movie" && episodeFromVideoId(item.state?.video_id));
-      if (!typeCoherent) return;
-      fetchMeta(item.type, item._id)
+      if (item._id.startsWith("tmdb:")) {
+        tmdbLiteMeta(settingsRef.current.tmdbKey, item._id)
+          .then((m) => {
+            if (cancelled || !m) return;
+            setHydratedMeta({
+              id: item._id,
+              type: libraryMetaType(item.type),
+              name: m.name?.trim() ? m.name : item.name,
+              poster: m.poster ?? item.poster,
+              background: m.background ?? item.background,
+            });
+            const bg = m.background || m.poster;
+            if (bg) setMetaBg(bg);
+          })
+          .catch(() => {});
+        return;
+      }
+      const looksEpisodic = item.type === "movie" && episodeFromVideoId(item.state?.video_id);
+      fetchMeta(looksEpisodic ? "series" : narrowMediaType(item.type), item._id)
         .then((full) => {
           if (cancelled || !full) return;
           setHydratedMeta(full);
@@ -106,10 +138,10 @@ export const ContinueCard = memo(function ContinueCard({ item, watched = false, 
   }, [item._id, item.type]);
 
   const meta: Meta = hydratedMeta
-    ? { ...hydratedMeta, id: item._id, type: item.type }
+    ? { ...hydratedMeta, id: item._id, type: libraryMetaType(item.type) }
     : {
         id: item._id,
-        type: item.type,
+        type: libraryMetaType(item.type),
         name: item.name,
         poster: item.poster,
         background: item.background,

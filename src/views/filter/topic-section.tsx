@@ -16,7 +16,7 @@ export function TopicSection({
   mediaType: "movie" | "tv";
 }) {
   const { settings } = useSettings();
-  const dedup = useDedupOnSeenIds();
+  const dedup = useDedupOnSeenIds(`topic:${mediaType}:${topic.id}`);
   const gate = useContext(SpotlightGateContext);
   const [items, setItems] = useState<Meta[] | null>(null);
   const [page, setPage] = useState(1);

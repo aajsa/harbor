@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Link2, Loader2 } from "lucide-react";
 import { computeTvgIdCounts, epgProgramsForChannel } from "@/lib/iptv/epg-resolver";
+import { useEpgMapVersion } from "@/lib/iptv/epg-map";
 import { channelHasCatchup } from "@/lib/iptv/catchup";
 import type { EpgIndex, EpgProgram, IptvChannel } from "@/lib/iptv/types";
 import { useLazyVisible } from "../hooks/use-lazy-visible";
+import { EpgMatchModal } from "./epg-match-modal";
 import { GuideChannelCell } from "./guide-channel-cell";
 import { GuideProgramBlock } from "./guide-program-block";
 import { GuideTimeRuler } from "./guide-time-ruler";
@@ -37,6 +39,7 @@ export function GuideView({
   onPlay,
   onPlayCatchup,
   resetKey,
+  showPrograms = true,
 }: {
   channels: IptvChannel[];
   epg: EpgIndex | null;
@@ -44,11 +47,14 @@ export function GuideView({
   onPlay: (ch: IptvChannel) => void;
   onPlayCatchup?: (ch: IptvChannel, program: EpgProgram) => void;
   resetKey: string;
+  showPrograms?: boolean;
 }) {
   const { visible: channels, sentinelRef, hasMore } = useLazyVisible(allChannels, resetKey);
   const scrollRef = useRef<HTMLDivElement>(null);
   const scrolledRef = useRef(false);
   const tvgIdCounts = useMemo(() => computeTvgIdCounts(allChannels), [allChannels]);
+  const epgMapVersion = useEpgMapVersion();
+  const [matchTarget, setMatchTarget] = useState<IptvChannel | null>(null);
 
   const [colPx, setColPx] = useState<number>(loadColPx);
   const dragRef = useRef<{ startX: number; startW: number } | null>(null);
@@ -109,6 +115,26 @@ export function GuideView({
   const nowLineLeft = Math.max(colPx + nowOffsetPx, scrollLeft + colPx);
   const nowPillLeft = Math.max(colPx + nowOffsetPx - 22, scrollLeft + colPx);
 
+  if (!showPrograms) {
+    return (
+      <div className="flex flex-col">
+        {channels.map((ch, i) => (
+          <div key={ch.id} className="flex">
+            <GuideChannelCell channel={ch} onPlay={onPlay} index={i} width={460} />
+          </div>
+        ))}
+        {hasMore && (
+          <div ref={sentinelRef} className="flex h-12 items-center justify-center">
+            <div className="flex items-center gap-2 text-[12px] text-ink-subtle">
+              <Loader2 size={13} className="animate-spin" />
+              Loading more channels ({channels.length.toLocaleString()} of {allChannels.length.toLocaleString()})
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="-mx-6 flex flex-col">
       {!epg && (
@@ -158,6 +184,7 @@ export function GuideView({
             />
           </div>
           {channels.map((ch, i) => {
+            void epgMapVersion;
             const programs = epgProgramsForChannel(ch, epg, tvgIdCounts) ?? [];
             return (
               <div
@@ -176,8 +203,17 @@ export function GuideView({
                   style={{ width: WINDOW_PX, height: ROW_HEIGHT_PX }}
                 >
                   {programs.length === 0 && (
-                    <div className="flex h-full items-center px-3 text-[11.5px] text-ink-subtle">
-                      No program info
+                    <div className="flex h-full items-center gap-3 px-3 text-[11.5px] text-ink-subtle">
+                      <span>No program info</span>
+                      {epg && epg.byChannel.size > 0 && (
+                        <button
+                          onClick={() => setMatchTarget(ch)}
+                          className="flex items-center gap-1.5 rounded-md border border-edge-soft/55 bg-elevated/70 px-2 py-1 font-medium text-ink-muted transition-colors hover:text-ink"
+                        >
+                          <Link2 size={11} strokeWidth={2.2} />
+                          Match EPG
+                        </button>
+                      )}
                     </div>
                   )}
                   {programs.map((p) => {
@@ -241,6 +277,9 @@ export function GuideView({
           Showing first {channels.length.toLocaleString()} of {allChannels.length.toLocaleString()} channels. Use search or a category to narrow down.
         </div>
       ) : null}
+      {matchTarget && epg && (
+        <EpgMatchModal channel={matchTarget} epg={epg} onClose={() => setMatchTarget(null)} />
+      )}
     </div>
   );
 }

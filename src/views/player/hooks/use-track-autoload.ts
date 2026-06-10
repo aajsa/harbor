@@ -18,32 +18,44 @@ export function useTrackAutoload(params: {
   authKey: string | null;
 }) {
   const { bridgeRef, src, snap, engine, settings, authKey } = params;
+  const snapRef = useRef(snap);
+  snapRef.current = snap;
 
   const [resolvedImdbId, setResolvedImdbId] = useState<string | null>(null);
   const [resolvedImdbVerified, setResolvedImdbVerified] = useState(false);
+  const [resolutionSettled, setResolutionSettled] = useState(false);
   useEffect(() => {
     setResolvedImdbId(null);
     setResolvedImdbVerified(false);
+    setResolutionSettled(false);
     if (src.imdbId) {
       setResolvedImdbId(src.imdbId);
       setResolvedImdbVerified(src.imdbIdVerified === true);
+      setResolutionSettled(true);
       return;
     }
     const raw = src.meta.id ?? "";
     if (raw.startsWith("tt")) {
       setResolvedImdbId(raw);
       setResolvedImdbVerified(true);
+      setResolutionSettled(true);
       return;
     }
-    if (!settings.tmdbKey) return;
+    if (!settings.tmdbKey) {
+      setResolutionSettled(true);
+      return;
+    }
     let cancelled = false;
     tmdbImdbId(settings.tmdbKey, raw)
       .then((id) => {
         if (cancelled) return;
         setResolvedImdbId(id);
         setResolvedImdbVerified(!!id);
+        setResolutionSettled(true);
       })
-      .catch(() => {});
+      .catch(() => {
+        if (!cancelled) setResolutionSettled(true);
+      });
     return () => {
       cancelled = true;
     };
@@ -126,9 +138,6 @@ export function useTrackAutoload(params: {
       console.info(`[subs/autoload] ${matches.length} match preferred langs`);
       const perLang = new Map<string, number>();
       const PER_LANG_MAX = 6;
-      const hasSelectedPreferred = snap.subtitleTracks.some(
-        (t) => t.selected && langScore(t.lang ?? "", langs) >= 0,
-      );
       let firstAdded = false;
       let attempted = 0;
       let added = 0;
@@ -137,8 +146,9 @@ export function useTrackAutoload(params: {
         const n = perLang.get(k) ?? 0;
         if (n >= PER_LANG_MAX) continue;
         perLang.set(k, n + 1);
+        const blocked = snapRef.current.subtitleTracks.some((t) => t.selected);
         const shouldSelect =
-          !settings.subtitlesOffByDefault && !hasSelectedPreferred && !firstAdded;
+          !settings.subtitlesOffByDefault && !blocked && !firstAdded;
         attempted++;
         const labeled = labelForTrack(r);
         const ok = await b.addSubtitle(r.url, r.lang, labeled, shouldSelect);
@@ -217,7 +227,7 @@ export function useTrackAutoload(params: {
     }
   }, [engine, src.url, src.meta.id, snap.audioTracks, snap.subtitleTracks, snap.rate, snap.subDelaySec, settings]);
 
-  return { resolvedImdbId, resolvedImdbVerified };
+  return { resolvedImdbId, resolvedImdbVerified, resolutionSettled };
 }
 
 function resolveLangPreference(

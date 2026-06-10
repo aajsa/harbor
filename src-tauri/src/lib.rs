@@ -41,6 +41,14 @@ pub(crate) fn shutdown_services(app: &tauri::AppHandle) {
     discord_rp::shutdown(app);
 }
 
+pub static CLOSE_FLUSH_DONE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+static CLOSE_IN_PROGRESS: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+#[tauri::command]
+fn harbor_flush_done() {
+    CLOSE_FLUSH_DONE.store(true, std::sync::atomic::Ordering::SeqCst);
+}
+
 #[tauri::command]
 async fn deeplink_set_stremio(app: tauri::AppHandle, enabled: bool) -> Result<(), String> {
     use tauri_plugin_deep_link::DeepLinkExt;
@@ -88,7 +96,7 @@ fn make_main_transparent(app: &tauri::AppHandle) {
         let controller = webview.controller();
         match controller.cast::<ICoreWebView2Controller2>() {
             Ok(controller2) => {
-                let color = COREWEBVIEW2_COLOR { A: 0, R: 255, G: 255, B: 255 };
+                let color = COREWEBVIEW2_COLOR { A: 0, R: 0, G: 0, B: 0 };
                 match controller2.SetDefaultBackgroundColor(color) {
                     Ok(()) => eprintln!("[harbor::transparent] SetDefaultBackgroundColor OK (alpha=0)"),
                     Err(e) => eprintln!("[harbor::transparent] SetDefaultBackgroundColor FAILED: {:?}", e),
@@ -315,6 +323,21 @@ pub fn run() {
                     if tray::close_to_tray() {
                         api.prevent_close();
                         let _ = window.hide();
+                    } else if !CLOSE_IN_PROGRESS.swap(true, std::sync::atomic::Ordering::SeqCst) {
+                        use tauri::Emitter;
+                        api.prevent_close();
+                        CLOSE_FLUSH_DONE.store(false, std::sync::atomic::Ordering::SeqCst);
+                        let _ = window.emit("harbor://app-closing", ());
+                        let w = window.clone();
+                        std::thread::spawn(move || {
+                            for _ in 0..24 {
+                                if CLOSE_FLUSH_DONE.load(std::sync::atomic::Ordering::SeqCst) {
+                                    break;
+                                }
+                                std::thread::sleep(std::time::Duration::from_millis(50));
+                            }
+                            let _ = w.destroy();
+                        });
                     }
                 }
                 tauri::WindowEvent::Focused(focused) => {
@@ -337,6 +360,7 @@ pub fn run() {
             }
         })
         .invoke_handler(tauri::generate_handler![
+            harbor_flush_done,
             power::power_inhibit,
             harbor_set_webview_memory_low,
             harbor_set_webview_visible,

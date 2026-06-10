@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSettings } from "@/lib/settings";
-import { FAVORITES_GROUP_KEY, useFavorites } from "@/lib/iptv/favorites";
 import type { IptvChannel, IptvPlaylistSource } from "@/lib/iptv/types";
 import type { Meta } from "@/lib/cinemeta";
 import type { PlayerSrc } from "@/lib/view";
@@ -11,9 +10,6 @@ export function useLiveChannelOverlay(params: {
 }) {
   const { src, replacePlayerSrc } = params;
   const { settings } = useSettings();
-  const favorites = useFavorites();
-  const favoritesCountRef = useRef(favorites.count);
-  favoritesCountRef.current = favorites.count;
   const [open, setOpen] = useState(false);
   const [group, setGroup] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -60,11 +56,9 @@ export function useLiveChannelOverlay(params: {
   }, [isLive]);
 
   useEffect(() => {
-    if (!open) {
-      setOverrideSourceId(null);
-      return;
-    }
-    setGroup(favoritesCountRef.current > 0 ? FAVORITES_GROUP_KEY : null);
+    if (open) return;
+    setOverrideSourceId(null);
+    setGroup(null);
     setQuery("");
   }, [open]);
 
@@ -81,6 +75,29 @@ export function useLiveChannelOverlay(params: {
     if (!isLive) return null;
     return src.meta.id.replace(/^iptv:/, "");
   }, [isLive, src.meta.id]);
+
+  const prevStackRef = useRef<PlayerSrc[]>([]);
+  const lastSrcRef = useRef<PlayerSrc | null>(null);
+  useEffect(() => {
+    if (!isLive) {
+      lastSrcRef.current = null;
+      return;
+    }
+    const prev = lastSrcRef.current;
+    if (prev && prev.meta.id !== src.meta.id) {
+      const stack = prevStackRef.current;
+      if (stack[stack.length - 1]?.meta.id !== prev.meta.id) stack.push(prev);
+      if (stack.length > 12) stack.shift();
+    }
+    lastSrcRef.current = src;
+  }, [isLive, src]);
+
+  const goPrevChannel = useCallback(() => {
+    const stack = prevStackRef.current;
+    let prev = stack.pop();
+    while (prev && prev.meta.id === lastSrcRef.current?.meta.id) prev = stack.pop();
+    if (prev) replacePlayerSrc(prev);
+  }, [replacePlayerSrc]);
 
   const switchChannel = useCallback(
     (channel: IptvChannel, program?: string) => {
@@ -117,6 +134,7 @@ export function useLiveChannelOverlay(params: {
     selectSource,
     currentChannelId,
     switchChannel,
+    goPrevChannel,
     group,
     setGroup,
     query,

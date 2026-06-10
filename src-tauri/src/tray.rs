@@ -167,6 +167,16 @@ pub fn build(app: &AppHandle) -> tauri::Result<()> {
             "tray_punf" => toggle(app, Pref::PauseUnfocused),
             "tray_ctt" => toggle(app, Pref::CloseToTray),
             "tray_quit" => {
+                if let Some(w) = app.get_webview_window("main") {
+                    crate::CLOSE_FLUSH_DONE.store(false, Ordering::SeqCst);
+                    let _ = w.emit("harbor://app-closing", ());
+                    for _ in 0..16 {
+                        if crate::CLOSE_FLUSH_DONE.load(Ordering::SeqCst) {
+                            break;
+                        }
+                        std::thread::sleep(std::time::Duration::from_millis(50));
+                    }
+                }
                 crate::shutdown_services(app);
                 app.exit(0);
             }

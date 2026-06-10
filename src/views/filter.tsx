@@ -13,7 +13,7 @@ import {
 
 export function FilterView({ filter }: { filter: MetaFilter }) {
   const scrollRef = useRef<HTMLElement>(null);
-  const seenRef = useRef(new Set<string>());
+  const seenRef = useRef(new Map<string, string>());
   const expectedSpotlights = useMemo(
     () => (filter.kind === "genre" ? selectSpotlights(filter.name).length : 0),
     [filter],
@@ -21,7 +21,7 @@ export function FilterView({ filter }: { filter: MetaFilter }) {
   const [doneSpotlights, setDoneSpotlights] = useState(0);
   const [timedOut, setTimedOut] = useState(false);
   useEffect(() => {
-    seenRef.current = new Set();
+    seenRef.current = new Map();
     setDoneSpotlights(0);
     setTimedOut(false);
     const t = window.setTimeout(() => setTimedOut(true), SPOTLIGHT_TIMEOUT_MS);

@@ -62,7 +62,7 @@ export function SubStyleBar() {
       >
         <FontMenu value={settings.subFontFamily} fonts={settings.customFonts} onChange={(f) => update({ subFontFamily: f })} />
         <Divider />
-        <SizeStepper value={settings.subFontSize} onChange={(n) => update({ subFontSize: clamp(n, 16, 56) })} />
+        <SizeStepper value={settings.subFontSize} onChange={(n) => update({ subFontSize: clamp(n, 16, 120) })} />
         <Divider />
         <ColorRow value={settings.subFontColor} onChange={(c) => update({ subFontColor: c })} portal />
         <Divider />

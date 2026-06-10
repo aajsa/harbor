@@ -56,6 +56,16 @@ export function useChromeVisibility(params: {
     return () => document.removeEventListener("mouseout", onLeave);
   }, [playing, drawMode, setChromeHidden]);
 
+  useEffect(() => {
+    const onBlur = () => {
+      if (hideTimer.current) window.clearTimeout(hideTimer.current);
+      setChromeVisible(false);
+      setChromeHidden(true);
+    };
+    window.addEventListener("blur", onBlur);
+    return () => window.removeEventListener("blur", onBlur);
+  }, [setChromeHidden]);
+
   useEffect(
     () =>
       subscribeSeekHovering(() => {

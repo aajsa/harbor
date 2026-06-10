@@ -457,8 +457,8 @@ export function createHtml5Bridge(): PlayerBridge {
       emit();
     },
     setAudioDelay() {},
-    setVideoFill(on) {
-      if (video) video.style.objectFit = on ? "cover" : "contain";
+    setPanscan(value) {
+      if (video) video.style.objectFit = value > 0 ? "cover" : "contain";
     },
     async addSubtitle(url, lang, title, select): Promise<boolean> {
       let resolvedUrl = url;
