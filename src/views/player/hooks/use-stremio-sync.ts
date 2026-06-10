@@ -13,9 +13,10 @@ export function useStremioSync(params: {
   snap: PlayerSnapshot;
   authKey: string | null;
   resolvedImdbId: string | null;
+  resolvedImdbVerified: boolean;
 }) {
-  const { src, snap, authKey, resolvedImdbId } = params;
-  const canonicalId = canonicalImdbId(src.meta.id, resolvedImdbId);
+  const { src, snap, authKey, resolvedImdbId, resolvedImdbVerified } = params;
+  const canonicalId = cloudWriteId(src.meta.id, resolvedImdbId, resolvedImdbVerified);
   const sessionStartRef = useRef<number>(Date.now());
   const lastSyncedRef = useRef(0);
   const baseItemRef = useRef<LibraryItem | null>(null);
@@ -116,9 +117,13 @@ export function useStremioSync(params: {
   }, []);
 }
 
-export function canonicalImdbId(metaId: string, resolved: string | null): string | null {
+export function cloudWriteId(
+  metaId: string,
+  resolved: string | null,
+  verified: boolean,
+): string | null {
   if (metaId.startsWith("tt")) return metaId;
-  if (resolved && resolved.startsWith("tt")) return resolved;
+  if (verified && resolved && resolved.startsWith("tt")) return resolved;
   return null;
 }
 
@@ -170,13 +175,19 @@ async function writeLibraryItem(
   canonicalId: string,
   positionSec: number,
 ): Promise<void> {
+  if (!canonicalId.startsWith("tt")) return;
+  const baseName = typeof base?.name === "string" ? base.name.trim() : "";
+  const ourName = (src.meta.name ?? src.title ?? "").trim();
+  const name = baseName || ourName;
+  if (!base && !name) return;
+
   const now = new Date().toISOString();
   const baseRecord = base as unknown as Record<string, unknown> | null;
   const baseState = (baseRecord?.state ?? {}) as Record<string, unknown>;
   const offsetMs = Math.max(0, Math.floor(positionSec * 1000));
   const durationMs = Math.max(0, Math.floor(snap.durationSec * 1000));
   const watchedRatio = positionSec / Math.max(1, snap.durationSec);
-  const isSeries = src.meta.type === "series";
+  const isSeries = src.meta.type === "series" || !!src.episode;
   const videoId = isSeries && src.episode
     ? `${canonicalId}:${src.episode.season}:${src.episode.episode}`
     : canonicalId;
@@ -187,14 +198,15 @@ async function writeLibraryItem(
   const prevLastVidReleased =
     typeof baseState.lastVidReleased === "string" ? baseState.lastVidReleased : null;
   const prevFlagged = typeof baseState.flaggedWatched === "number" ? baseState.flaggedWatched : 0;
+  const nowFlagged = watchedRatio > 0.7;
 
   const state: StremioLibraryItemState = {
     lastWatched: now,
     timeWatched: offsetMs,
     timeOffset: offsetMs,
     overallTimeWatched: Math.max(prevOverall, offsetMs),
-    timesWatched: prevTimesWatched,
-    flaggedWatched: watchedRatio > 0.85 ? 1 : prevFlagged,
+    timesWatched: nowFlagged && prevFlagged === 0 ? prevTimesWatched + 1 : prevTimesWatched,
+    flaggedWatched: nowFlagged ? 1 : prevFlagged,
     duration: durationMs,
     video_id: videoId,
     watched: prevWatched,
@@ -213,11 +225,13 @@ async function writeLibraryItem(
   const baseCtime = typeof baseRecord?._ctime === "string" ? (baseRecord._ctime as string) : null;
   const ctime = baseCtime ?? now;
 
+  const basePoster = typeof base?.poster === "string" && base.poster.length > 0 ? base.poster : null;
+  const baseType = base?.type === "series" || base?.type === "movie" ? base.type : null;
   const item: StremioLibraryItem = {
     _id: canonicalId,
-    name: base?.name ?? src.meta.name ?? src.title ?? "",
-    type: isSeries ? "series" : "movie",
-    poster: base?.poster ?? src.meta.poster ?? null,
+    name,
+    type: src.episode ? "series" : baseType ?? (isSeries ? "series" : "movie"),
+    poster: basePoster ?? src.meta.poster ?? null,
     posterShape: pickPosterShape(baseRecord?.posterShape),
     removed: base?.removed === true,
     temp: base ? base.temp === true : true,

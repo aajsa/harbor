@@ -43,6 +43,19 @@ export function useChromeVisibility(params: {
     };
   }, [wakeChrome, setChromeHidden]);
 
+  useEffect(() => {
+    const onLeave = (e: MouseEvent) => {
+      if (e.relatedTarget) return;
+      if (!playing || drawMode) return;
+      if (anyMenuOpenRef.current || getSeekHovering()) return;
+      if (hideTimer.current) window.clearTimeout(hideTimer.current);
+      setChromeVisible(false);
+      setChromeHidden(true);
+    };
+    document.addEventListener("mouseout", onLeave);
+    return () => document.removeEventListener("mouseout", onLeave);
+  }, [playing, drawMode, setChromeHidden]);
+
   useEffect(
     () =>
       subscribeSeekHovering(() => {

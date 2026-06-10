@@ -1,3 +1,4 @@
+mod cache_sweep;
 mod selftest;
 mod stream_route;
 
@@ -88,6 +89,7 @@ async fn init(app: AppHandle) -> Result<(), String> {
         .map_err(|e| e.to_string())?
         .join("engine");
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    cache_sweep::run(&dir, cache_sweep::CAP_BYTES);
     let opts = SessionOptions {
         fastresume: true,
         persistence: None,
@@ -226,6 +228,12 @@ pub async fn torrent_engine_add(
                 .collect::<Vec<_>>()
         })
         .map_err(|e| format!("{e:#}"))?;
+    if let Some(largest) = files.iter().max_by_key(|f| f.length).map(|f| f.idx) {
+        let only: HashSet<usize> = HashSet::from([largest]);
+        if let Err(e) = session.update_only_files(&handle, &only).await {
+            eprintln!("[torrent-engine] initial file narrowing failed: {e:#}");
+        }
+    }
     let port = current_port().ok_or_else(|| "engine port unavailable".to_string())?;
     Ok(AddResult {
         info_hash,

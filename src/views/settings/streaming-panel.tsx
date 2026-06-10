@@ -239,6 +239,7 @@ export function ManualAddonCard({
 const LANGUAGE_OPTIONS = [
   "English",
   "Spanish",
+  "Spanish (Latin America)",
   "French",
   "German",
   "Italian",

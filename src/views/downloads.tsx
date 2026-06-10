@@ -1,6 +1,7 @@
 import { useMemo, type ReactNode } from "react";
-import { Check, Download as DownloadIcon, FolderOpen, Trash2, X } from "lucide-react";
+import { Check, Download as DownloadIcon, FolderOpen, Play, Trash2, X } from "lucide-react";
 import { Poster } from "@/components/poster";
+import { useView } from "@/lib/view";
 import { DownloadDirBar } from "./downloads/download-dir-bar";
 import {
   cancelDownload,
@@ -97,8 +98,22 @@ function EmptyState() {
 }
 
 function DownloadRow({ d }: { d: DownloadItem }) {
+  const { openPlayer } = useView();
   const pct = Math.round(d.ratio * 100);
   const downloading = d.status === "downloading";
+  const playLocal = () =>
+    openPlayer({
+      meta: {
+        id: d.metaId,
+        type: d.season != null ? "series" : "movie",
+        name: d.title,
+        poster: d.poster ?? undefined,
+      },
+      url: d.path,
+      title: d.title,
+      subtitle: d.subtitle ?? undefined,
+      notWebReady: true,
+    });
   return (
     <li className="group flex items-center gap-4 rounded-2xl border border-edge-soft bg-elevated/40 p-3 transition-colors hover:bg-elevated/70">
       <div className="h-[68px] w-[46px] shrink-0 overflow-hidden rounded-lg">
@@ -157,11 +172,16 @@ function DownloadRow({ d }: { d: DownloadItem }) {
         ) : (
           <>
             {d.status === "done" && (
-              <RowBtn label="Show in folder" onClick={() => void revealDownload(d.id)}>
-                <FolderOpen size={16} strokeWidth={2} />
-              </RowBtn>
+              <>
+                <RowBtn label="Play" onClick={playLocal}>
+                  <Play size={16} strokeWidth={2.2} fill="currentColor" />
+                </RowBtn>
+                <RowBtn label="Show in folder" onClick={() => void revealDownload(d.id)}>
+                  <FolderOpen size={16} strokeWidth={2} />
+                </RowBtn>
+              </>
             )}
-            <RowBtn label="Remove from list" onClick={() => removeDownload(d.id)}>
+            <RowBtn label="Delete download and file" onClick={() => removeDownload(d.id)}>
               <Trash2 size={16} strokeWidth={2} />
             </RowBtn>
           </>

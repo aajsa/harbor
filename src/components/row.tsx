@@ -425,29 +425,22 @@ function EdgeArrow({
       </div>
     );
   }
-  const sideClass =
-    side === "left"
-      ? "right-full pr-3 justify-end"
-      : "left-full pl-3 justify-start";
-  const shadowClass =
-    side === "left"
-      ? "shadow-[-2px_3px_8px_rgba(0,0,0,0.45)]"
-      : "shadow-[2px_3px_8px_rgba(0,0,0,0.45)]";
+  const sideClass = side === "left" ? "left-0 justify-start" : "right-0 justify-end";
   return (
-    <div
-      className={`absolute top-0 bottom-0 z-30 flex w-9 items-center ${sideClass} ${
-        visible ? "" : "pointer-events-none"
-      }`}
-    >
+    <div className={`pointer-events-none absolute inset-y-0 z-30 flex w-14 items-center ${sideClass}`}>
       <button
         onClick={onClick}
         aria-label={`Scroll ${side}`}
         tabIndex={visible ? 0 : -1}
-        className={`flex h-[50%] w-7 items-center justify-center rounded-lg border border-edge-soft/40 bg-canvas/95 text-ink-muted ${shadowClass} transition-opacity duration-200 hover:text-ink ${
-          visible ? "opacity-0 group-hover/row:opacity-100" : "pointer-events-none opacity-0"
+        className={`pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full bg-canvas/85 text-ink backdrop-blur-md transition-all duration-200 hover:scale-105 hover:bg-canvas ${
+          visible ? "opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100" : "pointer-events-none opacity-0"
         }`}
       >
-        {side === "left" ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
+        {side === "left" ? (
+          <ChevronLeft size={22} strokeWidth={2.2} />
+        ) : (
+          <ChevronRight size={22} strokeWidth={2.2} />
+        )}
       </button>
     </div>
   );

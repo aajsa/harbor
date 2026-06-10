@@ -20,28 +20,34 @@ export function useTrackAutoload(params: {
   const { bridgeRef, src, snap, engine, settings, authKey } = params;
 
   const [resolvedImdbId, setResolvedImdbId] = useState<string | null>(null);
+  const [resolvedImdbVerified, setResolvedImdbVerified] = useState(false);
   useEffect(() => {
     setResolvedImdbId(null);
+    setResolvedImdbVerified(false);
     if (src.imdbId) {
       setResolvedImdbId(src.imdbId);
+      setResolvedImdbVerified(src.imdbIdVerified === true);
       return;
     }
     const raw = src.meta.id ?? "";
     if (raw.startsWith("tt")) {
       setResolvedImdbId(raw);
+      setResolvedImdbVerified(true);
       return;
     }
     if (!settings.tmdbKey) return;
     let cancelled = false;
     tmdbImdbId(settings.tmdbKey, raw)
       .then((id) => {
-        if (!cancelled) setResolvedImdbId(id);
+        if (cancelled) return;
+        setResolvedImdbId(id);
+        setResolvedImdbVerified(!!id);
       })
       .catch(() => {});
     return () => {
       cancelled = true;
     };
-  }, [src.imdbId, src.meta.id, settings.tmdbKey]);
+  }, [src.imdbId, src.imdbIdVerified, src.meta.id, settings.tmdbKey]);
 
   const userAddonsRef = useRef<Addon[] | null>(null);
   useEffect(() => {
@@ -131,7 +137,8 @@ export function useTrackAutoload(params: {
         const n = perLang.get(k) ?? 0;
         if (n >= PER_LANG_MAX) continue;
         perLang.set(k, n + 1);
-        const shouldSelect = !hasSelectedPreferred && !firstAdded;
+        const shouldSelect =
+          !settings.subtitlesOffByDefault && !hasSelectedPreferred && !firstAdded;
         attempted++;
         const labeled = labelForTrack(r);
         const ok = await b.addSubtitle(r.url, r.lang, labeled, shouldSelect);
@@ -210,7 +217,7 @@ export function useTrackAutoload(params: {
     }
   }, [engine, src.url, src.meta.id, snap.audioTracks, snap.subtitleTracks, snap.rate, snap.subDelaySec, settings]);
 
-  return { resolvedImdbId };
+  return { resolvedImdbId, resolvedImdbVerified };
 }
 
 function resolveLangPreference(

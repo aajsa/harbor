@@ -24,9 +24,7 @@ export function Header({ filter }: { filter: MetaFilter }) {
         </h1>
       )}
       <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-ink-muted">{subtitle}</p>
-      {(filter.kind === "language" || filter.kind === "country") && (
-        <MediaTypeToggle filter={filter} />
-      )}
+      {filter.kind === "country" && <MediaTypeToggle filter={filter} />}
     </div>
   );
 }
@@ -166,7 +164,7 @@ function describe(f: MetaFilter): {
     return {
       kicker: "Language",
       title: f.name,
-      subtitle: `${mediaWord} originally in ${f.name}, sorted across acclaim and hidden gems.`,
+      subtitle: `Everything originally in ${f.name}: movies and series across every genre, era, and hidden gems.`,
       Icon: Languages,
     };
   }

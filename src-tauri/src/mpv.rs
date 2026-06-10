@@ -47,6 +47,7 @@ pub struct MpvStartArgs {
     pub hdr_to_sdr: Option<bool>,
     pub embed: Option<bool>,
     pub anime4k_shaders: Option<Vec<String>>,
+    pub d3d11_flip: Option<bool>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -56,15 +57,6 @@ pub struct MpvGeometry {
     pub screen_y: i32,
     pub w: u32,
     pub h: u32,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct MpvClipRect {
-    pub x: i32,
-    pub y: i32,
-    pub w: i32,
-    pub h: i32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -79,7 +71,7 @@ pub struct MpvState {
 
 struct MpvSession {
     mpv: Arc<Mpv>,
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "linux"))]
     embedded: bool,
 }
 
@@ -184,7 +176,11 @@ fn apply_pre_init(
         set("force-window", "no")?;
     } else if cfg!(target_os = "linux") {
         set("hwdec", "auto-safe")?;
-        set("force-window", "yes")?;
+        if args.embed.unwrap_or(false) {
+            set("force-window", "no")?;
+        } else {
+            set("force-window", "yes")?;
+        }
     } else {
         set("hwdec", "auto")?;
         set("force-window", "immediate")?;
@@ -201,6 +197,9 @@ fn apply_pre_init(
         {
             let hwnd_i64: i64 = hwnd.parse().map_err(|e| format!("parse wid {}: {}", hwnd, e))?;
             init.set_property("wid", hwnd_i64).map_err(|e| format!("set wid={}: {}", hwnd_i64, e))?;
+            if !args.d3d11_flip.unwrap_or(false) {
+                set("d3d11-flip", "no")?;
+            }
         }
         #[cfg(not(windows))]
         {
@@ -250,7 +249,18 @@ pub async fn mpv_start(
             });
             let _ = rx.recv_timeout(std::time::Duration::from_millis(4000));
         }
-        #[cfg(not(target_os = "macos"))]
+        #[cfg(target_os = "linux")]
+        {
+            let (tx, rx) = std::sync::mpsc::sync_channel::<()>(1);
+            let _ = app.run_on_main_thread(move || {
+                let _ = crate::mpv_render_linux::uninstall();
+                let _ = prev.mpv.command("quit", &[]);
+                drop(prev);
+                let _ = tx.send(());
+            });
+            let _ = rx.recv_timeout(std::time::Duration::from_millis(4000));
+        }
+        #[cfg(all(not(target_os = "macos"), not(target_os = "linux")))]
         {
             let _ = prev.mpv.command("quit", &[]);
             drop(prev);
@@ -291,7 +301,7 @@ pub async fn mpv_start(
         let level = std::ffi::CString::new("warn").unwrap();
         libmpv2_sys::mpv_request_log_messages(mpv.ctx.as_ptr(), level.as_ptr());
     }
-    let use_render_api = cfg!(target_os = "macos") && want_embed;
+    let use_render_api = (cfg!(target_os = "macos") || cfg!(target_os = "linux")) && want_embed;
     if !use_render_api {
         if let Err(e) = mpv.set_property("vo", "gpu-next,") {
             eprintln!("[harbor::mpv] vo set FAILED: {:?}", e);
@@ -329,6 +339,37 @@ pub async fn mpv_start(
             Err(e) => {
                 eprintln!("[harbor::mpv_mac] install timed out: {:?}", e);
                 return Err("mac render install timeout".into());
+            }
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    if use_render_api {
+        let window = app
+            .get_webview_window("main")
+            .ok_or_else(|| "main window missing for render API install".to_string())?;
+        let mpv_ctx_addr: usize = mpv.ctx.as_ptr() as usize;
+        let (tx, rx) = std::sync::mpsc::sync_channel::<Result<(), String>>(1);
+        let _ = app.run_on_main_thread(move || {
+            let res = (|| {
+                let p = std::ptr::NonNull::new(mpv_ctx_addr as *mut libmpv2_sys::mpv_handle)
+                    .ok_or_else(|| "null mpv ctx".to_string())?;
+                crate::mpv_render_linux::prepare(p)?;
+                let gtk_window = window.gtk_window().map_err(|e| format!("gtk_window: {:?}", e))?;
+                let vbox = window.default_vbox().map_err(|e| format!("default_vbox: {:?}", e))?;
+                crate::mpv_render_linux::install(&gtk_window, &vbox)
+            })();
+            let _ = tx.send(res);
+        });
+        match rx.recv_timeout(std::time::Duration::from_millis(3000)) {
+            Ok(Ok(())) => eprintln!("[harbor::mpv_linux] install OK"),
+            Ok(Err(e)) => {
+                eprintln!("[harbor::mpv_linux] install failed: {}", e);
+                return Err(format!("linux render install: {}", e));
+            }
+            Err(e) => {
+                eprintln!("[harbor::mpv_linux] install timed out: {:?}", e);
+                return Err("linux render install timeout".into());
             }
         }
     }
@@ -390,6 +431,8 @@ pub async fn mpv_start(
         mpv: mpv_arc,
         #[cfg(windows)]
         embedded: embed_hwnd.is_some(),
+        #[cfg(target_os = "linux")]
+        embedded: use_render_api,
     });
     drop(g);
 
@@ -570,6 +613,26 @@ pub async fn mpv_set_geometry(
         let _ = rx.recv_timeout(std::time::Duration::from_millis(300));
         return Ok(());
     }
+    #[cfg(target_os = "linux")]
+    {
+        let embedded = {
+            let g = state.inner.lock().await;
+            g.as_ref().map(|s| s.embedded).unwrap_or(false)
+        };
+        if embedded {
+            let x = geom.screen_x as f64;
+            let y = geom.screen_y as f64;
+            let w = geom.w as f64;
+            let h = geom.h as f64;
+            let (tx, rx) = std::sync::mpsc::sync_channel::<()>(1);
+            let _ = app.run_on_main_thread(move || {
+                let _ = crate::mpv_render_linux::resize_to(x, y, w, h);
+                let _ = tx.send(());
+            });
+            let _ = rx.recv_timeout(std::time::Duration::from_millis(300));
+            return Ok(());
+        }
+    }
     #[cfg(all(not(windows), not(target_os = "macos")))]
     let _ = app;
 
@@ -579,14 +642,6 @@ pub async fn mpv_set_geometry(
     };
     let geo = format!("{}x{}+{}+{}", geom.w, geom.h, geom.screen_x, geom.screen_y);
     mpv.set_property("geometry", geo.as_str()).map_err(|e| format!("geometry: {}", e))
-}
-
-#[tauri::command]
-pub async fn mpv_set_clip_rects(
-    _app: AppHandle,
-    _rects: Vec<MpvClipRect>,
-) -> Result<(), String> {
-    Ok(())
 }
 
 #[tauri::command]
@@ -1029,7 +1084,18 @@ pub async fn mpv_stop(app: AppHandle, state: State<'_, MpvState>) -> Result<(), 
             });
             let _ = rx.recv_timeout(std::time::Duration::from_millis(4000));
         }
-        #[cfg(not(target_os = "macos"))]
+        #[cfg(target_os = "linux")]
+        {
+            let (tx, rx) = std::sync::mpsc::sync_channel::<()>(1);
+            let _ = app.run_on_main_thread(move || {
+                let _ = crate::mpv_render_linux::uninstall();
+                let _ = session.mpv.command("quit", &[]);
+                drop(session);
+                let _ = tx.send(());
+            });
+            let _ = rx.recv_timeout(std::time::Duration::from_millis(4000));
+        }
+        #[cfg(all(not(target_os = "macos"), not(target_os = "linux")))]
         {
             let _ = session.mpv.command("quit", &[]);
             drop(session);
@@ -1131,6 +1197,32 @@ fn position_embedded_mpv_child(app: &AppHandle, x: i32, y: i32, w: u32, h: u32) 
         .get_webview_window("main")
         .ok_or_else(|| "main window missing".to_string())?;
     let parent_hwnd = window.hwnd().map_err(|e| format!("hwnd: {}", e))?;
+
+    let (x, y, w, h) = {
+        use windows::Win32::Foundation::RECT;
+        use windows::Win32::UI::WindowsAndMessaging::GetClientRect;
+        let mut rc = RECT::default();
+        let ok = unsafe { GetClientRect(parent_hwnd, &mut rc).is_ok() };
+        let (cw, ch) = (rc.right, rc.bottom);
+        let (mut x, mut y, mut w, mut h) = (x, y, w as i32, h as i32);
+        if ok && cw > 0 && ch > 0 {
+            if x.abs() <= 2 {
+                w += x;
+                x = 0;
+            }
+            if y.abs() <= 2 {
+                h += y;
+                y = 0;
+            }
+            if (x + w - cw).abs() <= 2 {
+                w = cw - x;
+            }
+            if (y + h - ch).abs() <= 2 {
+                h = ch - y;
+            }
+        }
+        (x, y, w.max(1) as u32, h.max(1) as u32)
+    };
 
     struct EnumState {
         mpv_hwnds: Vec<isize>,

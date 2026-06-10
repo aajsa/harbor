@@ -1,6 +1,7 @@
-import { Layers, Search, Star, Tv, X } from "lucide-react";
+import { Eye, EyeOff, Layers, Pin, Search, Star, Tv, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FAVORITES_GROUP_KEY } from "@/lib/iptv/favorites";
+import { toggleGroupHidden, toggleGroupPin, useGroupPrefs } from "@/lib/iptv/group-order";
 
 export function CategorySidebar({
   groups,
@@ -9,6 +10,7 @@ export function CategorySidebar({
   counts,
   groupLogos,
   favoritesCount = 0,
+  sourceId,
 }: {
   groups: string[];
   active: string | null;
@@ -16,8 +18,12 @@ export function CategorySidebar({
   counts: Map<string, number>;
   groupLogos: Map<string, string | null>;
   favoritesCount?: number;
+  sourceId: string;
 }) {
   const total = Array.from(counts.values()).reduce((a, b) => a + b, 0);
+  const prefs = useGroupPrefs(sourceId);
+  const pinnedSet = useMemo(() => new Set(prefs.pinned), [prefs.pinned]);
+  const [showHidden, setShowHidden] = useState(false);
   const [filter, setFilter] = useState("");
   const visibleGroups = useMemo(() => {
     const q = filter.trim().toLowerCase();
@@ -126,6 +132,9 @@ export function CategorySidebar({
             active={activeKey === g}
             onClick={() => onSelect(g)}
             logoUrl={groupLogos.get(g) ?? null}
+            groupName={g}
+            sourceId={sourceId}
+            pinned={pinnedSet.has(g)}
           />
         ))}
         {visibleGroups.length === 0 && (
@@ -140,6 +149,36 @@ export function CategorySidebar({
           </div>
         )}
       </div>
+      {prefs.hidden.length > 0 && (
+        <div className="border-t border-edge-soft/40 px-2 py-1.5">
+          <button
+            onClick={() => setShowHidden((v) => !v)}
+            className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-[11.5px] font-medium text-ink-subtle transition-colors hover:bg-elevated/60 hover:text-ink"
+          >
+            <span>{prefs.hidden.length} hidden</span>
+            <span className="text-ink-muted">{showHidden ? "Done" : "Manage"}</span>
+          </button>
+          {showHidden && (
+            <div className="mt-1 flex max-h-44 flex-col gap-0.5 overflow-y-auto">
+              {prefs.hidden.map((g) => (
+                <div
+                  key={g}
+                  className="flex items-center gap-2 rounded-md px-2 py-1 text-[12px] text-ink-subtle"
+                >
+                  <span className="flex-1 truncate">{g}</span>
+                  <button
+                    onClick={() => toggleGroupHidden(sourceId, g)}
+                    aria-label={`Unhide ${g}`}
+                    className="flex h-6 w-6 items-center justify-center rounded text-ink-muted transition-colors hover:bg-elevated hover:text-ink"
+                  >
+                    <Eye size={13} strokeWidth={2} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </aside>
   );
 }
@@ -152,6 +191,9 @@ function CategoryItem({
   onClick,
   icon,
   logoUrl,
+  groupName,
+  sourceId,
+  pinned,
 }: {
   idx: number;
   label: string;
@@ -160,50 +202,85 @@ function CategoryItem({
   onClick: () => void;
   icon?: React.ReactNode;
   logoUrl?: string | null;
+  groupName?: string;
+  sourceId?: string;
+  pinned?: boolean;
 }) {
   const [errored, setErrored] = useState(false);
   const showLogo = logoUrl && !errored;
+  const hasActions = !!groupName && !!sourceId;
   return (
-    <button
-      data-cat-idx={idx}
-      role="option"
-      aria-selected={active}
-      tabIndex={active ? 0 : -1}
-      onClick={onClick}
-      className={`flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors duration-150 ${
-        active
-          ? "bg-elevated text-ink"
-          : "text-ink-muted hover:bg-elevated/65 hover:text-ink"
-      }`}
-    >
-      <span
-        className={`flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-md ${
-          active ? "bg-canvas" : "bg-elevated/70"
+    <div className="group/cat relative">
+      <button
+        data-cat-idx={idx}
+        role="option"
+        aria-selected={active}
+        tabIndex={active ? 0 : -1}
+        onClick={onClick}
+        className={`flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors duration-150 ${
+          active ? "bg-elevated text-ink" : "text-ink-muted hover:bg-elevated/65 hover:text-ink"
         }`}
       >
-        {showLogo ? (
-          <img
-            src={logoUrl!}
-            alt=""
-            draggable={false}
-            loading="lazy"
-            onError={() => setErrored(true)}
-            className="max-h-full max-w-full object-contain"
-          />
-        ) : icon ? (
-          icon
-        ) : (
-          <Tv size={15} strokeWidth={1.9} className="text-ink-subtle" />
-        )}
-      </span>
-      <span className="flex-1 truncate text-[13px] font-medium">{label}</span>
-      <span
-        className={`shrink-0 rounded-full px-2 py-0.5 text-[10.5px] font-semibold tabular-nums ${
-          active ? "bg-canvas text-ink-muted" : "bg-canvas/55 text-ink-subtle"
-        }`}
-      >
-        {count.toLocaleString()}
-      </span>
-    </button>
+        <span
+          className={`flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-md ${
+            active ? "bg-canvas" : "bg-elevated/70"
+          }`}
+        >
+          {showLogo ? (
+            <img
+              src={logoUrl!}
+              alt=""
+              draggable={false}
+              loading="lazy"
+              onError={() => setErrored(true)}
+              className="max-h-full max-w-full object-contain"
+            />
+          ) : icon ? (
+            icon
+          ) : (
+            <Tv size={15} strokeWidth={1.9} className="text-ink-subtle" />
+          )}
+        </span>
+        <span className="flex flex-1 items-center gap-1.5 truncate text-[13px] font-medium">
+          {pinned && <Pin size={11} strokeWidth={2.4} className="shrink-0 fill-current text-accent" />}
+          <span className="truncate">{label}</span>
+        </span>
+        <span
+          className={`shrink-0 rounded-full px-2 py-0.5 text-[10.5px] font-semibold tabular-nums transition-opacity ${
+            active ? "bg-canvas text-ink-muted" : "bg-canvas/55 text-ink-subtle"
+          } ${hasActions ? "group-hover/cat:opacity-0" : ""}`}
+        >
+          {count.toLocaleString()}
+        </span>
+      </button>
+      {hasActions && (
+        <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1 opacity-0 transition-opacity group-hover/cat:opacity-100">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleGroupPin(sourceId!, groupName!);
+            }}
+            aria-label={pinned ? "Unpin category" : "Pin category to top"}
+            className={`flex h-6 w-6 items-center justify-center rounded-md ${
+              pinned ? "bg-accent text-canvas" : "bg-canvas/90 text-ink-muted hover:text-ink"
+            }`}
+          >
+            <Pin size={12} strokeWidth={2.2} className={pinned ? "fill-current" : ""} />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleGroupHidden(sourceId!, groupName!);
+            }}
+            aria-label="Hide category"
+            className="flex h-6 w-6 items-center justify-center rounded-md bg-canvas/90 text-ink-muted hover:text-ink"
+          >
+            <EyeOff size={12} strokeWidth={2.2} />
+          </button>
+        </div>
+      )}
+    </div>
   );
 }

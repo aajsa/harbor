@@ -1,4 +1,4 @@
-import { Grid2x2, LayoutGrid, ListTree, Search } from "lucide-react";
+import { Grid2x2, Home, LayoutGrid, ListTree, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { save as saveDialog } from "@tauri-apps/plugin-dialog";
 import { writeTextFile } from "@tauri-apps/plugin-fs";
@@ -7,23 +7,23 @@ import { buildXtreamUrls, type PlaylistFormValue } from "./live/source-picker/pl
 import { useSettings } from "@/lib/settings";
 import { useScrollMemory, useView } from "@/lib/view";
 import type { Meta } from "@/lib/cinemeta";
-import { sortChannelsByGroupRelevance, sortGroupsByRelevance } from "@/lib/iptv/group-relevance";
 import { FAVORITES_GROUP_KEY, useFavorites } from "@/lib/iptv/favorites";
 import { clearPlaylistCache, getCachedPlaylist } from "@/lib/iptv/store";
+import { recordChannelPlay } from "@/lib/iptv/channel-stats";
 import { buildCatchupUrl } from "@/lib/iptv/catchup";
 import { findCurrent } from "@/lib/iptv/xmltv";
 import { pushActivityHint } from "@/lib/discord/activity-hint";
-import { filterChannelsByRegion, promoteTopChannelsToFront, rowsForRegion } from "@/lib/iptv/top-networks";
 import type { EpgProgram, IptvChannel, IptvPlaylistSource } from "@/lib/iptv/types";
 import { CategorySidebar } from "./live/category-sidebar";
 import { ChannelGrid, EmptyResult, ErrorBlock } from "./live/channel-grid";
 import { GridSkeleton, GuideSkeleton } from "./live/skeletons";
 import { PlaylistEmpty } from "./live/playlist-empty";
 import { SourcePicker } from "./live/source-picker";
+import { LiveHome } from "./live/live-home";
 import { TopNetworksRows } from "./live/top-networks-rows";
 import { GuideView } from "./live/guide/guide-view";
 import { useAllPlaylists } from "./live/hooks/use-all-playlists";
-import { useChannelFilter } from "./live/hooks/use-channel-filter";
+import { useChannelPipeline } from "./live/hooks/use-channel-pipeline";
 import { useEpg, useNowTick } from "./live/hooks/use-epg";
 import { useIptvPlaylist } from "./live/hooks/use-iptv-playlist";
 import { MultiviewView } from "./multiview";
@@ -31,7 +31,7 @@ import { isWindowsDesktop } from "@/lib/platform";
 
 const ACTIVE_KEY = "harbor.iptv.active";
 const MODE_KEY = "harbor.iptv.viewMode";
-type ViewMode = "grid" | "guide" | "multiview";
+type ViewMode = "home" | "grid" | "guide" | "multiview";
 
 function readActiveId(): string | null {
   try {
@@ -51,9 +51,12 @@ function writeActiveId(id: string | null) {
 function readMode(): ViewMode {
   try {
     const v = localStorage.getItem(MODE_KEY);
-    return v === "guide" ? "guide" : v === "multiview" && isWindowsDesktop() ? "multiview" : "grid";
+    if (v === "grid") return "grid";
+    if (v === "guide") return "guide";
+    if (v === "multiview" && isWindowsDesktop()) return "multiview";
+    return "home";
   } catch {
-    return "grid";
+    return "home";
   }
 }
 
@@ -126,32 +129,6 @@ export function LiveView({ active }: { active: boolean }) {
     ? settings.preferredLanguages
     : ["English"];
 
-  const sortedChannels = useMemo(
-    () => sortChannelsByGroupRelevance(playlist?.channels ?? [], region, preferredLanguages),
-    [playlist?.channels, region, preferredLanguages.join(",")],
-  );
-  const sortedGroups = useMemo(
-    () => sortGroupsByRelevance(playlist?.groups ?? [], region, preferredLanguages),
-    [playlist?.groups, region, preferredLanguages.join(",")],
-  );
-
-  const topRows = useMemo(() => rowsForRegion(region), [region]);
-  const showTopRows =
-    mode === "grid" && group === null && !query.trim() && topRows.length > 0;
-
-  const regionChannels = useMemo(
-    () => filterChannelsByRegion(sortedChannels, region),
-    [sortedChannels, region],
-  );
-
-  const orderedChannels = useMemo(() => {
-    if (mode !== "guide") return sortedChannels;
-    if (group !== null) return sortedChannels;
-    if (query.trim()) return sortedChannels;
-    if (topRows.length === 0) return sortedChannels;
-    return promoteTopChannelsToFront(sortedChannels, topRows, regionChannels);
-  }, [sortedChannels, mode, group, query, topRows, regionChannels]);
-
   const inFavorites = group === FAVORITES_GROUP_KEY;
   const allSources = useMemo<IptvPlaylistSource[]>(
     () =>
@@ -191,70 +168,27 @@ export function LiveView({ active }: { active: boolean }) {
     multiview || (inFavorites && stubSources.length > 0),
   );
 
-  useEffect(() => {
-    if (!inFavorites) return;
-    for (const pl of allPlaylists.values()) favorites.hydrate(pl.channels);
-  }, [inFavorites, allPlaylists, favorites]);
-
-  const mvChannels = useMemo<IptvChannel[]>(() => {
-    const out: IptvChannel[] = [];
-    const seen = new Set<string>();
-    for (const pl of allPlaylists.values()) {
-      for (const c of pl.channels) {
-        if (seen.has(c.url)) continue;
-        seen.add(c.url);
-        out.push(c);
-      }
-    }
-    return sortChannelsByGroupRelevance(out, region, preferredLanguages);
-  }, [allPlaylists, region, preferredLanguages.join(",")]);
-
-  const favoriteChannels = useMemo(() => {
-    if (!inFavorites) return [];
-    const nameById = new Map(allSources.map((s) => [s.id, s.name] as const));
-    const ready = [...favorites.items.values()].filter((f) => f.url);
-    ready.sort((a, b) => {
-      const na = nameById.get(a.sourceId) ?? a.sourceId;
-      const nb = nameById.get(b.sourceId) ?? b.sourceId;
-      return na.localeCompare(nb) || a.name.localeCompare(b.name);
-    });
-    return ready.map<IptvChannel>((f) => ({
-      id: f.id,
-      tvgId: f.tvgId,
-      name: f.name,
-      logo: f.logo,
-      group: nameById.get(f.sourceId) ?? "Favorites",
-      url: f.url,
-      catchupSource: null,
-      durationSec: null,
-      attrs: {},
-    }));
-  }, [inFavorites, favorites.items, allSources]);
-
-  const { visible: standardVisible, counts } = useChannelFilter(
-    orderedChannels,
-    inFavorites ? null : group,
+  const {
+    sortedGroups,
+    topRows,
+    showTopRows,
+    regionChannels,
+    shownChannels,
+    mvChannels,
+    visible,
+    counts,
+    groupLogos,
+  } = useChannelPipeline({
+    playlist,
+    region,
+    preferredLanguages,
+    mode,
+    group,
     query,
-    favorites.ids,
-  );
-
-  const visible = useMemo(() => {
-    if (!inFavorites) return standardVisible;
-    const q = query.trim().toLowerCase();
-    if (!q) return favoriteChannels;
-    return favoriteChannels.filter((ch) =>
-      `${ch.name} ${ch.group ?? ""}`.toLowerCase().includes(q),
-    );
-  }, [inFavorites, standardVisible, favoriteChannels, query]);
-
-  const groupLogos = useMemo(() => {
-    const m = new Map<string, string | null>();
-    for (const ch of sortedChannels) {
-      const g = ch.group ?? "Uncategorized";
-      if (!m.has(g) && ch.logo) m.set(g, ch.logo);
-    }
-    return m;
-  }, [sortedChannels]);
+    favorites,
+    allPlaylists,
+    allSources,
+  });
 
   const addPlaylist = useCallback(
     (entry: PlaylistFormValue) => {
@@ -282,6 +216,32 @@ export function LiveView({ active }: { active: boolean }) {
       }
     },
     [settings.iptvPlaylists, update, activeId],
+  );
+
+  const reorderPlaylist = useCallback(
+    (id: string, delta: number) => {
+      const arr = settings.iptvPlaylists;
+      const i = arr.findIndex((s) => s.id === id);
+      const j = i + delta;
+      if (i < 0 || j < 0 || j >= arr.length) return;
+      const next = arr.slice();
+      [next[i], next[j]] = [next[j], next[i]];
+      update({ iptvPlaylists: next });
+    },
+    [settings.iptvPlaylists, update],
+  );
+
+  const movePlaylistTop = useCallback(
+    (id: string) => {
+      const arr = settings.iptvPlaylists;
+      const i = arr.findIndex((s) => s.id === id);
+      if (i <= 0) return;
+      const next = arr.slice();
+      const [item] = next.splice(i, 1);
+      next.unshift(item);
+      update({ iptvPlaylists: next });
+    },
+    [settings.iptvPlaylists, update],
   );
 
   const editPlaylist = useCallback(
@@ -320,6 +280,7 @@ export function LiveView({ active }: { active: boolean }) {
 
   const handlePlay = useCallback(
     (ch: IptvChannel) => {
+      recordChannelPlay(ch);
       const meta = synthChannelMeta(ch);
       const programs = ch.tvgId ? epg?.byChannel.get(ch.tvgId) : undefined;
       const liveProgram = findCurrent(programs, Date.now()).current?.title ?? undefined;
@@ -372,7 +333,7 @@ export function LiveView({ active }: { active: boolean }) {
 
   return (
     <main data-rail-flush className={`relative flex min-h-0 flex-1 ${immersive ? "pt-0" : "pt-20"}`}>
-      {playlist && sortedGroups.length > 0 && mode !== "multiview" && state.kind !== "error" && (
+      {playlist && sortedGroups.length > 0 && mode !== "multiview" && mode !== "home" && state.kind !== "error" && (
         <CategorySidebar
           groups={sortedGroups}
           active={group}
@@ -380,6 +341,7 @@ export function LiveView({ active }: { active: boolean }) {
           counts={counts}
           groupLogos={groupLogos}
           favoritesCount={favorites.count}
+          sourceId={activeId ?? ""}
         />
       )}
       <div className="flex min-w-0 flex-1 flex-col">
@@ -398,6 +360,8 @@ export function LiveView({ active }: { active: boolean }) {
             onAdd={addPlaylist}
             onEdit={editPlaylist}
             onRemove={removePlaylist}
+            onMove={reorderPlaylist}
+            onMoveTop={movePlaylistTop}
             onRefresh={() => {
               if (activeId) clearPlaylistCache(activeId);
               refresh();
@@ -417,7 +381,10 @@ export function LiveView({ active }: { active: boolean }) {
               <input
                 type="text"
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  if (e.target.value && mode === "home") setMode("grid");
+                }}
                 placeholder={`Search ${playlist?.channels.length ?? 0} channels`}
                 className="flex-1 bg-transparent text-[14px] text-ink placeholder:text-ink-subtle focus:outline-none"
               />
@@ -459,17 +426,28 @@ export function LiveView({ active }: { active: boolean }) {
             mode === "guide" ? <GuideSkeleton /> : <GridSkeleton />
           ) : (
             <>
-              {playlist && visible.length === 0 && (
+              {mode === "home" && playlist && (
+                <LiveHome
+                  channels={shownChannels}
+                  epg={epg}
+                  nowMs={nowMs}
+                  sourceId={activeId ?? ""}
+                  region={region}
+                  favorites={favorites}
+                  onPlay={handlePlay}
+                  onOpenCategory={(g) => {
+                    setGroup(g);
+                    setMode("grid");
+                  }}
+                />
+              )}
+              {mode !== "home" && playlist && visible.length === 0 && (
                 <EmptyResult onClear={() => { setQuery(""); setGroup(null); }} />
               )}
               {visible.length > 0 && mode === "grid" && (
                 <div className="flex flex-col gap-6">
                   {showTopRows && (
-                    <TopNetworksRows
-                      rows={topRows}
-                      channels={regionChannels}
-                      onPlay={handlePlay}
-                    />
+                    <TopNetworksRows rows={topRows} channels={regionChannels} onPlay={handlePlay} />
                   )}
                   <ChannelGrid
                     channels={visible}
@@ -503,6 +481,12 @@ export function LiveView({ active }: { active: boolean }) {
 function ViewModeToggle({ mode, onChange }: { mode: ViewMode; onChange: (m: ViewMode) => void }) {
   return (
     <div className="flex h-11 shrink-0 items-center gap-0.5 rounded-xl border border-edge-soft/55 bg-elevated p-1">
+      <ToggleButton
+        active={mode === "home"}
+        onClick={() => onChange("home")}
+        icon={<Home size={14} strokeWidth={2} />}
+        label="Home"
+      />
       <ToggleButton
         active={mode === "grid"}
         onClick={() => onChange("grid")}

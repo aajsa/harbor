@@ -30,18 +30,25 @@ type LiveStreamRow = {
   num?: number;
 };
 
-async function xtreamFetch(url: string): Promise<unknown> {
+export async function xtreamFetch(url: string): Promise<unknown> {
   if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
     const { fetch: tauriFetch } = await import("@tauri-apps/plugin-http");
-    const res = await tauriFetch(url, {
-      method: "GET",
-      headers: {
-        "User-Agent": "IPTVSmartersPro/3.1.5",
-        Accept: "application/json, */*",
-      },
-      connectTimeout: 30_000,
-      maxRedirections: 5,
-    } as unknown as RequestInit);
+    let res: Response;
+    try {
+      res = await tauriFetch(url, {
+        method: "GET",
+        headers: {
+          "User-Agent": "IPTVSmartersPro/3.1.5",
+          Accept: "application/json, */*",
+        },
+        connectTimeout: 30_000,
+        maxRedirections: 5,
+      } as unknown as RequestInit);
+    } catch (e) {
+      if (!/scope|not allowed/i.test(String(e))) throw e;
+      const { safeFetch } = await import("@/lib/safe-fetch");
+      res = await safeFetch(url, { headers: { Accept: "application/json, */*" } });
+    }
     if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
     return res.json();
   }
@@ -50,7 +57,7 @@ async function xtreamFetch(url: string): Promise<unknown> {
   return res.json();
 }
 
-function apiUrl(creds: XtreamCreds, action: string, extra: Record<string, string> = {}): string {
+export function apiUrl(creds: XtreamCreds, action: string, extra: Record<string, string> = {}): string {
   const params = new URLSearchParams({
     username: creds.username,
     password: creds.password,

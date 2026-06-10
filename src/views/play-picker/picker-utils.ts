@@ -7,7 +7,8 @@ import {
 } from "@/components/format-badge";
 import type { Meta } from "@/lib/cinemeta";
 import type { Rejection } from "@/lib/streams/trust";
-import type { ScoredStream, Tier } from "@/lib/streams/types";
+import type { Addon } from "@/lib/addons";
+import type { ScoredStream, Stream, Tier } from "@/lib/streams/types";
 import type { PlayEpisode } from "@/lib/view";
 
 export async function cinemetaImdbFallback(
@@ -62,6 +63,7 @@ export function addonConfigHint(url?: string): string {
 
 export function buildAddonOptions(
   streams: ScoredStream[],
+  rank?: Map<string, number>,
 ): Array<{ id: string; name: string; count: number }> {
   const seen = new Map<string, { name: string; url?: string; count: number }>();
   for (const s of streams) {
@@ -79,7 +81,14 @@ export function buildAddonOptions(
       o.name = `${o.name} · ${hint}`;
     }
   }
-  opts.sort((a, b) => a.name.localeCompare(b.name));
+  if (rank) {
+    opts.sort(
+      (a, b) =>
+        (rank.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (rank.get(b.id) ?? Number.MAX_SAFE_INTEGER),
+    );
+  } else {
+    opts.sort((a, b) => a.name.localeCompare(b.name));
+  }
   return opts.map(({ id, name, count }) => ({ id, name, count }));
 }
 
@@ -410,4 +419,69 @@ export function humanError(code: string): string {
     default:
       return `Couldn't play this stream (${code}).`;
   }
+}
+
+function streamIdentity(s: {
+  addonId: string;
+  infoHash?: string;
+  fileIdx?: number;
+  url?: string;
+  title?: string;
+  name?: string;
+}): string {
+  const base = s.infoHash
+    ? `h:${s.infoHash}:${s.fileIdx ?? ""}`
+    : `u:${s.url ?? s.title ?? s.name ?? ""}`;
+  return `${s.addonId}:${base}`;
+}
+
+export function stampAddonOrder(streams: ScoredStream[], rawAddon: Stream[]): void {
+  if (rawAddon.length === 0) return;
+  const arrival = new Map<string, number>();
+  const byIdentity = new Map<string, Stream>();
+  rawAddon.forEach((s, i) => {
+    const k = streamIdentity(s);
+    if (!arrival.has(k)) {
+      arrival.set(k, i);
+      byIdentity.set(k, s);
+    }
+  });
+  for (const s of streams) {
+    const k = streamIdentity(s);
+    const idx = arrival.get(k);
+    if (idx !== undefined) s.nativeIdx = idx;
+    const raw = byIdentity.get(k);
+    if (raw) {
+      s.addonUrl ??= raw.addonUrl;
+      s.addonRanked ??= raw.addonRanked;
+    }
+  }
+}
+
+export function orderByAddonNative(
+  streams: ScoredStream[],
+  rawAddon: Stream[],
+  addons: Addon[] | null,
+): ScoredStream[] {
+  const rank = new Map<string, number>();
+  (addons ?? []).forEach((a, i) => {
+    if (a.transportUrl) rank.set(a.transportUrl, i);
+  });
+  const arrival = new Map<string, number>();
+  rawAddon.forEach((s, i) => {
+    const k = streamIdentity(s);
+    if (!arrival.has(k)) arrival.set(k, i);
+  });
+  const BIG = Number.MAX_SAFE_INTEGER;
+  const arrivalOf = (s: ScoredStream): number =>
+    s.nativeIdx ?? arrival.get(streamIdentity(s)) ?? BIG;
+  return streams.slice().sort((a, b) => {
+    const ar = rank.get(a.addonUrl ?? "") ?? BIG;
+    const br = rank.get(b.addonUrl ?? "") ?? BIG;
+    if (ar !== br) return ar - br;
+    const ai = arrivalOf(a);
+    const bi = arrivalOf(b);
+    if (ai !== bi) return ai - bi;
+    return b.score - a.score;
+  });
 }

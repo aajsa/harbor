@@ -25,6 +25,7 @@ import { InstallerViewportRoot } from "@/components/installer-viewport";
 import { UpdateRoot } from "@/components/update/update-root";
 import { CustomCodeMount } from "@/components/custom-code-mount";
 import { MemoryHud } from "@/components/memory-hud";
+import { OfflineBanner } from "@/chrome/offline-banner";
 import { MobileNotice } from "@/components/mobile-notice";
 import { WebhookLoopMount } from "@/components/webhook-loop-mount";
 import { TogetherChatToast } from "@/components/together-chat-toast";
@@ -72,6 +73,7 @@ const importDiscover = () => import("@/views/discover");
 const importAward = () => import("@/views/award");
 const importAnimeAward = () => import("@/views/anime-award");
 const importFilter = () => import("@/views/filter");
+const importGrid = () => import("@/views/grid");
 const importPerson = () => import("@/views/person");
 const importCollection = () => import("@/views/collection");
 const importPlayPicker = () => import("@/views/play-picker");
@@ -95,6 +97,7 @@ const Discover = lazy(() => importDiscover().then((m) => ({ default: m.Discover 
 const AwardView = lazy(() => importAward().then((m) => ({ default: m.AwardView })));
 const AnimeAwardView = lazy(() => importAnimeAward().then((m) => ({ default: m.AnimeAwardView })));
 const FilterView = lazy(() => importFilter().then((m) => ({ default: m.FilterView })));
+const GridView = lazy(() => importGrid().then((m) => ({ default: m.GridView })));
 const PersonView = lazy(() => importPerson().then((m) => ({ default: m.PersonView })));
 const CollectionView = lazy(() => importCollection().then((m) => ({ default: m.CollectionView })));
 const PlayPicker = lazy(() => importPlayPicker().then((m) => ({ default: m.PlayPicker })));
@@ -352,7 +355,7 @@ function filterReactKey(f: MetaFilter): string {
 }
 
 function Shell() {
-  const { topKind, service, meta, metaLiveContext, personId, collectionId, filter, awardType, animeAwardSource, picker, player, setView, goBack } = useView();
+  const { topKind, service, meta, metaLiveContext, metaEpisodeHint, personId, collectionId, filter, grid, awardType, animeAwardSource, picker, player, setView, goBack } = useView();
   const { settings } = useSettings();
   const preview = useThemePreview();
   const layout = useMemo(
@@ -416,6 +419,7 @@ function Shell() {
   const collectionTop = topKind === "collection";
   const detailTop = topKind === "meta";
   const filterTop = topKind === "filter";
+  const gridTop = topKind === "grid";
   const awardTop = topKind === "award";
   const animeAwardTop = topKind === "anime-award";
   const settingsTop = topKind === "settings";
@@ -469,6 +473,7 @@ function Shell() {
   const personAlive = useKeepAlive(personTop, personId !== null);
   const collectionAlive = useKeepAlive(collectionTop, collectionId !== null);
   const filterAlive = useKeepAlive(filterTop, !!filter);
+  const gridAlive = useKeepAlive(gridTop, !!grid);
   const awardAlive = useKeepAlive(awardTop, awardTop);
   const animeAwardAlive = useKeepAlive(animeAwardTop, animeAwardTop && !!animeAwardSource);
   const pickerAlive = useKeepAlive(pickerTop, !!picker);
@@ -592,7 +597,7 @@ function Shell() {
         {detailAlive && meta && (
           <div className={layer(detailTop)}>
             <Suspense fallback={null}>
-              <DetailView key={`meta-${meta.id}`} meta={meta} liveContext={metaLiveContext} />
+              <DetailView key={`meta-${meta.id}`} meta={meta} liveContext={metaLiveContext} episodeHint={metaEpisodeHint ?? undefined} />
             </Suspense>
           </div>
         )}
@@ -614,6 +619,13 @@ function Shell() {
           <div className={layer(filterTop)}>
             <Suspense fallback={null}>
               <FilterView key={filterReactKey(filter)} filter={filter} />
+            </Suspense>
+          </div>
+        )}
+        {gridAlive && grid && (
+          <div className={layer(gridTop)}>
+            <Suspense fallback={null}>
+              <GridView key={`grid-${grid.title}`} grid={grid} />
             </Suspense>
           </div>
         )}
@@ -665,6 +677,7 @@ function Shell() {
       <CustomCodeMount />
       <WebhookLoopMount />
       <MemoryHud />
+      <OfflineBanner />
     </div>
   );
 }

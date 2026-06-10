@@ -35,6 +35,7 @@ import { useScrollMemory, useView } from "@/lib/view";
 import { CustomizableRows } from "./home/customizable-rows";
 import { CustomizeBar } from "./home/customize-bar";
 import { CWSection } from "./home/cw-section";
+import { useCwAdvance } from "./home/hooks/use-cw-advance";
 import {
   buildAnimeHomeRows,
   buildCinemetaRows,
@@ -267,30 +268,42 @@ export function Home({ active = true }: { active?: boolean }) {
   }, [authKey, active]);
 
   const continueWatching = useMemo(() => {
+    const ts = (s: string) => {
+      const n = Date.parse(s);
+      return Number.isFinite(n) ? n : 0;
+    };
     const eligible = [...items, ...simklCw]
       .filter(
         (i) =>
+          ((i.type as string) === "movie" || (i.type as string) === "series" || (i.type as string) === "anime") &&
           !dismissed.has(i._id) &&
           (!i.removed || i.temp) &&
           i.state &&
-          i.state.timeOffset > 0,
+          i.state.timeOffset > 0 &&
+          !(
+            settings.animeOnlyInAnimeRoom &&
+            (i._id.startsWith("kitsu:") || i._id.startsWith("mal:") || i.isAnime === true)
+          ),
       )
-      .sort((a, b) => Date.parse(b._mtime) - Date.parse(a._mtime));
+      .sort((a, b) => ts(b._mtime) - ts(a._mtime));
     const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "").trim();
+    const ns = (id: string) => (id.startsWith("tt") ? "tt" : id.split(":")[0]);
     const seenId = new Set<string>();
-    const seenKey = new Set<string>();
+    const seenKey = new Map<string, string>();
     const out: typeof eligible = [];
     for (const i of eligible) {
       if (seenId.has(i._id)) continue;
       const key = `${i.type}:${norm(i.name ?? "")}`;
-      if (seenKey.has(key)) continue;
+      const keptNs = seenKey.get(key);
+      if (keptNs !== undefined && keptNs !== ns(i._id)) continue;
       seenId.add(i._id);
-      seenKey.add(key);
+      if (keptNs === undefined) seenKey.set(key, ns(i._id));
       out.push(i);
       if (out.length >= 20) break;
     }
     return out;
-  }, [items, simklCw, dismissed]);
+  }, [items, simklCw, dismissed, settings.animeOnlyInAnimeRoom]);
+  const cwItems = useCwAdvance(continueWatching, settings.tmdbKey, settings.cwAdvanceNext);
 
   const onDismissCw = useCallback(
     (id: string) => {
@@ -477,7 +490,7 @@ export function Home({ active = true }: { active?: boolean }) {
           <div data-scroll-anchor="cw" style={{ contentVisibility: "auto", containIntrinsicSize: "auto 300px" }}>
             <CWSection
               signedIn={!!authKey}
-              items={continueWatching}
+              items={cwItems}
               watchedSet={traktWatched}
               onDismiss={onDismissCw}
             />

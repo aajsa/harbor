@@ -16,11 +16,13 @@ function sniffKind(url: string): Kind {
 export function MultiPlayer({
   url,
   muted,
+  cover = false,
   onPlaying,
   onError,
 }: {
   url: string;
   muted: boolean;
+  cover?: boolean;
   onPlaying?: () => void;
   onError?: () => void;
 }) {
@@ -140,7 +142,7 @@ export function MultiPlayer({
   return (
     <video
       ref={ref}
-      className="h-full w-full bg-black object-contain"
+      className={`h-full w-full bg-black ${cover ? "object-cover" : "object-contain"}`}
       playsInline
       autoPlay
       muted={muted}

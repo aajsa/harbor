@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Info, Tv } from "lucide-react";
+import { Info, Pin, Tv } from "lucide-react";
 import type { Meta } from "@/lib/cinemeta";
 import { useFavorites } from "@/lib/iptv/favorites";
+import { togglePin, usePinnedOrder } from "@/lib/iptv/pins";
 import type { EpgProgram, IptvChannel } from "@/lib/iptv/types";
 import { HoverTooltip } from "@/components/hover-tooltip";
 import { FavoriteButton } from "./favorite-button";
@@ -39,6 +40,8 @@ export function ChannelCard({
   const [errored, setErrored] = useState(false);
   const favorites = useFavorites();
   const isFav = favorites.has(channel.id);
+  const pinned = usePinnedOrder();
+  const isChannelPinned = pinned.includes(channel.id);
   const posterUrl = hydrated?.poster && !errored ? hydrated.poster : null;
   const logoUrl = !posterUrl && channel.logo && !errored ? channel.logo : null;
   const displayName = hydrated?.name?.trim() || channel.name;
@@ -155,16 +158,28 @@ export function ChannelCard({
         </div>
       </button>
       <div className="absolute right-2 top-2 z-10 flex items-center gap-1.5">
-        {hydrated && onInfo && (
+        {onInfo && (
           <button
             type="button"
-            onClick={() => onInfo(hydrated)}
+            onClick={() => onInfo(hydrated ?? channelMeta(channel))}
             aria-label="Open details"
             className="flex h-7 w-7 items-center justify-center rounded-full bg-canvas/85 text-ink opacity-0 transition-opacity duration-150 hover:bg-canvas group-hover:opacity-100"
           >
             <Info size={13} strokeWidth={2.2} />
           </button>
         )}
+        <button
+          type="button"
+          onClick={() => togglePin(channel.id)}
+          aria-label={isChannelPinned ? "Unpin channel" : "Pin to top"}
+          className={`flex h-7 w-7 items-center justify-center rounded-full transition-opacity duration-150 ${
+            isChannelPinned
+              ? "bg-accent text-canvas opacity-100"
+              : "bg-canvas/85 text-ink opacity-0 hover:bg-canvas group-hover:opacity-100"
+          }`}
+        >
+          <Pin size={13} strokeWidth={2.2} className={isChannelPinned ? "fill-current" : ""} />
+        </button>
         <FavoriteButton
           active={isFav}
           onToggle={() => favorites.toggle(channel)}
@@ -173,4 +188,17 @@ export function ChannelCard({
       </div>
     </div>
   );
+}
+
+function channelMeta(ch: IptvChannel): Meta {
+  return {
+    id: `iptv:${ch.id}`,
+    type: "tv",
+    name: ch.name,
+    poster: ch.logo ?? undefined,
+    logo: ch.logo ?? undefined,
+    background: ch.logo ?? undefined,
+    description: ch.group ? `Live channel · ${ch.group}` : "Live channel",
+    releaseInfo: "Live",
+  };
 }

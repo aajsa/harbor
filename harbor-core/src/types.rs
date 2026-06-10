@@ -203,6 +203,8 @@ pub struct Stream {
     pub addon_name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub contributors: Option<Vec<Contributor>>,
+    #[serde(flatten)]
+    pub extra: std::collections::BTreeMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]

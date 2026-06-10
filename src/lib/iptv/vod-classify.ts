@@ -8,6 +8,12 @@ const LIVE_EXT_RE = /\.(ts|m3u8)(\?|$)/i;
 const MOVIE_GROUP_RE = /\b(vod|movie|movies|film|films|cinema|pel[ií]culas?|filme)\b/i;
 const SERIES_GROUP_RE = /\b(serie|series|s[ée]ries|tv ?show|tv ?shows|staffel|temporada)\b/i;
 
+export function isLiveChannel(ch: IptvChannel): boolean {
+  const declared = (ch.attrs["tvg-type"] || ch.attrs["type"] || "").toLowerCase();
+  if (declared === "movie" || declared === "series") return false;
+  return !/\/(movie|series)\//i.test(ch.url || "");
+}
+
 export function classifyChannel(ch: IptvChannel): VodKind {
   const url = ch.url || "";
   const group = ch.group || "";

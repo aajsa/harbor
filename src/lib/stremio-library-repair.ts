@@ -43,7 +43,7 @@ function normalizeWatched(v: unknown): string | null {
   if (typeof v !== "string" || v.length === 0) return null;
   const parts = v.split(":");
   if (parts.length < 3) return null;
-  const len = Number.parseInt(parts[1], 10);
+  const len = Number.parseInt(parts[parts.length - 2], 10);
   if (!Number.isFinite(len)) return null;
   return v;
 }

@@ -1,6 +1,27 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { rpdbPoster } from "@/lib/providers/rpdb";
 
 type Ratio = "portrait" | "landscape" | "wide";
+
+export function usePosterChain(rpdbKey: string, metaId: string, metaPoster?: string) {
+  const candidates = useMemo(() => {
+    const out: string[] = [];
+    const seen = new Set<string>();
+    for (const u of [rpdbPoster(rpdbKey, metaId, metaPoster), metaPoster]) {
+      if (u && !seen.has(u)) {
+        seen.add(u);
+        out.push(u);
+      }
+    }
+    return out;
+  }, [rpdbKey, metaId, metaPoster]);
+  const [idx, setIdx] = useState(0);
+  useEffect(() => setIdx(0), [candidates]);
+  return {
+    src: candidates[idx],
+    onError: () => setIdx((i) => (i + 1 < candidates.length ? i + 1 : i)),
+  };
+}
 
 const ASPECT: Record<Ratio, string> = {
   portrait: "aspect-[2/3]",

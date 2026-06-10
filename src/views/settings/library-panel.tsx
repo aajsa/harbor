@@ -84,6 +84,18 @@ export function LibraryPanel({
           value={settings.showPlaylistsTab}
           onChange={(v) => update({ showPlaylistsTab: v })}
         />
+        <ToggleRow
+          label="Keep anime in the Anime room only"
+          sub="Hides anime from the Home Continue Watching row. It still appears in the Anime tab's own Continue Watching."
+          value={settings.animeOnlyInAnimeRoom}
+          onChange={(v) => update({ animeOnlyInAnimeRoom: v })}
+        />
+        <ToggleRow
+          label="Advance Continue Watching to the next episode"
+          sub="When you finish an episode, the Home Continue Watching card moves on to the next episode instead of sitting at 0 minutes left."
+          value={settings.cwAdvanceNext}
+          onChange={(v) => update({ cwAdvanceNext: v })}
+        />
       </Section>
 
       <Section
@@ -202,6 +214,40 @@ export function LibraryPanel({
               stamped on it.
             </>
           }
+        />
+        <div className="flex flex-col gap-2 rounded-xl border border-edge-soft bg-canvas/30 p-4">
+          <p className="text-[13.5px] font-semibold text-ink">MDBList · Letterboxd and Trakt scores</p>
+          <p className="text-[12.5px] leading-relaxed text-ink-muted">
+            Free key at mdblist.com. Adds Letterboxd and Trakt community ratings to detail pages,
+            covering what OMDb misses.
+          </p>
+          <input
+            value={settings.mdblistKey}
+            onChange={(e) => update({ mdblistKey: e.target.value.trim() })}
+            placeholder="mdblist api key"
+            spellCheck={false}
+            className="h-10 w-full rounded-lg border border-edge-soft bg-canvas/40 px-3 text-[13px] text-ink outline-none transition-colors focus:border-edge"
+          />
+        </div>
+        <div className="flex flex-col gap-2 rounded-xl border border-edge-soft bg-canvas/30 p-4">
+          <p className="text-[13.5px] font-semibold text-ink">Custom poster service</p>
+          <p className="text-[12.5px] leading-relaxed text-ink-muted">
+            Point posters at any RPDB-compatible server instead of ratingposterdb.com. Leave
+            empty for the default. Your key above is still sent unless the server ignores it.
+          </p>
+          <input
+            value={settings.posterBaseUrl}
+            onChange={(e) => update({ posterBaseUrl: e.target.value })}
+            placeholder="https://posters.example.com"
+            spellCheck={false}
+            className="h-10 w-full rounded-lg border border-edge-soft bg-canvas/40 px-3 text-[13px] text-ink outline-none transition-colors focus:border-edge"
+          />
+        </div>
+        <ToggleRow
+          label="Hide titles under posters"
+          sub="Cleaner grid when your poster service already prints the title on the artwork."
+          value={settings.hidePosterTitles}
+          onChange={(v) => update({ hidePosterTitles: v })}
         />
         <KeyField
           label="Fanart.tv · logos and backdrops"

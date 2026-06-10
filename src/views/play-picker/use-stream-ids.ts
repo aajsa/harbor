@@ -10,12 +10,14 @@ export function useStreamIds(
 ): string[] | null {
   const [streamIds, setStreamIds] = useState<string[] | null>(null);
   useEffect(() => {
-    const out = buildStreamIds(meta.id, episode, imdbId);
+    const out = buildStreamIds(meta.id, episode, imdbId, meta.behaviorHints?.defaultVideoId);
     setStreamIds(out.length > 0 ? out : null);
   }, [
     meta.id,
+    meta.behaviorHints?.defaultVideoId,
     imdbId,
     episode?.kitsuStreamId,
+    episode?.videoId,
     episode?.imdbId,
     episode?.imdbSeason,
     episode?.imdbEpisode,

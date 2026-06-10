@@ -141,9 +141,11 @@ export const PickCard = memo(function PickCard({
           source={meta.id.startsWith("kitsu:") || meta.id.startsWith("mal:") ? "mal" : "imdb"}
         />
       </div>
-      <p className="line-clamp-2 text-[13px] font-medium leading-snug text-ink">
-        {meta.name}
-      </p>
+      {!settings.hidePosterTitles && (
+        <p className="line-clamp-2 text-[13px] font-medium leading-snug text-ink">
+          {meta.name}
+        </p>
+      )}
     </button>
   );
 });

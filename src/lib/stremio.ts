@@ -30,6 +30,8 @@ export type LibraryItem = {
   _ctime: string;
   _mtime: string;
   external?: "simkl";
+  isAnime?: boolean;
+  upNext?: boolean;
 };
 
 export function episodeFromVideoId(
@@ -88,9 +90,9 @@ export async function libraryGetOne(authKey: string, id: string): Promise<Librar
     authKey,
     collection: "libraryItem",
     ids: [id],
-    all: true,
+    all: false,
   }).catch(() => [] as LibraryItem[]);
-  return items?.[0] ?? null;
+  return items?.find((it) => it._id === id) ?? null;
 }
 
 export async function libraryPut(authKey: string, item: LibraryItem): Promise<void> {
@@ -106,9 +108,9 @@ export async function removeStremioLibraryItem(authKey: string, id: string): Pro
     authKey,
     collection: "libraryItem",
     ids: [id],
-    all: true,
+    all: false,
   });
-  const item = items?.[0];
+  const item = items?.find((it) => it._id === id);
   if (!item) return;
   await libraryPut(authKey, {
     ...item,

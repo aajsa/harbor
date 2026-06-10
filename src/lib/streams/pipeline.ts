@@ -69,6 +69,7 @@ export type PipelineInput = {
   trust?: TrustOptions;
   score: ScoreOptions;
   isAnime?: boolean;
+  presetStreams?: Stream[];
 };
 
 export type PipelineResult = {
@@ -108,12 +109,15 @@ export async function runPipeline(
     }
   };
 
+  const presets = input.presetStreams ?? [];
   const [librarySettled, addonSettled] = await Promise.allSettled([
     fetchLibraryStreams(input.debrids, input.query, signal).then((s) => {
       library = s;
       return s;
     }),
-    fetchAddonStreams(input.addons, input.request, signal, emitPartial),
+    presets.length > 0
+      ? Promise.resolve(presets)
+      : fetchAddonStreams(input.addons, input.request, signal, emitPartial),
   ]);
   if (librarySettled.status === "fulfilled") library = librarySettled.value;
   const addonStreams = addonSettled.status === "fulfilled" ? addonSettled.value : [];

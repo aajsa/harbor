@@ -3,12 +3,11 @@ import { memo, useMemo } from "react";
 import { awardSourceMeta, findTopAward, parseAwardYear } from "@/lib/anime-awards";
 import type { Meta } from "@/lib/cinemeta";
 import { useContextMenu } from "@/lib/context-menu";
-import { rpdbPoster } from "@/lib/providers/rpdb";
 import { useTmdbImdbId } from "@/lib/providers/tmdb";
 import { useSettings } from "@/lib/settings";
 import { useView } from "@/lib/view";
 import { useInWatchlist } from "@/lib/watchlist";
-import { Poster } from "./poster";
+import { Poster, usePosterChain } from "./poster";
 
 function AwardDot({ name, year }: { name: string; year?: number }) {
   const win = findTopAward(name, year);
@@ -51,6 +50,7 @@ export const TopRankCard = memo(function TopRankCard({ meta, rank }: { meta: Met
   const resolvedImdb = useTmdbImdbId(meta.id);
   const altIds = useMemo(() => [resolvedImdb], [resolvedImdb]);
   const inWatchlist = useInWatchlist(meta.id, altIds);
+  const poster = usePosterChain(settings.rpdbKey, meta.id, meta.poster);
   return (
     <button
       onClick={() => openMeta(meta)}
@@ -72,7 +72,8 @@ export const TopRankCard = memo(function TopRankCard({ meta, rank }: { meta: Met
       </span>
       <div className="absolute right-0 top-0 z-10 w-[60%] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0.24,1)] group-hover:-translate-y-2">
         <Poster
-          src={rpdbPoster(settings.rpdbKey, meta.id, meta.poster)}
+          src={poster.src}
+          onError={poster.onError}
           seed={meta.id}
           ratio="portrait"
           className="harbor-card-ring rounded-xl shadow-[0_0_0_rgba(0,0,0,0)] transition-shadow duration-300 group-hover:shadow-[0_24px_44px_-14px_rgba(0,0,0,0.6)]"
@@ -94,6 +95,7 @@ export const AnimeRankCard = memo(function AnimeRankCard({ meta, rank }: { meta:
   const resolvedImdb = useTmdbImdbId(meta.id);
   const altIds = useMemo(() => [resolvedImdb], [resolvedImdb]);
   const inWatchlist = useInWatchlist(meta.id, altIds);
+  const poster = usePosterChain(settings.rpdbKey, meta.id, meta.poster);
   return (
     <button
       onClick={() => openMeta(meta)}
@@ -114,7 +116,8 @@ export const AnimeRankCard = memo(function AnimeRankCard({ meta, rank }: { meta:
       </span>
       <div className="absolute right-0 top-0 z-10 w-[60%] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0.24,1)] group-hover:-translate-y-2">
         <Poster
-          src={rpdbPoster(settings.rpdbKey, meta.id, meta.poster)}
+          src={poster.src}
+          onError={poster.onError}
           seed={meta.id}
           ratio="portrait"
           className="harbor-card-ring rounded-xl shadow-[0_0_0_rgba(0,0,0,0)] transition-shadow duration-300 group-hover:shadow-[0_24px_44px_-14px_rgba(0,0,0,0.6)]"

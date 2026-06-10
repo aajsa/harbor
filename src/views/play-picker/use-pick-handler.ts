@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import type { Meta } from "@/lib/cinemeta";
 import type { DebridStore } from "@/lib/debrid/types";
-import { markStreamDead, recordStubEvent, STUB_TTL_MS } from "@/lib/dead-streams";
+import { markStreamDead, recordStubEvent } from "@/lib/dead-streams";
+
+const PREFLIGHT_STUB_TTL_MS = 15 * 60 * 1000;
 import { engineP2pEligible } from "@/lib/torrent/stremio-stream";
 import { preflightCheck } from "@/lib/streams/preflight";
 import { resolveStream } from "@/lib/streams/resolve";
@@ -17,6 +19,7 @@ import { humanError, isDebridFailure } from "./picker-utils";
 export function usePickHandler({
   meta,
   imdbId,
+  imdbIdVerified,
   episode,
   attempt,
   debrids,
@@ -41,6 +44,7 @@ export function usePickHandler({
 }: {
   meta: Meta;
   imdbId?: string | null;
+  imdbIdVerified?: boolean;
   episode?: PlayEpisode;
   attempt?: number;
   debrids: DebridStore[];
@@ -127,15 +131,8 @@ export function usePickHandler({
       if (ac.signal.aborted) return;
       if (!preflight.ok && preflight.reason === "stub") {
         setFailedStreams((prev) => new Set(prev).add(stream));
-        const sf = {
-          infoHash: stream.infoHash ?? undefined,
-          fileIdx: stream.fileIdx ?? undefined,
-          url: r.data.url,
-          addonId: stream.addonId ?? "",
-          title: stream.parsedTitle ?? stream.title ?? stream.name ?? "",
-        };
         const reasonStr = `preflight_stub_${preflight.sizeBytes ?? 0}b`;
-        markStreamDead(sf, reasonStr, STUB_TTL_MS);
+        markStreamDead({ url: r.data.url }, reasonStr, PREFLIGHT_STUB_TTL_MS);
         recordStubEvent(reasonStr);
         console.warn(
           `[picker] preflight detected stub (${preflight.sizeBytes ?? "unknown"} bytes); skipping`,
@@ -143,7 +140,7 @@ export function usePickHandler({
         const willRetry = autoActive && autoAttemptIdx + 1 < autoCandidatesLength;
         advanceAuto();
         if (!willRetry && !autoActive) {
-          setResolveError("This source isn't actually cached on your debrid yet. Try another.");
+          setResolveError("This source isn't ready on your debrid yet. Try it again in a moment or pick another.");
         }
         return;
       }
@@ -169,6 +166,7 @@ export function usePickHandler({
       openPlayer({
         meta,
         imdbId: imdbId ?? undefined,
+        imdbIdVerified: imdbIdVerified === true,
         episode,
         url: playUrl,
         title: episode ? episode.name || `Episode ${episode.episode}` : meta.name,

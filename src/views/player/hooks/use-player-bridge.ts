@@ -3,7 +3,6 @@ import { emptySnapshot, type PlayerBridge, type PlayerSnapshot } from "@/lib/pla
 import { probeMpv } from "@/lib/player/mpv";
 import type { PlayerSrc } from "@/lib/view";
 import type { Settings } from "@/lib/settings";
-import { isLinuxDesktop } from "@/lib/platform";
 import { setPlaybackClock } from "@/lib/player/playback-clock";
 import { pickBridge } from "../player-utils";
 
@@ -58,17 +57,22 @@ export function usePlayerBridge(params: {
         if (!el) return null;
         const r = el.getBoundingClientRect();
         const dpr = window.devicePixelRatio || 1;
+        const left = Math.floor(r.left * dpr);
+        const top = Math.floor(r.top * dpr);
+        const right = Math.ceil((r.left + r.width) * dpr);
+        const bottom = Math.ceil((r.top + r.height) * dpr);
         return {
-          screenX: Math.round(r.left * dpr),
-          screenY: Math.round(r.top * dpr),
-          w: Math.max(1, Math.round(r.width * dpr)),
-          h: Math.max(1, Math.round(r.height * dpr)),
+          screenX: left,
+          screenY: top,
+          w: Math.max(1, right - left),
+          h: Math.max(1, bottom - top),
         };
       };
       const { bridge: choose, engine: chosen } = await pickBridge(want, src.notWebReady === true, {
         anime4k: settings.playerAnime4k,
         hdrToSdr: settings.playerHdrToSdr,
-        embed: isLinuxDesktop() ? false : settings.playerMpvEmbed,
+        embed: settings.playerMpvEmbed,
+        d3d11Flip: settings.playerD3d11Flip,
         anime4kShaders: settings.playerAnime4k && settings.playerAnime4kShaders.length > 0
           ? settings.playerAnime4kShaders
           : [],

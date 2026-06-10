@@ -1,4 +1,3 @@
-import { isLinuxDesktop } from "@/lib/platform";
 import { useSettings } from "@/lib/settings";
 import { ToggleRow } from "../shared";
 import { Anime4kShaderList } from "./anime4k-shader-list";
@@ -7,7 +6,6 @@ import { DesktopOnlyBlock, isTauri } from "./internals";
 
 export function PlayerEnginePanel() {
   const { settings, update } = useSettings();
-  const linux = isLinuxDesktop();
 
   const choices: Array<{
     id: "auto" | "html5" | "mpv";
@@ -36,7 +34,6 @@ export function PlayerEnginePanel() {
   return (
     <div className="flex flex-col gap-4">
       <DesktopOnlyBlock>
-        {linux && <LinuxEngineNote />}
         <div className="flex flex-col gap-2.5">
             {choices.map((c) => {
               const selected = settings.playerEngine === c.id;
@@ -77,22 +74,30 @@ export function PlayerEnginePanel() {
 
       <DesktopOnlyBlock>
         <div className="flex flex-col gap-2">
-          {!linux && (
-            <>
-              <ToggleRow
-                label="Embed mpv inside Harbor window"
-                sub="Renders mpv inline so playback lives in Harbor itself. Disable to open it in a separate window instead."
-                value={settings.playerMpvEmbed}
-                onChange={(v) => update({ playerMpvEmbed: v })}
-              />
-              <ToggleRow
-                label="HDR-to-SDR tonemapping"
-                sub="Maps HDR sources to SDR using bt.2446a. Recommended on SDR displays."
-                value={settings.playerHdrToSdr}
-                onChange={(v) => update({ playerHdrToSdr: v })}
-              />
-            </>
-          )}
+          <ToggleRow
+            label="Embed mpv inside Harbor window"
+            sub="Renders mpv inline so playback lives in Harbor itself. Disable to open it in a separate window instead."
+            value={settings.playerMpvEmbed}
+            onChange={(v) => update({ playerMpvEmbed: v })}
+          />
+          <ToggleRow
+            label="HDR-to-SDR tonemapping"
+            sub="Maps HDR sources to SDR using bt.2446a. Recommended on SDR displays."
+            value={settings.playerHdrToSdr}
+            onChange={(v) => update({ playerHdrToSdr: v })}
+          />
+          <ToggleRow
+            label="Flip-model presentation"
+            sub="Lets Windows promote video to a hardware overlay plane. Slightly more efficient, but draws a thin bright line at the screen edge on some monitors. Leave off if you saw that line. Restart playback to apply."
+            value={settings.playerD3d11Flip}
+            onChange={(v) => update({ playerD3d11Flip: v })}
+          />
+          <ToggleRow
+            label="Motion smoothing"
+            sub="Interpolates frames for smoother panning, best on anime. Needs a display refresh rate above the video's frame rate, and can stutter on weak GPUs. mpv only."
+            value={settings.playerMotionInterp}
+            onChange={(v) => update({ playerMotionInterp: v })}
+          />
           <ToggleRow
             label="Direct torrent streaming"
             sub="When you have no debrid set up, or a torrent isn't cached, stream it straight from the bundled engine on localhost:11470. This connects to peers over your own connection, the same way Stremio's built-in streaming does."
@@ -111,41 +116,20 @@ export function PlayerEnginePanel() {
             value={settings.castAlwaysTranscode}
             onChange={(v) => update({ castAlwaysTranscode: v })}
           />
-          {!linux && (
-            <ToggleRow
-              label="Anime4K upscaling"
-              sub="Sharper lines and cleaner gradients on anime, in real time. One-tap setup below."
-              value={settings.playerAnime4k}
-              onChange={(v) => update({ playerAnime4k: v })}
-            />
-          )}
+          <ToggleRow
+            label="Anime4K upscaling"
+            sub="Sharper lines and cleaner gradients on anime, in real time. One-tap setup below."
+            value={settings.playerAnime4k}
+            onChange={(v) => update({ playerAnime4k: v })}
+          />
         </div>
       </DesktopOnlyBlock>
 
-      {!linux && settings.playerAnime4k && isTauri && <Anime4kShaderList />}
+      {settings.playerAnime4k && isTauri && <Anime4kShaderList />}
 
       <DesktopOnlyBlock>
         <BandwidthInput />
       </DesktopOnlyBlock>
-    </div>
-  );
-}
-
-function LinuxEngineNote() {
-  return (
-    <div className="flex flex-col gap-2 rounded-2xl border border-edge-soft bg-canvas/40 px-5 py-4">
-      <div className="flex items-center gap-2">
-        <span className="text-[15px] font-semibold text-ink">Playback on Linux</span>
-        <span className="rounded-md bg-accent/15 px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wider text-accent">
-          Linux
-        </span>
-      </div>
-      <p className="text-[12.5px] leading-snug text-ink-muted">
-        mpv now plays your streams on Linux with full codec coverage (HEVC, AC3, MKV, and more). For
-        now it opens in its own window with built-in controls; in-window playback matching Windows
-        and macOS is on the way. HTML5 stays available as a fallback if you prefer the webview
-        player.
-      </p>
     </div>
   );
 }

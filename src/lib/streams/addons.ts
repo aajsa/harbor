@@ -76,7 +76,7 @@ export function addonSupportsStream(addon: Addon, req: StreamRequest): boolean {
   return pickId(addon, req.type, req.ids) != null;
 }
 
-const PREFIX_PRIORITY = ["tt", "kitsu", "mal", "anidb", "anilist", "tmdb"];
+const PREFIX_PRIORITY = ["kitsu", "mal", "anidb", "anilist", "tt", "tmdb"];
 
 function idPriority(id: string): number {
   for (let i = 0; i < PREFIX_PRIORITY.length; i++) {
@@ -102,7 +102,7 @@ function addonAcceptsId(addon: Addon, type: string, id: string): boolean {
   );
   if (streamResources.length > 0) {
     return streamResources.some((r) => {
-      const typeOk = !r.types || r.types.length === 0 || r.types.includes(type);
+      const typeOk = Array.isArray(r.types) && r.types.includes(type);
       const idOk =
         !r.idPrefixes ||
         r.idPrefixes.length === 0 ||
@@ -111,7 +111,7 @@ function addonAcceptsId(addon: Addon, type: string, id: string): boolean {
     });
   }
   if (!resources.some((r) => r === "stream")) return false;
-  if (m.types && m.types.length > 0 && !m.types.includes(type)) return false;
+  if (!m.types || !m.types.includes(type)) return false;
   if (m.idPrefixes && m.idPrefixes.length > 0 && !m.idPrefixes.some((p) => id.startsWith(p))) {
     return false;
   }

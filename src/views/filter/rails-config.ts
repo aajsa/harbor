@@ -2,6 +2,7 @@ import { selectSpotlights, type Spotlight } from "@/lib/feed/genre-spotlights";
 import { GENRE_TOPICS, type Topic } from "@/lib/feed/genre-topics";
 import { GENRE_MOVIE_TO_TV, GENRE_TV_TO_MOVIE, MOVIE_GENRES } from "@/lib/feed/tags";
 import type { MetaFilter } from "@/lib/view";
+import { languageRails } from "./language-rails";
 
 export type StandardRail = {
   kind: "standard";
@@ -204,43 +205,7 @@ export function railsForFilter(f: MetaFilter): AnyRail[] {
     ];
   }
   if (f.kind === "language") {
-    return [
-      {
-        kind: "standard",
-        id: "popular",
-        title: "Most popular",
-        kicker: `In ${f.name}`,
-        params: {
-          with_original_language: f.iso,
-          sort_by: "popularity.desc",
-          "vote_count.gte": "100",
-        },
-      },
-      {
-        kind: "standard",
-        id: "rated",
-        title: "Highest rated",
-        kicker: `${f.name} cinema, sorted by acclaim`,
-        params: {
-          with_original_language: f.iso,
-          sort_by: "vote_average.desc",
-          "vote_count.gte": "400",
-        },
-      },
-      {
-        kind: "standard",
-        id: "gems",
-        title: "Hidden gems",
-        kicker: "Quieter favorites",
-        params: {
-          with_original_language: f.iso,
-          sort_by: "vote_average.desc",
-          "vote_count.gte": "50",
-          "vote_count.lte": "1200",
-          "vote_average.gte": "7",
-        },
-      },
-    ];
+    return languageRails(f.iso, f.name);
   }
   if (f.kind === "network") {
     const id = String(f.id);

@@ -24,6 +24,7 @@ import { SourceSwitcher } from "./calendar/source-switcher";
 import {
   buildLibraryNameSet,
   buildMonthCells,
+  calendarEpisodeHint,
   calendarToMeta,
   FILTERS,
   MONTH_NAMES,
@@ -94,7 +95,7 @@ export function CalendarView() {
 
   const openItem = useCallback(
     (item: CalendarItem) => {
-      openMeta(calendarToMeta(item));
+      openMeta(calendarToMeta(item), { episodeHint: calendarEpisodeHint(item) ?? undefined });
     },
     [openMeta],
   );

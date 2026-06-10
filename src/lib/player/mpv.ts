@@ -48,6 +48,7 @@ export type MpvOptions = {
   hdrToSdr: boolean;
   embed?: boolean;
   anime4kShaders?: string[];
+  d3d11Flip?: boolean;
   getEmbedRect?: () => Promise<MpvRect | null> | MpvRect | null;
 };
 
@@ -266,6 +267,7 @@ export function createMpvBridge(mpvOptions?: MpvOptions): PlayerBridge {
             hdrToSdr: opts.hdrToSdr,
             embed: opts.embed === true,
             anime4kShaders: opts.anime4kShaders ?? [],
+            d3d11Flip: opts.d3d11Flip === true,
           },
         });
         mpvStarted = true;
@@ -375,6 +377,9 @@ export function createMpvBridge(mpvOptions?: MpvOptions): PlayerBridge {
     },
     setAudioDelay(sec) {
       invoke("mpv_set_property", { name: "audio-delay", value: sec }).catch(() => {});
+    },
+    setVideoFill(on) {
+      invoke("mpv_set_property", { name: "panscan", value: on ? 1.0 : 0.0 }).catch(() => {});
     },
     async addSubtitle(url, lang, title, select): Promise<boolean> {
       let mpvUrl = url;

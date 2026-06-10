@@ -221,7 +221,8 @@ export function removeDownload(id: string): void {
   handles.delete(id);
   speed.delete(id);
   if (items.delete(id)) rebuild();
-  if (item && item.status !== "done") {
+  if (item) {
+    void remove(item.path).catch(() => {});
     void remove(`${item.path}.part`).catch(() => {});
   }
 }

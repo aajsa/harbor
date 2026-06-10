@@ -70,6 +70,16 @@ export function StreamingSourcesPanel({
       </Section>
 
       <Section
+        title="Result order"
+        subtitle="Harbor ranking puts the best-scoring sources first. Addon order keeps each addon's results in the order it returned them, like the Stremio and Vidi apps."
+      >
+        <StreamSortPicker
+          value={settings.streamSort}
+          onChange={(v) => update({ streamSort: v })}
+        />
+      </Section>
+
+      <Section
         title="Debrid services"
         subtitle="Real-Debrid, TorBox, AllDebrid, Premiumize, Debrid-Link. Cached streams play direct. Keys stay local."
       >
@@ -295,6 +305,58 @@ function PickerLayoutPicker({
       id: "stremio",
       label: "Stremio",
       sub: "Flat list of sources grouped by addon, with a filter dropdown. No re-ranking. Closest match to the Stremio app's stream picker.",
+    },
+  ];
+  return (
+    <div className="flex flex-col gap-2.5">
+      {options.map((opt) => {
+        const selected = value === opt.id;
+        return (
+          <button
+            key={opt.id}
+            type="button"
+            onClick={() => onChange(opt.id)}
+            className={`flex items-start gap-3.5 rounded-2xl border px-5 py-4 text-left transition-colors ${
+              selected
+                ? "border-ink bg-elevated"
+                : "border-edge-soft bg-canvas/40 hover:border-edge hover:bg-canvas/60"
+            }`}
+          >
+            <span
+              className={`mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
+                selected ? "border-ink" : "border-edge"
+              }`}
+            >
+              {selected && <span className="h-2.5 w-2.5 rounded-full bg-ink" />}
+            </span>
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
+              <span className="text-[15px] font-semibold text-ink">{opt.label}</span>
+              <span className="text-[12.5px] leading-snug text-ink-muted">{opt.sub}</span>
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function StreamSortPicker({
+  value,
+  onChange,
+}: {
+  value: "harbor" | "addon";
+  onChange: (v: "harbor" | "addon") => void;
+}) {
+  const options: Array<{ id: "harbor" | "addon"; label: string; sub: string }> = [
+    {
+      id: "harbor",
+      label: "Harbor ranking",
+      sub: "Default. Harbor parses and scores every source and surfaces the best quality first.",
+    },
+    {
+      id: "addon",
+      label: "Addon order",
+      sub: "Show each addon's results in the order it returned them, grouped by your addon list. Matches the Stremio and Vidi apps.",
     },
   ];
   return (

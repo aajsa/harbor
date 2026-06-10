@@ -2,6 +2,7 @@ import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Check, Play, X } from "lucide-react";
 import simklLogo from "@/assets/simkl.png";
 import { meta as fetchMeta, type Meta } from "@/lib/cinemeta";
+import { animeKitsuMeta } from "@/lib/providers/anime-kitsu-addon";
 import { useContextMenu } from "@/lib/context-menu";
 import { readSnapshot, useSnapshotVersion } from "@/lib/snapshots";
 import { episodeFromVideoId, type LibraryItem } from "@/lib/stremio";
@@ -15,7 +16,7 @@ type Props = {
 };
 
 export const ContinueCard = memo(function ContinueCard({ item, watched = false, onDismiss }: Props) {
-  const { openPicker } = useView();
+  const { openMeta, openPicker } = useView();
   const { settings } = useSettings();
   const { open: openContextMenu } = useContextMenu();
   useSnapshotVersion();
@@ -25,6 +26,7 @@ export const ContinueCard = memo(function ContinueCard({ item, watched = false, 
   const off = item.state?.timeOffset ?? 0;
   const progress = dur > 0 ? Math.min(1, off / dur) : 0;
   const remaining = dur > 0 && !isExternal ? formatRemaining(dur - off) : "";
+  const upNext = item.upNext === true;
   const ep =
     item.state?.season && item.state?.episode
       ? { season: item.state.season, episode: item.state.episode }
@@ -37,9 +39,10 @@ export const ContinueCard = memo(function ContinueCard({ item, watched = false, 
   const cardRef = useRef<HTMLButtonElement>(null);
 
   const candidates = useMemo(() => {
+    const thumb = item.type === "movie" ? snapshot : undefined;
     const seen = new Set<string>();
     const out: string[] = [];
-    for (const u of [snapshot, item.background, item.poster, metaBg]) {
+    for (const u of [thumb, metaBg, item.background, item.poster]) {
       if (!u) continue;
       const d = downscaleTmdb(u)!;
       if (seen.has(d)) continue;
@@ -47,7 +50,7 @@ export const ContinueCard = memo(function ContinueCard({ item, watched = false, 
       out.push(d);
     }
     return out;
-  }, [snapshot, item.background, item.poster, metaBg]);
+  }, [snapshot, metaBg, item.background, item.poster, item.type]);
 
   const src = candidates[imgIdx];
 
@@ -63,6 +66,19 @@ export const ContinueCard = memo(function ContinueCard({ item, watched = false, 
     const start = () => {
       if (started) return;
       started = true;
+      if (/^(kitsu|mal|anilist|anidb):/.test(item._id)) {
+        animeKitsuMeta(item._id)
+          .then((m) => {
+            if (cancelled || !m) return;
+            if (m.logo) setLogo(m.logo);
+            const bg = m.background || m.poster;
+            if (bg) setMetaBg(bg);
+          })
+          .catch(() => {});
+        return;
+      }
+      const typeCoherent = !(item.type === "movie" && episodeFromVideoId(item.state?.video_id));
+      if (!typeCoherent) return;
       fetchMeta(item.type, item._id)
         .then((full) => {
           if (cancelled || !full) return;
@@ -100,6 +116,11 @@ export const ContinueCard = memo(function ContinueCard({ item, watched = false, 
       };
 
   const onClick = () => {
+    openMeta(meta);
+  };
+
+  const onPlay = (e: React.MouseEvent) => {
+    e.stopPropagation();
     const episode = item.type === "series" && ep ? ep : undefined;
     openPicker(meta, episode, { autoPlay: settings.instantPlay });
   };
@@ -146,7 +167,7 @@ export const ContinueCard = memo(function ContinueCard({ item, watched = false, 
           </div>
         )}
         <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-canvas/80 to-transparent" />
-        {(sub || remaining || isExternal) && (
+        {(sub || remaining || isExternal || upNext) && (
           <div className="absolute bottom-2 left-2 flex items-center gap-1.5 rounded-md bg-canvas/95 px-2 py-1 text-[11px]">
             {isExternal ? (
               <img src={simklLogo} alt="" className="h-3.5 w-3.5 rounded-sm" title="Paused on Simkl" />
@@ -154,21 +175,33 @@ export const ContinueCard = memo(function ContinueCard({ item, watched = false, 
               <Play size={11} fill="currentColor" className="text-ink" />
             )}
             {sub && <span className="font-medium text-ink">{sub}</span>}
-            {sub && remaining && <span className="text-ink-subtle">·</span>}
-            {remaining && <span className="text-ink-muted">{remaining}</span>}
+            {sub && (upNext || remaining) && <span className="text-ink-subtle">·</span>}
+            {upNext ? (
+              <span className="font-medium text-accent">Up Next</span>
+            ) : (
+              remaining && <span className="text-ink-muted">{remaining}</span>
+            )}
           </div>
         )}
         <div className="absolute inset-x-0 bottom-0 h-[3px] bg-canvas/40">
           <div className="h-full bg-accent" style={{ width: `${progress * 100}%` }} />
         </div>
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-[220ms] group-hover:opacity-100">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-canvas ring-1 ring-white/15 shadow-[0_10px_28px_-8px_rgba(0,0,0,0.6)]">
-            <Play size={22} fill="currentColor" className="ml-0.5 text-ink" />
-          </div>
-        </div>
       </div>
-      <p className="truncate text-[13px] font-medium text-ink">{item.name}</p>
+      <p className="truncate text-[13px] font-medium text-ink">
+        {hydratedMeta?.name?.trim() || item.name}
+      </p>
       </button>
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex aspect-[16/9] items-center justify-center opacity-0 transition-opacity duration-[220ms] group-hover:opacity-100 group-focus-within:opacity-100">
+        <button
+          type="button"
+          onClick={onPlay}
+          aria-label="Play"
+          title="Play"
+          className="pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full bg-canvas ring-1 ring-white/15 shadow-[0_10px_28px_-8px_rgba(0,0,0,0.6)] transition-transform duration-150 hover:scale-[1.06]"
+        >
+          <Play size={22} fill="currentColor" className="ml-0.5 text-ink" />
+        </button>
+      </div>
       {onDismiss && (
         <button
           type="button"

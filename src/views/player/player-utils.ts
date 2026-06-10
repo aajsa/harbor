@@ -1,6 +1,5 @@
 import { createHtml5Bridge } from "@/lib/player/html5";
 import { createMpvBridge, probeMpv } from "@/lib/player/mpv";
-import { isLinuxDesktop } from "@/lib/platform";
 import type { PlayerBridge } from "@/lib/player/bridge";
 
 export const SYNC_DRIFT_TOLERANCE_S = 0.6;
@@ -39,13 +38,13 @@ export async function pickBridge(
     hdrToSdr: boolean;
     embed?: boolean;
     anime4kShaders?: string[];
+    d3d11Flip?: boolean;
     getEmbedRect?: () =>
       | Promise<{ screenX: number; screenY: number; w: number; h: number } | null>
       | { screenX: number; screenY: number; w: number; h: number }
       | null;
   },
 ): Promise<{ bridge: PlayerBridge; engine: "html5" | "mpv" }> {
-  if (isLinuxDesktop()) return { bridge: createHtml5Bridge(), engine: "html5" };
   if (want === "html5") return { bridge: createHtml5Bridge(), engine: "html5" };
   if (want === "mpv") {
     const probe = await probeMpv();

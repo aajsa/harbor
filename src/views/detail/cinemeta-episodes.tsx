@@ -17,26 +17,41 @@ export function CinemetaEpisodes({
 }) {
   const grouped = useMemo(() => {
     const map = new Map<number, CinemetaVideo[]>();
+    const flat: CinemetaVideo[] = [];
     for (const v of videos) {
-      if (v.season == null || v.episode == null) continue;
-      if (v.season === 0) continue;
+      if (v.season == null || (v.episode ?? v.number) == null) {
+        flat.push(v);
+        continue;
+      }
       const arr = map.get(v.season) ?? [];
       arr.push(v);
       map.set(v.season, arr);
     }
-    return Array.from(map.entries())
+    const numbered = Array.from(map.entries())
       .sort(([a], [b]) => a - b)
       .map(([s, eps]) => ({
         seasonNumber: s,
-        episodes: eps.slice().sort((a, b) => (a.episode ?? 0) - (b.episode ?? 0)),
+        episodes: eps.slice().sort((a, b) => ((a.episode ?? a.number) ?? 0) - ((b.episode ?? b.number) ?? 0)),
       }));
+    if (flat.length > 0 && numbered.length === 0) {
+      flat.sort((a, b) => (a.released ?? "").localeCompare(b.released ?? ""));
+      return [{ seasonNumber: -1, episodes: flat }];
+    }
+    return numbered;
   }, [videos]);
 
-  const latestSeason = grouped[grouped.length - 1]?.seasonNumber ?? 1;
+  const realSeasons = grouped.filter((g) => g.seasonNumber > 0);
+  const latestSeason =
+    realSeasons[realSeasons.length - 1]?.seasonNumber ??
+    grouped[grouped.length - 1]?.seasonNumber ??
+    1;
   const [active, setActive] = useState<number>(latestSeason);
 
   useEffect(() => {
-    setActive(grouped[grouped.length - 1]?.seasonNumber ?? 1);
+    const real = grouped.filter((g) => g.seasonNumber > 0);
+    setActive(
+      real[real.length - 1]?.seasonNumber ?? grouped[grouped.length - 1]?.seasonNumber ?? 1,
+    );
   }, [meta.id, grouped.length]);
 
   if (grouped.length === 0) return null;
@@ -58,11 +73,12 @@ export function CinemetaEpisodes({
         {activeEps.length} episode{activeEps.length === 1 ? "" : "s"}
       </p>
       <div className="flex flex-col gap-1">
-        {activeEps.map((ep) => (
+        {activeEps.map((ep, i) => (
           <CinemetaEpisodeRow
-            key={ep.id ?? `${ep.season}-${ep.episode}`}
+            key={ep.id ?? `${ep.season ?? "x"}-${ep.episode ?? i}`}
             meta={meta}
             ep={ep}
+            flatIndex={ep.season == null ? i + 1 : undefined}
           />
         ))}
       </div>
@@ -70,14 +86,24 @@ export function CinemetaEpisodes({
   );
 }
 
-export function CinemetaEpisodeRow({ meta, ep }: { meta: Meta; ep: CinemetaVideo }) {
+export function CinemetaEpisodeRow({
+  meta,
+  ep,
+  flatIndex,
+}: {
+  meta: Meta;
+  ep: CinemetaVideo;
+  flatIndex?: number;
+}) {
   const { openPicker } = useView();
   const { settings } = useSettings();
   const aired = ep.released ?? ep.firstAired ?? null;
+  const epNumber = ep.episode ?? ep.number ?? flatIndex ?? 1;
   const playEpisode = {
-    season: ep.season!,
-    episode: ep.episode!,
+    season: ep.season ?? 0,
+    episode: epNumber,
     name: ep.name || ep.title || undefined,
+    videoId: ep.id || undefined,
     still: ep.thumbnail || undefined,
     overview: undefined,
   };
@@ -93,7 +119,7 @@ export function CinemetaEpisodeRow({ meta, ep }: { meta: Meta; ep: CinemetaVideo
         <div className="relative w-[200px] shrink-0 overflow-hidden rounded-lg">
           <Poster
             src={ep.thumbnail}
-            seed={`${meta.id}-${ep.season}-${ep.episode}`}
+            seed={ep.id ?? `${meta.id}-${ep.season}-${epNumber}`}
             ratio="landscape"
           />
           <div className="absolute inset-0 flex items-center justify-center bg-canvas/40 opacity-0 transition-opacity group-hover:opacity-100">
@@ -101,16 +127,20 @@ export function CinemetaEpisodeRow({ meta, ep }: { meta: Meta; ep: CinemetaVideo
               <Play size={18} fill="currentColor" />
             </div>
           </div>
-          <span className="absolute left-2 top-2 rounded-md bg-canvas/95 px-1.5 py-0.5 text-[11px] font-semibold text-ink">
-            {ep.episode}
-          </span>
+          {ep.season != null && (
+            <span className="absolute left-2 top-2 rounded-md bg-canvas/95 px-1.5 py-0.5 text-[11px] font-semibold text-ink">
+              {epNumber}
+            </span>
+          )}
         </div>
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
           <h4 className="truncate text-[16px] font-semibold text-ink">
-            {ep.name || ep.title || `Episode ${ep.episode}`}
+            {ep.name || ep.title || formatAired(aired) || `Episode ${epNumber}`}
           </h4>
           <p className="text-[12px] text-ink-subtle">
-            {[`S${ep.season} E${ep.episode}`, formatAired(aired)].filter(Boolean).join("  ·  ")}
+            {[ep.season != null ? `S${ep.season} E${epNumber}` : null, formatAired(aired)]
+              .filter(Boolean)
+              .join("  ·  ")}
           </p>
         </div>
       </button>
@@ -153,7 +183,7 @@ function SeasonDropdown({
         onClick={() => setOpen((v) => !v)}
         className="flex h-10 items-center gap-2 rounded-full border border-edge-soft bg-canvas/90 pl-4 pr-3 text-[13.5px] font-medium text-ink transition-colors hover:bg-canvas"
       >
-        <span>Season {active}</span>
+        <span>{seasonLabel(active)}</span>
         <ChevronDown
           size={15}
           className={`text-ink-muted transition-transform ${open ? "rotate-180" : ""}`}
@@ -177,7 +207,7 @@ function SeasonDropdown({
                       : "text-ink-muted hover:bg-elevated/60 hover:text-ink"
                   }`}
                 >
-                  Season {s}
+                  {seasonLabel(s)}
                 </button>
               );
             })}
@@ -186,6 +216,12 @@ function SeasonDropdown({
       )}
     </div>
   );
+}
+
+function seasonLabel(n: number): string {
+  if (n === 0) return "Specials";
+  if (n === -1) return "Videos";
+  return `Season ${n}`;
 }
 
 function formatAired(date: string | null | undefined): string | null {

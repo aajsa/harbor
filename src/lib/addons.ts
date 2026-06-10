@@ -56,14 +56,14 @@ export function addonAccepts(addon: Addon, resource: string, type: string, id: s
   );
   if (specific.length > 0) {
     return specific.some((r) => {
-      const typeOk = !r.types || r.types.length === 0 || r.types.includes(type);
+      const typeOk = Array.isArray(r.types) && r.types.includes(type);
       const idOk =
         !r.idPrefixes || r.idPrefixes.length === 0 || r.idPrefixes.some((p) => id.startsWith(p));
       return typeOk && idOk;
     });
   }
   if (!resources.some((r) => r === resource)) return false;
-  if (m.types && m.types.length > 0 && !m.types.includes(type)) return false;
+  if (!m.types || !m.types.includes(type)) return false;
   if (m.idPrefixes && m.idPrefixes.length > 0 && !m.idPrefixes.some((p) => id.startsWith(p))) {
     return false;
   }
@@ -259,6 +259,7 @@ export async function loadAddonRows(
             id: addon.manifest.id,
             name: addon.manifest.name,
             logo: addon.manifest.logo,
+            base,
           };
           const metas: Meta[] = raw.map((m) => ({ ...m, addonOrigin: origin }));
           return {
@@ -291,6 +292,17 @@ export async function loadAddonRows(
     deduped.push(r);
   }
   return deduped.slice(0, cap);
+}
+
+export async function fetchAddonMeta(base: string, type: string, id: string): Promise<Meta | null> {
+  const res = await fetchWithTimeout(`${base}/meta/${type}/${encodeURIComponent(id)}.json`);
+  if (!res || !res.ok) return null;
+  try {
+    const json = await res.json();
+    return (json.meta ?? null) as Meta | null;
+  } catch {
+    return null;
+  }
 }
 
 export async function fetchAddonCatalogPage(

@@ -9,6 +9,8 @@ import {
 } from "@/lib/theme";
 import { loadBgImage, saveBgImage } from "@/lib/theme-storage";
 import { languageName } from "@/lib/subtitles/language";
+import { setTmdbLanguage } from "@/lib/providers/tmdb/tmdb-client";
+import { setPosterBaseUrl } from "@/lib/providers/rpdb";
 
 export type StreamingService =
   | "netflix"
@@ -85,6 +87,7 @@ export type Settings = {
   seekPreviewEnabled: boolean;
   instantPlay: boolean;
   playerHdrToSdr: boolean;
+  playerMotionInterp: boolean;
   playerAnime4k: boolean;
   playerMpvEmbed: boolean;
   stremioServerTranscode: boolean;
@@ -113,6 +116,12 @@ export type Settings = {
   subLineSpacing: number;
   subProvidersEnabled: { wyzie: boolean; opensubtitles: boolean; jimaku: boolean; addons: boolean };
   subShowInPip: boolean;
+  subtitlesOffByDefault: boolean;
+  tmdbLanguage: string;
+  posterBaseUrl: string;
+  hidePosterTitles: boolean;
+  mdblistKey: string;
+  playerD3d11Flip: boolean;
   opensubtitlesApiKey: string;
   jimakuToken: string;
   audioNormalize: boolean;
@@ -129,6 +138,8 @@ export type Settings = {
   homeMode: "harbor" | "classic";
   homeShowAllAddonRows: boolean;
   libraryBookmarkedOnly: boolean;
+  animeOnlyInAnimeRoom: boolean;
+  cwAdvanceNext: boolean;
   useNativeTitleBar: boolean;
   closeToTray: boolean;
   trayAlwaysOnTop: boolean;
@@ -147,6 +158,7 @@ export type Settings = {
   animePicksDismissedAt: number;
   animeAnilistRowsHidden: string[];
   pickerLayout: "condensed" | "stremio";
+  streamSort: "harbor" | "addon";
   seekBarStyle: "flat" | "glass" | "pinstripe" | "rainbow" | "image";
   seekBarHeight: number;
   seekBarColor: string;
@@ -290,6 +302,7 @@ const DEFAULT: Settings = {
   seekPreviewEnabled: typeof navigator !== "undefined" && (navigator.hardwareConcurrency || 8) >= 4,
   instantPlay: true,
   playerHdrToSdr: true,
+  playerMotionInterp: false,
   playerAnime4k: false,
   playerMpvEmbed: true,
   stremioServerTranscode: false,
@@ -318,6 +331,12 @@ const DEFAULT: Settings = {
   subLineSpacing: 0,
   subProvidersEnabled: { wyzie: false, opensubtitles: true, jimaku: false, addons: true },
   subShowInPip: true,
+  subtitlesOffByDefault: false,
+  tmdbLanguage: "",
+  posterBaseUrl: "",
+  hidePosterTitles: false,
+  mdblistKey: "",
+  playerD3d11Flip: false,
   opensubtitlesApiKey: "",
   jimakuToken: "",
   audioNormalize: false,
@@ -339,6 +358,8 @@ const DEFAULT: Settings = {
   homeMode: "harbor",
   homeShowAllAddonRows: false,
   libraryBookmarkedOnly: true,
+  animeOnlyInAnimeRoom: false,
+  cwAdvanceNext: true,
   useNativeTitleBar: false,
   closeToTray: false,
   trayAlwaysOnTop: false,
@@ -353,6 +374,7 @@ const DEFAULT: Settings = {
   animePicksDismissedAt: 0,
   animeAnilistRowsHidden: [],
   pickerLayout: "stremio",
+  streamSort: "harbor",
   seekBarStyle: "flat",
   seekBarHeight: 6,
   seekBarColor: "",
@@ -609,6 +631,14 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     applyTheme(settings.theme);
   }, [settings.theme]);
+
+  useEffect(() => {
+    setTmdbLanguage(settings.tmdbLanguage);
+  }, [settings.tmdbLanguage]);
+
+  useEffect(() => {
+    setPosterBaseUrl(settings.posterBaseUrl);
+  }, [settings.posterBaseUrl]);
 
   useEffect(() => {
     if (typeof document === "undefined" || !("fonts" in document)) return;

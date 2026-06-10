@@ -5,6 +5,12 @@ const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window
 export const TMDB = "https://api.themoviedb.org/3";
 export const IMG = "https://image.tmdb.org/t/p";
 
+let tmdbLanguage = "";
+
+export function setTmdbLanguage(lang: string): void {
+  tmdbLanguage = lang.trim();
+}
+
 let lastFailureLogged = 0;
 function logTmdbFailure(path: string, status: number, body: string): void {
   const now = Date.now();
@@ -77,6 +83,7 @@ export async function get<T>(
   if (!key) return null;
   const url = new URL(`${TMDB}/${path}`);
   url.searchParams.set("api_key", key);
+  if (tmdbLanguage && !params.language) url.searchParams.set("language", tmdbLanguage);
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
   const target = url.toString();
   for (let attempt = 0; attempt < 4; attempt += 1) {

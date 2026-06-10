@@ -4,7 +4,7 @@ import { trickplayGet } from "@/lib/trickplay";
 import { getPlaybackPosition } from "@/lib/player/playback-clock";
 import type { PlayerStatus } from "@/lib/player/bridge";
 import type { PlayerSrc } from "@/lib/view";
-import { canonicalImdbId } from "./use-stremio-sync";
+import { cloudWriteId } from "./use-stremio-sync";
 
 const CACHE_MS = 12000;
 const WARM_MS = 4000;
@@ -12,17 +12,17 @@ const EXIT_GRAB_MS = 700;
 const GRAB_FULL_MS = 3500;
 const END_RATIO = 0.92;
 
-type Cached = { img: string; ids: string[] };
+type Cached = { img: string; id: string };
 
-function snapshotIds(src: PlayerSrc, resolved: string | null): string[] {
+function snapshotId(src: PlayerSrc, resolved: string | null, verified: boolean): string | null {
   const id = src.meta.id ?? "";
-  if (!id || id.startsWith("iptv:")) return [];
-  return [...new Set([id, src.imdbId, resolved, canonicalImdbId(id, resolved)].filter(Boolean))] as string[];
+  if (!id || id.startsWith("iptv:")) return null;
+  return cloudWriteId(id, src.imdbId ?? resolved, verified) || id;
 }
 
 function persist(cached: Cached | null): void {
   if (!cached) return;
-  for (const id of cached.ids) saveSnapshot(id, cached.img);
+  saveSnapshot(cached.id, cached.img);
 }
 
 function nearEnd(cur: number, dur: number, ended: boolean): boolean {
@@ -36,11 +36,12 @@ export function useExitSnapshot(params: {
   durationSec: number;
   videoMountRef: RefObject<HTMLDivElement | null>;
   resolvedImdbId: string | null;
+  resolvedImdbVerified: boolean;
   seekPreviewEnabled: boolean;
 }) {
-  const { src, engine, status, durationSec, videoMountRef, resolvedImdbId, seekPreviewEnabled } = params;
-  const latest = useRef({ src, engine, durationSec, resolvedImdbId, seekPreviewEnabled });
-  latest.current = { src, engine, durationSec, resolvedImdbId, seekPreviewEnabled };
+  const { src, engine, status, durationSec, videoMountRef, resolvedImdbId, resolvedImdbVerified, seekPreviewEnabled } = params;
+  const latest = useRef({ src, engine, durationSec, resolvedImdbId, resolvedImdbVerified, seekPreviewEnabled });
+  latest.current = { src, engine, durationSec, resolvedImdbId, resolvedImdbVerified, seekPreviewEnabled };
   const lastGoodRef = useRef<Cached | null>(null);
   const capturedKeyRef = useRef<string | null>(null);
 
@@ -60,9 +61,9 @@ export function useExitSnapshot(params: {
   );
 
   const captureExitSnapshot = useCallback(async () => {
-    const { src: s, durationSec: dur, resolvedImdbId: resolved } = latest.current;
-    const ids = snapshotIds(s, resolved);
-    if (ids.length === 0) {
+    const { src: s, durationSec: dur, resolvedImdbId: resolved, resolvedImdbVerified: verified } = latest.current;
+    const id = snapshotId(s, resolved, verified);
+    if (!id) {
       persist(lastGoodRef.current);
       return;
     }
@@ -85,21 +86,24 @@ export function useExitSnapshot(params: {
       grabFrame(true),
       new Promise<null>((r) => setTimeout(() => r(null), budget)),
     ]);
-    if (fresh) lastGoodRef.current = { img: fresh, ids };
+    if (fresh && latest.current.src.meta.id === s.meta.id) {
+      lastGoodRef.current = { img: fresh, id };
+    }
     persist(lastGoodRef.current);
   }, [grabFrame]);
 
   useEffect(() => {
     if (status !== "playing") return;
     const tick = async () => {
-      const { src: s, durationSec: dur, resolvedImdbId: resolved } = latest.current;
-      const ids = snapshotIds(s, resolved);
-      if (ids.length === 0) return;
+      const { src: s, durationSec: dur, resolvedImdbId: resolved, resolvedImdbVerified: verified } = latest.current;
+      const id = snapshotId(s, resolved, verified);
+      if (!id) return;
       const cur = getPlaybackPosition();
       if (!Number.isFinite(cur) || cur <= 0 || nearEnd(cur, dur, false)) return;
       const img = await grabFrame(true);
       if (!img) return;
-      const cached = { img, ids };
+      if (latest.current.src.meta.id !== s.meta.id) return;
+      const cached = { img, id };
       lastGoodRef.current = cached;
       persist(cached);
     };

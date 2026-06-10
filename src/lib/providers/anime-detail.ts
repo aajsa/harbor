@@ -276,6 +276,7 @@ export async function animeDetails(
   }
 
   if (aniZip?.episodes) {
+    const azImdb = aniZip.mappings?.imdb_id;
     for (const ep of episodes) {
       const az = aniZip.episodes[String(ep.number)];
       if (!az) continue;
@@ -289,6 +290,11 @@ export async function animeDetails(
       if (az.runtime && !ep.length) ep.length = az.runtime;
       if (az.filler) ep.filler = true;
       if (az.absoluteEpisodeNumber) ep.absoluteNumber = az.absoluteEpisodeNumber;
+      if (azImdb && az.seasonNumber != null && az.seasonNumber > 0 && az.episodeNumber != null) {
+        ep.imdbId = azImdb;
+        ep.imdbSeason = az.seasonNumber;
+        ep.imdbEpisode = az.episodeNumber;
+      }
     }
   }
 

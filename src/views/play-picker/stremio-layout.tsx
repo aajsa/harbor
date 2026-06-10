@@ -13,6 +13,7 @@ export function StremioLayout({
   pipelineDone,
   loadingAddonCount,
   failedStreams,
+  preserveOrder,
   onPlay,
 }: {
   streams: ScoredStream[];
@@ -20,6 +21,7 @@ export function StremioLayout({
   pipelineDone: boolean;
   loadingAddonCount: number;
   failedStreams: Set<ScoredStream>;
+  preserveOrder?: boolean;
   onPlay: (stream: ScoredStream) => void;
 }) {
   const [filter, setFilter] = useState<string>("all");
@@ -28,11 +30,12 @@ export function StremioLayout({
   const addonLogoMap = useMemo(() => {
     const m = new Map<string, string | null>();
     for (const a of addons ?? []) {
-      if (a.transportUrl) m.set(a.transportUrl, resolveAddonLogo(a.manifest.logo, a.transportUrl));
+      const logo = resolveAddonLogo(a.manifest.logo, a.transportUrl);
+      if (a.transportUrl) m.set(a.transportUrl, logo);
+      if (!m.has(a.manifest.id)) m.set(a.manifest.id, logo);
     }
     return m;
   }, [addons]);
-  const addonOptions = useMemo(() => buildAddonOptions(streams), [streams]);
   const addonRank = useMemo(() => {
     const m = new Map<string, number>();
     (addons ?? []).forEach((a, i) => {
@@ -40,6 +43,7 @@ export function StremioLayout({
     });
     return m;
   }, [addons]);
+  const addonOptions = useMemo(() => buildAddonOptions(streams, addonRank), [streams, addonRank]);
   const addonFiltered = useMemo(
     () => (filter === "all" ? streams : streams.filter((s) => addonInstanceKey(s) === filter)),
     [streams, filter],
@@ -52,6 +56,7 @@ export function StremioLayout({
     const filtered =
       quality === "all" ? addonFiltered : addonFiltered.filter((s) => qualityTier(s) === quality);
     if (filter !== "all") return filtered;
+    if (preserveOrder) return filtered;
     const downloadRx = /[⏳⌛⬇⏬🔽📥]|\bdownload(ing)?\b|\bqueued?\b|\bnot[\s_-]?cached\b/iu;
     const isDownload = (s: ScoredStream) => {
       const haystack = `${s.name ?? ""} ${s.title ?? ""} ${s.description ?? ""}`;
@@ -72,7 +77,7 @@ export function StremioLayout({
       if (ai !== bi) return bi - ai;
       return 0;
     });
-  }, [addonFiltered, quality, filter, addonRank]);
+  }, [addonFiltered, quality, filter, addonRank, preserveOrder]);
   const filterLabel = filter === "all"
     ? "All"
     : addonOptions.find((o) => o.id === filter)?.name ?? "All";
@@ -150,7 +155,7 @@ export function StremioLayout({
             key={`${s.url ?? s.infoHash ?? s.title}-${i}`}
             stream={s}
             failed={failedStreams.has(s)}
-            addonLogo={addonLogoMap.get(s.addonId) ?? null}
+            addonLogo={addonLogoMap.get(s.addonUrl ?? "") ?? addonLogoMap.get(s.addonId) ?? null}
             onPlay={() => onPlay(s)}
           />
         ))}

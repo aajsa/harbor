@@ -1,7 +1,8 @@
 import { filterChannelsForDisplay } from "./divider-filter";
 import { parseM3u } from "./m3u";
 import type { IptvChannel, IptvPlaylist, IptvPlaylistSource } from "./types";
-import { fetchXtreamLiveChannels, parseXtreamUrl } from "./xtream";
+import { fetchXtreamLiveChannels, parseXtreamUrl, type XtreamCreds } from "./xtream";
+import { fetchXtreamVodAndSeries } from "./xtream-vod";
 
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 const PARSE_LIMIT_BYTES = 80 * 1024 * 1024;
@@ -27,8 +28,13 @@ export function getCachedPlaylist(id: string): IptvPlaylist | null {
 }
 
 export function clearPlaylistCache(id?: string) {
-  if (id) cache.delete(id);
-  else cache.clear();
+  if (id) {
+    cache.delete(id);
+    vodHydrated.delete(id);
+  } else {
+    cache.clear();
+    vodHydrated.clear();
+  }
   notify();
 }
 
@@ -54,12 +60,17 @@ export async function loadPlaylist(
   }
 }
 
+const vodHydrated = new Set<string>();
+
 async function fetchAndParse(src: IptvPlaylistSource): Promise<IptvPlaylist> {
   const creds = parseXtreamUrl(src.url);
   if (creds) {
     try {
-      const channels = await fetchXtreamLiveChannels(creds, src.id);
-      if (channels.length > 0) return shapePlaylist(src, channels);
+      const live = await fetchXtreamLiveChannels(creds, src.id);
+      if (live.length > 0) {
+        void hydrateXtreamVod(src, creds, live);
+        return shapePlaylist(src, live);
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       const xtreamFailedSilently = msg.includes("inactive");
@@ -67,6 +78,23 @@ async function fetchAndParse(src: IptvPlaylistSource): Promise<IptvPlaylist> {
     }
   }
   return fetchViaM3u(src);
+}
+
+async function hydrateXtreamVod(
+  src: IptvPlaylistSource,
+  creds: XtreamCreds,
+  live: IptvChannel[],
+): Promise<void> {
+  if (vodHydrated.has(src.id)) return;
+  vodHydrated.add(src.id);
+  try {
+    const vod = await fetchXtreamVodAndSeries(creds, src.id);
+    if (vod.length === 0) return;
+    cache.set(src.id, shapePlaylist(src, [...live, ...vod]));
+    notify();
+  } catch {
+    vodHydrated.delete(src.id);
+  }
 }
 
 async function fetchViaM3u(src: IptvPlaylistSource): Promise<IptvPlaylist> {
@@ -97,15 +125,21 @@ async function fetchViaM3u(src: IptvPlaylistSource): Promise<IptvPlaylist> {
 async function iptvFetch(url: string): Promise<Response> {
   if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
     const { fetch: tauriFetch } = await import("@tauri-apps/plugin-http");
-    return tauriFetch(url, {
-      method: "GET",
-      headers: {
-        "User-Agent": "VLC/3.0.20 LibVLC/3.0.20",
-        Accept: "audio/x-mpegurl, application/x-mpegURL, application/octet-stream, */*",
-      },
-      connectTimeout: CONNECT_TIMEOUT_S * 1000,
-      maxRedirections: 5,
-    } as unknown as RequestInit);
+    try {
+      return await tauriFetch(url, {
+        method: "GET",
+        headers: {
+          "User-Agent": "VLC/3.0.20 LibVLC/3.0.20",
+          Accept: "audio/x-mpegurl, application/x-mpegURL, application/octet-stream, */*",
+        },
+        connectTimeout: CONNECT_TIMEOUT_S * 1000,
+        maxRedirections: 5,
+      } as unknown as RequestInit);
+    } catch (e) {
+      if (!/scope|not allowed/i.test(String(e))) throw e;
+      const { safeFetch } = await import("@/lib/safe-fetch");
+      return safeFetch(url);
+    }
   }
   return fetch(url, { cache: "no-store" });
 }

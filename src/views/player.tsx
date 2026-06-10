@@ -37,7 +37,7 @@ import { LiveChannelOverlay } from "@/components/player/live-channel-overlay/ove
 import { LiveChannelDvr } from "@/components/player/live-channel-dvr";
 import { StreamCheckPill } from "@/components/player/stream-check-pill";
 import { isLocalUrl } from "@/lib/player/local-url";
-import { isMacDesktop, isLinuxDesktop } from "@/lib/platform";
+import { isMacDesktop } from "@/lib/platform";
 import {
   checkStreamCompat,
   getDeviceCaps,
@@ -168,6 +168,7 @@ import { useTrackAutoload } from "./player/hooks/use-track-autoload";
 import { useTrickplay } from "./player/hooks/use-trickplay";
 import { usePauseOnInactive } from "./player/hooks/use-pause-on-inactive";
 import { applySubStyle } from "@/lib/player/sub-style";
+import { applyMotionInterp } from "@/lib/player/motion-interp";
 import { isAssTrack } from "@/lib/player/sub-format";
 import { clearImportedSubs } from "@/lib/player/imported-subs";
 import { useTraktScrobble } from "@/lib/trakt/scrobble-hook";
@@ -198,6 +199,10 @@ import { useStubDetection } from "./player/hooks/use-stub-detection";
 import { useBridgeLoad } from "./player/hooks/use-bridge-load";
 import { useResumeAutosave } from "./player/hooks/use-resume-autosave";
 import { useStremioSync } from "./player/hooks/use-stremio-sync";
+import { usePowerInhibit } from "./player/hooks/use-power-inhibit";
+import { useVideoFill } from "./player/hooks/use-video-fill";
+import { setSkipSegmentsView } from "@/lib/skip-intro/segment-store";
+import { useSubDrop } from "./player/hooks/use-sub-drop";
 
 export function PlayerView({ src }: { src: PlayerSrc }) {
   const { setChromeHidden, topPath, openPicker, exitPlayback, replacePlayerSrc } = useView();
@@ -456,7 +461,7 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
     sendDraw,
   });
 
-  const { chromeVisible, wakeChrome, anyMenuOpen, setAnyMenuOpen, cursorStyle } = useChromeVisibility({
+  const { chromeVisible, wakeChrome, setAnyMenuOpen, cursorStyle } = useChromeVisibility({
     playing,
     drawMode,
     pipMode,
@@ -520,7 +525,7 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
   });
   const gif = useGifRecorder({ src });
 
-  const { resolvedImdbId } = useTrackAutoload({
+  const { resolvedImdbId, resolvedImdbVerified } = useTrackAutoload({
     bridgeRef,
     src,
     snap,
@@ -530,7 +535,7 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
   });
 
   useTrickplay({ src, enabled: settings.seekPreviewEnabled });
-  const subEmbed = engine === "mpv" && settings.playerMpvEmbed && !isLinuxDesktop();
+  const subEmbed = engine === "mpv" && settings.playerMpvEmbed;
   const selectedSubTrack = snap.subtitleTracks.find((t) => t.selected) ?? null;
   const subAssNative = subEmbed && isAssTrack(selectedSubTrack);
   useEffect(() => {
@@ -551,6 +556,12 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
     settings.subLineSpacing,
   ]);
   useEffect(() => {
+    if (engine !== "mpv") return;
+    if (isMacDesktop() && settings.playerMpvEmbed) return;
+    if (!bridgeReady) return;
+    void applyMotionInterp(settings.playerMotionInterp);
+  }, [engine, bridgeReady, bridgeKey, settings.playerMpvEmbed, settings.playerMotionInterp]);
+  useEffect(() => {
     if (!subEmbed) return;
     bridgeRef.current?.setSubVisible(subAssNative);
   }, [subEmbed, subAssNative, selectedSubTrack?.id]);
@@ -564,6 +575,7 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
     durationSec: snap.durationSec,
     videoMountRef,
     resolvedImdbId,
+    resolvedImdbVerified,
     seekPreviewEnabled: settings.seekPreviewEnabled,
   });
 
@@ -699,7 +711,8 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
     );
   }, [src.attempt, src.meta, src.episode, openPicker, settings.instantPlay, inRoom, closePlayer]);
 
-  useKeyboardShortcuts({
+  const videoFill = useVideoFill(bridgeRef, src.url);
+  const { holdSpeedActive } = useKeyboardShortcuts({
     bridgeRef,
     snap,
     drawMode,
@@ -727,6 +740,7 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
       sleep.mode.kind === "off" ? sleep.set({ kind: "end_episode" }) : sleep.cancel(),
     onScreenshot: quickToolsEnabled ? () => frameGrab.trigger() : undefined,
     onGifRecord: quickToolsEnabled ? () => gif.toggle() : undefined,
+    onToggleCrop: () => videoFill.toggle(),
   });
 
   const cycleSubtitles = () => {
@@ -803,7 +817,9 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
   }, [pendingSeekSec, snap.durationSec, clearPendingSeek]);
 
   useResumeAutosave({ src, snap, season, episode });
-  useStremioSync({ src, snap, authKey, resolvedImdbId });
+  useStremioSync({ src, snap, authKey, resolvedImdbId, resolvedImdbVerified });
+  usePowerInhibit(snap);
+  const subDropToast = useSubDrop(bridgeRef);
 
   const playPauseToggle = () => {
     if (castDevice) {
@@ -865,6 +881,10 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
             : null;
 
   const skipSegments = useSkipSegments(src.meta, src.episode, snap.chapters, snap.durationSec);
+  useEffect(() => {
+    setSkipSegmentsView(skipSegments);
+    return () => setSkipSegmentsView([]);
+  }, [skipSegments]);
   const hasNextEpisodeNow = canChangeEpisode && !!adjacent.next;
   const seekTo = useCallback((sec: number) => {
     if (castDevice) {
@@ -879,17 +899,7 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
     bridgeRef.current?.seek(sec);
   }, [castDevice, canControl, inRoom, isHost, sendCommand, seekCast]);
 
-  const overlayCovers = switcherOpen || showWaiting || foreignNotice != null;
-  useMpvEmbed({
-    engine,
-    settings,
-    pipMode,
-    chromeVisible,
-    streamPillVariant,
-    snap,
-    overlayCovers,
-    anyMenuOpen,
-  });
+  useMpvEmbed({ engine, settings });
 
   const mpvEmbedWindowsActive =
     engine === "mpv" &&
@@ -939,6 +949,22 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
         <SubtitleOverlay text={snap.subText} startSec={snap.subStartSec} scale={pipMode ? 0.45 : 1} />
       )}
       {showStats && !pipMode && <StatsOverlay snap={snap} engine={engine} />}
+      {holdSpeedActive && !pipMode && (
+        <div className="pointer-events-none absolute left-1/2 top-8 z-30 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-canvas/85 px-3.5 py-1.5 text-[13px] font-semibold text-ink backdrop-blur-md">
+          {snap.rate}x
+          <span className="font-normal text-ink-muted">speed</span>
+        </div>
+      )}
+      {videoFill.pill && !holdSpeedActive && !pipMode && (
+        <div className="pointer-events-none absolute left-1/2 top-8 z-30 -translate-x-1/2 rounded-full bg-canvas/85 px-3.5 py-1.5 text-[13px] font-semibold text-ink backdrop-blur-md">
+          {videoFill.pill}
+        </div>
+      )}
+      {subDropToast && !pipMode && (
+        <div className="pointer-events-none absolute bottom-28 left-1/2 z-30 -translate-x-1/2 rounded-full bg-canvas/90 px-4 py-2 text-[13px] font-medium text-ink backdrop-blur-md">
+          {subDropToast}
+        </div>
+      )}
       {!pipMode && <SubStyleBar />}
       <CastMenu
         open={castMenuOpen}

@@ -85,6 +85,9 @@ fn main() {
         if !found {
             panic!("libmpv not found. Install it: apt install libmpv-dev (Debian/Ubuntu), dnf install mpv-libs-devel (Fedora), or pacman -S mpv (Arch).");
         }
+        println!("cargo:rustc-link-arg=-Wl,-rpath,$ORIGIN");
+        println!("cargo:rustc-link-arg=-Wl,-rpath,$ORIGIN/lib");
+        println!("cargo:rustc-link-arg=-Wl,-rpath,$ORIGIN/../lib");
     }
 
     let _ = manifest;

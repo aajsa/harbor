@@ -63,6 +63,8 @@ export {
 
 export {
   tmdbCollection,
+  tmdbSearchCollectionId,
+  collectionNameMatches,
   type TmdbCollection,
 } from "./tmdb/tmdb-collection";
 

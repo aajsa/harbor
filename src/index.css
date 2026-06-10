@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+@media (min-width: 3000px) {
+  #root {
+    zoom: 1.25;
+  }
+}
+
 @font-face {
   font-family: "WonderfulFontyCure";
   src: url("./assets/fonts/WonderfulFontyCure-4nnoD.ttf") format("truetype");

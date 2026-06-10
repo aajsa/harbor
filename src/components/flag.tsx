@@ -31,6 +31,7 @@ const FLAG: Record<string, string> = {
   Russian: flagRus,
   Hindi: flagHin,
   Spanish: flagSpa,
+  "Spanish (Latin America)": flagSpa,
   Korean: flagKor,
   Japanese: flagJpn,
   Chinese: flagZho,

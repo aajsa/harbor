@@ -1,5 +1,6 @@
 import { Cast, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { fetchTrailer, resolveTrailerQuality, trailerSrc } from "@/lib/trailer";
 import { useSettings } from "@/lib/settings";
 import { useView } from "@/lib/view";
@@ -69,10 +70,10 @@ export function TrailerOverlay({
     return () => document.removeEventListener("keydown", onKey);
   }, [dismiss]);
 
-  return (
+  return createPortal(
     <div
       onClick={dismiss}
-      className="fixed inset-0 z-50 flex cursor-zoom-out items-center justify-center"
+      className="fixed inset-0 z-[120] flex cursor-zoom-out items-center justify-center"
       style={{
         backgroundColor: open ? "rgba(0,0,0,0.82)" : "rgba(0,0,0,0)",
         backdropFilter: open ? "blur(32px) saturate(1.2)" : "blur(0px)",
@@ -82,7 +83,7 @@ export function TrailerOverlay({
       }}
     >
       <div
-        className="absolute right-7 top-7 z-10 flex items-center gap-2.5"
+        className="absolute right-7 top-16 z-10 flex items-center gap-2.5"
         style={{
           opacity: open ? 1 : 0,
           transform: open ? "scale(1)" : "scale(0.85)",
@@ -99,7 +100,7 @@ export function TrailerOverlay({
               dismiss();
             }}
             aria-label="Close trailer"
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-canvas/90 text-ink shadow-[0_8px_22px_rgba(0,0,0,0.4)] transition-colors duration-200 hover:bg-canvas active:scale-[0.94]"
+            className="relative flex h-11 w-11 items-center justify-center rounded-full bg-canvas/90 text-ink shadow-[0_8px_22px_rgba(0,0,0,0.4)] transition-colors duration-200 before:absolute before:-inset-3 before:content-[''] hover:bg-canvas active:scale-[0.94]"
           >
             <X size={18} strokeWidth={2.4} />
           </button>
@@ -132,7 +133,8 @@ export function TrailerOverlay({
       >
         Esc or click outside to close
       </span>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

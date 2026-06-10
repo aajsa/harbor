@@ -46,6 +46,14 @@ export async function aniZipByMal(malId: number): Promise<AniZipMapping | null> 
   return get(`mal_id=${malId}`);
 }
 
+export async function aniZipByImdb(imdbId: string): Promise<AniZipMapping | null> {
+  return get(`imdb_id=${imdbId}`);
+}
+
+export async function aniZipByTmdbTv(tmdbId: number): Promise<AniZipMapping | null> {
+  return get(`themoviedb_id=${tmdbId}`);
+}
+
 const TIMEOUT_MS = 4000;
 
 async function get(query: string): Promise<AniZipMapping | null> {

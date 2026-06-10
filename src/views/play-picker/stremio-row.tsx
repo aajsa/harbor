@@ -1,6 +1,6 @@
 import { Play } from "lucide-react";
 import { AddonLogo } from "@/components/addon-logo";
-import { FormatBadge, resolutionBadge } from "@/components/format-badge";
+import { FormatBadge, streamBadges } from "@/components/format-badge";
 import type { ScoredStream } from "@/lib/streams/types";
 
 export function StremioRow({
@@ -17,25 +17,20 @@ export function StremioRow({
   const addonName = stream.addonName ?? "Source";
   const headline = stream.name?.trim() || addonName;
   const description = stream.title?.trim() || stream.description?.trim() || "";
-  const resBadge = resolutionBadge(stream);
+  const badges = streamBadges(stream);
   return (
     <div
       className={`flex items-stretch gap-5 rounded-2xl bg-elevated/40 p-5 ring-1 transition-colors ${
         failed ? "ring-danger/40 bg-danger/5" : "ring-edge-soft/50"
       }`}
     >
-      <div className="relative flex w-[68px] shrink-0 flex-col items-center justify-center">
+      <div className="flex w-[68px] shrink-0 flex-col items-center justify-center">
         <AddonLogo
           addonId={stream.addonId}
           addonName={addonName}
           manifestLogo={addonLogo}
           size="tile"
         />
-        {resBadge && (
-          <span className="pointer-events-none absolute -bottom-1.5 -right-2 flex items-center justify-center drop-shadow-[0_2px_4px_rgba(0,0,0,0.55)]">
-            <FormatBadge kind={resBadge} size="sm" />
-          </span>
-        )}
       </div>
       <div className="flex min-w-0 flex-1 flex-col justify-center gap-1.5">
         <p className="whitespace-pre-line text-[16px] font-semibold leading-snug text-ink">
@@ -45,6 +40,13 @@ export function StremioRow({
           <p className="whitespace-pre-line text-[14.5px] leading-snug text-ink-muted">
             {description}
           </p>
+        )}
+        {badges.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            {badges.map((k) => (
+              <FormatBadge key={k} kind={k} size="sm" />
+            ))}
+          </div>
         )}
         {failed && (
           <p className="text-[13px] font-medium text-danger">Unavailable, try another.</p>

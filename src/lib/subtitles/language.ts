@@ -7,13 +7,25 @@ const ISO_3_TO_1: Record<string, string> = {
 };
 
 const NAMES: Record<string, string> = {
-  en: "English", es: "Spanish", fr: "French", de: "German", it: "Italian",
+  en: "English", es: "Spanish", "es-419": "Spanish (Latin America)", fr: "French",
+  de: "German", it: "Italian",
   ja: "Japanese", ko: "Korean", zh: "Chinese", ru: "Russian", pt: "Portuguese",
   ar: "Arabic", hi: "Hindi", th: "Thai", vi: "Vietnamese", tr: "Turkish",
   pl: "Polish", nl: "Dutch", sv: "Swedish", no: "Norwegian", da: "Danish",
   fi: "Finnish", he: "Hebrew", id: "Indonesian", cs: "Czech", el: "Greek",
   hu: "Hungarian", ro: "Romanian", uk: "Ukrainian",
 };
+
+const LATAM_ALIASES = new Set([
+  "es-419", "es-la", "lat", "latam", "latino", "latin american spanish",
+  "spanish (latin america)", "spanish latin america", "español latino",
+  "espanol latino", "español latinoamericano",
+]);
+
+const LATAM_REGIONS = new Set([
+  "mx", "ar", "co", "cl", "pe", "ve", "ec", "gt", "cu", "bo", "do", "hn",
+  "py", "sv", "ni", "cr", "pa", "uy", "pr", "419",
+]);
 
 const NAME_TO_CODE: Record<string, string> = (() => {
   const m: Record<string, string> = {};
@@ -27,14 +39,15 @@ const NAME_TO_CODE: Record<string, string> = (() => {
 export function normalizeLang(input?: string | null): string {
   if (!input) return "";
   const raw = input.trim().toLowerCase();
+  if (LATAM_ALIASES.has(raw)) return "es-419";
   if (raw.length === 2) return raw;
   if (raw.length === 3 && ISO_3_TO_1[raw]) return ISO_3_TO_1[raw];
   if (NAME_TO_CODE[raw]) return NAME_TO_CODE[raw];
   if (raw.includes("-") || raw.includes("_")) {
-    const head = raw.split(/[-_]/)[0];
-    if (head.length === 2) return head;
-    if (ISO_3_TO_1[head]) return ISO_3_TO_1[head];
-    if (NAME_TO_CODE[head]) return NAME_TO_CODE[head];
+    const [head, region] = raw.split(/[-_]/);
+    const headCode = head.length === 2 ? head : ISO_3_TO_1[head] ?? NAME_TO_CODE[head];
+    if (headCode === "es" && region && LATAM_REGIONS.has(region)) return "es-419";
+    if (headCode) return headCode;
   }
   return raw;
 }
@@ -47,8 +60,17 @@ export function languageName(code: string): string {
 export function langScore(lang: string, preferred: string[]): number {
   if (!preferred.length) return 0;
   const n = normalizeLang(lang);
-  const idx = preferred.findIndex((p) => normalizeLang(p) === n);
-  return idx === -1 ? -1 : preferred.length - idx;
+  const baseOf = (c: string) => c.split("-")[0];
+  let exactIdx = -1;
+  let baseIdx = -1;
+  for (let i = 0; i < preferred.length; i++) {
+    const pn = normalizeLang(preferred[i]);
+    if (exactIdx === -1 && pn === n) exactIdx = i;
+    if (baseIdx === -1 && baseOf(pn) === baseOf(n)) baseIdx = i;
+  }
+  if (exactIdx !== -1) return (preferred.length - exactIdx) * 2;
+  if (baseIdx !== -1) return (preferred.length - baseIdx) * 2 - 1;
+  return -1;
 }
 
 export function pickBestTrack<T extends { lang?: string; default?: boolean; forced?: boolean }>(

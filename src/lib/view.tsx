@@ -14,6 +14,7 @@ export type PlayEpisode = {
   imdbSeason?: number;
   imdbEpisode?: number;
   kitsuStreamId?: string;
+  videoId?: string;
   still?: string;
   overview?: string;
 };
@@ -21,6 +22,7 @@ export type PlayEpisode = {
 export type PlayerSrc = {
   meta: Meta;
   imdbId?: string;
+  imdbIdVerified?: boolean;
   episode?: PlayEpisode;
   url: string;
   title: string;
@@ -42,6 +44,12 @@ export type PlayerStreamRef = {
   source?: string | null;
   size?: number | null;
   cachedSlugs?: string[];
+};
+
+export type GridSpec = {
+  title: string;
+  fetcher: (page: number) => Promise<Meta[]>;
+  initial?: Meta[];
 };
 
 export type MetaFilter =
@@ -69,10 +77,11 @@ export type Frame =
   | { kind: "vod" }
   | { kind: "downloads" }
   | { kind: "service"; service: StreamingService }
-  | { kind: "meta"; meta: Meta; liveContext?: boolean }
+  | { kind: "meta"; meta: Meta; liveContext?: boolean; episodeHint?: { season: number; episode: number } }
   | { kind: "person"; id: number }
   | { kind: "collection"; id: number }
   | { kind: "filter"; filter: MetaFilter }
+  | { kind: "grid"; grid: GridSpec }
   | { kind: "award"; awardType: import("./providers/wikidata").AwardType }
   | { kind: "anime-award"; sourceId: import("./anime-awards").AwardSourceId }
   | { kind: "picker"; meta: Meta; episode?: PlayEpisode; autoPlay?: boolean; attempt?: number; intent?: "play" | "download" }
@@ -106,7 +115,8 @@ type ViewValue = {
   openService: (s: StreamingService | null) => void;
   meta: Meta | null;
   metaLiveContext: boolean;
-  openMeta: (m: Meta | null, opts?: { liveContext?: boolean }) => void;
+  metaEpisodeHint: { season: number; episode: number } | null;
+  openMeta: (m: Meta | null, opts?: { liveContext?: boolean; episodeHint?: { season: number; episode: number } }) => void;
   promoteMetaToRoot: () => void;
   personId: number | null;
   openPerson: (id: number | null) => void;
@@ -115,6 +125,8 @@ type ViewValue = {
   openQueue: () => void;
   filter: MetaFilter | null;
   openFilter: (f: MetaFilter) => void;
+  grid: GridSpec | null;
+  openGrid: (g: GridSpec) => void;
   awardType: import("./providers/wikidata").AwardType | null;
   openAward: (t: import("./providers/wikidata").AwardType) => void;
   animeAwardSource: import("./anime-awards").AwardSourceId | null;
@@ -198,6 +210,8 @@ function frameKey(f: Frame): string {
       return `collection:${f.id}`;
     case "filter":
       return `filter:${f.filter.kind}:${f.filter.mediaType}:${"name" in f.filter ? f.filter.name : f.filter.value}`;
+    case "grid":
+      return `grid:${f.grid.title}`;
     case "award":
       return `award:${f.awardType}`;
     case "anime-award":
@@ -284,9 +298,12 @@ export function ViewProvider({ children }: { children: ReactNode }) {
   const meta = metaFrame && metaFrame.kind === "meta" ? metaFrame.meta : null;
   const metaLiveContext =
     metaFrame && metaFrame.kind === "meta" ? metaFrame.liveContext === true : false;
+  const metaEpisodeHint =
+    metaFrame && metaFrame.kind === "meta" ? metaFrame.episodeHint ?? null : null;
   const personId = top.kind === "person" ? top.id : null;
   const collectionId = top.kind === "collection" ? top.id : null;
   const filter = top.kind === "filter" ? top.filter : null;
+  const grid = top.kind === "grid" ? top.grid : null;
   const awardType = top.kind === "award" ? top.awardType : null;
   const picker =
     top.kind === "picker"
@@ -452,18 +469,26 @@ export function ViewProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const openMeta = useCallback((m: Meta | null, opts?: { liveContext?: boolean }) => {
-    if (m === null) {
-      setStack((s) => (s.length > 1 ? s.slice(0, -1) : s));
-      return;
-    }
-    setStack((cur) => {
-      const t = cur[cur.length - 1];
-      if (t.kind === "meta" && t.meta.id === m.id) return cur;
-      trackEvent(m.id, "open", profileFromMeta(m));
-      return pushFrame(cur, { kind: "meta", meta: m, liveContext: opts?.liveContext });
-    });
-  }, []);
+  const openMeta = useCallback(
+    (m: Meta | null, opts?: { liveContext?: boolean; episodeHint?: { season: number; episode: number } }) => {
+      if (m === null) {
+        setStack((s) => (s.length > 1 ? s.slice(0, -1) : s));
+        return;
+      }
+      setStack((cur) => {
+        const t = cur[cur.length - 1];
+        if (t.kind === "meta" && t.meta.id === m.id) return cur;
+        trackEvent(m.id, "open", profileFromMeta(m));
+        return pushFrame(cur, {
+          kind: "meta",
+          meta: m,
+          liveContext: opts?.liveContext,
+          episodeHint: opts?.episodeHint,
+        });
+      });
+    },
+    [],
+  );
 
   const openPerson = useCallback((id: number | null) => {
     if (id === null) {
@@ -521,6 +546,14 @@ export function ViewProvider({ children }: { children: ReactNode }) {
         return cur;
       }
       return pushFrame(cur, { kind: "filter", filter: f });
+    });
+  }, []);
+
+  const openGrid = useCallback((g: GridSpec) => {
+    setStack((cur) => {
+      const t = cur[cur.length - 1];
+      if (t.kind === "grid" && t.grid.title === g.title) return cur;
+      return pushFrame(cur, { kind: "grid", grid: g });
     });
   }, []);
 
@@ -607,6 +640,7 @@ export function ViewProvider({ children }: { children: ReactNode }) {
       openService,
       meta,
       metaLiveContext,
+      metaEpisodeHint,
       openMeta,
       promoteMetaToRoot,
       personId,
@@ -616,6 +650,8 @@ export function ViewProvider({ children }: { children: ReactNode }) {
       openQueue,
       filter,
       openFilter,
+      grid,
+      openGrid,
       awardType,
       openAward,
       animeAwardSource: top.kind === "anime-award" ? top.sourceId : null,
@@ -650,6 +686,7 @@ export function ViewProvider({ children }: { children: ReactNode }) {
       service,
       meta,
       metaLiveContext,
+      metaEpisodeHint,
       promoteMetaToRoot,
       personId,
       collectionId,
@@ -668,6 +705,8 @@ export function ViewProvider({ children }: { children: ReactNode }) {
       openPerson,
       openQueue,
       openFilter,
+      grid,
+      openGrid,
       openAward,
       openAnimeAward,
       openPicker,

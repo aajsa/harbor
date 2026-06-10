@@ -1,4 +1,4 @@
-import { Check, ChevronDown, Copy, Download, MoreHorizontal, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { ArrowUpToLine, Check, ChevronDown, ChevronUp, Copy, Download, MoreHorizontal, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { IptvPlaylistSource } from "@/lib/iptv/types";
@@ -14,6 +14,8 @@ export function SourcePicker({
   onAdd,
   onEdit,
   onRemove,
+  onMove,
+  onMoveTop,
   onRefresh,
   onExport,
   fetchedAt,
@@ -27,6 +29,8 @@ export function SourcePicker({
   onAdd: (entry: PlaylistFormValue) => void;
   onEdit: (id: string, entry: PlaylistFormValue) => void;
   onRemove: (id: string) => void;
+  onMove?: (id: string, delta: number) => void;
+  onMoveTop?: (id: string) => void;
   onRefresh: () => void;
   onExport: (id: string) => void;
   fetchedAt: number | null;
@@ -107,13 +111,17 @@ export function SourcePicker({
             {mode === "list" && (
               <>
                 <div className="max-h-[280px] overflow-y-auto py-1.5">
-                  {sources.map((s) => {
+                  {sources.map((s, idx) => {
                     const isActive = s.id === activeId;
                     const isOpen = actions?.id === s.id;
                     return (
                       <SourceRow
                         key={s.id}
                         source={s}
+                        index={idx}
+                        total={sources.length}
+                        onMove={onMove ? (d) => onMove(s.id, d) : undefined}
+                        onMoveTop={onMoveTop ? () => onMoveTop(s.id) : undefined}
                         isActive={isActive}
                         isMenuOpen={isOpen}
                         copied={isOpen && (actions?.copied ?? false)}
@@ -206,6 +214,10 @@ export function SourcePicker({
 
 function SourceRow({
   source,
+  index,
+  total,
+  onMove,
+  onMoveTop,
   isActive,
   isMenuOpen,
   copied,
@@ -219,6 +231,10 @@ function SourceRow({
   onDelete,
 }: {
   source: IptvPlaylistSource;
+  index: number;
+  total: number;
+  onMove?: (delta: number) => void;
+  onMoveTop?: () => void;
   isActive: boolean;
   isMenuOpen: boolean;
   copied: boolean;
@@ -250,6 +266,34 @@ function SourceRow({
           />
           <span className="truncate">{source.name}</span>
         </button>
+        {onMove && total > 1 && (
+          <div className="flex shrink-0 flex-col opacity-0 transition-opacity group-hover:opacity-100">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onMove(-1);
+              }}
+              disabled={index === 0}
+              aria-label="Move up"
+              className="flex h-4 w-6 items-center justify-center text-ink-subtle transition-colors hover:text-ink disabled:opacity-25"
+            >
+              <ChevronUp size={13} strokeWidth={2.2} />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onMove(1);
+              }}
+              disabled={index === total - 1}
+              aria-label="Move down"
+              className="flex h-4 w-6 items-center justify-center text-ink-subtle transition-colors hover:text-ink disabled:opacity-25"
+            >
+              <ChevronDown size={13} strokeWidth={2.2} />
+            </button>
+          </div>
+        )}
         <button
           ref={triggerRef}
           onClick={(e) => {
@@ -271,6 +315,11 @@ function SourceRow({
           triggerRef={triggerRef}
           onClose={onCloseMenu}
         >
+          {onMoveTop && index > 0 && (
+            <MenuItem icon={<ArrowUpToLine size={14} strokeWidth={1.9} />} onClick={onMoveTop}>
+              Move to top
+            </MenuItem>
+          )}
           <MenuItem icon={<Pencil size={14} strokeWidth={1.9} />} onClick={onEdit}>
             Edit
           </MenuItem>

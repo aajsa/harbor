@@ -24,7 +24,8 @@ export type Meta = {
   genres?: string[];
   trailers?: Array<{ source: string; type?: string }>;
   trailerStreams?: Array<{ ytId?: string; title?: string }>;
-  addonOrigin?: { id: string; name: string; logo?: string };
+  addonOrigin?: { id: string; name: string; logo?: string; base?: string };
+  behaviorHints?: { defaultVideoId?: string | null };
   videos?: Array<{
     id?: string;
     season?: number;
@@ -35,6 +36,7 @@ export type Meta = {
     name?: string;
     title?: string;
     thumbnail?: string;
+    streams?: Array<Record<string, unknown>>;
   }>;
 };
 

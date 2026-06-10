@@ -106,6 +106,7 @@ async function getAddonEpisodes(id: string): Promise<PlayEpisode[] | null> {
     const ep: PlayEpisode = { season, episode, name: v.title || v.name || undefined, still: v.thumbnail };
     const vid = (v as { id?: string }).id;
     if (vid && (vid.startsWith("kitsu:") || vid.startsWith("mal:"))) ep.kitsuStreamId = vid;
+    else if (vid) ep.videoId = vid;
     eps.push(ep);
   }
   if (eps.length === 0) return null;

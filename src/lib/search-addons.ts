@@ -6,7 +6,12 @@ const CAP_PER_CATALOG = 20;
 const MAX_CATALOGS = 12;
 
 function addonOrigin(addon: Addon) {
-  return { id: addon.manifest.id, name: addon.manifest.name, logo: addon.manifest.logo };
+  return {
+    id: addon.manifest.id,
+    name: addon.manifest.name,
+    logo: addon.manifest.logo,
+    base: addon.transportUrl.replace(/\/manifest\.json$/, ""),
+  };
 }
 
 export async function searchAddonCatalogs(
@@ -85,9 +90,10 @@ export async function searchAddonGroups(addons: Addon[], query: string): Promise
   for (const addon of addons) {
     for (const c of addon.manifest.catalogs ?? []) {
       if (!c?.type || !c?.id) continue;
-      if (c.type !== "movie" && c.type !== "series") continue;
+      if (c.type === "other") continue;
       if (!c.extra?.some((e) => e.name === "search")) continue;
       const entry = byAddon.get(addon.manifest.id) ?? { addon, targets: [] };
+      if (entry.targets.length >= 6) continue;
       entry.targets.push({ type: c.type, id: c.id });
       byAddon.set(addon.manifest.id, entry);
     }
@@ -97,8 +103,8 @@ export async function searchAddonGroups(addons: Addon[], query: string): Promise
   const entries = [...byAddon.values()].slice(0, MAX_GROUPS);
   const groups = await Promise.all(
     entries.map(async ({ addon, targets }): Promise<AddonResultGroup> => {
-      const base = addon.transportUrl.replace(/\/manifest\.json$/, "");
       const origin = addonOrigin(addon);
+      const base = origin.base;
       const settled = await Promise.allSettled(
         targets.map(async ({ type, id }) => {
           const url = `${base}/catalog/${type}/${id}/search=${encodeURIComponent(q)}.json`;

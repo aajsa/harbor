@@ -1,4 +1,4 @@
-import { useEffect, type RefObject } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import type { PlayerBridge, PlayerSnapshot } from "@/lib/player/bridge";
 import { writePlayerPrefs } from "@/lib/player-prefs";
 import { writePlayerVolume } from "@/lib/player-volume";
@@ -29,6 +29,7 @@ export function useKeyboardShortcuts(params: {
   toggleSleep?: () => void;
   onScreenshot?: () => void;
   onGifRecord?: () => void;
+  onToggleCrop?: () => void;
 }) {
   const {
     bridgeRef,
@@ -53,9 +54,17 @@ export function useKeyboardShortcuts(params: {
     toggleSleep,
     onScreenshot,
     onGifRecord,
+    onToggleCrop,
   } = params;
   const { settings } = useSettings();
   const overrides = settings.hotkeys ?? {};
+  const holdRef = useRef<{
+    key: string | null;
+    timer: number | null;
+    engaged: boolean;
+    baseRate: number;
+  }>({ key: null, timer: null, engaged: false, baseRate: 1 });
+  const [holdSpeedActive, setHoldSpeedActive] = useState(false);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -87,7 +96,16 @@ export function useKeyboardShortcuts(params: {
       }
       if (match("playerPlayPause")) {
         e.preventDefault();
-        playPauseToggle();
+        if (e.repeat) return;
+        const h = holdRef.current;
+        h.key = e.key;
+        h.baseRate = snap.rate;
+        h.timer = window.setTimeout(() => {
+          h.timer = null;
+          h.engaged = true;
+          setHoldSpeedActive(true);
+          bridgeRef.current?.setRate(Math.max(2, h.baseRate));
+        }, 350);
         return;
       }
       if (match("playerSeekBack10")) {
@@ -134,6 +152,11 @@ export function useKeyboardShortcuts(params: {
       if (match("playerFullscreen")) {
         e.preventDefault();
         toggleFullscreen();
+        return;
+      }
+      if (match("playerCrop") && onToggleCrop) {
+        e.preventDefault();
+        onToggleCrop();
         return;
       }
       if (match("playerSubtitleCycle") || match("playerSubtitleCycleAlt")) {
@@ -245,8 +268,39 @@ export function useKeyboardShortcuts(params: {
         return;
       }
     };
+    const releaseHold = () => {
+      const h = holdRef.current;
+      h.key = null;
+      if (h.timer != null) {
+        window.clearTimeout(h.timer);
+        h.timer = null;
+        return "tap" as const;
+      }
+      if (h.engaged) {
+        h.engaged = false;
+        setHoldSpeedActive(false);
+        bridgeRef.current?.setRate(h.baseRate);
+      }
+      return "held" as const;
+    };
+    const onKeyUp = (e: KeyboardEvent) => {
+      const h = holdRef.current;
+      if (h.key == null || e.key !== h.key) return;
+      if (releaseHold() === "tap") playPauseToggle();
+    };
+    const onBlur = () => {
+      if (holdRef.current.key != null) releaseHold();
+    };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("keyup", onKeyUp);
+    window.addEventListener("blur", onBlur);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("keyup", onKeyUp);
+      window.removeEventListener("blur", onBlur);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [closePlayer, drawMode, snap.muted, snap.volume, snap.rate, snap.durationSec, snap.subDelaySec, overrides, toggleSwitcher, toggleEpisodePanel, toggleGuide, toggleDvr, toggleSleep, onScreenshot, onGifRecord]);
+  }, [closePlayer, drawMode, snap.muted, snap.volume, snap.rate, snap.durationSec, snap.subDelaySec, overrides, toggleSwitcher, toggleEpisodePanel, toggleGuide, toggleDvr, toggleSleep, onScreenshot, onGifRecord, onToggleCrop]);
+
+  return { holdSpeedActive };
 }

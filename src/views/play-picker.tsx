@@ -10,6 +10,7 @@ import { consumeRecentStubEvent } from "@/lib/dead-streams";
 import { readPlayback } from "@/lib/playback-history";
 import { useSettings } from "@/lib/settings";
 import type { ScoredStream, Tier } from "@/lib/streams/types";
+import { isAddonRanked } from "@/lib/streams/addon-detect";
 import { useView, type PlayEpisode } from "@/lib/view";
 import { AutoExhaustedModal } from "./play-picker/auto-exhausted-modal";
 import { AutoPlayTransition } from "./play-picker/auto-play-transition";
@@ -24,6 +25,7 @@ import { NoSourcesConfiguredModal } from "./play-picker/no-sources-modal";
 import {
   hasUncachedMarker,
   normalizeLangCode,
+  orderByAddonNative,
   streamMatchesLangs,
 } from "./play-picker/picker-utils";
 import { PickerHeader } from "./play-picker/picker-header";
@@ -63,7 +65,8 @@ export function PlayPicker({
   const debrids = useDebridClients();
   const { snapshot: roomSnapshot, sendInvite, claimHost, wasInvitedTo } = useTogether();
   const inSession = roomSnapshot.state === "joined";
-  const imdbId = useImdbId(meta, settings.tmdbKey);
+  const resolvedImdb = useImdbId(meta, settings.tmdbKey);
+  const imdbId = resolvedImdb.id;
   const streamIds = useStreamIds(meta, episode, imdbId);
   const { addons, userHasStreamAddons } = useAddons(authKey, settings);
   const [resolving, setResolving] = useState<{ stream: ScoredStream } | null>(null);
@@ -171,6 +174,25 @@ export function PlayPicker({
     return { primary, byTier, all };
   }, [result, langFilter, preferredLangs, cachedOnly, debrids.length, isCached]);
 
+  const anyAddonRanked = useMemo(() => {
+    const all = filteredPicker?.all ?? [];
+    if (all.length === 0 || !addons) return false;
+    const byUrl = new Map(addons.map((a) => [a.transportUrl, a]));
+    const usedUrls = new Set(all.map((s) => s.addonUrl).filter(Boolean) as string[]);
+    if (usedUrls.size === 0) return false;
+    for (const url of usedUrls) {
+      const a = byUrl.get(url);
+      if (a && isAddonRanked(a)) return true;
+    }
+    return false;
+  }, [filteredPicker, addons]);
+  const addonOrderMode = settings.streamSort === "addon" || anyAddonRanked;
+  const displayStreams = useMemo(() => {
+    const all = filteredPicker?.all ?? [];
+    if (!addonOrderMode || !result) return all;
+    return orderByAddonNative(all, result.raw.addon, addons);
+  }, [filteredPicker, addonOrderMode, result, addons]);
+
   const langHiddenCount = useMemo(() => {
     if (!result || preferredLangs.length === 0) return 0;
     return result.picker.all.filter((s) => !streamMatchesLangs(s, preferredLangs)).length;
@@ -246,6 +268,7 @@ export function PlayPicker({
   const { onPlay, onCache, queuedHash, debridDown, resetDebridDown, abortResolve, p2pConfirm, confirmP2p, cancelP2p } = usePickHandler({
     meta,
     imdbId,
+    imdbIdVerified: resolvedImdb.verified,
     episode,
     attempt,
     debrids,
@@ -553,11 +576,12 @@ export function PlayPicker({
 
         {(settings.pickerLayout === "stremio" || isDownload) && filteredPicker && filteredPicker.all.length > 0 ? (
           <StremioLayout
-            streams={filteredPicker.all}
+            streams={displayStreams}
             addons={addons}
             pipelineDone={pipelineDone}
             loadingAddonCount={Math.max(0, (addons?.length ?? 0) - addonCount)}
             failedStreams={failedStreams}
+            preserveOrder={addonOrderMode}
             onPlay={onPlay}
           />
         ) : (
@@ -621,7 +645,7 @@ export function PlayPicker({
                 count={allCount}
                 addonCount={addonCount}
                 usedAddons={usedAddons}
-                streams={filteredPicker.all}
+                streams={displayStreams}
                 debrids={debrids}
                 getAddonLogo={lookupLogo}
                 onPlay={onPlay}

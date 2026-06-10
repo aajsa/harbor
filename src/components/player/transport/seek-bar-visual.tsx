@@ -14,18 +14,22 @@ export function resolveAccent(settings: Settings): string {
   return (settings.seekBarColor || "").trim() || "oklch(0.78 0.13 60)";
 }
 
+export type SeekSegmentSpan = { startPct: number; endPct: number };
+
 export function SeekBarVisual({
   settings,
   pct,
   bufferedPct,
   scrubbing = false,
   hovered = false,
+  segments,
 }: {
   settings: Settings;
   pct: number;
   bufferedPct?: number;
   scrubbing?: boolean;
   hovered?: boolean;
+  segments?: SeekSegmentSpan[];
 }) {
   const accent = resolveAccent(settings);
   const baseHeight = clamp(settings.seekBarHeight ?? 6, 3, 14);
@@ -76,6 +80,19 @@ export function SeekBarVisual({
         {style === "pinstripe" && <div className="harbor-barberpole absolute inset-0" />}
         {glassOverlay && <div className="absolute inset-0" style={glassOverlay} />}
       </div>
+      {(segments ?? []).map((s, i) => (
+        <div
+          key={`${s.startPct}-${i}`}
+          className="pointer-events-none absolute rounded-full bg-white/45"
+          style={{
+            left: `${s.startPct}%`,
+            width: `${Math.max(0.4, s.endPct - s.startPct)}%`,
+            height: Math.max(2, trackHeight - 2),
+            top: "50%",
+            transform: "translateY(-50%)",
+          }}
+        />
+      ))}
       {shape !== "hidden" && (
         <SeekDot
           shape={shape}

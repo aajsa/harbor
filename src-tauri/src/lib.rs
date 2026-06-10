@@ -19,9 +19,12 @@ mod proc_mem;
 mod roku;
 #[cfg(target_os = "macos")]
 mod mpv_render_mac;
+#[cfg(target_os = "linux")]
+mod mpv_render_linux;
 mod pip;
 #[cfg(target_os = "macos")]
 mod pip_mac;
+mod power;
 mod airplay;
 mod stream_proxy;
 mod streams;
@@ -206,6 +209,8 @@ fn harbor_resume_webview(app: tauri::AppHandle) {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    #[cfg(target_os = "linux")]
+    mpv_render_linux::enforce_nvidia_x11();
     let _ = rustls::crypto::ring::default_provider().install_default();
     trailer::sweep_cache();
     let proxy_state = tauri::async_runtime::block_on(stream_proxy::ProxyState::start())
@@ -332,6 +337,7 @@ pub fn run() {
             }
         })
         .invoke_handler(tauri::generate_handler![
+            power::power_inhibit,
             harbor_set_webview_memory_low,
             harbor_set_webview_visible,
             harbor_try_suspend_webview,
@@ -356,7 +362,6 @@ pub fn run() {
             mpv::mpv_command,
             mpv::mpv_set_property,
             mpv::mpv_set_geometry,
-            mpv::mpv_set_clip_rects,
             mpv::mpv_force_below,
             webview_helpers::webview_reapply_transparency,
             mpv::mpv_on_pip_changed,

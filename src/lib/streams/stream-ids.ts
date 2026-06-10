@@ -4,6 +4,7 @@ export function buildStreamIds(
   metaId: string,
   episode: PlayEpisode | undefined,
   imdbId: string | null,
+  defaultVideoId?: string | null,
 ): string[] {
   const out: string[] = [];
   const seen = new Set<string>();
@@ -12,6 +13,9 @@ export function buildStreamIds(
     seen.add(s);
     out.push(s);
   };
+
+  if (episode?.videoId) push(episode.videoId);
+  if (!episode && defaultVideoId) push(defaultVideoId);
 
   if (episode?.kitsuStreamId) {
     push(episode.kitsuStreamId);

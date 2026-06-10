@@ -1,6 +1,6 @@
 import { Layers } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { tmdbCollection } from "@/lib/providers/tmdb";
+import { collectionNameMatches, tmdbCollection, tmdbSearchCollectionId } from "@/lib/providers/tmdb";
 import { useSettings } from "@/lib/settings";
 import { useView } from "@/lib/view";
 import { Row } from "./row";
@@ -59,7 +59,7 @@ const COLLECTIONS: Col[] = [
   { id: 468222, name: "The Incredibles" },
   { id: 137697, name: "Finding Nemo" },
   { id: 137696, name: "Monsters, Inc." },
-  { id: 87800, name: "Cars" },
+  { id: 87118, name: "Cars" },
   { id: 386382, name: "Frozen" },
   { id: 2150, name: "Shrek" },
   { id: 14890, name: "Madagascar" },
@@ -89,6 +89,7 @@ function CollectionCard({ col }: { col: Col }) {
   const [inView, setInView] = useState(false);
   const [backdrop, setBackdrop] = useState<string | null>(null);
   const [count, setCount] = useState<number | null>(null);
+  const [resolvedId, setResolvedId] = useState<number>(col.id);
 
   useEffect(() => {
     const el = ref.current;
@@ -109,17 +110,23 @@ function CollectionCard({ col }: { col: Col }) {
   useEffect(() => {
     if (!inView) return;
     let cancelled = false;
-    tmdbCollection(settings.tmdbKey, col.id)
-      .then((c) => {
-        if (cancelled || !c) return;
-        setBackdrop(c.backdrop ?? null);
-        setCount(c.parts.length);
-      })
-      .catch(() => {});
+    void (async () => {
+      let c = await tmdbCollection(settings.tmdbKey, col.id).catch(() => null);
+      if (!c || !collectionNameMatches(c.name, col.name)) {
+        const healedId = await tmdbSearchCollectionId(settings.tmdbKey, col.name).catch(() => null);
+        if (healedId != null && healedId !== col.id) {
+          c = await tmdbCollection(settings.tmdbKey, healedId).catch(() => null);
+        }
+      }
+      if (cancelled || !c) return;
+      setBackdrop(c.backdrop ?? null);
+      setCount(c.parts.length);
+      setResolvedId(c.id);
+    })();
     return () => {
       cancelled = true;
     };
-  }, [inView, col.id, settings.tmdbKey]);
+  }, [inView, col.id, col.name, settings.tmdbKey]);
 
   const hue = (col.id * 47) % 360;
   const from = `oklch(0.42 0.13 ${hue})`;
@@ -129,7 +136,7 @@ function CollectionCard({ col }: { col: Col }) {
     <button
       ref={ref}
       type="button"
-      onClick={() => openCollection(col.id)}
+      onClick={() => openCollection(resolvedId)}
       className="group/card relative aspect-[16/9] w-full cursor-pointer overflow-hidden rounded-2xl border border-edge-soft text-left shadow-[0_4px_18px_-10px_rgba(0,0,0,0.5)] ring-1 ring-inset ring-white/0 transition-[border-color] duration-300 hover:border-edge hover:ring-white/15"
       style={{ background: `linear-gradient(140deg, ${from}, ${to})` }}
     >

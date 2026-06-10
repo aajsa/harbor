@@ -19,15 +19,29 @@ export const FILTERS: Array<{ id: CalendarFilter; label: string }> = [
 
 export function calendarToMeta(item: CalendarItem): Meta {
   return {
-    id: item.id,
+    id: calendarBaseId(item.id),
     type: item.type === "tv" ? "series" : "movie",
-    name: item.name,
+    name: calendarBaseName(item.name),
     poster: item.poster ?? undefined,
     background: item.background ?? undefined,
     description: item.overview,
     releaseInfo: item.releaseDate.slice(0, 4),
     releaseDate: item.releaseDate,
   };
+}
+
+export function calendarEpisodeHint(item: CalendarItem): { season: number; episode: number } | null {
+  const m = item.id.match(/:(\d+):(\d+)$/);
+  if (!m) return null;
+  return { season: Number(m[1]), episode: Number(m[2]) };
+}
+
+function calendarBaseId(id: string): string {
+  return id.replace(/:(\d+):(\d+)$/, "").replace(/:premiere$/, "");
+}
+
+function calendarBaseName(name: string): string {
+  return name.replace(/ S\d{2,}E\d{2,}.*$/, "").replace(/ \(premiere\)$/, "");
 }
 
 export function normalizeName(s: string): string {

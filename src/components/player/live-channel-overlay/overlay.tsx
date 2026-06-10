@@ -230,6 +230,7 @@ export function LiveChannelOverlay({
             counts={counts}
             groupLogos={groupLogos}
             favoritesCount={favorites.count}
+            sourceId={playlist?.id ?? ""}
           />
         )}
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 pt-2 pb-8">

@@ -127,6 +127,15 @@ fn check_one(
     in_cinema_window: bool,
     older_catalog: bool,
 ) -> Option<String> {
+    let has_playable = s.stream.url.is_some()
+        || s.stream.info_hash.is_some()
+        || s.stream.yt_id.is_some()
+        || s.stream.external_url.is_some()
+        || s.stream.extra.contains_key("nzbUrl");
+    if !has_playable {
+        return Some("no-playable-source".to_string());
+    }
+
     let filename = behavior_hint_filename(s).unwrap_or_default().to_lowercase();
     let title_lower = s.stream.title.as_deref().unwrap_or("").to_lowercase();
     let name_lower = s.stream.name.as_deref().unwrap_or("").to_lowercase();
@@ -521,6 +530,7 @@ mod tests {
             stream: Stream {
                 addon_id: "addon".into(),
                 addon_name: "Addon".into(),
+                info_hash: Some("a".repeat(40)),
                 ..Default::default()
             },
             parsed_title: "Sample Movie".into(),
@@ -602,6 +612,26 @@ mod tests {
         let result = apply_trust(vec![s], &opts_strict());
         assert_eq!(result.rejected.len(), 1);
         assert_eq!(result.rejected[0].reason, "trailer-or-extra");
+    }
+
+    #[test]
+    fn rejects_no_playable_source() {
+        let mut s = base_stream();
+        s.stream.info_hash = None;
+        let result = apply_trust(vec![s], &opts_strict());
+        assert_eq!(result.rejected.len(), 1);
+        assert_eq!(result.rejected[0].reason, "no-playable-source");
+    }
+
+    #[test]
+    fn keeps_nzb_only_stream() {
+        let mut s = base_stream();
+        s.stream.info_hash = None;
+        s.stream
+            .extra
+            .insert("nzbUrl".into(), serde_json::Value::String("https://x/nzb".into()));
+        let result = apply_trust(vec![s], &opts_strict());
+        assert_eq!(result.rejected.len(), 0);
     }
 
     #[test]

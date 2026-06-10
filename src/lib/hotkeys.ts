@@ -18,6 +18,7 @@ export type HotkeyId =
   | "playerStart"
   | "playerEnd"
   | "playerStats"
+  | "playerCrop"
   | "playerScreenshot"
   | "playerGifRecord"
   | "playerSpeedDown"
@@ -47,6 +48,7 @@ export const HOTKEYS: HotkeyDef[] = [
   { id: "playerPlayPause", scope: "Player", group: "Playback", label: "Play / pause", description: "Toggle playback.", defaultBinding: "Space" },
   { id: "playerFullscreen", scope: "Player", group: "Playback", label: "Toggle fullscreen", description: "Enter or exit fullscreen.", defaultBinding: "f" },
   { id: "playerStats", scope: "Player", group: "Playback", label: "Toggle stats overlay", description: "Show or hide the playback stats overlay.", defaultBinding: "i" },
+  { id: "playerCrop", scope: "Player", group: "Playback", label: "Crop to fill", description: "Toggle between fit (letterboxed) and crop-to-fill for the current video.", defaultBinding: "v" },
   { id: "playerScreenshot", scope: "Player", group: "Playback", label: "Screenshot", description: "Save the current frame (video only, no subtitles) as a PNG to Pictures/Harbor.", defaultBinding: "p" },
   { id: "playerGifRecord", scope: "Player", group: "Playback", label: "Record GIF", description: "Start or stop recording a GIF of the video (no subtitles). Saves to Pictures/Harbor.", defaultBinding: "o" },
 

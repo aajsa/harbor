@@ -137,6 +137,7 @@ export type ScoredStream = ParsedStream & {
   score: number;
   reasons: ScoreReason[];
   tier: Tier;
+  nativeIdx?: number;
 };
 
 export type RankedPicker = {

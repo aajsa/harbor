@@ -166,9 +166,16 @@ pub async fn fetch_trailer(
     let duration_seconds = meta["duration"].as_f64().unwrap_or(0.0) as u64;
 
     let file_path_str = file_path.to_string_lossy().to_string();
+    let ffmpeg = crate::transcode::locate_ffmpeg();
+    let wants_merge = needs_merge(quality) && ffmpeg.is_some();
+    let effective_format = if needs_merge(quality) && ffmpeg.is_none() {
+        FORMAT_HIGH
+    } else {
+        format_for(quality)
+    };
     let mut dl_args: Vec<String> = vec![
         "-f".into(),
-        format_for(quality).into(),
+        effective_format.into(),
         "-o".into(),
         file_path_str.clone(),
         "--no-playlist".into(),
@@ -176,8 +183,8 @@ pub async fn fetch_trailer(
         "--quiet".into(),
         "--force-overwrites".into(),
     ];
-    if needs_merge(quality) {
-        if let Some(ff) = crate::transcode::locate_ffmpeg() {
+    if wants_merge {
+        if let Some(ff) = &ffmpeg {
             dl_args.push("--ffmpeg-location".into());
             dl_args.push(ff.to_string_lossy().to_string());
         }
@@ -191,7 +198,12 @@ pub async fn fetch_trailer(
         .map_err(|e| format!("sidecar init: {}", e))?
         .args(dl_args);
 
-    let download_output = tokio::time::timeout(DOWNLOAD_TIMEOUT, download_sidecar.output())
+    let dl_timeout = if wants_merge {
+        Duration::from_secs(240)
+    } else {
+        DOWNLOAD_TIMEOUT
+    };
+    let download_output = tokio::time::timeout(dl_timeout, download_sidecar.output())
         .await
         .map_err(|_| "yt-dlp download timed out".to_string())?
         .map_err(|e| format!("yt-dlp download: {}", e))?;

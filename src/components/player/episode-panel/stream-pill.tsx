@@ -1,4 +1,4 @@
-import { FormatBadge, resolutionBadge } from "@/components/format-badge";
+import { FormatBadge, streamBadges } from "@/components/format-badge";
 import type { ScoredStream } from "@/lib/streams/types";
 
 export function StreamPill({
@@ -13,7 +13,7 @@ export function StreamPill({
   void cached;
   const headline = stream.name?.trim() || stream.parsedTitle || stream.title || stream.addonName || "Source";
   const description = stream.title?.trim() || stream.description?.trim() || "";
-  const resBadge = resolutionBadge(stream);
+  const badges = streamBadges(stream);
   return (
     <button
       onClick={onPick}
@@ -21,8 +21,10 @@ export function StreamPill({
     >
       <div className="flex flex-1 flex-col gap-1.5 min-w-0">
         <div className="flex items-center gap-2">
-          {resBadge && <FormatBadge kind={resBadge} size="sm" />}
-          <p className="whitespace-pre-line text-[13px] font-semibold leading-snug text-ink">
+          {badges.slice(0, 3).map((k) => (
+            <FormatBadge key={k} kind={k} size="sm" />
+          ))}
+          <p className="min-w-0 whitespace-pre-line text-[13px] font-semibold leading-snug text-ink">
             {headline}
           </p>
         </div>

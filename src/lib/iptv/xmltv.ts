@@ -7,16 +7,22 @@ const STALL_TIMEOUT_MS = 25_000;
 async function iptvFetch(url: string, signal: AbortSignal): Promise<Response> {
   if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
     const { fetch: tauriFetch } = await import("@tauri-apps/plugin-http");
-    return tauriFetch(url, {
-      method: "GET",
-      headers: {
-        "User-Agent": "VLC/3.0.20 LibVLC/3.0.20",
-        Accept: "application/xml, text/xml, application/octet-stream, */*",
-      },
-      connectTimeout: CONNECT_TIMEOUT_MS,
-      maxRedirections: 5,
-      signal,
-    } as unknown as RequestInit);
+    try {
+      return await tauriFetch(url, {
+        method: "GET",
+        headers: {
+          "User-Agent": "VLC/3.0.20 LibVLC/3.0.20",
+          Accept: "application/xml, text/xml, application/octet-stream, */*",
+        },
+        connectTimeout: CONNECT_TIMEOUT_MS,
+        maxRedirections: 5,
+        signal,
+      } as unknown as RequestInit);
+    } catch (e) {
+      if (!/scope|not allowed/i.test(String(e))) throw e;
+      const { safeFetch } = await import("@/lib/safe-fetch");
+      return safeFetch(url, { signal });
+    }
   }
   return fetch(url, { cache: "no-store", signal });
 }

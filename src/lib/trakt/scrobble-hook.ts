@@ -35,8 +35,9 @@ export function useTraktScrobble({ src, snap }: { src: PlayerSrc; snap: Snap }):
       if (a.snap.durationSec <= 0) return;
       if (lastActionRef.current !== "start" && lastActionRef.current !== "pause") return;
       const progress = Math.min(100, Math.max(0, (getPlaybackPosition() / a.snap.durationSec) * 100));
-      sendPauseBeacon(target, progress);
-      lastActionRef.current = "pause";
+      const action = progress >= 80 ? "stop" : "pause";
+      sendBeacon(target, progress, action);
+      lastActionRef.current = action;
     };
     window.addEventListener("pagehide", onPageHide);
     return () => window.removeEventListener("pagehide", onPageHide);
@@ -61,6 +62,15 @@ export function useTraktScrobble({ src, snap }: { src: PlayerSrc; snap: Snap }):
     if (!target) return;
     if (snap.durationSec <= 0) return;
     const progress = Math.min(100, Math.max(0, (getPlaybackPosition() / snap.durationSec) * 100));
+
+    if (snap.status === "ended") {
+      if (lastActionRef.current === "start" || lastActionRef.current === "pause") {
+        scrobble("stop", { metaId, episode: src.episode, progress: 100 });
+        lastActionRef.current = "stop";
+      }
+      return;
+    }
+    if (lastActionRef.current === "stop") return;
 
     if (snap.status === "playing" && lastActionRef.current !== "start") {
       scrobble("start", { metaId, episode: src.episode, progress });
@@ -112,16 +122,20 @@ export function useTraktScrobble({ src, snap }: { src: PlayerSrc; snap: Snap }):
       const a = stopArgsRef.current;
       if (a.snap.durationSec > 0) {
         const progress = Math.min(100, (getPlaybackPosition() / a.snap.durationSec) * 100);
-        scrobble("pause", { metaId: a.metaId, episode: a.episode, progress });
+        const action = progress >= 80 ? "stop" : "pause";
+        scrobble(action, { metaId: a.metaId, episode: a.episode, progress });
+        lastActionRef.current = action;
+      } else {
+        lastActionRef.current = "pause";
       }
-      lastActionRef.current = "pause";
     };
   }, [scrobble]);
 }
 
-function sendPauseBeacon(
+function sendBeacon(
   target: ReturnType<NonNullable<ReturnType<typeof useTrakt>["resolveTarget"]>> & object,
   progress: number,
+  action: "stop" | "pause",
 ): void {
   const session = getSession();
   if (!session) return;
@@ -138,7 +152,7 @@ function sendPauseBeacon(
   } else {
     body = { show: { ids: target.ids }, progress: clamped };
   }
-  const url = `${TRAKT_API_BASE}/scrobble/pause`;
+  const url = `${TRAKT_API_BASE}/scrobble/${action}`;
   try {
     void fetch(url, {
       method: "POST",

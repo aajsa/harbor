@@ -50,6 +50,7 @@ function buildItem(
   when: string,
   season?: number,
   episode?: number,
+  isAnime?: boolean,
 ): LibraryItem {
   return {
     _id: id,
@@ -66,17 +67,25 @@ function buildItem(
     _ctime: when,
     _mtime: when,
     external: "simkl",
+    isAnime,
   };
 }
 
 function toLibraryItem(raw: RawSession): LibraryItem | null {
   const pct = Math.min(100, Math.max(0, raw.progress ?? 0));
   if (pct < 2 || pct > 98) return null;
-  const when = raw.watched_at ?? "";
+  const when = raw.watched_at ?? new Date(0).toISOString();
 
   if (raw.movie) {
     const id = movieMetaId(raw.movie.ids);
     return id ? buildItem(id, "movie", raw.movie, pct, DURATION_MS.movie, when) : null;
+  }
+
+  if (!raw.show && !raw.episode && raw.anime) {
+    const movieId = movieMetaId(raw.anime.ids);
+    if (movieId) {
+      return buildItem(movieId, "movie", raw.anime, pct, DURATION_MS.movie, when, undefined, undefined, true);
+    }
   }
 
   const seriesNode = raw.show ?? raw.anime;
@@ -92,6 +101,7 @@ function toLibraryItem(raw: RawSession): LibraryItem | null {
       when,
       raw.episode?.season,
       raw.episode?.number,
+      !raw.show,
     );
   }
   return null;

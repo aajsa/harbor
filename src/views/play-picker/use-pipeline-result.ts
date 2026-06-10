@@ -5,8 +5,9 @@ import { useDebridClients } from "@/lib/debrid/registry";
 import { buildPickerConfigHash, getPickerCache, setPickerCache } from "@/lib/picker-cache";
 import { useSettings } from "@/lib/settings";
 import { runPipeline, type PipelineResult } from "@/lib/streams/pipeline";
+import type { Stream } from "@/lib/streams/types";
 import type { PlayEpisode } from "@/lib/view";
-import { parseRuntimeMinutes } from "./picker-utils";
+import { parseRuntimeMinutes, stampAddonOrder } from "./picker-utils";
 
 type Settings = ReturnType<typeof useSettings>["settings"];
 
@@ -37,6 +38,30 @@ export function usePipelineResult({
   const [firstResultAt, setFirstResultAt] = useState<number | null>(null);
   const [autoSettleReady, setAutoSettleReady] = useState(false);
   const [resolveError, setResolveError] = useState<string | null>(null);
+
+  const embedded = useMemo<Stream[]>(() => {
+    const vids = meta.videos ?? [];
+    if (vids.length === 0) return [];
+    const pick = episode?.videoId
+      ? vids.find((v) => v.id === episode.videoId)
+      : episode
+        ? vids.find(
+            (v) =>
+              (v.season ?? null) === episode.season &&
+              ((v.episode ?? v.number) ?? null) === episode.episode,
+          )
+        : vids.find((v) => v.id === meta.id) ?? (vids.length === 1 ? vids[0] : undefined);
+    const raw = pick?.streams ?? [];
+    return raw.map(
+      (s) =>
+        ({
+          ...s,
+          addonId: meta.addonOrigin?.id ?? "embedded",
+          addonName: meta.addonOrigin?.name ?? "Addon",
+          addonUrl: meta.addonOrigin?.base,
+        }) as unknown as Stream,
+    );
+  }, [meta, episode?.videoId, episode?.season, episode?.episode]);
 
   const configHash = useMemo(
     () =>
@@ -93,6 +118,7 @@ export function usePipelineResult({
         addons,
         debrids,
         isAnime: streamIds.some((id) => id.startsWith("kitsu:") || id.startsWith("mal:")),
+        presetStreams: embedded.length > 0 ? embedded : undefined,
         trust: {
           kind: episode ? "series" : meta.type === "series" ? "series" : "movie",
           expectedTitle: meta.name,
@@ -101,7 +127,7 @@ export function usePipelineResult({
           expectedSeason: episode?.season ?? null,
           expectedEpisode: episode?.episode ?? null,
           strict: strictMode,
-          disabled: filterDisabled || addonNative,
+          disabled: filterDisabled || addonNative || embedded.length > 0,
           preferredLanguages: settings.preferredLanguages,
           preferredAudioLangs: settings.preferredAudioLangs,
           requirePreferredLanguage: strictMode && settings.requirePreferredLanguage,
@@ -126,6 +152,7 @@ export function usePipelineResult({
       (partial) => {
         if (ac.signal.aborted) return;
         if (partial.picker.all.length === 0) return;
+        stampAddonOrder(partial.picker.all, partial.raw.addon);
         setResult(partial);
         setLoading(false);
         setFirstResultAt((prev) => prev ?? performance.now());
@@ -134,6 +161,7 @@ export function usePipelineResult({
     )
       .then((r) => {
         if (ac.signal.aborted) return;
+        stampAddonOrder(r.picker.all, r.raw.addon);
         setResult(r);
         setLoading(false);
         setPipelineDone(true);
@@ -159,6 +187,7 @@ export function usePipelineResult({
     meta.releaseInfo,
     episode?.season,
     episode?.episode,
+    embedded,
     settings.preferredLanguages,
     settings.requirePreferredLanguage,
     strictMode,
