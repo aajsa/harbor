@@ -38,7 +38,7 @@ Offering things like a native player, a stream ranking engine, Wikidata, watch p
 <br/>
 ATTENTION: We will be working on the Linux build for the next 48 hours and the few remaining bugs + ALL your feature requests. We set a hard deadline of 48 hours (June 13th) for 0.9.6 we may have it earlier, but we do not want to rush and introduce any issues. This next update will include every issue we see in Issues tab for the current version, we know we normally try to get things same-day but this will be the exception. We are so sorry for any delays and inconvenience this causes. We thank you so much for trying harbor! If you encounter issues or bugs make a Issue ticket if it's new we will address it while we work on these other feature requests!
 
-Thank you so much for this project better!
+Thank you so much for making this project better!
 <br/>
 > [!IMPORTANT]
 > Harbor is a media player and a client for the open Stremio addon protocol. It hosts, indexes, and ships no media, and it bundles no content addons. You bring your own addons and sources. See the [Disclaimer](#disclaimer).
