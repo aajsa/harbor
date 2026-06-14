@@ -85,11 +85,11 @@ export function PreviewBlock({ data, onDetails }: { data: PreviewData; onDetails
       )}
       <div data-stagger="2" className="flex h-6 items-center justify-between">
         <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-subtle transition-colors duration-150 group-hover:text-ink">
-          <span className="transition-transform duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-[2px]">
+          <span className="transition-transform duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-[2px] rtl:group-hover:-translate-x-[2px]">
             {inProgress ? (
               <Play size={12} fill="currentColor" />
             ) : (
-              <ArrowUpRight size={12} strokeWidth={2.6} />
+              <ArrowUpRight size={12} strokeWidth={2.6} className="dir-icon" />
             )}
           </span>
           {verb}

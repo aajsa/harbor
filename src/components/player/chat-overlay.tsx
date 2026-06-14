@@ -5,6 +5,7 @@ import type { PanelCorner } from "@/lib/player-chrome";
 import type { ChatMessage } from "@/lib/together/provider";
 import type { Participant } from "@/lib/together/protocol";
 import { useSelfIdentity } from "@/lib/together/use-self-identity";
+import { useT } from "@/lib/i18n";
 
 const RECENT_WINDOW_MS = 7000;
 const COMPOSE_TIMEOUT_MS = 4500;
@@ -34,6 +35,7 @@ export function ChatOverlay({
   corner?: PanelCorner;
   hidden?: boolean;
 }) {
+  const t = useT();
   const selfIdentity = useSelfIdentity();
   const [composing, setComposing] = useState(false);
   const [draft, setDraft] = useState("");
@@ -134,14 +136,14 @@ export function ChatOverlay({
             ref={inputRef}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            placeholder="Say something…"
+            placeholder={t("Say something…")}
             className="flex-1 bg-transparent text-[13.5px] text-white placeholder:text-white/35 outline-none"
             maxLength={300}
           />
           <button
             type="submit"
             className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-white/85 transition-colors hover:bg-white/20"
-            aria-label="Send"
+            aria-label={t("Send")}
           >
             <Send size={12} strokeWidth={2.4} />
           </button>
@@ -155,7 +157,7 @@ export function ChatOverlay({
           className="pointer-events-auto mt-3 inline-flex w-fit items-center gap-1.5 rounded-full border border-white/12 bg-black/45 px-3 py-1.5 text-[11.5px] font-semibold uppercase tracking-[0.18em] text-white/65 backdrop-blur-md transition-colors hover:bg-black/65 hover:text-white"
         >
           <MessageCircle size={11} strokeWidth={2.4} />
-          Press T
+          {t("Press T")}
         </button>
       )}
     </div>
@@ -180,7 +182,7 @@ function Bubble({
     return (
       <div
         className={`pointer-events-auto flex max-w-full ${isSelf ? "self-end" : ""}`}
-        style={{ marginTop: 2, paddingLeft: isSelf ? 0 : 32 }}
+        style={{ marginTop: 2, paddingInlineStart: isSelf ? 0 : 32 }}
       >
         <span className="break-words rounded-2xl border border-white/10 bg-black/55 px-3 py-1.5 text-[13.5px] leading-snug text-white backdrop-blur-xl">
           {message.text}

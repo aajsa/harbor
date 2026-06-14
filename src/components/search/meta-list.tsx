@@ -27,7 +27,7 @@ export function MetaList({
               openMeta(m);
               onClose();
             }}
-            className="group flex items-center gap-4 rounded-2xl border border-transparent px-3 py-2.5 text-left transition-colors hover:border-edge-soft hover:bg-elevated/50 active:scale-[0.997]"
+            className="group flex items-center gap-4 rounded-2xl border border-transparent px-3 py-2.5 text-start transition-colors hover:border-edge-soft hover:bg-elevated/50 active:scale-[0.997]"
           >
             <div className="h-[96px] w-[64px] shrink-0 overflow-hidden rounded-xl shadow-[0_6px_16px_-8px_rgba(0,0,0,0.55)] ring-1 ring-edge-soft">
               <Poster src={m.poster} seed={m.id} ratio="portrait" className="block h-full w-full" />

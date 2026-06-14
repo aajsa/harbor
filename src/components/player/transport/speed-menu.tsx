@@ -1,6 +1,7 @@
 import { Clock, Gauge } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { SLEEP_PRESETS, type SleepTimerState } from "@/views/player/hooks/use-sleep-timer";
+import { useT } from "@/lib/i18n";
 import { Tooltip } from "./tooltip";
 
 function formatRemaining(ms: number): string {
@@ -21,6 +22,7 @@ export function SpeedMenu({
   sleep?: SleepTimerState;
   onOpenChange?: (open: boolean) => void;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -43,16 +45,17 @@ export function SpeedMenu({
     if (sleep.mode.kind === "minutes" && sleep.remainingMs != null) {
       return formatRemaining(sleep.remainingMs);
     }
-    if (sleep.mode.kind === "end_episode") return "End ep";
-    if (sleep.mode.kind === "end_next_episode") return `+${sleep.mode.remaining} ep`;
+    if (sleep.mode.kind === "end_episode") return t("End ep");
+    if (sleep.mode.kind === "end_next_episode")
+      return t("+{n} ep", { n: sleep.mode.remaining });
     return null;
   })();
   return (
     <div ref={wrap} className="relative">
-      <Tooltip label={sleep ? "Speed & sleep" : "Playback speed"}>
+      <Tooltip label={sleep ? t("Speed & sleep") : t("Playback speed")}>
         <button
           onClick={() => setOpen((o) => !o)}
-          aria-label="Speed and sleep timer"
+          aria-label={t("Speed and sleep timer")}
           className={`flex h-11 min-w-11 items-center justify-center gap-1 rounded-full px-2 transition-[background-color,color] ${
             accent ? "bg-white/22 text-white hover:bg-white/30" : "text-white/85 hover:bg-white/10 hover:text-white"
           }`}
@@ -69,17 +72,17 @@ export function SpeedMenu({
         </button>
       </Tooltip>
       {open && (
-        <div className="absolute bottom-[calc(100%+10px)] right-0 w-[400px] max-w-[calc(100vw-32px)] overflow-hidden rounded-2xl border border-edge bg-elevated/97 shadow-[0_24px_60px_-18px_rgba(0,0,0,0.8)] backdrop-blur-xl">
+        <div className="absolute bottom-[calc(100%+10px)] end-0 w-[400px] max-w-[calc(100vw-32px)] overflow-hidden rounded-2xl border border-edge bg-elevated/97 shadow-[0_24px_60px_-18px_rgba(0,0,0,0.8)] backdrop-blur-xl">
           <div className={`grid ${sleep ? "grid-cols-2" : "grid-cols-1"}`}>
-            <Section title="Playback speed">
+            <Section title={t("Playback speed")}>
               {choices.map((r) => {
                 const isSel = Math.abs(r - rate) < 0.01;
                 return (
                   <Row
                     key={r}
                     selected={isSel}
-                    label={r === 1 ? "Normal" : `${r}×`}
-                    hint={r === 1 ? "default" : undefined}
+                    label={r === 1 ? t("Normal") : `${r}×`}
+                    hint={r === 1 ? t("default") : undefined}
                     onClick={() => {
                       onRate(r);
                       setOpen(false);
@@ -89,7 +92,7 @@ export function SpeedMenu({
               })}
             </Section>
             {sleep && (
-              <Section title="Sleep timer" leftBorder>
+              <Section title={t("Sleep timer")} leftBorder>
                 {SLEEP_PRESETS.map((p) => {
                   const isSel =
                     (sleep.mode.kind === "minutes" &&
@@ -104,7 +107,7 @@ export function SpeedMenu({
                     <Row
                       key={p.id}
                       selected={isSel}
-                      label={p.label}
+                      label={t(p.label)}
                       hint={hint}
                       onClick={() => {
                         sleep.set(p.mode);
@@ -119,9 +122,9 @@ export function SpeedMenu({
                       sleep.cancel();
                       setOpen(false);
                     }}
-                    className="mt-1 flex h-10 w-full items-center rounded-lg px-3 text-left text-[14px] font-medium text-danger transition-colors hover:bg-danger/10"
+                    className="mt-1 flex h-10 w-full items-center rounded-lg px-3 text-start text-[14px] font-medium text-danger transition-colors hover:bg-danger/10"
                   >
-                    Cancel timer
+                    {t("Cancel timer")}
                   </button>
                 )}
               </Section>
@@ -143,7 +146,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className={`p-2 ${leftBorder ? "border-l border-edge-soft" : ""}`}>
+    <div className={`p-2 ${leftBorder ? "border-s border-edge-soft" : ""}`}>
       <div className="px-3 pb-1.5 pt-1 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-ink-subtle">
         {title}
       </div>
@@ -166,7 +169,7 @@ function Row({
   return (
     <button
       onClick={onClick}
-      className={`flex h-10 w-full items-center justify-between rounded-lg px-3 text-left text-[14px] transition-colors ${
+      className={`flex h-10 w-full items-center justify-between rounded-lg px-3 text-start text-[14px] transition-colors ${
         selected ? "bg-elevated text-ink ring-1 ring-edge" : "text-ink-muted hover:bg-canvas/55 hover:text-ink"
       }`}
     >

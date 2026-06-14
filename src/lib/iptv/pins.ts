@@ -39,6 +39,14 @@ export function clearPins(): void {
   persist([]);
 }
 
+export function removePinsForSource(sourceId: string): void {
+  if (!sourceId) return;
+  const cur = load();
+  const prefix = `${sourceId}::`;
+  const next = cur.filter((id) => !id.startsWith(prefix));
+  if (next.length !== cur.length) persist(next);
+}
+
 export function usePinnedOrder(): string[] {
   return useSyncExternalStore(
     (cb) => {

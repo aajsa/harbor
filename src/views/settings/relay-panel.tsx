@@ -247,7 +247,7 @@ export function TogetherRelayPanel({
               {testResult.needsUpdate && !isPubRelay && (
                 <button
                   onClick={() => (isManaged ? setShowDeploy(true) : setShowDocs(true))}
-                  className="ml-7 flex h-8 w-fit items-center gap-1.5 rounded-lg bg-ink px-3 text-[11.5px] font-medium text-canvas transition-transform hover:scale-[1.02]"
+                  className="ms-7 flex h-8 w-fit items-center gap-1.5 rounded-lg bg-ink px-3 text-[11.5px] font-medium text-canvas transition-transform hover:scale-[1.02]"
                 >
                   <Power size={12} strokeWidth={2} />
                   {isManaged ? "Redeploy relay" : "Redeploy instructions"}

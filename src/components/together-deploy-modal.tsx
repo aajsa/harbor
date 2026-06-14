@@ -100,9 +100,9 @@ export function TogetherDeployModal({ onClose, inline = false }: { onClose: () =
       {phase !== "deploying" && phase !== "done" && (
         <button
           onClick={onClose}
-          className="flex h-8 w-fit items-center gap-1.5 rounded-lg px-2 -ml-2 text-[12.5px] font-medium text-ink-subtle transition-colors hover:bg-elevated/60 hover:text-ink"
+          className="flex h-8 w-fit items-center gap-1.5 rounded-lg px-2 -ms-2 text-[12.5px] font-medium text-ink-subtle transition-colors hover:bg-elevated/60 hover:text-ink"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden className="dir-icon">
             <path
               d="M15 6l-6 6 6 6"
               stroke="currentColor"
@@ -209,7 +209,7 @@ export function TogetherDeployModal({ onClose, inline = false }: { onClose: () =
                     setAccountId(a.id);
                     setPhase("deploying");
                   }}
-                  className="flex h-12 items-center justify-between rounded-xl border border-edge px-4 text-left text-[14px] text-ink transition-colors hover:bg-elevated"
+                  className="flex h-12 items-center justify-between rounded-xl border border-edge px-4 text-start text-[14px] text-ink transition-colors hover:bg-elevated"
                 >
                   <span>{a.name}</span>
                   <span className="font-mono text-[11px] text-ink-subtle">{a.id.slice(0, 8)}…</span>

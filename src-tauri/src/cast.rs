@@ -14,6 +14,7 @@ use std::sync::Mutex;
 use std::time::Duration;
 
 use crate::airplay;
+use crate::cast_subs::{self, CastSub, CastSubStyle};
 use crate::dlna;
 use crate::roku;
 use crate::stream_proxy::{ProxyState, RegisterArgs};
@@ -368,8 +369,25 @@ pub async fn cast_load(
     headers: Option<std::collections::HashMap<String, String>>,
     transcode: Option<bool>,
     profile: Option<TranscodeProfile>,
+    subtitle: Option<CastSub>,
+    sub_style: Option<CastSubStyle>,
 ) -> Result<(), String> {
     let kind_str = kind.unwrap_or_else(|| "chromecast".into());
+    let req_headers = headers.unwrap_or_default();
+    let burn_sub = match subtitle {
+        Some(ref s) if !s.off => {
+            let style = sub_style.unwrap_or_default();
+            let seek = start_time_sec.unwrap_or(0.0).max(0.0);
+            cast_subs::prepare(s, &style, &url, &req_headers, seek).await
+        }
+        _ => None,
+    };
+    if let Some(ref prepared) = burn_sub {
+        eprintln!(
+            "[harbor::cast] burning subtitle into transcode: {}",
+            prepared.path.display(),
+        );
+    }
     // Auto-remux to MPEGTS for chromecast/dlna casts of MP4/MKV. This is the
     // ONLY way to reliably stream non-faststart MP4s and MKV through these
     // receivers — same approach Plex/Jellyfin/Stremio use. ffmpeg copy mode
@@ -387,10 +405,10 @@ pub async fn cast_load(
         kind_str, url_needs_remux, ffmpeg_available, ffmpeg_path, roku_force_transcode, already_streaming,
     );
     let auto_remux = (url_needs_remux && ffmpeg_available) || roku_force_transcode;
-    let do_transcode = transcode.unwrap_or(false) || auto_remux;
+    let do_transcode = transcode.unwrap_or(false) || auto_remux || burn_sub.is_some();
     eprintln!(
-        "[harbor::cast] load kind={} host={} port={} transcode={} (auto_remux={}) src={}",
-        kind_str, host, port, do_transcode, auto_remux, url,
+        "[harbor::cast] load kind={} host={} port={} transcode={} (auto_remux={} burn_sub={}) src={}",
+        kind_str, host, port, do_transcode, auto_remux, burn_sub.is_some(), url,
     );
     // When auto_remux fires (and the frontend didn't pass a re-encode profile),
     // use copy mode so we just remux to MPEGTS at line rate — no CPU cost.
@@ -405,14 +423,18 @@ pub async fn cast_load(
     } else {
         None
     });
+    let burn_sub_path = burn_sub.as_ref().map(|p| p.path.to_string_lossy().to_string());
+    let burn_sub_style = burn_sub.as_ref().map(|p| p.force_style.clone());
     let proxied = proxy_state
         .register_cast(RegisterArgs {
             url: url.clone(),
-            headers: headers.unwrap_or_default(),
+            headers: req_headers,
             transcode: do_transcode,
             profile: effective_profile,
             target_host: Some(host.clone()),
             start_time_sec,
+            burn_sub_path,
+            burn_sub_style,
         })
         .await;
     eprintln!("[harbor::cast] proxied URL for device: {}", proxied.url);
@@ -735,6 +757,7 @@ pub async fn cast_stop() -> Result<(), String> {
         let mut active = ACTIVE.lock().map_err(|e| format!("lock: {e}"))?;
         active.take()
     };
+    cast_subs::cleanup();
     match session {
         Some(ActiveSession::Dlna { control_url }) => dlna::stop(control_url).await,
         Some(ActiveSession::Roku { ecp_base }) => roku::stop(ecp_base).await,

@@ -1,4 +1,5 @@
 import { Eye, EyeOff, Pencil } from "lucide-react";
+import { useT } from "@/lib/i18n";
 import { BigButton } from "./big-button";
 
 export function DrawToggle({
@@ -12,12 +13,13 @@ export function DrawToggle({
   onToggle: () => void;
   onToggleHideOthers: () => void;
 }) {
+  const t = useT();
   return (
     <div className="flex items-center">
       <BigButton
         onClick={onToggle}
-        ariaLabel={active ? "Stop drawing" : "Draw on screen"}
-        tooltip={active ? "Stop drawing" : "Draw"}
+        ariaLabel={active ? t("Stop drawing") : t("Draw on screen")}
+        tooltip={active ? t("Stop drawing") : t("Draw")}
         active={active}
       >
         <Pencil size={22} strokeWidth={2} />
@@ -25,8 +27,8 @@ export function DrawToggle({
       {active && (
         <BigButton
           onClick={onToggleHideOthers}
-          ariaLabel={hideOthers ? "Show others' drawings" : "Hide others' drawings"}
-          tooltip={hideOthers ? "Show others' drawings" : "Hide others' drawings"}
+          ariaLabel={hideOthers ? t("Show others' drawings") : t("Hide others' drawings")}
+          tooltip={hideOthers ? t("Show others' drawings") : t("Hide others' drawings")}
           active={hideOthers}
         >
           {hideOthers ? <EyeOff size={22} strokeWidth={2} /> : <Eye size={22} strokeWidth={2} />}

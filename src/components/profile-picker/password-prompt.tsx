@@ -28,7 +28,7 @@ export function PasswordPrompt({
             <CatAvatar className="h-full w-full" />
           )}
         </span>
-        <span className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-canvas text-ink shadow-md ring-1 ring-edge">
+        <span className="absolute -bottom-1 -end-1 flex h-7 w-7 items-center justify-center rounded-full bg-canvas text-ink shadow-md ring-1 ring-edge">
           <Lock size={13} strokeWidth={2.4} />
         </span>
       </span>

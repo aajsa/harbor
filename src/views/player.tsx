@@ -105,7 +105,7 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
   const bridgeRef = useRef<PlayerBridge | null>(null);
   const selfFrameReadyRef = useRef(false);
   const { fullscreen, toggleFullscreen } = useFullscreen(stageRef);
-  const { snap, engine, bridgeReady, bridgeKey } = usePlayerBridge({
+  const { snap, engine, bridgeReady, bridgeKey, embedActive } = usePlayerBridge({
     bridgeRef,
     videoMountRef,
     src,
@@ -126,7 +126,7 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
   snapRef.current = snap;
   const [foreignNotice, setForeignNotice] = useState<{ title: string | null; from: string } | null>(null);
   const [hasStarted, setHasStarted] = useState(false);
-  const cast = usePlayerCast({ src, debrids, snapRef, bridgeRef });
+  const cast = usePlayerCast({ src, debrids, snapRef, bridgeRef, settings });
   const [now, setNow] = useState(() => Date.now());
   const { pipMode, togglePipMode, exitPip } = usePipMode({ bridgeRef, setChromeHidden });
   const { slowLoad, transcodedUrl } = useAutoRetry({
@@ -502,7 +502,7 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
 
   const { mpvEmbedWindowsActive, stageBg } = embedFlags(
     engine,
-    settings.playerMpvEmbed,
+    embedActive,
     snap.videoWidth,
     snap.videoHeight,
   );
@@ -549,7 +549,13 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
         videoFillPill={videoFill.pill}
         subDropToast={subDropToast}
       />
-      <CastLayer cast={cast} src={src} durationSec={snap.durationSec} onPickAnother={pickAnother} />
+      <CastLayer
+        cast={cast}
+        src={src}
+        durationSec={snap.durationSec}
+        hasActiveSub={snap.subtitleTracks.some((t) => t.selected)}
+        onPickAnother={pickAnother}
+      />
       <DragClickStage
         drawMode={drawMode}
         pipMode={pipMode}

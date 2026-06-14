@@ -92,6 +92,21 @@ export function clearChannelStats(): void {
   persist({});
 }
 
+export function removeStatsForSource(sourceId: string): void {
+  if (!sourceId) return;
+  const map = load();
+  const next: Record<string, ChannelStat> = {};
+  let changed = false;
+  for (const [id, stat] of Object.entries(map)) {
+    if (stat.sourceId === sourceId || id.startsWith(`${sourceId}::`)) {
+      changed = true;
+      continue;
+    }
+    next[id] = stat;
+  }
+  if (changed) persist(next);
+}
+
 export function useChannelStatsVersion(): number {
   return useSyncExternalStore(
     (cb) => {

@@ -44,7 +44,7 @@ export function Rail({
           >
             {expanded ? "Show less" : `See all (${items.length})`}
             <ChevronRight
-              className={`-mr-0.5 ml-0.5 inline transition-transform ${expanded ? "rotate-90" : ""}`}
+              className={`-me-0.5 ms-0.5 inline transition-transform ${expanded ? "rotate-90" : "rtl:-scale-x-100"}`}
               size={12}
               strokeWidth={2.6}
             />

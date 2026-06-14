@@ -28,10 +28,10 @@ export function UpdateRoot() {
         : "Update ready";
 
   return createPortal(
-    <div className="fixed bottom-5 right-5 z-[120] flex items-center gap-1.5">
+    <div className="fixed bottom-5 end-5 z-[120] flex items-center gap-1.5">
       <button
         onClick={openUpdatePanel}
-        className="group flex h-11 items-center gap-2.5 rounded-full border border-accent/30 bg-elevated pl-3 pr-4 shadow-[0_14px_40px_rgba(0,0,0,0.42)] transition-transform hover:-translate-y-0.5"
+        className="group flex h-11 items-center gap-2.5 rounded-full border border-accent/30 bg-elevated ps-3 pe-4 shadow-[0_14px_40px_rgba(0,0,0,0.42)] transition-transform hover:-translate-y-0.5"
       >
         <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-accent/15 text-accent">
           <ArrowUpCircle size={17} strokeWidth={2.3} />

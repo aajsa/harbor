@@ -3,6 +3,7 @@ import { useTrakt } from "./provider";
 import { TRAKT_API_BASE, TRAKT_API_VERSION, TRAKT_CLIENT_ID } from "./config";
 import { getSession } from "./session";
 import { getPlaybackPosition } from "@/lib/player/playback-clock";
+import { useSettings } from "@/lib/settings";
 import type { PlayerSrc } from "@/lib/view";
 
 type Snap = {
@@ -15,6 +16,9 @@ type LastAction = "start" | "pause" | "stop" | null;
 
 export function useTraktScrobble({ src, snap }: { src: PlayerSrc; snap: Snap }): void {
   const { isConnected, resolveTarget, scrobble } = useTrakt();
+  const { settings } = useSettings();
+  const pauseOnPauseRef = useRef(settings.pauseListStatusOnPause);
+  pauseOnPauseRef.current = settings.pauseListStatusOnPause;
   const lastActionRef = useRef<LastAction>(null);
   const lastKeyRef = useRef<string | null>(null);
 
@@ -35,6 +39,7 @@ export function useTraktScrobble({ src, snap }: { src: PlayerSrc; snap: Snap }):
       if (a.snap.durationSec <= 0) return;
       if (lastActionRef.current !== "start" && lastActionRef.current !== "pause") return;
       const progress = Math.min(100, Math.max(0, (getPlaybackPosition() / a.snap.durationSec) * 100));
+      if (progress < 80 && !pauseOnPauseRef.current) return;
       const action = progress >= 80 ? "stop" : "pause";
       sendBeacon(target, progress, action);
       lastActionRef.current = action;
@@ -47,7 +52,7 @@ export function useTraktScrobble({ src, snap }: { src: PlayerSrc; snap: Snap }):
     if (lastKeyRef.current && lastKeyRef.current !== key) {
       const prevPos = getPlaybackPosition();
       const prevDur = snap.durationSec;
-      if (prevDur > 0) {
+      if (prevDur > 0 && pauseOnPauseRef.current) {
         const progress = Math.min(100, (prevPos / prevDur) * 100);
         scrobble("pause", { metaId, episode: src.episode, progress });
       }
@@ -76,7 +81,9 @@ export function useTraktScrobble({ src, snap }: { src: PlayerSrc; snap: Snap }):
       scrobble("start", { metaId, episode: src.episode, progress });
       lastActionRef.current = "start";
     } else if (snap.status === "paused" && lastActionRef.current === "start") {
-      scrobble("pause", { metaId, episode: src.episode, progress });
+      if (pauseOnPauseRef.current) {
+        scrobble("pause", { metaId, episode: src.episode, progress });
+      }
       lastActionRef.current = "pause";
     }
   }, [
@@ -123,7 +130,9 @@ export function useTraktScrobble({ src, snap }: { src: PlayerSrc; snap: Snap }):
       if (a.snap.durationSec > 0) {
         const progress = Math.min(100, (getPlaybackPosition() / a.snap.durationSec) * 100);
         const action = progress >= 80 ? "stop" : "pause";
-        scrobble(action, { metaId: a.metaId, episode: a.episode, progress });
+        if (action === "stop" || pauseOnPauseRef.current) {
+          scrobble(action, { metaId: a.metaId, episode: a.episode, progress });
+        }
         lastActionRef.current = action;
       } else {
         lastActionRef.current = "pause";

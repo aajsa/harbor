@@ -4,6 +4,7 @@ import { nameColor } from "@/lib/together/colors";
 import { useSelfIdentity } from "@/lib/together/use-self-identity";
 import type { PanelCorner } from "@/lib/player-chrome";
 import type { Participant, ParticipantLocation, SyncState } from "@/lib/together/protocol";
+import { useT } from "@/lib/i18n";
 
 const ACTIVE_THRESHOLD_MS = 18_000;
 
@@ -97,6 +98,7 @@ function Avatar({
   isStale: boolean;
   leftPlayer: boolean;
 }) {
+  const t = useT();
   const { avatar: selfAvatar, color: selfColor } = useSelfIdentity();
   const initial = (participant.name?.[0] ?? "?").toUpperCase();
   const avatarSrc = isSelf ? selfAvatar : participant.avatar ?? null;
@@ -110,11 +112,11 @@ function Avatar({
     <div className="group/avatar pointer-events-auto flex items-center gap-2">
       <span className="hidden whitespace-nowrap rounded-full bg-black/65 px-2.5 py-1 text-[11px] font-medium text-white/90 backdrop-blur-md group-hover/avatar:inline-flex">
         {participant.name}
-        {isSelf && " · you"}
-        {isHost && " · host"}
-        {isStale && " · away"}
-        {isPauser && " · paused"}
-        {leftPlayer && " · left the video"}
+        {isSelf && t(" · you")}
+        {isHost && t(" · host")}
+        {isStale && t(" · away")}
+        {isPauser && t(" · paused")}
+        {leftPlayer && t(" · left the video")}
       </span>
       <span
         aria-label={participant.name}
@@ -158,7 +160,7 @@ function Avatar({
         )}
         {isHost && (
           <span
-            aria-label="Host"
+            aria-label={t("Host")}
             className="pointer-events-none absolute -top-2 -right-1 z-10 inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-300 text-black shadow-[0_2px_6px_rgba(0,0,0,0.45)] ring-2 ring-black/35"
           >
             <Crown size={11} strokeWidth={2.4} fill="currentColor" />

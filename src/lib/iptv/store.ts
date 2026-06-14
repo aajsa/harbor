@@ -1,19 +1,24 @@
 import { filterChannelsForDisplay } from "./divider-filter";
-import { parseM3u } from "./m3u";
+import { loadFromShape } from "./ingest/load";
+import { detectProviderShape } from "./ingest/detect";
 import type { IptvChannel, IptvPlaylist, IptvPlaylistSource } from "./types";
-import { fetchXtreamLiveChannels, parseXtreamUrl, type XtreamCreds } from "./xtream";
-import { fetchXtreamVodAndSeries } from "./xtream-vod";
+import { clearSeriesInfoCache } from "./xtream-vod";
 
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
-const PARSE_LIMIT_BYTES = 80 * 1024 * 1024;
-const CONNECT_TIMEOUT_S = 30;
 
 const cache = new Map<string, IptvPlaylist>();
 const inflight = new Map<string, Promise<IptvPlaylist>>();
 const listeners = new Set<() => void>();
+const vodHydrated = new Set<string>();
 
+let notifyScheduled = false;
 function notify() {
-  listeners.forEach((l) => l());
+  if (notifyScheduled) return;
+  notifyScheduled = true;
+  queueMicrotask(() => {
+    notifyScheduled = false;
+    listeners.forEach((l) => l());
+  });
 }
 
 export function subscribePlaylists(fn: () => void): () => void {
@@ -31,9 +36,13 @@ export function clearPlaylistCache(id?: string) {
   if (id) {
     cache.delete(id);
     vodHydrated.delete(id);
+    inflight.delete(id);
+    clearSeriesInfoCache(id);
   } else {
     cache.clear();
     vodHydrated.clear();
+    inflight.clear();
+    clearSeriesInfoCache();
   }
   notify();
 }
@@ -48,59 +57,43 @@ export async function loadPlaylist(
   }
   const pending = inflight.get(src.id);
   if (pending && !opts?.force) return pending;
-  const promise = fetchAndParse(src);
+  const promise = loadFromShape(src, detectProviderShape(src));
   inflight.set(src.id, promise);
   try {
     const result = await promise;
-    cache.set(src.id, result);
-    notify();
+    if (inflight.get(src.id) === promise) {
+      cache.set(src.id, result);
+      notify();
+    }
     return result;
   } finally {
-    inflight.delete(src.id);
+    if (inflight.get(src.id) === promise) inflight.delete(src.id);
   }
 }
 
-const vodHydrated = new Set<string>();
-
-async function fetchAndParse(src: IptvPlaylistSource): Promise<IptvPlaylist> {
-  const creds = parseXtreamUrl(src.url);
-  if (creds) {
-    try {
-      const live = await fetchXtreamLiveChannels(creds, src.id);
-      if (live.length > 0) {
-        void hydrateXtreamVod(src, creds, live);
-        return shapePlaylist(src, live);
-      }
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      const xtreamFailedSilently = msg.includes("inactive");
-      if (xtreamFailedSilently) throw new Error(msg);
-    }
-  }
-  return fetchViaM3u(src);
+export function markVodHydrated(id: string): boolean {
+  if (vodHydrated.has(id)) return false;
+  vodHydrated.add(id);
+  return true;
 }
 
-async function hydrateXtreamVod(
-  src: IptvPlaylistSource,
-  creds: XtreamCreds,
-  live: IptvChannel[],
-): Promise<void> {
-  if (vodHydrated.has(src.id)) return;
-  vodHydrated.add(src.id);
-  try {
-    const vod = await fetchXtreamVodAndSeries(creds, src.id);
-    if (vod.length === 0) return;
-    cache.set(src.id, shapePlaylist(src, [...live, ...vod]));
-    notify();
-  } catch {
-    vodHydrated.delete(src.id);
-  }
+export function unmarkVodHydrated(id: string): void {
+  vodHydrated.delete(id);
 }
 
-async function fetchViaM3u(src: IptvPlaylistSource): Promise<IptvPlaylist> {
+export function commitHydratedPlaylist(src: IptvPlaylistSource, channels: IptvChannel[]): void {
+  if (!cache.has(src.id)) return;
+  cache.set(src.id, shapePlaylist(src, channels));
+  notify();
+}
+
+const CONNECT_TIMEOUT_S = 30;
+const PARSE_LIMIT_BYTES = 80 * 1024 * 1024;
+
+export async function fetchM3uText(url: string): Promise<string> {
   let res: Response;
   try {
-    res = await iptvFetch(src.url);
+    res = await iptvFetch(url);
   } catch (e) {
     throw new Error(networkErrorMessage(e));
   }
@@ -119,7 +112,7 @@ async function fetchViaM3u(src: IptvPlaylistSource): Promise<IptvPlaylist> {
   if (text.length > PARSE_LIMIT_BYTES) {
     throw new Error(`Playlist is too large (${(text.length / 1024 / 1024).toFixed(1)} MB). 80 MB limit.`);
   }
-  return parseAndShape(src, text);
+  return text;
 }
 
 async function iptvFetch(url: string): Promise<Response> {
@@ -138,7 +131,12 @@ async function iptvFetch(url: string): Promise<Response> {
     } catch (e) {
       if (!/scope|not allowed/i.test(String(e))) throw e;
       const { safeFetch } = await import("@/lib/safe-fetch");
-      return safeFetch(url);
+      return safeFetch(url, {
+        headers: {
+          "User-Agent": "VLC/3.0.20 LibVLC/3.0.20",
+          Accept: "audio/x-mpegurl, application/x-mpegURL, application/octet-stream, */*",
+        },
+      });
     }
   }
   return fetch(url, { cache: "no-store" });
@@ -181,19 +179,7 @@ function networkErrorMessage(e: unknown): string {
   return `Network error: ${raw}`;
 }
 
-function parseAndShape(src: IptvPlaylistSource, text: string): IptvPlaylist {
-  if (!text || !text.includes("#EXTM3U")) {
-    const preview = text.slice(0, 120).replace(/\s+/g, " ");
-    throw new Error(`Server response was not an M3U playlist. Got: ${preview || "(empty)"}`);
-  }
-  const channels = parseM3u(text, src.id);
-  if (channels.length === 0) {
-    throw new Error("Playlist parsed but contained no channels.");
-  }
-  return shapePlaylist(src, channels);
-}
-
-function shapePlaylist(src: IptvPlaylistSource, channels: IptvChannel[]): IptvPlaylist {
+export function shapePlaylist(src: IptvPlaylistSource, channels: IptvChannel[]): IptvPlaylist {
   const cleaned = filterChannelsForDisplay(channels);
   return {
     id: src.id,

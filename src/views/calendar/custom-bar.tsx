@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { MOVIE_GENRES, TV_GENRES } from "@/lib/feed/tags";
 import { searchAll, type SearchPerson } from "@/lib/search";
 import type { Settings } from "@/lib/settings";
+import { useT } from "@/lib/i18n";
 import traktLogo from "@/assets/trakt.svg";
 
 const WATCH_PROVIDERS: Array<{ id: number; name: string }> = [
@@ -49,6 +50,7 @@ export function CustomCalendarBar({
   value: CustomCalendar;
   onChange: (next: CustomCalendar) => void;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -109,15 +111,29 @@ export function CustomCalendarBar({
 
   const summary = (() => {
     const bits: string[] = [];
-    if (value.trackedPeople.length) bits.push(`${value.trackedPeople.length} people`);
-    if (value.genres.length) bits.push(`${value.genres.length} genre${value.genres.length === 1 ? "" : "s"}`);
+    if (value.trackedPeople.length)
+      bits.push(t("{n} people", { n: value.trackedPeople.length }));
+    if (value.genres.length)
+      bits.push(
+        value.genres.length === 1
+          ? t("{n} genre", { n: value.genres.length })
+          : t("{n} genres", { n: value.genres.length }),
+      );
     if (value.watchProviders.length)
-      bits.push(`${value.watchProviders.length} provider${value.watchProviders.length === 1 ? "" : "s"}`);
+      bits.push(
+        value.watchProviders.length === 1
+          ? t("{n} provider", { n: value.watchProviders.length })
+          : t("{n} providers", { n: value.watchProviders.length }),
+      );
     if (value.originCountries.length)
-      bits.push(`${value.originCountries.length} ${value.originCountries.length === 1 ? "country" : "countries"}`);
-    if (value.includeTraktAnticipated) bits.push("Anticipated");
-    if (value.includeTraktWatchlist) bits.push("Watchlist");
-    if (bits.length === 0) return "Empty — click to add filters";
+      bits.push(
+        value.originCountries.length === 1
+          ? t("{n} country", { n: value.originCountries.length })
+          : t("{n} countries", { n: value.originCountries.length }),
+      );
+    if (value.includeTraktAnticipated) bits.push(t("Anticipated"));
+    if (value.includeTraktWatchlist) bits.push(t("Watchlist"));
+    if (bits.length === 0) return t("Empty — click to add filters");
     return bits.join(" · ");
   })();
 
@@ -128,7 +144,7 @@ export function CustomCalendarBar({
         className="flex items-center gap-2 rounded-full border border-edge-soft bg-elevated/40 px-4 py-1.5 text-[12.5px] font-medium text-ink-muted transition-colors hover:border-edge hover:text-ink"
       >
         <UserPlus size={13} strokeWidth={2.2} />
-        <span className="text-ink">Manage</span>
+        <span className="text-ink">{t("Manage")}</span>
         <span className="text-ink-subtle">·</span>
         <span className="truncate max-w-[260px]">{summary}</span>
       </button>
@@ -178,6 +194,7 @@ function CustomManager({
   onToggleCountry: (code: string) => void;
   onClose: () => void;
 }) {
+  const t = useT();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchPerson[]>([]);
   const [busy, setBusy] = useState(false);
@@ -190,7 +207,7 @@ function CustomManager({
     }
     let cancelled = false;
     setBusy(true);
-    const t = window.setTimeout(async () => {
+    const handle = window.setTimeout(async () => {
       try {
         const r = await searchAll(tmdbKey, q);
         if (!cancelled) setResults(r.people.slice(0, 8));
@@ -200,7 +217,7 @@ function CustomManager({
     }, 220);
     return () => {
       cancelled = true;
-      window.clearTimeout(t);
+      window.clearTimeout(handle);
     };
   }, [query, tmdbKey]);
 
@@ -215,16 +232,18 @@ function CustomManager({
         <header className="flex shrink-0 items-start justify-between gap-3 border-b border-edge-soft px-7 py-5">
           <div className="flex flex-col gap-1">
             <h2 className="font-display text-[22px] font-medium leading-none tracking-tight text-ink">
-              Custom calendar
+              {t("Custom calendar")}
             </h2>
             <p className="text-[13px] text-ink-muted">
-              Pick what you want in your calendar. Mix and match: tracked people, genres, streamers, countries, Trakt lists.
+              {t(
+                "Pick what you want in your calendar. Mix and match: tracked people, genres, streamers, countries, Trakt lists.",
+              )}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t("Close")}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-subtle transition-colors hover:bg-canvas/70 hover:text-ink"
           >
             <X size={15} strokeWidth={2.2} />
@@ -232,35 +251,35 @@ function CustomManager({
         </header>
         <div className="flex flex-col gap-6 overflow-y-auto px-7 py-6">
 
-      <Section title="What to include">
+      <Section title={t("What to include")}>
         <div className="flex flex-wrap gap-2">
           <PillToggle
             on={value.mediaTypes.movie}
             onClick={() => onToggleMediaType("movie")}
             icon={<Film size={12} strokeWidth={2.2} />}
-            label="Movies"
+            label={t("Movies")}
           />
           <PillToggle
             on={value.mediaTypes.tv}
             onClick={() => onToggleMediaType("tv")}
             icon={<Tv2 size={12} strokeWidth={2.2} />}
-            label="Series"
+            label={t("Series")}
           />
           <PillToggle
             on={value.mediaTypes.anime}
             onClick={() => onToggleMediaType("anime")}
             icon={<Sparkles size={12} strokeWidth={2.2} />}
-            label="Anime"
+            label={t("Anime")}
           />
         </div>
       </Section>
 
-      <Section title="Genres">
+      <Section title={t("Genres")}>
         <ChipMultiselect
           items={[
             ...Object.entries(MOVIE_GENRES).map(([name, id]) => ({
               key: `movie:${id}`,
-              label: name,
+              label: t(name),
               selected: value.genres.some((g) => g.id === id && g.mediaType === "movie"),
               onToggle: () => onToggleGenre({ id, name, mediaType: "movie" }),
             })),
@@ -268,7 +287,7 @@ function CustomManager({
               .filter(([name]) => !(name in MOVIE_GENRES))
               .map(([name, id]) => ({
                 key: `tv:${id}`,
-                label: name + " (TV)",
+                label: t("{name} (TV)", { name: t(name) }),
                 selected: value.genres.some((g) => g.id === id && g.mediaType === "tv"),
                 onToggle: () => onToggleGenre({ id, name, mediaType: "tv" }),
               })),
@@ -276,7 +295,7 @@ function CustomManager({
         />
       </Section>
 
-      <Section title="Where to watch">
+      <Section title={t("Where to watch")}>
         <ChipMultiselect
           items={WATCH_PROVIDERS.map((p) => ({
             key: `prov:${p.id}`,
@@ -287,28 +306,32 @@ function CustomManager({
         />
       </Section>
 
-      <Section title="Origin country" icon={<Globe2 size={11} strokeWidth={2.2} />}>
+      <Section title={t("Origin country")} icon={<Globe2 size={11} strokeWidth={2.2} />}>
         <ChipMultiselect
           items={COUNTRIES.map((c) => ({
             key: `cn:${c.code}`,
-            label: c.name,
+            label: t(c.name),
             selected: value.originCountries.includes(c.code),
             onToggle: () => onToggleCountry(c.code),
           }))}
         />
       </Section>
 
-      <Section title="Trakt sources">
+      <Section title={t("Trakt sources")}>
         <ToggleRow
-          label="Trakt anticipated"
-          sub="Most-anticipated upcoming releases on Trakt"
+          label={t("Trakt anticipated")}
+          sub={t("Most-anticipated upcoming releases on Trakt")}
           on={value.includeTraktAnticipated}
           onToggle={() => onToggleSource("includeTraktAnticipated")}
           icon={<img src={traktLogo} alt="" className="h-3.5 w-3.5" />}
         />
         <ToggleRow
-          label="My Trakt watchlist"
-          sub={traktConnected ? "Upcoming items from your watchlist" : "Connect Trakt in settings first"}
+          label={t("My Trakt watchlist")}
+          sub={
+            traktConnected
+              ? t("Upcoming items from your watchlist")
+              : t("Connect Trakt in settings first")
+          }
           on={value.includeTraktWatchlist}
           onToggle={() => traktConnected && onToggleSource("includeTraktWatchlist")}
           disabled={!traktConnected}
@@ -316,14 +339,16 @@ function CustomManager({
         />
       </Section>
 
-      <Section title={`Track people (${value.trackedPeople.length})`}>
+      <Section title={t("Track people ({n})", { n: value.trackedPeople.length })}>
         <div className="flex h-10 items-center gap-2 rounded-xl border border-edge bg-canvas px-3">
           <Search size={13} className="text-ink-subtle" strokeWidth={2} />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={tmdbKey ? "Search actors, directors…" : "Add a TMDB key in settings first"}
+            placeholder={
+              tmdbKey ? t("Search actors, directors…") : t("Add a TMDB key in settings first")
+            }
             disabled={!tmdbKey}
             className="h-full flex-1 bg-transparent text-[13px] text-ink placeholder:text-ink-subtle outline-none"
           />
@@ -343,7 +368,7 @@ function CustomManager({
                     setQuery("");
                     setResults([]);
                   }}
-                  className="flex w-full items-center gap-2.5 border-b border-edge-soft/50 px-3 py-2 text-left text-[12.5px] last:border-b-0 hover:bg-elevated disabled:opacity-50"
+                  className="flex w-full items-center gap-2.5 border-b border-edge-soft/50 px-3 py-2 text-start text-[12.5px] last:border-b-0 hover:bg-elevated disabled:opacity-50"
                 >
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-elevated text-ink-subtle">
                     {p.profile ? (
@@ -362,7 +387,7 @@ function CustomManager({
                     <span className="block truncate text-[11px] text-ink-subtle">{p.knownFor}</span>
                   </span>
                   {tracked ? (
-                    <span className="text-[10.5px] uppercase tracking-[0.14em] text-ink-subtle">added</span>
+                    <span className="text-[10.5px] uppercase tracking-[0.14em] text-ink-subtle">{t("added")}</span>
                   ) : (
                     <Plus size={13} className="text-ink-subtle" />
                   )}
@@ -394,7 +419,7 @@ function CustomManager({
                 <button
                   type="button"
                   onClick={() => onRemovePerson(p.id)}
-                  aria-label={`Remove ${p.name}`}
+                  aria-label={t("Remove {name}", { name: p.name })}
                   className="flex h-7 w-7 items-center justify-center rounded-full text-ink-subtle transition-colors hover:bg-danger/15 hover:text-danger"
                 >
                   <Trash2 size={12} strokeWidth={1.9} />
@@ -502,7 +527,7 @@ function ToggleRow({
       type="button"
       onClick={onToggle}
       disabled={disabled}
-      className={`flex items-center gap-3 rounded-xl border px-3.5 py-2.5 text-left transition-colors ${
+      className={`flex items-center gap-3 rounded-xl border px-3.5 py-2.5 text-start transition-colors ${
         disabled
           ? "cursor-not-allowed border-edge-soft/40 opacity-60"
           : "border-edge-soft hover:border-edge"
@@ -519,7 +544,7 @@ function ToggleRow({
       >
         <span
           className={`absolute top-0.5 h-4 w-4 rounded-full bg-canvas transition-transform ${
-            on ? "translate-x-[18px]" : "translate-x-0.5"
+            on ? "translate-x-[18px] rtl:-translate-x-[18px]" : "translate-x-0.5 rtl:-translate-x-0.5"
           }`}
         />
       </span>

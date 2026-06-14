@@ -33,7 +33,7 @@ export function AnimeRow({ items, onClose }: { items: AnimeHit[]; onClose: () =>
           <button
             key={hit.malId}
             onClick={() => open(hit)}
-            className="group flex items-start gap-3 rounded-xl border border-edge-soft/60 bg-elevated/40 p-2.5 text-left transition-colors hover:border-edge hover:bg-elevated"
+            className="group flex items-start gap-3 rounded-xl border border-edge-soft/60 bg-elevated/40 p-2.5 text-start transition-colors hover:border-edge hover:bg-elevated"
           >
             <span className="flex h-[88px] w-[60px] shrink-0 overflow-hidden rounded-md bg-canvas">
               {hit.poster ? (

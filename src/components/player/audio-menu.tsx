@@ -5,6 +5,7 @@ import { Flag } from "@/components/flag";
 import type { TrackInfo } from "@/lib/player/bridge";
 import { modalOverlayClose, modalOverlayEmitState, modalOverlayOpen } from "@/lib/modal-overlay";
 import { languageName } from "@/lib/subtitles/language";
+import { useT } from "@/lib/i18n";
 import { Tooltip } from "./transport/tooltip";
 
 type Props = {
@@ -28,6 +29,7 @@ function buildAudioOverlayState(props: Props) {
 }
 
 export function AudioMenu(props: Props) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [forceInline, setForceInline] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
@@ -101,11 +103,11 @@ export function AudioMenu(props: Props) {
 
   return (
     <div ref={wrap} className="relative">
-      <Tooltip label="Audio tracks">
+      <Tooltip label={t("Audio tracks")}>
         <button
           type="button"
           onClick={handleClick}
-          aria-label="Audio"
+          aria-label={t("Audio")}
           className={`flex h-12 w-12 items-center justify-center rounded-full transition-colors ${
             open ? "bg-white/22 text-white" : "text-white/85 hover:bg-white/10 hover:text-white"
           }`}
@@ -114,7 +116,7 @@ export function AudioMenu(props: Props) {
         </button>
       </Tooltip>
       {open && (forceInline || !useOverlay) && (
-        <div className="absolute bottom-[calc(100%+10px)] right-0 flex max-h-[400px] w-[360px] max-w-[calc(100vw-32px)] flex-col overflow-hidden rounded-2xl border border-edge bg-elevated/97 shadow-[0_24px_60px_-18px_rgba(0,0,0,0.8)] backdrop-blur-xl">
+        <div className="absolute bottom-[calc(100%+10px)] end-0 flex max-h-[400px] w-[360px] max-w-[calc(100vw-32px)] flex-col overflow-hidden rounded-2xl border border-edge bg-elevated/97 shadow-[0_24px_60px_-18px_rgba(0,0,0,0.8)] backdrop-blur-xl">
           <AudioMenuBody {...props} onClose={() => setOpen(false)} />
         </div>
       )}
@@ -127,19 +129,20 @@ export function AudioMenuBody(props: Props & { onClose: () => void }) {
 }
 
 function MenuBody(props: Props & { onClose: () => void }) {
+  const t = useT();
   const { tracks, selectedId, onSelect, onClose, delaySec, onDelay, engine } = props;
   return (
     <div className="flex h-full flex-col overflow-hidden">
       <header className="flex items-center justify-between border-b border-edge-soft px-4 py-2.5">
         <div className="flex items-center gap-2.5">
-          <span className="text-[13.5px] font-semibold text-ink">Audio</span>
+          <span className="text-[13.5px] font-semibold text-ink">{t("Audio")}</span>
           {tracks.length > 0 && (
             <span className="text-[11.5px] tabular-nums text-ink-subtle">{tracks.length}</span>
           )}
         </div>
         <button
           onClick={onClose}
-          aria-label="Close"
+          aria-label={t("Close")}
           className="flex h-7 w-7 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-raised hover:text-ink"
         >
           <X size={13} strokeWidth={2.2} />
@@ -174,12 +177,15 @@ function TrackSection({
   engine: "html5" | "mpv";
   onSelect: (id: string) => void;
 }) {
+  const tr = useT();
   if (tracks.length === 0) {
     return (
       <div className="px-3 py-4 text-[12.5px] leading-relaxed text-ink-muted">
         {engine === "mpv"
-          ? "This file has one audio track."
-          : "Track switching isn't supported on the current engine. The file's default audio is playing."}
+          ? tr("This file has one audio track.")
+          : tr(
+              "Track switching isn't supported on the current engine. The file's default audio is playing.",
+            )}
       </div>
     );
   }
@@ -191,7 +197,7 @@ function TrackSection({
           <button
             key={t.id}
             onClick={() => onSelect(t.id)}
-            className={`flex items-start gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors ${
+            className={`flex items-start gap-2.5 rounded-lg px-2.5 py-2 text-start transition-colors ${
               isSel ? "bg-elevated ring-1 ring-edge" : "hover:bg-canvas/55"
             }`}
           >
@@ -210,10 +216,10 @@ function TrackSection({
             )}
             <div className="flex min-w-0 flex-1 flex-col gap-0.5">
               <span className="truncate text-[12.5px] font-medium leading-snug text-ink">
-                {trackTitle(t)}
+                {trackTitle(t, tr)}
               </span>
               <span className="truncate text-[10.5px] uppercase tracking-[0.1em] text-ink-subtle">
-                {trackSubtitle(t)}
+                {trackSubtitle(t, tr)}
               </span>
             </div>
           </button>
@@ -223,18 +229,18 @@ function TrackSection({
   );
 }
 
-function trackTitle(t: TrackInfo): string {
+function trackTitle(t: TrackInfo, tr: (key: string) => string): string {
   if (t.title && t.title.trim() && t.title !== t.lang) return t.title;
   if (t.lang) return languageName(t.lang);
-  return t.label || "Track";
+  return t.label || tr("Track");
 }
 
-function trackSubtitle(t: TrackInfo): string {
+function trackSubtitle(t: TrackInfo, tr: (key: string) => string): string {
   const parts: string[] = [];
   if (t.lang) parts.push(languageName(t.lang));
   if (t.codec) parts.push(t.codec);
   if (t.channels) parts.push(t.channels);
-  if (t.default) parts.push("Default");
+  if (t.default) parts.push(tr("Default"));
   return parts.filter(Boolean).join(" · ");
 }
 
@@ -247,6 +253,7 @@ function DelayRow({
   onDelay: (sec: number) => void;
   disabled: boolean;
 }) {
+  const tr = useT();
   const round = (v: number) => Math.round(v * 100) / 100;
   return (
     <div
@@ -255,7 +262,7 @@ function DelayRow({
       }`}
     >
       <span className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
-        Sync
+        {tr("Sync")}
       </span>
       <button
         disabled={disabled}
@@ -278,7 +285,7 @@ function DelayRow({
       {delay !== 0 && !disabled && (
         <button
           onClick={() => onDelay(0)}
-          aria-label="Reset sync"
+          aria-label={tr("Reset sync")}
           className="flex h-6 w-6 items-center justify-center rounded text-ink-subtle transition-colors hover:bg-raised hover:text-ink"
         >
           <RotateCcw size={11} strokeWidth={2.2} />

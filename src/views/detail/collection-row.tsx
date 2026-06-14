@@ -41,13 +41,13 @@ export function CollectionRow({
       title={
         <button
           onClick={() => openCollection(collection.id)}
-          className="group inline-flex items-center gap-1.5 text-left transition-colors hover:text-ink"
+          className="group inline-flex items-center gap-1.5 text-start transition-colors hover:text-ink"
         >
           {collection.name}
           <ChevronRight
             size={18}
             strokeWidth={2.4}
-            className="text-ink-subtle transition-transform group-hover:translate-x-0.5"
+            className="dir-icon text-ink-subtle transition-transform group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5"
           />
         </button>
       }

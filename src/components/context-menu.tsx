@@ -410,7 +410,7 @@ function Item({
       role="menuitem"
       onClick={onClick}
       disabled={disabled}
-      className={`flex h-9 items-center gap-2.5 rounded-lg px-3 text-left text-[13px] transition-colors ${
+      className={`flex h-9 items-center gap-2.5 rounded-lg px-3 text-start text-[13px] transition-colors ${
         disabled
           ? "cursor-not-allowed text-ink-subtle/55"
           : accent

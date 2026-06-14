@@ -19,7 +19,7 @@ export function AddonHits({ hits, onClose }: { hits: AddonHit[]; onClose: () => 
               openAddonDetail(a.id);
               onClose();
             }}
-            className="group flex items-center gap-4 rounded-2xl border border-transparent px-3 py-2.5 text-left transition-colors hover:border-edge-soft hover:bg-elevated/50 active:scale-[0.997]"
+            className="group flex items-center gap-4 rounded-2xl border border-transparent px-3 py-2.5 text-start transition-colors hover:border-edge-soft hover:bg-elevated/50 active:scale-[0.997]"
           >
             <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-elevated ring-1 ring-edge-soft">
               {a.logo ? (
@@ -42,7 +42,7 @@ export function AddonHits({ hits, onClose }: { hits: AddonHit[]; onClose: () => 
                 <span className="line-clamp-1 text-[12.5px] leading-snug text-ink-subtle">{a.blurb}</span>
               )}
             </div>
-            <ChevronRight size={18} className="shrink-0 text-ink-subtle transition-transform group-hover:translate-x-0.5" />
+            <ChevronRight size={18} className="dir-icon shrink-0 text-ink-subtle transition-transform group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5" />
           </button>
         ))}
       </div>

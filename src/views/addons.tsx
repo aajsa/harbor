@@ -284,8 +284,8 @@ export function AddonsView() {
         onPass={() => update({ showAdultAddons: true })}
       />
       <header className="shrink-0 px-12 pt-20 pb-3">
-        <div className="flex items-center gap-6">
-          <nav className="flex items-center gap-1">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+          <nav className="flex flex-wrap items-center gap-1">
             {(["discover", "browse", "installed"] as Tab[]).map((t) => {
               const active = tab === t;
               if (t === "installed") {
@@ -340,9 +340,9 @@ export function AddonsView() {
               return <span key={t}>{btn}</span>;
             })}
           </nav>
-          <div className="flex flex-1 items-center gap-3">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
             <SearchBar value={query} onChange={setQuery} />
-            <div className="flex-1">
+            <div className="min-w-[180px] flex-1">
               <AddByUrlBar onSubmit={async (raw) => { setInstallModal({ kind: "install", url: raw }); }} compact />
             </div>
             <button

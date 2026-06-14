@@ -17,7 +17,7 @@ export function DiagnosticsCard({ diag }: { diag: Diagnostics | null }) {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center gap-3 px-4 py-3 text-left"
+        className="flex w-full items-center gap-3 px-4 py-3 text-start"
       >
         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-elevated text-ink-muted">
           <ShieldCheck size={14} strokeWidth={1.9} />
@@ -26,7 +26,7 @@ export function DiagnosticsCard({ diag }: { diag: Diagnostics | null }) {
           <span className="text-[12px] font-semibold text-ink">What gets sent</span>
           <span className="truncate text-[11.5px] text-ink-subtle">{compact}</span>
         </div>
-        <span className="ml-auto text-ink-subtle">
+        <span className="ms-auto text-ink-subtle">
           {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
         </span>
       </button>

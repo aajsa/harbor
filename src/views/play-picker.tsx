@@ -70,7 +70,7 @@ export function PlayPicker({
   const resolvedImdb = useImdbId(meta, settings.tmdbKey);
   const imdbId = resolvedImdb.id;
   const streamIds = useStreamIds(meta, episode, imdbId);
-  const { addons, userHasStreamAddons } = useAddons(authKey, settings);
+  const { addons } = useAddons(authKey, settings);
   const [resolving, setResolving] = useState<{ stream: ScoredStream } | null>(null);
   const [failedStreams, setFailedStreams] = useState<Set<ScoredStream>>(new Set());
   const [selectedTier, setSelectedTier] = useState<Tier | null>(null);
@@ -402,7 +402,7 @@ export function PlayPicker({
   void terminalEmpty;
 
   const noSourcesConfigured =
-    addons !== null && !userHasStreamAddons && debrids.length === 0;
+    addons !== null && addons.length === 0 && debrids.length === 0;
 
   if (noSourcesConfigured) {
     return <NoSourcesConfiguredModal meta={meta} />;

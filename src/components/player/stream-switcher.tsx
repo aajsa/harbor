@@ -14,6 +14,7 @@ import { buildMatchScores, matchBadge } from "@/lib/together/source-match";
 import { addonInstanceKey, buildAddonOptions } from "@/views/play-picker/picker-utils";
 import type { Meta } from "@/lib/cinemeta";
 import type { PlayEpisode } from "@/lib/view";
+import { useT } from "@/lib/i18n";
 import { AddonFilterMenu, QualityFilterMenu } from "./stream-switcher/filter-dropdowns";
 import { abbreviateLanguages, normalizeLangCode, streamMatchesLangs } from "./stream-switcher/lang-utils";
 import { QUALITY_BADGE, QUALITY_LABEL, QUALITY_ORDER, qualityKey, type QualityKey } from "./stream-switcher/quality";
@@ -46,6 +47,7 @@ export function StreamSwitcher({
   episode?: PlayEpisode;
   hostSource?: SourceDescriptor | null;
 }) {
+  const t = useT();
   const { authKey } = useAuth();
   const { settings } = useSettings();
   const baseLangs = settings.preferredLanguages ?? [];
@@ -219,7 +221,7 @@ export function StreamSwitcher({
   const hiddenCount = addonFilteredList.length - matchedStreams.length;
   const uncachedHidden = allStreams.length - cachedStreams.length;
   const activeAddonName =
-    addonFilter === "all" ? "All addons" : addonOptions.find((o) => o.id === addonFilter)?.name ?? addonFilter;
+    addonFilter === "all" ? t("All addons") : addonOptions.find((o) => o.id === addonFilter)?.name ?? addonFilter;
   void cache?.meta.name;
   void cache?.episode;
 
@@ -236,15 +238,15 @@ export function StreamSwitcher({
         <header className="flex items-center justify-between gap-4 border-b border-edge-soft px-6 py-4">
           <div className="flex flex-col gap-0.5">
             <span className="text-[11px] font-bold uppercase tracking-[0.28em] text-ink-subtle">
-              Switch stream
+              {t("Switch stream")}
             </span>
             <span className="text-[14px] font-medium text-ink">
-              {cache ? `${list.length} sources available` : "No sources cached"}
+              {cache ? t("{n} sources available", { n: list.length }) : t("No sources cached")}
             </span>
           </div>
           <div className="flex items-center gap-2">
             {rejectedStreams.length > 0 && (
-              <Tooltip label="Show sources hidden by the trust filter" side="bottom">
+              <Tooltip label={t("Show sources hidden by the trust filter")} side="bottom">
                 <button
                   onClick={() => setShowFiltered((v) => !v)}
                   className={`flex h-9 items-center gap-2 rounded-md px-3.5 text-[11.5px] font-semibold tracking-[0.04em] transition-colors ${
@@ -255,7 +257,7 @@ export function StreamSwitcher({
                   aria-pressed={showFiltered}
                 >
                   <Filter size={11} strokeWidth={2.2} />
-                  {showFiltered ? "Flagged shown" : `Show flagged (${rejectedStreams.length})`}
+                  {showFiltered ? t("Flagged shown") : t("Show flagged ({n})", { n: rejectedStreams.length })}
                 </button>
               </Tooltip>
             )}
@@ -270,7 +272,7 @@ export function StreamSwitcher({
                 aria-pressed={cachedOnly}
               >
                 <Zap size={11} fill={cachedOnly ? "currentColor" : "none"} strokeWidth={2.2} />
-                {cachedOnly ? `Cached only (${uncachedHidden})` : "Cached only"}
+                {cachedOnly ? t("Cached only ({n})", { n: uncachedHidden }) : t("Cached only")}
               </button>
             )}
             {addonOptions.length > 1 && (
@@ -307,14 +309,14 @@ export function StreamSwitcher({
               >
                 <Languages size={13} strokeWidth={2.2} />
                 {filterToPreferred
-                  ? `${abbreviateLanguages(preferredLangs)} only · ${hiddenCount} hidden`
-                  : `Show ${abbreviateLanguages(preferredLangs)} only`}
+                  ? t("{langs} only · {n} hidden", { langs: abbreviateLanguages(preferredLangs), n: hiddenCount })
+                  : t("Show {langs} only", { langs: abbreviateLanguages(preferredLangs) })}
               </button>
             )}
             <button
               onClick={onClose}
               className="flex h-9 w-9 items-center justify-center rounded-md bg-raised text-ink-muted transition-colors hover:bg-elevated hover:text-ink"
-              aria-label="Close"
+              aria-label={t("Close")}
             >
               <X size={16} strokeWidth={2.2} />
             </button>
@@ -325,7 +327,7 @@ export function StreamSwitcher({
 
         {!cache || list.length === 0 ? (
           <div className="flex flex-1 items-center justify-center px-8 py-12 text-center text-[13.5px] text-ink-muted">
-            Sources are not cached for this title. Open the picker page to refresh.
+            {t("Sources are not cached for this title. Open the picker page to refresh.")}
           </div>
         ) : (
           <ul className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-none [&::-webkit-scrollbar-thumb]:border-4 [&::-webkit-scrollbar-thumb]:border-solid [&::-webkit-scrollbar-thumb]:border-transparent [&::-webkit-scrollbar-thumb]:bg-ink/25 [&::-webkit-scrollbar-thumb]:bg-clip-padding [&::-webkit-scrollbar-thumb:hover]:bg-ink/40">
@@ -347,9 +349,9 @@ export function StreamSwitcher({
                   onClick={() => setShowCount((n) => n + 80)}
                   className="flex w-full items-center justify-center gap-2 rounded-md bg-raised px-4 py-2.5 text-[12.5px] font-semibold text-ink-muted transition-colors hover:bg-elevated hover:text-ink"
                 >
-                  Load more
+                  {t("Load more")}
                   <span className="text-[11px] tabular-nums text-ink-subtle">
-                    {list.length - showCount} hidden
+                    {t("{n} hidden", { n: list.length - showCount })}
                   </span>
                 </button>
               </li>
@@ -360,13 +362,13 @@ export function StreamSwitcher({
         <footer className="flex items-center justify-between gap-4 border-t border-edge-soft px-6 py-2.5">
           <span className="flex items-center gap-2 text-[12px] text-ink-subtle">
             <MousePointerClick size={13} strokeWidth={2.2} />
-            Click any source to swap in place
+            {t("Click any source to swap in place")}
           </span>
           <span className="flex items-center gap-1.5 text-[12px] text-ink-subtle">
             <kbd className="inline-flex h-[18px] items-center justify-center rounded-[5px] border border-edge bg-raised px-1.5 font-sans text-[10.5px] font-semibold tracking-normal text-ink-muted">
               Esc
             </kbd>
-            to close
+            {t("to close")}
           </span>
         </footer>
       </div>

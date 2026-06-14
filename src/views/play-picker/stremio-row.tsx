@@ -1,5 +1,6 @@
 import { Play } from "lucide-react";
 import { AddonLogo } from "@/components/addon-logo";
+import { CopyLinkButton, resolveStreamLink } from "@/components/player/copy-link-button";
 import { FormatBadge, streamBadges } from "@/components/format-badge";
 import { HostMatchChip } from "@/components/host-match-chip";
 import type { ScoredStream } from "@/lib/streams/types";
@@ -21,6 +22,7 @@ export function StremioRow({
   const headline = stream.name?.trim() || addonName;
   const description = stream.title?.trim() || stream.description?.trim() || "";
   const badges = streamBadges(stream);
+  const link = resolveStreamLink(stream);
   return (
     <div
       className={`flex items-stretch gap-5 rounded-2xl bg-elevated/40 p-5 ring-1 transition-colors ${
@@ -56,13 +58,16 @@ export function StremioRow({
           <p className="text-[13px] font-medium text-danger">Unavailable, try another.</p>
         )}
       </div>
-      <button
-        onClick={onPlay}
-        aria-label="Play"
-        className="flex h-16 w-16 shrink-0 items-center justify-center self-center rounded-full bg-accent text-canvas transition-transform active:scale-95 hover:opacity-90"
-      >
-        <Play size={26} fill="currentColor" className="ml-0.5" />
-      </button>
+      <div className="flex shrink-0 items-center gap-2 self-center">
+        {link && <CopyLinkButton url={link} size={16} className="h-9 w-9" />}
+        <button
+          onClick={onPlay}
+          aria-label="Play"
+          className="flex h-16 w-16 items-center justify-center rounded-full bg-accent text-canvas transition-transform active:scale-95 hover:opacity-90"
+        >
+          <Play size={26} fill="currentColor" className="ml-0.5" />
+        </button>
+      </div>
     </div>
   );
 }

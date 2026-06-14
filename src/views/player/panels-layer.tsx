@@ -3,6 +3,7 @@ import { ResumePrompt } from "@/components/player/resume-prompt";
 import type { Meta } from "@/lib/cinemeta";
 import type { PanelCorner } from "@/lib/player-chrome";
 import type { PlayEpisode } from "@/lib/view";
+import { useT } from "@/lib/i18n";
 import { HeaderWarning, NoAudioWarning } from "./header-warning";
 
 export function PanelsLayer({
@@ -54,12 +55,13 @@ export function PanelsLayer({
   onDismissNoAudio: () => void;
   onPickAnother: () => void;
 }) {
+  const t = useT();
   return (
     <>
       {upNextButtonVisible && (
         <button
           onClick={onOpenEpisodePanel}
-          aria-label="Up next"
+          aria-label={t("Up next")}
           className={`group absolute top-1/2 z-20 flex h-32 -translate-y-1/2 flex-col items-center justify-center gap-2.5 bg-elevated/95 text-ink ring-1 ring-edge-soft shadow-[0_10px_32px_-10px_rgba(0,0,0,0.6)] backdrop-blur-md transition-[padding,background] duration-200 hover:bg-elevated ${
             episodesCorner === "top-left" || episodesCorner === "bottom-left"
               ? "left-0 rounded-r-2xl pl-2 pr-2.5 hover:pr-3"
@@ -79,7 +81,7 @@ export function PanelsLayer({
             className="text-[11px] font-semibold uppercase tracking-[0.28em]"
             style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}
           >
-            Up Next
+            {t("Up Next")}
           </span>
         </button>
       )}

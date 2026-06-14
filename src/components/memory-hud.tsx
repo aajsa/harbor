@@ -67,7 +67,7 @@ export function MemoryHud() {
 
   return (
     <div
-      className="fixed bottom-3 right-3 z-[9999] flex w-[400px] flex-col gap-2 rounded-xl border border-edge-soft bg-canvas/95 p-3 font-mono text-[11px] text-ink shadow-[0_24px_60px_-20px_rgba(0,0,0,0.6)] backdrop-blur-xl"
+      className="fixed bottom-3 end-3 z-[9999] flex w-[400px] flex-col gap-2 rounded-xl border border-edge-soft bg-canvas/95 p-3 font-mono text-[11px] text-ink shadow-[0_24px_60px_-20px_rgba(0,0,0,0.6)] backdrop-blur-xl"
       style={{ pointerEvents: "auto" }}
     >
       <div className="flex items-center justify-between gap-2">

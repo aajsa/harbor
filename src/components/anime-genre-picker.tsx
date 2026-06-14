@@ -72,7 +72,7 @@ export function AnimeGenrePicker({
           type="button"
           aria-label="Close"
           onClick={onClose}
-          className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full text-ink-subtle transition-colors hover:bg-canvas/60 hover:text-ink"
+          className="absolute end-4 top-4 flex h-9 w-9 items-center justify-center rounded-full text-ink-subtle transition-colors hover:bg-canvas/60 hover:text-ink"
         >
           <X size={16} strokeWidth={2.2} />
         </button>

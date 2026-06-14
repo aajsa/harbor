@@ -1,5 +1,6 @@
 import { Pause, Play } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useT } from "@/lib/i18n";
 import { Tooltip } from "./tooltip";
 import { PiPButton, Scrubber, SpeedPill, VolumeControl, formatTime } from "./trailer-controls";
 
@@ -13,6 +14,7 @@ export function NativeTrailerPlayer({
   src: string;
   videoRef: React.RefObject<HTMLVideoElement | null>;
 }) {
+  const t = useT();
   const ref = videoRef;
   const [playing, setPlaying] = useState(false);
   const [time, setTime] = useState(0);
@@ -270,10 +272,10 @@ export function NativeTrailerPlayer({
           onScrubEnd={() => setScrubbing(false)}
         />
         <div className="mt-5 flex items-center gap-3 text-white">
-          <Tooltip label={playing ? "Pause · Space" : "Play · Space"}>
+          <Tooltip label={playing ? t("Pause · Space") : t("Play · Space")}>
             <button
               onClick={toggle}
-              aria-label={playing ? "Pause" : "Play"}
+              aria-label={playing ? t("Pause") : t("Play")}
               className="flex h-12 w-12 items-center justify-center rounded-md text-white transition-colors hover:bg-white/15 active:scale-95"
             >
               {playing ? (
@@ -283,17 +285,17 @@ export function NativeTrailerPlayer({
               )}
             </button>
           </Tooltip>
-          <Tooltip label={showRemaining ? "Show elapsed time" : "Show remaining time"}>
+          <Tooltip label={showRemaining ? t("Show elapsed time") : t("Show remaining time")}>
             <button
               onClick={() => setShowRemaining((s) => !s)}
-              className="ml-1 font-mono text-[15px] tabular-nums text-white/90 transition-colors hover:text-white"
+              className="ms-1 font-mono text-[15px] tabular-nums text-white/90 transition-colors hover:text-white"
             >
               {timeText}
               <span className="mx-2 text-white/30">/</span>
               <span className="text-white/55">{formatTime(duration)}</span>
             </button>
           </Tooltip>
-          <div className="ml-auto flex items-center gap-1.5">
+          <div className="ms-auto flex items-center gap-1.5">
             <SpeedPill speed={speed} onCycle={cycleSpeed} />
             {pipSupported && <PiPButton active={pipActive} onClick={togglePiP} />}
             <VolumeControl

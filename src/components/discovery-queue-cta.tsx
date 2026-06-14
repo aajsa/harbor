@@ -25,7 +25,7 @@ export function DiscoveryQueueCta({ items }: { items: FeedItem[] }) {
       <button
         type="button"
         onClick={openQueue}
-        className="group relative flex h-[156px] items-stretch overflow-hidden rounded-2xl border border-edge-soft bg-elevated/40 text-left"
+        className="group relative flex h-[156px] items-stretch overflow-hidden rounded-2xl border border-edge-soft bg-elevated/40 text-start"
       >
         <div className="absolute inset-0 grid grid-cols-6 gap-px">
           {peek.map((item, i) => (
@@ -58,7 +58,7 @@ export function DiscoveryQueueCta({ items }: { items: FeedItem[] }) {
             </span>
             <ArrowRight
               size={18}
-              className="shrink-0 text-ink-subtle transition-transform duration-300 group-hover:translate-x-1 group-hover:text-ink"
+              className="dir-icon shrink-0 text-ink-subtle transition-transform duration-300 group-hover:translate-x-1 rtl:group-hover:-translate-x-1 group-hover:text-ink"
             />
           </div>
         </div>

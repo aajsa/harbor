@@ -63,6 +63,25 @@ export const SEED_PRESETS: SubPreset[] = [
       subLineSpacing: 0,
     },
   },
+  {
+    id: "arabic",
+    name: "Arabic",
+    values: {
+      subStyle: "outline",
+      subFontFamily: "arabic",
+      subFontSize: 40,
+      subFontColor: "#FFFFFF",
+      subBorderColor: "#000000",
+      subBorderSize: 2,
+      subMarginY: 14,
+      subAlignX: "center",
+      subAssOverride: "force",
+      subBoxOpacity: 0.6,
+      subBoxColor: "#000000",
+      subOpacity: 1,
+      subLineSpacing: 0,
+    },
+  },
 ];
 
 export function loadSubPresets(): SubPreset[] {

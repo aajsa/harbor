@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Poster } from "@/components/poster";
 import type { CalendarItem } from "@/lib/calendar";
+import { useT } from "@/lib/i18n";
 import { formatDateLong } from "./utils";
 
 export function CalendarChip({
@@ -11,9 +12,10 @@ export function CalendarChip({
   item: CalendarItem;
   onOpen: (item: CalendarItem) => void;
 }) {
+  const t = useT();
   const [hovered, setHovered] = useState(false);
   const ref = useRef<HTMLButtonElement>(null);
-  const tag = item.isAnime ? "Anime" : item.type === "movie" ? "Movie" : "TV";
+  const tag = item.isAnime ? t("Anime") : item.type === "movie" ? t("Movie") : t("TV");
   const tagClass = item.isAnime
     ? "bg-rose-400/20 text-rose-200"
     : item.type === "movie"
@@ -28,7 +30,7 @@ export function CalendarChip({
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className="group relative flex min-w-0 items-center gap-2 rounded-md bg-canvas/50 p-1 pr-2 text-left transition-colors hover:bg-canvas/85"
+      className="group relative flex min-w-0 items-center gap-2 rounded-md bg-canvas/50 p-1 pe-2 text-start transition-colors hover:bg-canvas/85"
     >
       <div className="h-7 w-5 shrink-0 overflow-hidden rounded-[3px] bg-elevated/50">
         {item.poster ? (
@@ -53,6 +55,7 @@ function ChipTooltip({
   item: CalendarItem;
   anchorRef: React.RefObject<HTMLElement | null>;
 }) {
+  const t = useT();
   const tipRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ left: number; top: number; ready: boolean }>({
     left: 0,
@@ -76,7 +79,7 @@ function ChipTooltip({
     setPos({ left, top, ready: true });
   }, [anchorRef, item.id]);
 
-  const tag = item.isAnime ? "Anime" : item.type === "movie" ? "Movie" : "TV";
+  const tag = item.isAnime ? t("Anime") : item.type === "movie" ? t("Movie") : t("TV");
   const dateLabel = formatDateLong(item.releaseDate);
 
   return createPortal(

@@ -111,7 +111,7 @@ export function PinEntry({
           className="flex h-9 items-center gap-1.5 rounded-lg px-2 text-[12.5px] font-medium text-ink-muted transition-colors hover:bg-elevated/40 hover:text-ink"
           aria-label="Back"
         >
-          <ChevronLeft size={14} strokeWidth={2.2} />
+          <ChevronLeft size={14} strokeWidth={2.2} className="dir-icon" />
           Back
         </button>
       </div>

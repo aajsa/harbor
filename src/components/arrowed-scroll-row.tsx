@@ -147,13 +147,13 @@ function Arrow({
       aria-label={`Scroll ${side}`}
       tabIndex={visible ? 0 : -1}
       className={`absolute top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-edge bg-canvas/95 text-ink shadow-[0_8px_24px_-6px_rgba(0,0,0,0.5)] backdrop-blur-md transition-all hover:scale-105 hover:bg-canvas active:scale-95 ${
-        side === "left" ? "left-1" : "right-1"
+        side === "left" ? "start-1" : "end-1"
       } ${visible ? "opacity-100" : "pointer-events-none opacity-0"}`}
     >
       {side === "left" ? (
-        <ChevronLeft size={20} strokeWidth={2.4} />
+        <ChevronLeft size={20} strokeWidth={2.4} className="dir-icon" />
       ) : (
-        <ChevronRight size={20} strokeWidth={2.4} />
+        <ChevronRight size={20} strokeWidth={2.4} className="dir-icon" />
       )}
     </button>
   );

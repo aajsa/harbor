@@ -1,4 +1,4 @@
-import { Check, ChevronDown, ChevronLeft, ChevronRight, Minus, Plus, X } from "lucide-react";
+import { Check, ChevronDown, ChevronLeft, ChevronRight, Layers, Minus, Plus, X } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { ColorPopoverTrigger } from "@/views/settings/color-picker";
@@ -12,6 +12,7 @@ import {
   useStyleBarOpen,
   type SubPreset,
 } from "@/lib/player/sub-presets";
+import { useT } from "@/lib/i18n";
 
 const SWATCHES = ["#FFFFFF", "#FFE45E", "#9AE6B4", "#93C5FD", "#FCA5A5", "#C4B5FD"];
 const IDLE_MS = 7000;
@@ -21,6 +22,7 @@ function clamp(n: number, lo: number, hi: number): number {
 }
 
 export function SubStyleBar() {
+  const t = useT();
   const open = useStyleBarOpen();
   const { settings, update } = useSettings();
 
@@ -57,7 +59,7 @@ export function SubStyleBar() {
     <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex justify-center px-7 pt-[68px] animate-in fade-in slide-in-from-top-2 duration-200">
       <div
         role="toolbar"
-        aria-label="Subtitle appearance"
+        aria-label={t("Subtitle appearance")}
         className="pointer-events-auto flex max-w-[calc(100vw-56px)] items-stretch gap-1.5 overflow-x-auto rounded-[14px] border border-edge bg-elevated/95 px-1.5 py-1.5 shadow-[0_18px_44px_-22px_rgba(0,0,0,0.85)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         <FontMenu value={settings.subFontFamily} fonts={settings.customFonts} onChange={(f) => update({ subFontFamily: f })} />
@@ -72,12 +74,14 @@ export function SubStyleBar() {
         <Divider />
         <PlacementPad settings={settings} update={update} />
         <Divider />
+        <AssOverrideToggle settings={settings} update={update} />
+        <Divider />
         <PresetCluster settings={settings} update={update} />
         <button
           type="button"
           onClick={closeStyleBar}
-          aria-label="Done"
-          className="ml-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] text-ink-subtle transition-colors hover:bg-raised hover:text-ink"
+          aria-label={t("Done")}
+          className="ms-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] text-ink-subtle transition-colors hover:bg-raised hover:text-ink"
         >
           <X size={18} strokeWidth={2.2} />
         </button>
@@ -95,6 +99,7 @@ const BUILT_IN_FONTS: Array<{ id: string; label: string }> = [
   { id: "system", label: "System" },
   { id: "rounded", label: "Rounded" },
   { id: "serif", label: "Serif" },
+  { id: "arabic", label: "Arabic" },
 ];
 
 function FontMenu({
@@ -106,6 +111,7 @@ function FontMenu({
   fonts: Settings["customFonts"];
   onChange: (f: string) => void;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const btnRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -122,8 +128,8 @@ function FontMenu({
     };
     place();
     const onDown = (e: MouseEvent) => {
-      const t = e.target as Node;
-      if (btnRef.current?.contains(t) || menuRef.current?.contains(t)) return;
+      const target = e.target as Node;
+      if (btnRef.current?.contains(target) || menuRef.current?.contains(target)) return;
       setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
@@ -149,7 +155,9 @@ function FontMenu({
         className="flex h-11 min-w-[124px] shrink-0 items-center justify-between gap-2 rounded-[10px] bg-raised px-3 text-[14px] font-semibold text-ink transition-colors hover:bg-elevated"
         style={{ fontFamily: previewFamily(value) }}
       >
-        <span className="truncate">{current.label}</span>
+        <span className="truncate">
+          {current.id.startsWith("custom:") ? current.label : t(current.label)}
+        </span>
         <ChevronDown size={15} className="shrink-0 text-ink-subtle" />
       </button>
       {open &&
@@ -177,12 +185,14 @@ function FontMenu({
                     onChange(it.id);
                     setOpen(false);
                   }}
-                  className={`flex w-full items-center justify-between gap-2 rounded-[9px] px-3 py-2.5 text-left text-[15px] transition-colors ${
+                  className={`flex w-full items-center justify-between gap-2 rounded-[9px] px-3 py-2.5 text-start text-[15px] transition-colors ${
                     active ? "bg-raised text-ink" : "text-ink-muted hover:bg-raised/60 hover:text-ink"
                   }`}
                   style={{ fontFamily: previewFamily(it.id) }}
                 >
-                  <span className="truncate">{it.label}</span>
+                  <span className="truncate">
+                    {it.id.startsWith("custom:") ? it.label : t(it.label)}
+                  </span>
                   {active && <Check size={15} className="shrink-0 text-ink" />}
                 </button>
               );
@@ -196,6 +206,7 @@ function FontMenu({
 }
 
 function SizeStepper({ value, onChange }: { value: number; onChange: (n: number) => void }) {
+  const t = useT();
   const drag = useRef({ active: false, startX: 0, startVal: 0 });
   const onDown = (e: React.PointerEvent) => {
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -211,7 +222,7 @@ function SizeStepper({ value, onChange }: { value: number; onChange: (n: number)
   };
   return (
     <div className="flex h-11 shrink-0 items-stretch gap-px overflow-hidden rounded-[10px] bg-raised">
-      <button aria-label="Smaller" onClick={() => onChange(value - 1)} className="flex w-9 items-center justify-center text-ink-muted transition-colors hover:bg-elevated hover:text-ink">
+      <button aria-label={t("Smaller")} onClick={() => onChange(value - 1)} className="flex w-9 items-center justify-center text-ink-muted transition-colors hover:bg-elevated hover:text-ink">
         <span className="text-[13px] font-bold">A</span>
       </button>
       <button
@@ -223,7 +234,7 @@ function SizeStepper({ value, onChange }: { value: number; onChange: (n: number)
       >
         {value}
       </button>
-      <button aria-label="Larger" onClick={() => onChange(value + 1)} className="flex w-9 items-center justify-center text-ink-muted transition-colors hover:bg-elevated hover:text-ink">
+      <button aria-label={t("Larger")} onClick={() => onChange(value + 1)} className="flex w-9 items-center justify-center text-ink-muted transition-colors hover:bg-elevated hover:text-ink">
         <span className="text-[17px] font-bold">A</span>
       </button>
     </div>
@@ -231,12 +242,13 @@ function SizeStepper({ value, onChange }: { value: number; onChange: (n: number)
 }
 
 function ColorRow({ value, onChange, portal }: { value: string; onChange: (c: string) => void; portal?: boolean }) {
+  const t = useT();
   return (
     <div className="flex h-11 shrink-0 items-center gap-1 rounded-[10px] bg-raised px-1.5">
       {SWATCHES.map((c) => (
         <button
           key={c}
-          aria-label={`Subtitle color ${c}`}
+          aria-label={t("Subtitle color {color}", { color: c })}
           onClick={() => onChange(c)}
           className={`h-6 w-6 rounded-full transition-transform hover:scale-110 ${
             value.toUpperCase() === c ? "ring-2 ring-ink" : "ring-1 ring-edge-soft"
@@ -256,6 +268,7 @@ const OUTLINE_MODES: Array<{ id: "shadow" | "outline" | "box"; label: string }> 
 ];
 
 function OutlineToggle({ settings, update }: { settings: Settings; update: (p: Partial<Settings>) => void }) {
+  const t = useT();
   const idx = Math.max(0, OUTLINE_MODES.findIndex((m) => m.id === settings.subStyle));
   const mode = OUTLINE_MODES[idx];
   return (
@@ -264,14 +277,14 @@ function OutlineToggle({ settings, update }: { settings: Settings; update: (p: P
         onClick={() => update({ subStyle: OUTLINE_MODES[(idx + 1) % OUTLINE_MODES.length].id })}
         className="flex min-w-[78px] items-center justify-center px-3 text-[13px] font-semibold text-ink"
       >
-        {mode.label}
+        {t(mode.label)}
       </button>
       {settings.subStyle === "outline" && (
-        <div className="flex items-stretch border-l border-edge-soft">
-          <button aria-label="Thinner outline" onClick={() => update({ subBorderSize: clamp(settings.subBorderSize - 1, 1, 6) })} className="flex w-7 items-center justify-center text-ink-muted transition-colors hover:bg-elevated hover:text-ink">
+        <div className="flex items-stretch border-s border-edge-soft">
+          <button aria-label={t("Thinner outline")} onClick={() => update({ subBorderSize: clamp(settings.subBorderSize - 1, 1, 6) })} className="flex w-7 items-center justify-center text-ink-muted transition-colors hover:bg-elevated hover:text-ink">
             <Minus size={13} />
           </button>
-          <button aria-label="Thicker outline" onClick={() => update({ subBorderSize: clamp(Math.max(1, settings.subBorderSize) + 1, 1, 6) })} className="flex w-7 items-center justify-center text-ink-muted transition-colors hover:bg-elevated hover:text-ink">
+          <button aria-label={t("Thicker outline")} onClick={() => update({ subBorderSize: clamp(Math.max(1, settings.subBorderSize) + 1, 1, 6) })} className="flex w-7 items-center justify-center text-ink-muted transition-colors hover:bg-elevated hover:text-ink">
             <Plus size={13} />
           </button>
         </div>
@@ -281,15 +294,16 @@ function OutlineToggle({ settings, update }: { settings: Settings; update: (p: P
 }
 
 function SpacingStepper({ value, onChange }: { value: number; onChange: (n: number) => void }) {
+  const t = useT();
   return (
     <div className="flex h-11 shrink-0 items-stretch overflow-hidden rounded-[10px] bg-raised">
-      <button aria-label="Tighter spacing" onClick={() => onChange(value - 1)} className="flex w-9 items-center justify-center text-ink-muted transition-colors hover:bg-elevated hover:text-ink">
+      <button aria-label={t("Tighter spacing")} onClick={() => onChange(value - 1)} className="flex w-9 items-center justify-center text-ink-muted transition-colors hover:bg-elevated hover:text-ink">
         <Minus size={14} />
       </button>
-      <span className="flex min-w-[40px] items-center justify-center font-mono text-[13px] tabular-nums text-ink-muted" title="Letter spacing">
+      <span className="flex min-w-[40px] items-center justify-center font-mono text-[13px] tabular-nums text-ink-muted" title={t("Letter spacing")}>
         {value}
       </span>
-      <button aria-label="Wider spacing" onClick={() => onChange(value + 1)} className="flex w-9 items-center justify-center text-ink-muted transition-colors hover:bg-elevated hover:text-ink">
+      <button aria-label={t("Wider spacing")} onClick={() => onChange(value + 1)} className="flex w-9 items-center justify-center text-ink-muted transition-colors hover:bg-elevated hover:text-ink">
         <Plus size={14} />
       </button>
     </div>
@@ -297,14 +311,15 @@ function SpacingStepper({ value, onChange }: { value: number; onChange: (n: numb
 }
 
 function PlacementPad({ settings, update }: { settings: Settings; update: (p: Partial<Settings>) => void }) {
+  const t = useT();
   const aligns: Array<"left" | "center" | "right"> = ["left", "center", "right"];
   return (
     <div className="flex h-11 shrink-0 items-center gap-1.5 rounded-[10px] bg-raised px-2">
       <div className="flex flex-col">
-        <button aria-label="Raise subtitles" onClick={() => update({ subMarginY: clamp(settings.subMarginY + 2, 0, 40) })} className="flex h-[18px] w-7 items-center justify-center text-ink-muted transition-colors hover:text-ink">
+        <button aria-label={t("Raise subtitles")} onClick={() => update({ subMarginY: clamp(settings.subMarginY + 2, 0, 40) })} className="flex h-[18px] w-7 items-center justify-center text-ink-muted transition-colors hover:text-ink">
           <ChevronLeft size={13} className="rotate-90" />
         </button>
-        <button aria-label="Lower subtitles" onClick={() => update({ subMarginY: clamp(settings.subMarginY - 2, 0, 40) })} className="flex h-[18px] w-7 items-center justify-center text-ink-muted transition-colors hover:text-ink">
+        <button aria-label={t("Lower subtitles")} onClick={() => update({ subMarginY: clamp(settings.subMarginY - 2, 0, 40) })} className="flex h-[18px] w-7 items-center justify-center text-ink-muted transition-colors hover:text-ink">
           <ChevronRight size={13} className="rotate-90" />
         </button>
       </div>
@@ -312,7 +327,7 @@ function PlacementPad({ settings, update }: { settings: Settings; update: (p: Pa
         {aligns.map((a) => (
           <button
             key={a}
-            aria-label={`Align ${a}`}
+            aria-label={t("Align {dir}", { dir: t(a) })}
             onClick={() => update({ subAlignX: a })}
             className={`h-2 w-2 rounded-full transition-colors ${settings.subAlignX === a ? "bg-ink" : "bg-edge"}`}
           />
@@ -322,12 +337,39 @@ function PlacementPad({ settings, update }: { settings: Settings; update: (p: Pa
   );
 }
 
+function AssOverrideToggle({ settings, update }: { settings: Settings; update: (p: Partial<Settings>) => void }) {
+  const t = useT();
+  const on = settings.subAssOverride !== "no";
+  return (
+    <PresetTip
+      label={
+        on
+          ? t("Your style is overriding the embedded subtitle's own styling")
+          : t("Embedded subtitles keep their own styling. Click to force your style onto them.")
+      }
+    >
+      <button
+        type="button"
+        onClick={() => update({ subAssOverride: on ? "no" : "force" })}
+        aria-pressed={on}
+        className={`flex h-11 shrink-0 items-center gap-2 rounded-[10px] px-3 text-[13px] font-semibold transition-colors ${
+          on ? "bg-accent text-canvas" : "bg-raised text-ink-muted hover:bg-elevated hover:text-ink"
+        }`}
+      >
+        <Layers size={15} strokeWidth={2.2} />
+        {t("Override")}
+      </button>
+    </PresetTip>
+  );
+}
+
 function styleMatches(s: Settings, p: SubPreset): boolean {
   const v = snapshotSub(s);
   return (Object.keys(p.values) as Array<keyof SubPreset["values"]>).every((k) => v[k] === p.values[k]);
 }
 
 function PresetCluster({ settings, update }: { settings: Settings; update: (p: Partial<Settings>) => void }) {
+  const t = useT();
   const [list, setList] = useState<SubPreset[]>(() => loadSubPresets());
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [naming, setNaming] = useState(false);
@@ -384,25 +426,25 @@ function PresetCluster({ settings, update }: { settings: Settings; update: (p: P
               setDraft("");
             }
           }}
-          placeholder={list.length ? "New template name" : "Name your first template"}
+          placeholder={list.length ? t("New template name") : t("Name your first template")}
           className="h-8 w-[156px] rounded-[8px] bg-elevated px-2.5 text-[13px] text-ink outline-none ring-1 ring-edge placeholder:text-ink-subtle focus:ring-ink"
         />
         <button
           onClick={createNamed}
           disabled={!draft.trim()}
-          className={`ml-0.5 flex h-8 items-center gap-1 rounded-[8px] px-2.5 text-[13px] font-semibold transition-colors ${
+          className={`ms-0.5 flex h-8 items-center gap-1 rounded-[8px] px-2.5 text-[13px] font-semibold transition-colors ${
             draft.trim() ? "bg-accent text-canvas hover:brightness-110" : "cursor-default text-ink-subtle/50"
           }`}
         >
           <Check size={13} strokeWidth={2.6} />
-          Save
+          {t("Save")}
         </button>
         <button
           onClick={() => {
             setNaming(false);
             setDraft("");
           }}
-          aria-label="Cancel"
+          aria-label={t("Cancel")}
           className="flex h-8 w-8 items-center justify-center rounded-[8px] text-ink-subtle transition-colors hover:bg-elevated hover:text-ink"
         >
           <X size={15} />
@@ -417,7 +459,7 @@ function PresetCluster({ settings, update }: { settings: Settings; update: (p: P
         const isSel = p.id === selectedId;
         const matches = styleMatches(settings, p);
         return (
-          <PresetTip key={p.id} label="Click to apply · Right-click to delete">
+          <PresetTip key={p.id} label={t("Click to apply · Right-click to delete")}>
             <button
               onClick={() => apply(p)}
               onContextMenu={(e) => {
@@ -434,7 +476,7 @@ function PresetCluster({ settings, update }: { settings: Settings; update: (p: P
               }`}
             >
               {p.name}
-              {isSel && dirty && <span aria-label="unsaved changes" className="h-1.5 w-1.5 rounded-full bg-amber-400" />}
+              {isSel && dirty && <span aria-label={t("unsaved changes")} className="h-1.5 w-1.5 rounded-full bg-amber-400" />}
             </button>
           </PresetTip>
         );
@@ -445,20 +487,26 @@ function PresetCluster({ settings, update }: { settings: Settings; update: (p: P
       <button
         onClick={selected ? (dirty ? overrideSelected : undefined) : startCreate}
         disabled={isSaved}
-        title={selected ? (dirty ? `Overwrite ${selected.name} with this look` : "No unsaved changes") : "Save this look as a template"}
+        title={
+          selected
+            ? dirty
+              ? t("Overwrite {name} with this look", { name: selected.name })
+              : t("No unsaved changes")
+            : t("Save this look as a template")
+        }
         className={`flex h-8 items-center gap-1.5 rounded-[8px] px-3 text-[13px] font-semibold transition-all ${
           isSaved ? "cursor-default text-ink-subtle/55" : "bg-accent text-canvas hover:brightness-110"
         }`}
       >
         {isSaved || selected ? <Check size={13} strokeWidth={2.6} /> : <Plus size={14} strokeWidth={2.6} />}
-        {isSaved ? "Saved" : selected ? `Override ${selected.name}` : "Save look"}
+        {isSaved ? t("Saved") : selected ? t("Override {name}", { name: selected.name }) : t("Save look")}
       </button>
 
       {selected && (
-        <PresetTip label="Save as a new template">
+        <PresetTip label={t("Save as a new template")}>
           <button
             onClick={startCreate}
-            aria-label="Save as a new template"
+            aria-label={t("Save as a new template")}
             className="flex h-8 w-8 items-center justify-center rounded-[8px] text-ink-subtle transition-colors hover:bg-elevated hover:text-ink"
           >
             <Plus size={16} />

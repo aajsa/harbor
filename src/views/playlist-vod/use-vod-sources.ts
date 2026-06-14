@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSettings } from "@/lib/settings";
 import { clearPlaylistCache } from "@/lib/iptv/store";
+import { clearEpg } from "@/lib/iptv/epg-store";
+import { purgePlaylistState } from "@/lib/iptv/source-cleanup";
+import { useFavorites } from "@/lib/iptv/favorites";
 import type { IptvPlaylistSource } from "@/lib/iptv/types";
 import { buildXtreamUrls, type PlaylistFormValue } from "@/views/live/source-picker/playlist-form";
 
@@ -50,6 +53,7 @@ function materialize(id: string, entry: PlaylistFormValue) {
 
 export function useVodSources() {
   const { settings, update } = useSettings();
+  const favorites = useFavorites();
 
   const sources = useMemo<IptvPlaylistSource[]>(
     () =>
@@ -97,21 +101,23 @@ export function useVodSources() {
       const next = settings.iptvPlaylists.map((s) => (s.id === id ? materialize(id, entry) : s));
       update({ iptvPlaylists: next });
       clearPlaylistCache(id);
+      clearEpg(id);
     },
     [settings.iptvPlaylists, update],
   );
 
   const removePlaylist = useCallback(
     (id: string) => {
-      update({ iptvPlaylists: settings.iptvPlaylists.filter((s) => s.id !== id) });
-      clearPlaylistCache(id);
+      const next = settings.iptvPlaylists.filter((s) => s.id !== id);
       if (activeId === id) {
-        const fallback = settings.iptvPlaylists.find((s) => s.id !== id)?.id ?? null;
+        const fallback = next[0]?.id ?? null;
         setActiveId(fallback);
         writeActive(fallback);
       }
+      update({ iptvPlaylists: next });
+      purgePlaylistState(id, favorites.removeForSource);
     },
-    [settings.iptvPlaylists, update, activeId],
+    [settings.iptvPlaylists, update, activeId, favorites.removeForSource],
   );
 
   return { sources, activeId, selectId, addPlaylist, editPlaylist, removePlaylist };

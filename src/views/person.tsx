@@ -14,6 +14,7 @@ import { useRankings } from "@/lib/rankings";
 import { useSettings } from "@/lib/settings";
 import { useTopRankModal, type TopRankDept } from "@/lib/top-rank-modal";
 import { useScrollMemory, useView } from "@/lib/view";
+import { useT } from "@/lib/i18n";
 import { AwardLaurelStrip } from "./person/award-laurel-strip";
 import { Bio } from "./person/bio";
 import { FilmRow } from "./person/film-row";
@@ -31,6 +32,7 @@ import {
 } from "./person/person-utils";
 
 export function PersonView({ personId }: { personId: number }) {
+  const t = useT();
   const { settings } = useSettings();
   const { rank } = useRankings();
   const { openMeta } = useView();
@@ -146,7 +148,7 @@ export function PersonView({ personId }: { personId: number }) {
             <div className="flex items-center gap-3">
               {person?.knownForDepartment && (
                 <span className="text-[12.5px] font-medium uppercase tracking-[0.22em] text-ink-subtle">
-                  {person.knownForDepartment}
+                  {t(person.knownForDepartment)}
                 </span>
               )}
               {personRank && (
@@ -154,21 +156,21 @@ export function PersonView({ personId }: { personId: number }) {
                   type="button"
                   onClick={() => openTopRank((person?.knownForDepartment as TopRankDept) ?? "Acting")}
                   className="flex items-center gap-1 rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.14em] text-accent transition-all hover:scale-105 hover:border-accent/60 hover:bg-accent/20"
-                  title={`Open Top 100 ${person?.knownForDepartment ?? "Actors"}`}
+                  title={t("Open Top 100 {dept}", { dept: t(person?.knownForDepartment ?? "Actors") })}
                 >
-                  Top {personRank}
+                  {t("Top {n}", { n: personRank })}
                 </button>
               )}
             </div>
             <h1 className="font-display text-[88px] font-medium leading-[0.95] tracking-tight text-ink">
-              {person?.name ?? (loading ? "" : "Unknown")}
+              {person?.name ?? (loading ? "" : t("Unknown"))}
             </h1>
 
             <div className="flex flex-wrap gap-x-6 gap-y-2 text-[14px] text-ink-muted">
               {person?.birthday && (
                 <BirthdayLink birthday={person.birthday} age={age} />
               )}
-              {person?.deathday && <span>Died {fmtDate(person.deathday)}</span>}
+              {person?.deathday && <span>{t("Died {date}", { date: fmtDate(person.deathday) })}</span>}
               {person?.placeOfBirth && <PlaceLink place={person.placeOfBirth} />}
             </div>
 
@@ -196,20 +198,20 @@ export function PersonView({ personId }: { personId: number }) {
         )}
 
         {knownFor.length > 0 && (
-          <FilmRow title="Known For" credits={knownFor} showRole={false} />
+          <FilmRow title={t("Known For")} credits={knownFor} showRole={false} />
         )}
-        {movies.length > 0 && <FilmRow title={`Movies · ${movies.length}`} credits={movies} showRole />}
-        {shows.length > 0 && <FilmRow title={`TV Shows · ${shows.length}`} credits={shows} showRole />}
-        {directing.length > 0 && <FilmRow title="Directing" credits={directing} showRole />}
-        {writing.length > 0 && <FilmRow title="Writing" credits={writing} showRole />}
-        {producing.length > 0 && <FilmRow title="Producing" credits={producing} showRole />}
+        {movies.length > 0 && <FilmRow title={t("Movies · {n}", { n: movies.length })} credits={movies} showRole />}
+        {shows.length > 0 && <FilmRow title={t("TV Shows · {n}", { n: shows.length })} credits={shows} showRole />}
+        {directing.length > 0 && <FilmRow title={t("Directing")} credits={directing} showRole />}
+        {writing.length > 0 && <FilmRow title={t("Writing")} credits={writing} showRole />}
+        {producing.length > 0 && <FilmRow title={t("Producing")} credits={producing} showRole />}
         {otherCrew.length > 0 && otherCrew.length > 4 && (
-          <FilmRow title="Other Work" credits={otherCrew.slice(0, 24)} showRole />
+          <FilmRow title={t("Other Work")} credits={otherCrew.slice(0, 24)} showRole />
         )}
 
         {!loading && person && sortedCast.length === 0 && sortedCrew.length === 0 && (
           <div className="rounded-2xl border border-dashed border-edge px-6 py-12 text-center text-[14px] text-ink-muted">
-            No filmography on record.
+            {t("No filmography on record.")}
           </div>
         )}
       </div>

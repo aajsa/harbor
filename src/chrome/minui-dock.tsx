@@ -12,6 +12,7 @@ import { MoviesIcon } from "@/components/icons/movies-icon";
 import { SettingsIcon } from "@/components/icons/settings-icon";
 import { TvIcon } from "@/components/icons/tv-icon";
 import { ParentalPinModal } from "@/components/parental-pin-modal";
+import { useT } from "@/lib/i18n";
 import { useParental, type LockableTab } from "@/lib/parental";
 import { useSettings } from "@/lib/settings";
 import { useView, type View } from "@/lib/view";
@@ -50,6 +51,7 @@ export function MinUIDock() {
   const { view, setView, chromeHidden } = useView();
   const { locked, unlock, hiddenTabs } = useParental();
   const { settings } = useSettings();
+  const t = useT();
   const [pinFor, setPinFor] = useState<View | null>(null);
   const [cursor, setCursor] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -133,7 +135,7 @@ export function MinUIDock() {
               return (
                 <DockButton
                   key={it.view}
-                  label={it.label}
+                  label={t(it.label)}
                   active={active}
                   scale={scale}
                   baseSize={ICON_BASE}

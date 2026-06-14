@@ -109,7 +109,7 @@ function Item({
     <button
       role="menuitem"
       onClick={onClick}
-      className="flex h-9 items-center gap-2.5 rounded-lg px-3 text-left text-[13px] text-ink transition-colors hover:bg-raised"
+      className="flex h-9 items-center gap-2.5 rounded-lg px-3 text-start text-[13px] text-ink transition-colors hover:bg-raised"
     >
       <span className="text-ink-muted">{icon}</span>
       {label}

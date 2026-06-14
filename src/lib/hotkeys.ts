@@ -51,9 +51,9 @@ export const HOTKEYS: HotkeyDef[] = [
   { id: "playerPlayPause", scope: "Player", group: "Playback", label: "Play / pause", description: "Toggle playback.", defaultBinding: "Space" },
   { id: "playerFullscreen", scope: "Player", group: "Playback", label: "Toggle fullscreen", description: "Enter or exit fullscreen.", defaultBinding: "f" },
   { id: "playerStats", scope: "Player", group: "Playback", label: "Toggle stats overlay", description: "Show or hide the playback stats overlay.", defaultBinding: "i" },
-  { id: "playerCrop", scope: "Player", group: "Playback", label: "Crop to fill", description: "Toggle between fit (letterboxed) and crop-to-fill for the current video.", defaultBinding: "v" },
-  { id: "playerPanscanDown", scope: "Player", group: "Playback", label: "Panscan out", description: "Zoom the video out step by step, restoring black bars (lower panscan).", defaultBinding: "-" },
-  { id: "playerPanscanUp", scope: "Player", group: "Playback", label: "Panscan in", description: "Zoom the video in step by step to crop black bars (raise panscan).", defaultBinding: "=" },
+  { id: "playerCrop", scope: "Player", group: "Playback", label: "Cycle aspect / crop", description: "Cycle aspect and crop modes: Fit, Fill, Zoom, 16:9, 4:3, Original.", defaultBinding: "v" },
+  { id: "playerPanscanDown", scope: "Player", group: "Playback", label: "Zoom out", description: "Step zoom out to restore baked-in black bars (Zoom mode).", defaultBinding: "-" },
+  { id: "playerPanscanUp", scope: "Player", group: "Playback", label: "Zoom in", description: "Step zoom in to crop baked-in black bars (Zoom mode).", defaultBinding: "=" },
   { id: "playerScreenshot", scope: "Player", group: "Playback", label: "Screenshot", description: "Save the current frame (video only, no subtitles) as a PNG to Pictures/Harbor.", defaultBinding: "p" },
   { id: "playerGifRecord", scope: "Player", group: "Playback", label: "Record GIF", description: "Start or stop recording a GIF of the video (no subtitles). Saves to Pictures/Harbor.", defaultBinding: "o" },
 

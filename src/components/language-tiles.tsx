@@ -71,7 +71,7 @@ function LanguageTile({ lang }: { lang: Lang }) {
       onClick={() =>
         openFilter({ kind: "language", mediaType: "tv", name: lang.name, iso: lang.iso })
       }
-      className="group relative aspect-[5/4] w-full cursor-pointer overflow-hidden rounded-2xl border border-edge-soft text-left transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0.24,1)] hover:-translate-y-1"
+      className="group relative aspect-[5/4] w-full cursor-pointer overflow-hidden rounded-2xl border border-edge-soft text-start transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0.24,1)] hover:-translate-y-1"
       style={{ background: `linear-gradient(150deg, ${from}, ${to})` }}
     >
       <Collage backdrops={backdrops} rpdbKey={settings.rpdbKey} />
@@ -89,7 +89,7 @@ function LanguageTile({ lang }: { lang: Lang }) {
         style={{ background: `linear-gradient(to bottom, transparent, ${to})` }}
       />
       <span
-        className="pointer-events-none absolute right-4 top-3 select-none font-display text-[34px] font-medium leading-none opacity-25"
+        className="pointer-events-none absolute end-4 top-3 select-none font-display text-[34px] font-medium leading-none opacity-25"
         style={{ color: ink }}
         aria-hidden
       >
@@ -103,7 +103,7 @@ function LanguageTile({ lang }: { lang: Lang }) {
           {lang.name}
         </h3>
         <span
-          className="text-[18px] transition-transform duration-200 group-hover:translate-x-1"
+          className="dir-icon text-[18px] transition-transform duration-200 group-hover:translate-x-1 rtl:group-hover:-translate-x-1"
           style={{ color: ink }}
           aria-hidden
         >

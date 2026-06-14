@@ -53,6 +53,15 @@ export function clearGroupPrefs(sourceId: string): void {
   update(sourceId, () => ({ pinned: [], hidden: [] }));
 }
 
+export function removeGroupPrefs(sourceId: string): void {
+  if (!sourceId) return;
+  const map = load();
+  if (!(sourceId in map)) return;
+  const next = { ...map };
+  delete next[sourceId];
+  persist(next);
+}
+
 export function useGroupPrefs(sourceId: string): GroupPrefs {
   const map = useSyncExternalStore(
     (cb) => {

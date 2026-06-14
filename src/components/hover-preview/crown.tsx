@@ -94,7 +94,7 @@ export function PreviewCrown({ data, height }: { data: PreviewData; height: numb
       {data.chip && (
         <span
           data-stagger="0"
-          className="absolute left-3 top-3 rounded-md border border-edge-soft bg-canvas/85 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-ink backdrop-blur-sm"
+          className="absolute start-3 top-3 rounded-md border border-edge-soft bg-canvas/85 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-ink backdrop-blur-sm"
         >
           {data.chip}
         </span>
@@ -102,7 +102,7 @@ export function PreviewCrown({ data, height }: { data: PreviewData; height: numb
       <div className="absolute inset-x-5 bottom-0 flex flex-col">
         <h3
           data-stagger="0"
-          className={`-ml-px line-clamp-2 font-display text-[20px] font-semibold leading-[1.18] tracking-[-0.01em] text-ink ${
+          className={`-ms-px line-clamp-2 font-display text-[20px] font-semibold leading-[1.18] tracking-[-0.01em] text-ink ${
             resume ? "pb-[6px]" : "pb-[14px]"
           }`}
         >

@@ -431,7 +431,7 @@ function BadgeWithTooltip({
               background:
                 "linear-gradient(var(--color-elevated), var(--color-elevated)), var(--color-canvas)",
             }}
-            className="pointer-events-none fixed z-[145] flex flex-col gap-1.5 rounded-xl border border-edge px-3.5 py-3 text-left shadow-[0_18px_50px_-15px_rgba(0,0,0,0.7)] animate-popover-in"
+            className="pointer-events-none fixed z-[145] flex flex-col gap-1.5 rounded-xl border border-edge px-3.5 py-3 text-start shadow-[0_18px_50px_-15px_rgba(0,0,0,0.7)] animate-popover-in"
           >
             <span className={`flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-[0.18em] ${accent}`}>
               {note.tone === "warn" ? (

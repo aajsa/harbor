@@ -220,7 +220,7 @@ export function BugReportPanel() {
       )}
 
       <div className="sticky bottom-3 z-10 flex items-center justify-end gap-3 rounded-2xl border border-edge-soft bg-elevated/85 px-5 py-3 backdrop-blur">
-        <span className="mr-auto text-[11.5px] text-ink-subtle">
+        <span className="me-auto text-[11.5px] text-ink-subtle">
           {canSubmit ? "Ready to send" : summary.trim().length < 6 ? "Summary needs at least 6 characters" : "Preparing…"}
         </span>
         <button
@@ -249,7 +249,7 @@ function Field({
     <label className="flex flex-col gap-1.5">
       <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-subtle">
         {label}
-        {required && <span className="ml-1 text-accent">*</span>}
+        {required && <span className="ms-1 text-accent">*</span>}
       </span>
       {children}
     </label>

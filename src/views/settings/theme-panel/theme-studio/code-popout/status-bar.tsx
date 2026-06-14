@@ -29,7 +29,7 @@ export function StatusBar({
       </span>
       <span className="tabular-nums">{lines} lines</span>
       <span className="tabular-nums">{chars.toLocaleString()} chars</span>
-      <span className="ml-auto flex items-center gap-4">
+      <span className="ms-auto flex items-center gap-4">
         <span>Spaces: 2</span>
         <span>UTF-8</span>
         <span className="flex items-center gap-1.5" style={{ color: "#98c379" }}>

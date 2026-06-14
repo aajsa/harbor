@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import type { SkipSegment } from "@/lib/skip-intro";
 import type { SpoilerMask } from "@/lib/spoilers";
 import type { PlayEpisode } from "@/lib/view";
+import { useT } from "@/lib/i18n";
 
 const UP_NEXT_WINDOW_SEC = 15;
 
@@ -27,6 +28,7 @@ export function SkipPill({
   onNextEpisode: () => void;
   onCancelAutoNext?: () => void;
 }) {
+  const t = useT();
   const [mounted, setMounted] = useState<SkipSegment | null>(segment);
   const [show, setShow] = useState(false);
 
@@ -37,8 +39,8 @@ export function SkipPill({
       return () => window.cancelAnimationFrame(id);
     }
     setShow(false);
-    const t = window.setTimeout(() => setMounted(null), 240);
-    return () => window.clearTimeout(t);
+    const timer = window.setTimeout(() => setMounted(null), 240);
+    return () => window.clearTimeout(timer);
   }, [segment?.kind, segment?.startSec, segment?.endSec]);
 
   if (!mounted) return null;
@@ -62,18 +64,18 @@ export function SkipPill({
 
   const label =
     mounted.kind === "intro"
-      ? "Skip Intro"
+      ? t("Skip Intro")
       : mounted.kind === "recap"
-        ? "Skip Recap"
+        ? t("Skip Recap")
         : isOutroNext
-          ? "Next Episode"
-          : "Skip Credits";
+          ? t("Next Episode")
+          : t("Skip Credits");
   const action = isOutroNext ? onNextEpisode : onSkip;
   const Icon = isOutroNext ? ChevronsRight : FastForward;
 
   return (
     <div
-      className={`pointer-events-none absolute right-7 z-30 transition-all duration-200 ease-out ${
+      className={`pointer-events-none absolute end-7 z-30 transition-all duration-200 ease-out ${
         visible && show
           ? "bottom-44 opacity-100 translate-y-0"
           : "bottom-40 opacity-0 translate-y-2"
@@ -84,7 +86,7 @@ export function SkipPill({
         onClick={action}
         className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/75 px-5 py-2.5 text-[14px] font-semibold text-white shadow-[0_18px_50px_-15px_rgba(0,0,0,0.85)] backdrop-blur-md transition-[background-color,transform] hover:bg-black/90 active:scale-[0.97]"
       >
-        <Icon size={18} strokeWidth={2.2} />
+        <Icon size={18} strokeWidth={2.2} className={isOutroNext ? "dir-icon" : undefined} />
         {label}
       </button>
     </div>
@@ -106,18 +108,19 @@ function UpNextCard({
   onPlay: () => void;
   onCancel?: () => void;
 }) {
+  const t = useT();
   const seconds = Math.max(0, Math.ceil(remainingSec));
   const progress = Math.min(1, Math.max(0, 1 - seconds / UP_NEXT_WINDOW_SEC));
   const epLabel =
     typeof ep.season === "number" && typeof ep.episode === "number"
       ? `S${ep.season} · E${ep.episode}`
-      : "Up Next";
+      : t("Up Next");
   const title = mask?.title ? epLabel : ep.name?.trim() || epLabel;
   const hideStill = mask?.thumb === true;
 
   return (
     <div
-      className={`pointer-events-none absolute right-7 z-30 transition-all duration-200 ease-out ${
+      className={`pointer-events-none absolute end-7 z-30 transition-all duration-200 ease-out ${
         visible
           ? "bottom-44 opacity-100 translate-y-0"
           : "bottom-40 opacity-0 translate-y-2"
@@ -144,7 +147,7 @@ function UpNextCard({
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               <div className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-white/55">
-                Up next in {seconds}s
+                {t("Up next in {s}s", { s: seconds })}
               </div>
               <div className="mt-0.5 truncate text-[13.5px] font-semibold text-white">
                 {title}
@@ -157,7 +160,7 @@ function UpNextCard({
               <button
                 type="button"
                 onClick={onCancel}
-                aria-label="Cancel autoplay"
+                aria-label={t("Cancel autoplay")}
                 className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-white/60 transition-colors hover:bg-white/10 hover:text-white"
               >
                 <X size={13} strokeWidth={2.2} />
@@ -170,7 +173,7 @@ function UpNextCard({
             className="mt-auto inline-flex h-9 items-center justify-center gap-1.5 self-start rounded-full bg-white px-4 text-[12.5px] font-semibold text-black transition-opacity hover:opacity-90"
           >
             <Play size={12} strokeWidth={2.4} className="fill-current" />
-            Play now
+            {t("Play now")}
           </button>
         </div>
         <div className="absolute inset-x-0 bottom-0 h-[3px] bg-white/15">

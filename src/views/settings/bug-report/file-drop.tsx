@@ -99,13 +99,13 @@ export function FileDrop({
               <FilePreview file={f} />
               <div className="flex items-center gap-2 px-2.5 py-2 text-[11px] text-ink-muted">
                 <span className="truncate" title={f.name}>{f.name}</span>
-                <span className="ml-auto shrink-0 text-ink-subtle">{fmtBytes(f.size)}</span>
+                <span className="ms-auto shrink-0 text-ink-subtle">{fmtBytes(f.size)}</span>
               </div>
               <button
                 type="button"
                 onClick={() => remove(i)}
                 aria-label="Remove"
-                className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-canvas/85 text-ink-muted opacity-0 transition-opacity hover:text-ink group-hover:opacity-100"
+                className="absolute end-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-canvas/85 text-ink-muted opacity-0 transition-opacity hover:text-ink group-hover:opacity-100"
               >
                 <X size={13} strokeWidth={2.2} />
               </button>

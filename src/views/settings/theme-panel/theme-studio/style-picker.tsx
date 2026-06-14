@@ -34,7 +34,7 @@ export function StylePicker({
             key={s.id}
             type="button"
             onClick={() => onChange(s.id)}
-            className={`relative flex flex-col gap-2 overflow-hidden rounded-lg border p-3 text-left transition-colors ${
+            className={`relative flex flex-col gap-2 overflow-hidden rounded-lg border p-3 text-start transition-colors ${
               active
                 ? "border-accent/80 bg-accent-soft"
                 : "border-edge-soft bg-canvas/40 hover:border-edge hover:bg-white/[0.04]"

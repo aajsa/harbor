@@ -1,8 +1,10 @@
 import { Loader2, Zap } from "lucide-react";
 import { AddonLogo } from "@/components/addon-logo";
+import { CopyLinkButton, resolveStreamLink } from "@/components/player/copy-link-button";
 import { FlagStack } from "@/components/flag";
 import { FormatBadge, streamBadges } from "@/components/format-badge";
 import type { ScoredStream } from "@/lib/streams/types";
+import { useT } from "@/lib/i18n";
 
 export function streamKey(s: ScoredStream): string {
   return s.infoHash ?? s.url ?? `${s.addonId}:${s.title ?? ""}`;
@@ -30,11 +32,13 @@ export function SwitcherRow({
   isCurrent: boolean;
   match?: "same" | "close" | null;
 }) {
-  const addonName = stream.addonName ?? "Source";
+  const t = useT();
+  const addonName = stream.addonName ?? t("Source");
   const headline = stripFlagEmoji(stream.name?.trim() || addonName) || addonName;
   const description = stripFlagEmoji(stream.title?.trim() || stream.description?.trim() || "");
   const cornerBadges = streamBadges(stream);
   const langs = stream.audioLanguages ?? [];
+  const link = resolveStreamLink(stream);
   const filterReason = stream.reasons?.find((r) => r.signal.startsWith("filtered:"))?.signal.slice(9);
 
   return (
@@ -42,7 +46,7 @@ export function SwitcherRow({
       <button
         onClick={onPick}
         disabled={resolving || isCurrent}
-        className={`group flex w-full items-center gap-3.5 px-5 py-3 text-left transition-colors ${
+        className={`group flex w-full items-center gap-3.5 px-5 py-3 text-start transition-colors ${
           isCurrent
             ? "cursor-default bg-canvas/40"
             : "hover:bg-canvas/55 disabled:cursor-wait disabled:opacity-60"
@@ -67,10 +71,10 @@ export function SwitcherRow({
         <div className="flex shrink-0 items-center gap-2">
           {filterReason && (
             <span
-              title={`Hidden by filter: ${filterReason}`}
+              title={t("Hidden by filter: {reason}", { reason: filterReason })}
               className="rounded-md bg-danger/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-danger ring-1 ring-danger/30"
             >
-              Filtered
+              {t("Filtered")}
             </span>
           )}
           {match && !isCurrent && (
@@ -81,7 +85,7 @@ export function SwitcherRow({
                   : "bg-raised text-ink-muted ring-edge-soft"
               }`}
             >
-              {match === "same" ? "Same file" : "Close match"}
+              {match === "same" ? t("Same file") : t("Close match")}
             </span>
           )}
           {langs.length > 0 && !isCurrent && (
@@ -97,9 +101,10 @@ export function SwitcherRow({
           {isCurrent && (
             <span className="inline-flex items-center gap-1.5 rounded-md bg-ink/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-ink ring-1 ring-edge">
               <Zap size={9} fill="currentColor" strokeWidth={0} />
-              Now Playing
+              {t("Now Playing")}
             </span>
           )}
+          {link && !resolving && <CopyLinkButton url={link} />}
           {resolving && <Loader2 size={13} className="animate-spin text-ink-muted" />}
         </div>
       </button>

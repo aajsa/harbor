@@ -8,6 +8,7 @@ import { layoutHasGlobalBack } from "@/lib/theme";
 import { tmdbSearchCollections, type CollectionHit } from "@/lib/providers/tmdb";
 import { useSettings } from "@/lib/settings";
 import { useScrollMemory, useView } from "@/lib/view";
+import { useT } from "@/lib/i18n";
 import { useCategoryFeed } from "./collections/use-category-feed";
 
 const FEED_QUERY = "collection";
@@ -17,6 +18,7 @@ function stripSuffix(name: string): string {
 }
 
 export function CollectionsView() {
+  const t = useT();
   const { settings } = useSettings();
   const { goBack } = useView();
   const scrollRef = useRef<HTMLElement>(null);
@@ -34,6 +36,7 @@ export function CollectionsView() {
   const [done, setDone] = useState(false);
   const [loading, setLoading] = useState(false);
   const loadingRef = useRef(false);
+  const queryEpoch = useRef(0);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   const curated = useMemo(() => {
@@ -55,6 +58,7 @@ export function CollectionsView() {
   });
 
   useEffect(() => {
+    queryEpoch.current += 1;
     setHits([]);
     setPage(0);
     setDone(!remoteQuery);
@@ -84,10 +88,13 @@ export function CollectionsView() {
         loadingRef.current = true;
         setLoading(true);
         const next = page + 1;
+        const epoch = queryEpoch.current;
         const delay = searchActive && next === 1 ? 350 : 0;
         const timer = window.setTimeout(() => {
+          if (queryEpoch.current !== epoch) return;
           tmdbSearchCollections(settings.tmdbKey, remoteQuery, next)
             .then(({ hits: batch, totalPages }) => {
+              if (queryEpoch.current !== epoch) return;
               setPage(next);
               if (batch.length === 0 || next >= totalPages) setDone(true);
               setHits((prev) => {
@@ -100,8 +107,11 @@ export function CollectionsView() {
                 return [...prev, ...fresh];
               });
             })
-            .catch(() => setDone(true))
+            .catch(() => {
+              if (queryEpoch.current === epoch) setDone(true);
+            })
             .finally(() => {
+              if (queryEpoch.current !== epoch) return;
               loadingRef.current = false;
               setLoading(false);
             });
@@ -121,18 +131,18 @@ export function CollectionsView() {
           {!layoutHasGlobalBack() && (
             <button
               onClick={goBack}
-              aria-label="Back"
+              aria-label={t("Back")}
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-edge-soft bg-elevated/60 text-ink transition-colors hover:bg-raised"
             >
-              <ArrowLeft size={19} strokeWidth={2.2} />
+              <ArrowLeft size={19} strokeWidth={2.2} className="dir-icon" />
             </button>
           )}
           <div className="flex flex-col">
             <h1 className="font-display text-[44px] font-medium leading-[1.02] tracking-tight text-ink">
-              Collections
+              {t("Collections")}
             </h1>
             <p className="mt-1 text-[13.5px] text-ink-muted">
-              Every saga in one place. Search anything: if it exists, it's here.
+              {t("Every saga in one place. Search anything: if it exists, it's here.")}
             </p>
           </div>
         </div>
@@ -148,7 +158,7 @@ export function CollectionsView() {
           >
             {stuck && (
               <span className="hidden shrink-0 font-display text-[19px] font-medium tracking-tight text-ink sm:inline">
-                Collections
+                {t("Collections")}
               </span>
             )}
             <div className="relative w-full max-w-md">
@@ -161,7 +171,7 @@ export function CollectionsView() {
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search every collection on TMDB..."
+                placeholder={t("Search every collection on TMDB...")}
                 spellCheck={false}
                 className="h-11 w-full rounded-full border border-edge bg-elevated/50 pl-11 pr-10 text-[14px] text-ink placeholder:text-ink-subtle transition-colors focus:border-ink-subtle focus:outline-none"
               />
@@ -169,7 +179,7 @@ export function CollectionsView() {
                 <button
                   type="button"
                   onClick={() => setQuery("")}
-                  aria-label="Clear search"
+                  aria-label={t("Clear search")}
                   className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-ink-subtle transition-colors hover:bg-raised hover:text-ink"
                 >
                   <X size={14} strokeWidth={2.2} />
@@ -189,7 +199,7 @@ export function CollectionsView() {
                         : "bg-elevated/50 text-ink-muted ring-1 ring-edge-soft hover:bg-raised hover:text-ink"
                     }`}
                   >
-                    {c}
+                    {t(c)}
                   </button>
                 ))}
               </div>
@@ -201,8 +211,15 @@ export function CollectionsView() {
           {!searchActive && (
             <section className="flex flex-col gap-5">
               <p className="text-[13px] text-ink-subtle">
-                {category === "All" ? "Featured" : category} · {curated.length} collection
-                {curated.length === 1 ? "" : "s"}
+                {curated.length === 1
+                  ? t("{label} · {n} collection", {
+                      label: category === "All" ? t("Featured") : t(category),
+                      n: curated.length,
+                    })
+                  : t("{label} · {n} collections", {
+                      label: category === "All" ? t("Featured") : t(category),
+                      n: curated.length,
+                    })}
               </p>
               <div className="grid grid-cols-2 gap-5 lg:grid-cols-3 2xl:grid-cols-4">
                 {curated.map((c) => (
@@ -219,7 +236,7 @@ export function CollectionsView() {
 
           {!searchActive && category !== "All" && (
             <section className="flex flex-col gap-5">
-              <p className="text-[13px] text-ink-subtle">More {category}</p>
+              <p className="text-[13px] text-ink-subtle">{t("More {category}", { category: t(category) })}</p>
               {catFeed.hits.length > 0 && (
                 <div className="grid grid-cols-2 gap-5 lg:grid-cols-3 2xl:grid-cols-4">
                   {catFeed.hits.map((h) => (
@@ -246,8 +263,8 @@ export function CollectionsView() {
               {catFeed.done && (
                 <p className="py-4 text-center text-[12.5px] text-ink-subtle">
                   {catFeed.hits.length > 0
-                    ? `That's every ${category} collection we could find.`
-                    : "No more found for this category."}
+                    ? t("That's every {category} collection we could find.", { category: t(category) })
+                    : t("No more found for this category.")}
                 </p>
               )}
             </section>
@@ -258,9 +275,9 @@ export function CollectionsView() {
               <p className="text-[13px] text-ink-subtle">
                 {searchActive
                   ? hits.length === 0 && done
-                    ? "Nothing matched. Try the franchise's first film name."
-                    : `Results for "${query.trim()}"`
-                  : "Every collection"}
+                    ? t("Nothing matched. Try the franchise's first film name.")
+                    : t('Results for "{query}"', { query: query.trim() })
+                  : t("Every collection")}
               </p>
               <div className="grid grid-cols-2 gap-5 lg:grid-cols-3 2xl:grid-cols-4">
                 {hits.map((h) => (
@@ -284,7 +301,7 @@ export function CollectionsView() {
               )}
               {done && hits.length > 0 && (
                 <p className="py-4 text-center text-[12.5px] text-ink-subtle">
-                  That's every collection TMDB knows about.
+                  {t("That's every collection TMDB knows about.")}
                 </p>
               )}
             </section>

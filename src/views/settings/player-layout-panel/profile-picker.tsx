@@ -138,14 +138,14 @@ export function ProfilePicker({
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="flex h-11 max-w-[200px] items-center gap-2 rounded-full border border-white/15 bg-white/8 pl-4 pr-3 text-[13px] font-medium text-white/90 transition-colors hover:bg-white/15 hover:text-white"
+        className="flex h-11 max-w-[200px] items-center gap-2 rounded-full border border-white/15 bg-white/8 ps-4 pe-3 text-[13px] font-medium text-white/90 transition-colors hover:bg-white/15 hover:text-white"
       >
         <span className="truncate">{label}</span>
         <ChevronDown size={14} strokeWidth={2.3} className={open ? "rotate-180 transition-transform" : "transition-transform"} />
       </button>
 
       {open && (
-        <div className="absolute right-0 top-[calc(100%+8px)] z-40 w-[280px] overflow-hidden rounded-2xl border border-white/12 bg-black/95 shadow-[0_24px_60px_rgba(0,0,0,0.55)] backdrop-blur-2xl">
+        <div className="absolute end-0 top-[calc(100%+8px)] z-40 w-[280px] overflow-hidden rounded-2xl border border-white/12 bg-black/95 shadow-[0_24px_60px_rgba(0,0,0,0.55)] backdrop-blur-2xl">
           <div className="px-4 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/45">
             Profiles
           </div>
@@ -163,7 +163,7 @@ export function ProfilePicker({
                         onSwitch(p.id);
                         setOpen(false);
                       }}
-                      className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[13px] transition-colors ${
+                      className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-start text-[13px] transition-colors ${
                         isActive ? "bg-white/10 text-white" : "text-white/80 hover:bg-white/8 hover:text-white"
                       }`}
                     >
@@ -333,7 +333,7 @@ function MenuItem({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[12.5px] transition-colors ${
+      className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-start text-[12.5px] transition-colors ${
         disabled
           ? "cursor-not-allowed text-white/25"
           : danger

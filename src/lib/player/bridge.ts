@@ -9,6 +9,7 @@ export type TrackInfo = {
   channelCount?: number;
   title?: string;
   external?: boolean;
+  externalFilename?: string;
   forced?: boolean;
   default?: boolean;
   hearingImpaired?: boolean;
@@ -68,6 +69,8 @@ export type PlayerBridge = {
   setSubDelay: (sec: number) => void;
   setAudioDelay: (sec: number) => void;
   setPanscan: (value: number) => void;
+  setVideoZoom: (log2: number) => void;
+  setAspectOverride: (ratio: string) => void;
   addSubtitle: (url: string, lang?: string, title?: string, select?: boolean) => Promise<boolean>;
   setAudioNormalize: (on: boolean) => void;
   setAudioProfile?: (profile: string) => void;

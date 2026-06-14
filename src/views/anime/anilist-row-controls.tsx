@@ -1,4 +1,5 @@
 import anilistIcon from "@/assets/anilist.png";
+import { useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
 
 const ROWS = [
@@ -8,6 +9,7 @@ const ROWS = [
 ] as const;
 
 export function AnilistRowControls() {
+  const t = useT();
   const { settings, update } = useSettings();
   const hidden = settings.animeAnilistRowsHidden;
   const toggle = (key: string) => {
@@ -15,10 +17,10 @@ export function AnilistRowControls() {
     update({ animeAnilistRowsHidden: next });
   };
   return (
-    <div className="flex items-center gap-2 pl-[9px]">
-      <span className="mr-1 flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.16em] text-ink-subtle">
+    <div className="flex items-center gap-2 ps-[9px]">
+      <span className="me-1 flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.16em] text-ink-subtle">
         <img src={anilistIcon} alt="" className="h-[15px] w-[15px] rounded-[3px]" />
-        AniList rows
+        {t("AniList rows")}
       </span>
       {ROWS.map((r) => {
         const on = !hidden.includes(r.key);
@@ -34,7 +36,7 @@ export function AnilistRowControls() {
                 : "border-edge-soft bg-canvas/40 text-ink-subtle hover:border-edge hover:text-ink-muted"
             }`}
           >
-            {r.label}
+            {t(r.label)}
           </button>
         );
       })}

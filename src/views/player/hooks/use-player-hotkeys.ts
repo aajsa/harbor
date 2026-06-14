@@ -89,7 +89,7 @@ export function usePlayerHotkeys(params: {
       sleep.mode.kind === "off" ? sleep.set({ kind: "end_episode" }) : sleep.cancel(),
     onScreenshot: quickToolsEnabled ? () => frameGrab.trigger() : undefined,
     onGifRecord: quickToolsEnabled ? () => gif.toggle() : undefined,
-    onToggleCrop: () => videoFill.toggle(),
+    onToggleCrop: () => videoFill.cycle(),
     onPanscanUp: () => videoFill.step(0.1),
     onPanscanDown: () => videoFill.step(-0.1),
     onPrevChannel: liveOverlay.isLive ? liveOverlay.goPrevChannel : undefined,

@@ -1,8 +1,14 @@
 import { useCallback, useEffect, useState, type RefObject } from "react";
-import { guessContentType, type CastDeviceInfo } from "@/lib/cast";
+import {
+  guessContentType,
+  type CastDeviceInfo,
+  type CastSubInfo,
+  type CastSubStyle,
+} from "@/lib/cast";
 import { useDebridClients } from "@/lib/debrid/registry";
-import type { PlayerBridge, PlayerSnapshot } from "@/lib/player/bridge";
+import type { PlayerBridge, PlayerSnapshot, TrackInfo } from "@/lib/player/bridge";
 import { getPlaybackPosition } from "@/lib/player/playback-clock";
+import type { Settings } from "@/lib/settings";
 import type { PlayerSrc } from "@/lib/view";
 import { resolveCompatibleCastUrl } from "../cast-resolve";
 import type { useCastSession } from "./use-cast-session";
@@ -17,16 +23,55 @@ const UNIVERSAL_SAFE_PROFILE = {
   max_video_kbps: 5000,
 };
 
+function subFormatFromTrack(track: TrackInfo): CastSubInfo["format"] {
+  const codec = (track.codec ?? "").toLowerCase();
+  const source = `${codec} ${(track.externalFilename ?? "").toLowerCase()}`;
+  if (source.includes("ass") || source.includes("ssa")) return "ass";
+  if (source.includes("vtt") || source.includes("webvtt")) return "vtt";
+  return "srt";
+}
+
+function buildCastSub(tracks: TrackInfo[]): CastSubInfo | null {
+  const selected = tracks.find((t) => t.selected);
+  if (!selected) return null;
+  if (selected.external) {
+    if (!selected.externalFilename) return null;
+    return {
+      kind: "external",
+      url: selected.externalFilename,
+      format: subFormatFromTrack(selected),
+      off: false,
+    };
+  }
+  const embeddedIndex = tracks.filter((t) => !t.external).indexOf(selected);
+  if (embeddedIndex < 0) return null;
+  return { kind: "embedded", src_index: embeddedIndex, off: false };
+}
+
+function buildCastSubStyle(s: Settings): CastSubStyle {
+  return {
+    font_size: s.subFontSize,
+    font_color: s.subFontColor,
+    border_color: s.subBorderColor,
+    border_size: s.subBorderSize,
+    margin_y: s.subMarginY,
+    align_x: s.subAlignX,
+  };
+}
+
 export function useCastPick(params: {
   src: PlayerSrc;
   debrids: ReturnType<typeof useDebridClients>;
   snapRef: RefObject<PlayerSnapshot>;
   bridgeRef: RefObject<PlayerBridge | null>;
+  settings: Settings;
+  burnSubsOnTv: boolean;
   closeCastMenu: () => void;
   pickCastDevice: CastSession["pickCastDevice"];
   setCastErrorInfo: CastSession["setCastErrorInfo"];
 }) {
-  const { src, debrids, snapRef, bridgeRef, closeCastMenu, pickCastDevice, setCastErrorInfo } = params;
+  const { src, debrids, snapRef, bridgeRef, settings, burnSubsOnTv, closeCastMenu, pickCastDevice, setCastErrorInfo } =
+    params;
   const [castIncompatError, setCastIncompatError] = useState<string | null>(null);
   const [castTranscoding, setCastTranscoding] = useState(false);
 
@@ -89,7 +134,8 @@ export function useCastPick(params: {
         );
       }
       const isLiveIptv = src.meta.id?.startsWith("iptv:") ?? false;
-      const forceTranscode = resolved.kind === "transcode" || isLiveIptv;
+      const burnSub = burnSubsOnTv ? buildCastSub(snap.subtitleTracks) : null;
+      const forceTranscode = resolved.kind === "transcode" || isLiveIptv || burnSub != null;
       const profile = forceTranscode ? UNIVERSAL_SAFE_PROFILE : undefined;
       setCastTranscoding(forceTranscode);
       await pickCastDevice(
@@ -105,11 +151,13 @@ export function useCastPick(params: {
             : undefined,
           transcode: forceTranscode,
           profile,
+          subtitle: burnSub,
+          subStyle: burnSub ? buildCastSubStyle(settings) : null,
         },
         () => bridgeRef.current?.pause(),
       );
     },
-    [src, debrids, snapRef, bridgeRef, closeCastMenu, pickCastDevice, setCastErrorInfo],
+    [src, debrids, snapRef, bridgeRef, settings, burnSubsOnTv, closeCastMenu, pickCastDevice, setCastErrorInfo],
   );
 
   return { castIncompatError, setCastIncompatError, castTranscoding, setCastTranscoding, onPickDevice };

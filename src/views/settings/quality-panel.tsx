@@ -86,7 +86,7 @@ export function QualityPanel() {
             onChange={(e) => update({ uiScale: parseFloat(e.target.value) })}
             className="h-1 flex-1 appearance-none rounded-full bg-edge-soft accent-ink"
           />
-          <span className="w-14 shrink-0 text-right text-[13px] tabular-nums text-ink-muted">
+          <span className="w-14 shrink-0 text-end text-[13px] tabular-nums text-ink-muted">
             {Math.round(settings.uiScale * 100)}%
           </span>
           {settings.uiScale !== 1 && (

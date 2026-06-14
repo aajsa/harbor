@@ -1,7 +1,9 @@
 import { ChevronDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useT } from "@/lib/i18n";
 
 export function Synopsis({ text }: { text: string }) {
+  const t = useT();
   const [expanded, setExpanded] = useState(false);
   const [showToggle, setShowToggle] = useState(false);
   const ref = useRef<HTMLParagraphElement>(null);
@@ -38,7 +40,7 @@ export function Synopsis({ text }: { text: string }) {
           onClick={() => setExpanded((e) => !e)}
           className="mt-3 inline-flex items-center gap-1 text-[13px] font-medium text-ink-muted transition-colors hover:text-ink"
         >
-          {expanded ? "Show less" : "Show more"}
+          {expanded ? t("Show less") : t("Show more")}
           <ChevronDown
             className={`h-3.5 w-3.5 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
           />

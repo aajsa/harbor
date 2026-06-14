@@ -36,7 +36,7 @@ export function StreamingStep() {
             >
               <ServiceLogo service={svc} height={22} />
               {on && (
-                <span className="absolute right-1.5 top-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-ink">
+                <span className="absolute end-1.5 top-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-ink">
                   <Check size={9} strokeWidth={3} className="text-canvas" />
                 </span>
               )}

@@ -31,12 +31,21 @@ export function ChannelGrid({
   );
   const hydrations = useChannelHydration(visibleNames);
   const tvgIdCounts = useMemo(() => computeTvgIdCounts(channels), [channels]);
+  const nowMinute = Math.floor(nowMs / 60_000);
+  const nowByChannel = useMemo(() => {
+    const m = new Map<string, { current: ReturnType<typeof findCurrent>["current"]; next: ReturnType<typeof findCurrent>["next"] }>();
+    for (const ch of visible) {
+      const programs = epgProgramsForChannel(ch, epg, tvgIdCounts);
+      m.set(ch.id, findCurrent(programs, nowMs));
+    }
+    return m;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, epg, tvgIdCounts, nowMinute]);
   return (
     <div className="flex flex-col gap-5">
       <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-3.5">
         {visible.map((ch) => {
-          const programs = epgProgramsForChannel(ch, epg, tvgIdCounts);
-          const { current, next } = findCurrent(programs, nowMs);
+          const { current, next } = nowByChannel.get(ch.id) ?? { current: null, next: null };
           const hydrated = hydrations.get(ch.name) ?? null;
           return (
             <ChannelCard
@@ -140,10 +149,24 @@ function classifyError(raw: string): { title: string; hint: string; raw: string 
       raw,
     };
   }
-  if (lower.includes("inactive")) {
+  if (lower.includes("inactive") || lower.includes("expired") || lower.includes("banned") || lower.includes("disabled")) {
     return {
-      title: "Account is inactive",
-      hint: "This account is no longer active on the provider side. Renew or confirm with your provider.",
+      title: "Account is not active",
+      hint: "This Xtream account is expired, banned, or disabled on the provider side. Renew or confirm with your provider.",
+      raw,
+    };
+  }
+  if (lower.includes("auth failed") || lower.includes("rejected these credentials")) {
+    return {
+      title: "Xtream login was rejected",
+      hint: "The server URL, username, or password is wrong. Edit the playlist and re-check the credentials your provider sent.",
+      raw,
+    };
+  }
+  if (lower.includes("non-json") || lower.includes("webpage instead")) {
+    return {
+      title: "Provider did not return valid data",
+      hint: "The server replied with a webpage instead of Xtream data. The account may be expired, or the server URL is not an Xtream panel.",
       raw,
     };
   }

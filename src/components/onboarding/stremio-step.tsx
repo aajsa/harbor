@@ -84,7 +84,7 @@ export function StremioStep() {
           onClick={goToIntro}
           className="flex w-fit items-center gap-1.5 text-[12.5px] font-medium text-ink-subtle transition-colors hover:text-ink-muted"
         >
-          <ChevronLeft size={14} strokeWidth={2.2} />
+          <ChevronLeft size={14} strokeWidth={2.2} className="dir-icon" />
           Back
         </button>
         <div className="flex justify-center">

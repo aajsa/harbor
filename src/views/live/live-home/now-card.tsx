@@ -29,7 +29,7 @@ export function NowCard({
       data-art={backdrop || channel.logo || ""}
       onClick={() => onPlay(channel)}
       aria-label={`Play ${channel.name}`}
-      className="group/now relative flex aspect-[16/9] w-full flex-col justify-end overflow-hidden rounded-lg border border-edge-soft/55 bg-elevated text-left transition-all duration-200 hover:border-edge hover:shadow-[0_10px_30px_-12px_rgba(0,0,0,0.6)]"
+      className="group/now relative flex aspect-[16/9] w-full flex-col justify-end overflow-hidden rounded-lg border border-edge-soft/55 bg-elevated text-start transition-all duration-200 hover:border-edge hover:shadow-[0_10px_30px_-12px_rgba(0,0,0,0.6)]"
     >
       {art ? (
         <img
@@ -58,11 +58,11 @@ export function NowCard({
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-canvas via-canvas/35 to-transparent" />
 
-      <span className="absolute left-3 top-3 flex h-[22px] items-center gap-1.5 rounded-full bg-canvas/90 px-2.5 text-[10.5px] font-bold uppercase tracking-[0.16em] text-danger backdrop-blur">
+      <span className="absolute start-3 top-3 flex h-[22px] items-center gap-1.5 rounded-full bg-canvas/90 px-2.5 text-[10.5px] font-bold uppercase tracking-[0.16em] text-danger backdrop-blur">
         <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-danger" />
         Live
       </span>
-      <span className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-ink text-canvas opacity-0 shadow-[0_4px_14px_rgba(0,0,0,0.4)] transition-all duration-200 group-hover/now:opacity-100">
+      <span className="absolute end-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-ink text-canvas opacity-0 shadow-[0_4px_14px_rgba(0,0,0,0.4)] transition-all duration-200 group-hover/now:opacity-100">
         <Play size={15} fill="currentColor" />
       </span>
 
@@ -80,7 +80,7 @@ export function NowCard({
           )}
           <span className="truncate">{channel.name}</span>
         </div>
-        <div className="truncate text-[14.5px] font-semibold leading-tight text-ink">
+        <div dir="auto" className="truncate text-[14.5px] font-semibold leading-tight text-ink">
           {current?.title || hydrated?.name || channel.group || "Live channel"}
         </div>
         {progress != null && (

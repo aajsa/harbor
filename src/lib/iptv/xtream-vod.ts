@@ -20,6 +20,19 @@ type EpisodeRow = {
 };
 type SeriesInfo = { episodes?: Record<string, EpisodeRow[]> };
 
+const seriesInfoCache = new Map<string, SeriesInfo>();
+
+export function clearSeriesInfoCache(baseId?: string): void {
+  if (!baseId) {
+    seriesInfoCache.clear();
+    return;
+  }
+  const prefix = `${baseId}::`;
+  for (const key of [...seriesInfoCache.keys()]) {
+    if (key.startsWith(prefix)) seriesInfoCache.delete(key);
+  }
+}
+
 function catMap(raw: unknown): Map<string, string> {
   const m = new Map<string, string>();
   if (Array.isArray(raw)) {
@@ -91,13 +104,19 @@ export async function fetchXtreamSeries(creds: XtreamCreds, baseId: string): Pro
     const seriesName = s.name?.trim() || `Series ${s.series_id}`;
     const group = s.category_id ? cats.get(String(s.category_id)) ?? null : null;
     const cover = s.cover?.trim() || null;
-    let infoRaw: unknown;
-    try {
-      infoRaw = await xtreamFetch(apiUrl(creds, "get_series_info", { series_id: String(s.series_id) }));
-    } catch {
-      return [];
+    const cacheKey = `${baseId}::${s.series_id}`;
+    let info = seriesInfoCache.get(cacheKey);
+    if (!info) {
+      try {
+        info = (await xtreamFetch(
+          apiUrl(creds, "get_series_info", { series_id: String(s.series_id) }),
+        )) as SeriesInfo;
+      } catch {
+        return [];
+      }
+      seriesInfoCache.set(cacheKey, info);
     }
-    const episodes = (infoRaw as SeriesInfo)?.episodes;
+    const episodes = info?.episodes;
     if (!episodes || typeof episodes !== "object") return [];
     const eps: IptvChannel[] = [];
     for (const seasonKey of Object.keys(episodes)) {

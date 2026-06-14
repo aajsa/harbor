@@ -160,11 +160,7 @@ export function AnimeHero({
         })}
         <div
           aria-hidden
-          className="absolute inset-0"
-          style={{
-            background:
-              "linear-gradient(90deg, var(--color-canvas) 0%, color-mix(in oklch, var(--color-canvas), transparent 12%) 32%, color-mix(in oklch, var(--color-canvas), transparent 50%) 55%, color-mix(in oklch, var(--color-canvas), transparent 92%) 100%)",
-          }}
+          className="absolute inset-0 bg-gradient-to-r rtl:bg-gradient-to-l from-[var(--color-canvas)] from-0% via-[color-mix(in_oklch,var(--color-canvas),transparent_50%)] via-55% to-[color-mix(in_oklch,var(--color-canvas),transparent_92%)] to-100%"
         />
         <div
           aria-hidden
@@ -210,7 +206,7 @@ export function AnimeHero({
             >
               {saved ? <BookmarkCheck size={18} /> : <Bookmark size={18} />}
             </button>
-            <span className="ml-1 hidden items-center gap-1.5 text-[13px] text-ink-muted sm:inline-flex">
+            <span className="ms-1 hidden items-center gap-1.5 text-[13px] text-ink-muted sm:inline-flex">
               {current.imdbRating && (
                 <>
                   <MalLogo className="h-[12px] w-auto text-ink-muted" />
@@ -228,17 +224,17 @@ export function AnimeHero({
             type="button"
             onClick={prev}
             aria-label="Previous"
-            className="absolute left-3 top-[260px] z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-canvas/35 text-ink-muted transition-colors duration-150 hover:bg-canvas/65 hover:text-ink"
+            className="absolute start-3 top-[260px] z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-canvas/35 text-ink-muted transition-colors duration-150 hover:bg-canvas/65 hover:text-ink"
           >
-            <ChevronLeft size={26} />
+            <ChevronLeft size={26} className="dir-icon" />
           </button>
           <button
             type="button"
             onClick={next}
             aria-label="Next"
-            className="absolute right-3 top-[260px] z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-canvas/35 text-ink-muted transition-colors duration-150 hover:bg-canvas/65 hover:text-ink"
+            className="absolute end-3 top-[260px] z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-canvas/35 text-ink-muted transition-colors duration-150 hover:bg-canvas/65 hover:text-ink"
           >
-            <ChevronRight size={26} />
+            <ChevronRight size={26} className="dir-icon" />
           </button>
         </>
       )}
@@ -298,7 +294,7 @@ function HeroLogo({ title, logo }: { title: string; logo?: string }) {
         decoding="async"
         onLoad={() => setLoaded(true)}
         onError={() => setFailed(true)}
-        className="max-h-[120px] w-auto max-w-[420px] object-contain object-left drop-shadow-[0_6px_24px_rgba(0,0,0,0.55)]"
+        className="max-h-[120px] w-auto max-w-[420px] object-contain object-left rtl:object-right drop-shadow-[0_6px_24px_rgba(0,0,0,0.55)]"
         style={{
           opacity: loaded ? 1 : 0,
           transition: "opacity 420ms cubic-bezier(0.32, 0.72, 0.24, 1)",
@@ -342,7 +338,7 @@ function CrunchyrollBadge({ name, year }: { name: string; year?: number }) {
       </span>
       <div
         role="tooltip"
-        className={`pointer-events-none absolute left-0 top-full z-30 mt-2 w-max max-w-[280px] origin-top-left rounded-xl border border-edge-soft/70 bg-elevated/95 px-3.5 py-2.5 text-left shadow-[0_18px_40px_-16px_rgba(0,0,0,0.8)] backdrop-blur-md transition-all duration-150 ${
+        className={`pointer-events-none absolute start-0 top-full z-30 mt-2 w-max max-w-[280px] origin-top-left rtl:origin-top-right rounded-xl border border-edge-soft/70 bg-elevated/95 px-3.5 py-2.5 text-start shadow-[0_18px_40px_-16px_rgba(0,0,0,0.8)] backdrop-blur-md transition-all duration-150 ${
           hover ? "scale-100 opacity-100" : "scale-95 opacity-0"
         }`}
       >

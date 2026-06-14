@@ -6,6 +6,7 @@ import { CastModal } from "./cast-modal";
 import type { DownloadStatus } from "@/views/player/hooks/use-video-download";
 import { TransportStremio } from "./transport-stremio";
 import { useSettings } from "@/lib/settings";
+import { useT } from "@/lib/i18n";
 import { activeLayout } from "@/lib/theme";
 import { SeekBar } from "./transport/seek-bar";
 import { LiveBadge, GoToLive, LiveSeekBar } from "./transport/live-controls";
@@ -126,6 +127,7 @@ export function Transport({
   onOpenDvr?: () => void;
   sleep?: import("@/views/player/hooks/use-sleep-timer").SleepTimerState;
 }) {
+  const t = useT();
   const { settings } = useSettings();
   const isStremioLayout = activeLayout(settings.theme) === "stremio";
   if (isStremioLayout && !pipMode) {
@@ -249,6 +251,7 @@ export function Transport({
     );
   }
   const ctx: ControlContext = {
+    t,
     snap,
     capabilities,
     fullscreen,

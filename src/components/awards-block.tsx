@@ -96,7 +96,7 @@ function AwardGroup({ type, entries }: { type: AwardType; entries: AwardEntry[] 
               <button
                 type="button"
                 onClick={() => openAward(type)}
-                className="rounded-sm text-left transition-colors hover:text-accent"
+                className="rounded-sm text-start transition-colors hover:text-accent"
               >
                 {TYPE_TITLE[type]}
               </button>

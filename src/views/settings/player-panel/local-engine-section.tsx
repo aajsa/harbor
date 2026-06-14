@@ -179,7 +179,7 @@ export function LocalEngineSection() {
                 </span>
                 <span className="font-medium text-ink">{step.label}</span>
                 {step.detail && (
-                  <span className="ml-auto truncate pl-3 text-right font-mono text-[11.5px] text-ink-subtle">
+                  <span className="ms-auto truncate ps-3 text-end font-mono text-[11.5px] text-ink-subtle">
                     {step.detail}
                   </span>
                 )}

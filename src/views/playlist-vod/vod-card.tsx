@@ -45,7 +45,7 @@ export const VodCard = memo(function VodCard({ kind, title, year, logo, seed, su
   }, [settings.tmdbKey, kind, title, year, logo]);
 
   return (
-    <button ref={ref} onClick={onClick} className="group flex w-full min-w-0 flex-col gap-2 text-left">
+    <button ref={ref} onClick={onClick} className="group flex w-full min-w-0 flex-col gap-2 text-start">
       <Poster
         src={poster ?? undefined}
         seed={seed}

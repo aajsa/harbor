@@ -1,4 +1,5 @@
 import { GalleryHorizontal, List } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 export function EpisodeLayoutToggle({
   value,
@@ -7,11 +8,12 @@ export function EpisodeLayoutToggle({
   value: "list" | "strip";
   onChange: (v: "list" | "strip") => void;
 }) {
+  const t = useT();
   return (
     <div className="flex h-10 items-center gap-0.5 rounded-full border border-edge-soft bg-canvas/90 p-1">
       <button
         type="button"
-        aria-label="List view"
+        aria-label={t("List view")}
         onClick={() => onChange("list")}
         className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors ${
           value === "list" ? "bg-ink text-canvas" : "text-ink-muted hover:text-ink"
@@ -21,7 +23,7 @@ export function EpisodeLayoutToggle({
       </button>
       <button
         type="button"
-        aria-label="Horizontal view"
+        aria-label={t("Horizontal view")}
         onClick={() => onChange("strip")}
         className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors ${
           value === "strip" ? "bg-ink text-canvas" : "text-ink-muted hover:text-ink"

@@ -8,12 +8,13 @@ import { TmdbNudge } from "@/components/nudge";
 import { TopRankCard } from "@/components/top-rank-card";
 import { useAuth } from "@/lib/auth";
 import { topSeries, type Meta } from "@/lib/cinemeta";
+import { useT } from "@/lib/i18n";
 import { TV_GENRES } from "@/lib/feed/tags";
 import { publishResumeStates } from "@/lib/hover-preview/store";
 import { listPager } from "@/lib/list-pager";
 import { tmdbDiscover, tmdbSeriesRow, tmdbTrending } from "@/lib/providers/tmdb";
 import { useSettings } from "@/lib/settings";
-import { library, type LibraryItem } from "@/lib/stremio";
+import { cwSortKey, isCwMember, library, type LibraryItem } from "@/lib/stremio";
 import { useScrollMemory, useView } from "@/lib/view";
 import { buildShowHero, bucketCopy } from "./shows/hero-curation";
 
@@ -40,6 +41,7 @@ export function Shows({ active = true }: { active?: boolean }) {
   const { settings } = useSettings();
   const { authKey } = useAuth();
   const { openGrid } = useView();
+  const t = useT();
   const [hero, setHero] = useState<Meta[]>([]);
   const [rows, setRows] = useState<ShowRow[]>([]);
   const [items, setItems] = useState<LibraryItem[]>([]);
@@ -145,18 +147,10 @@ export function Shows({ active = true }: { active?: boolean }) {
   const continueWatching = useMemo(
     () =>
       items
-        .filter(
-          (i) =>
-            i.type === "series" &&
-            (!i.removed || i.temp) &&
-            i.state &&
-            i.state.timeOffset > 0,
-        )
-        .sort(
-          (a, b) =>
-            Date.parse(b.state?.lastWatched ?? b._mtime) -
-            Date.parse(a.state?.lastWatched ?? a._mtime),
-        )
+        .filter((i) => i.type === "series" && isCwMember(i))
+        .map((i) => ({ i, k: cwSortKey(i) }))
+        .sort((a, b) => b.k - a.k)
+        .map((e) => e.i)
         .slice(0, 16),
     [items],
   );
@@ -222,7 +216,7 @@ export function Shows({ active = true }: { active?: boolean }) {
           <PeekHero slides={hero} />
           {!settings.tmdbKey && <TmdbNudge />}
           {continueWatching.length > 0 && (
-            <Row title="Pick up where you left off" min={260} shape="landscape" scrollKey="shows:cw">
+            <Row title={t("Pick up where you left off")} min={260} shape="landscape" scrollKey="shows:cw">
               {continueWatching.map((it) => (
                 <ContinueCard key={it._id} item={it} />
               ))}
@@ -230,7 +224,7 @@ export function Shows({ active = true }: { active?: boolean }) {
           )}
           {top10.length >= 10 && (
             <Row
-              title="Top 10 Series Today"
+              title={t("Top 10 Series Today")}
               min={216}
               shape="rank"
               scrollKey="shows:top10"
@@ -239,7 +233,7 @@ export function Shows({ active = true }: { active?: boolean }) {
                 return trending?.fetcher
                   ? () =>
                       openGrid({
-                        title: trending.title,
+                        title: t(trending.title),
                         fetcher: trending.fetcher!,
                         initial: trending.metas,
                       })
@@ -254,14 +248,14 @@ export function Shows({ active = true }: { active?: boolean }) {
           {restRows.map((row) => (
             <Row
               key={row.key}
-              title={row.title}
+              title={t(row.title)}
               min={148}
               shape="portrait"
               scrollKey={`shows:${row.key}`}
               onEndReached={row.hasMore ? () => loadMore(row.key) : undefined}
               onViewAll={
                 row.fetcher
-                  ? () => openGrid({ title: row.title, fetcher: row.fetcher!, initial: row.metas })
+                  ? () => openGrid({ title: t(row.title), fetcher: row.fetcher!, initial: row.metas })
                   : undefined
               }
             >
@@ -278,17 +272,18 @@ export function Shows({ active = true }: { active?: boolean }) {
 }
 
 function PageMast() {
+  const t = useT();
   const copy = bucketCopy();
   return (
     <header data-tauri-drag-region className="flex flex-col gap-2">
       <span className="text-[11px] font-bold uppercase tracking-[0.42em] text-ink-subtle">
-        {copy.kicker}
+        {t(copy.kicker)}
       </span>
       <h1 className="font-display text-[44px] font-medium leading-[1.05] tracking-tight text-ink">
-        {copy.title}
+        {t(copy.title)}
       </h1>
       <p className="max-w-2xl text-[15px] leading-relaxed text-ink-muted">
-        {copy.subtitle}
+        {t(copy.subtitle)}
       </p>
     </header>
   );

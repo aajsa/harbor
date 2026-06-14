@@ -29,7 +29,7 @@ function SubToggle({
       >
         <span
           className={`h-4 w-4 rounded-full bg-canvas shadow-sm transition-transform ${
-            on ? "translate-x-4" : "translate-x-0"
+            on ? "translate-x-4 rtl:-translate-x-4" : "translate-x-0"
           }`}
         />
       </button>
@@ -68,12 +68,12 @@ export function TrayRow() {
         >
           <span
             className={`h-5 w-5 rounded-full bg-canvas shadow-sm transition-transform ${
-              on ? "translate-x-5" : "translate-x-0"
+              on ? "translate-x-5 rtl:-translate-x-5" : "translate-x-0"
             }`}
           />
         </button>
       </div>
-      <div className="flex flex-col gap-1.5 pl-4">
+      <div className="flex flex-col gap-1.5 ps-4">
         <SubToggle
           label="Always on top"
           hint="Keep the Harbor window above other windows."

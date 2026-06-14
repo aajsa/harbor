@@ -12,7 +12,7 @@ export function GuestPickToggle() {
     >
       <span className="flex min-w-0 items-center gap-2">
         <ListChecks size={13} strokeWidth={1.9} className="shrink-0" />
-        <span className="flex min-w-0 flex-col text-left">
+        <span className="flex min-w-0 flex-col text-start">
           <span className="truncate">Guests pick their own source</span>
           <span className="truncate text-[10.5px] text-ink-subtle">
             Prompts guests to choose instead of auto-matching
@@ -27,7 +27,7 @@ export function GuestPickToggle() {
       >
         <span
           className={`block h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
-            on ? "translate-x-4" : "translate-x-0"
+            on ? "translate-x-4 rtl:-translate-x-4" : "translate-x-0"
           }`}
         />
       </span>

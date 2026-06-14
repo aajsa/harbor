@@ -1,19 +1,13 @@
-import { Grid2x2, Home, LayoutGrid, ListTree, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { save as saveDialog } from "@tauri-apps/plugin-dialog";
-import { writeTextFile } from "@tauri-apps/plugin-fs";
-import { buildM3u, suggestExportFilename } from "@/lib/iptv/export";
-import { buildXtreamUrls, type PlaylistFormValue } from "./live/source-picker/playlist-form";
+import { usePlaylistMutations } from "./live/hooks/use-playlist-mutations";
+import { useLiveActions } from "./live/hooks/use-live-actions";
 import { useSettings } from "@/lib/settings";
 import { useScrollMemory, useView } from "@/lib/view";
-import type { Meta } from "@/lib/cinemeta";
 import { FAVORITES_GROUP_KEY, useFavorites } from "@/lib/iptv/favorites";
 import { clearPlaylistCache, getCachedPlaylist } from "@/lib/iptv/store";
-import { recordChannelPlay } from "@/lib/iptv/channel-stats";
-import { buildCatchupUrl } from "@/lib/iptv/catchup";
-import { findCurrent } from "@/lib/iptv/xmltv";
 import { pushActivityHint } from "@/lib/discord/activity-hint";
-import type { EpgProgram, IptvChannel, IptvPlaylistSource } from "@/lib/iptv/types";
+import type { IptvPlaylistSource } from "@/lib/iptv/types";
 import { CategorySidebar } from "./live/category-sidebar";
 import { ChannelGrid, EmptyResult, ErrorBlock } from "./live/channel-grid";
 import { GridSkeleton, GuideSkeleton } from "./live/skeletons";
@@ -27,11 +21,11 @@ import { useChannelPipeline } from "./live/hooks/use-channel-pipeline";
 import { useEpg, useNowTick } from "./live/hooks/use-epg";
 import { useIptvPlaylist } from "./live/hooks/use-iptv-playlist";
 import { MultiviewView } from "./multiview";
+import { ViewModeToggle, type ViewMode } from "./live/view-mode-toggle";
 import { isWindowsDesktop } from "@/lib/platform";
 
 const ACTIVE_KEY = "harbor.iptv.active";
 const MODE_KEY = "harbor.iptv.viewMode";
-type ViewMode = "home" | "grid" | "guide" | "multiview";
 
 function readActiveId(): string | null {
   try {
@@ -67,8 +61,8 @@ function writeMode(m: ViewMode) {
 }
 
 export function LiveView({ active }: { active: boolean }) {
-  const { settings, update } = useSettings();
-  const { openPlayer, openMeta } = useView();
+  const { settings } = useSettings();
+  const { openMeta } = useView();
   const sources = settings.iptvPlaylists;
 
   const [activeId, setActiveId] = useState<string | null>(() => readActiveId());
@@ -90,11 +84,19 @@ export function LiveView({ active }: { active: boolean }) {
   const activeSource: IptvPlaylistSource | null = useMemo(() => {
     if (!activeId) return null;
     const found = sources.find((s) => s.id === activeId);
-    return found ? { id: found.id, name: found.name, url: found.url, epgUrl: found.epgUrl } : null;
+    return found
+      ? { id: found.id, name: found.name, url: found.url, epgUrl: found.epgUrl, kind: found.kind, xtream: found.xtream }
+      : null;
   }, [activeId, sources]);
 
   const { state, refresh } = useIptvPlaylist(active ? activeSource : null);
-  const playlist = state.kind === "ready" ? state.playlist : getCachedPlaylist(activeSource?.id ?? "");
+  const cachedForActive = getCachedPlaylist(activeSource?.id ?? "");
+  const playlist =
+    state.kind === "ready"
+      ? state.playlist
+      : cachedForActive && cachedForActive.id === activeId
+        ? cachedForActive
+        : null;
   const epgOnlyUrls = useMemo(
     () => sources.filter((s) => s.kind === "epg").map((s) => s.epgUrl || s.url),
     [sources],
@@ -194,130 +196,19 @@ export function LiveView({ active }: { active: boolean }) {
     allSources,
   });
 
-  const addPlaylist = useCallback(
-    (entry: PlaylistFormValue) => {
-      const id = `pl-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-      const built = materializePlaylistEntry(id, entry);
-      const next = [...settings.iptvPlaylists, built];
-      update({ iptvPlaylists: next });
-      if (entry.kind !== "epg") {
-        setActiveId(id);
-        writeActiveId(id);
-      }
-    },
-    [settings.iptvPlaylists, update],
-  );
+  const selectActive = useCallback((id: string | null) => {
+    setActiveId(id);
+    writeActiveId(id);
+  }, []);
 
-  const removePlaylist = useCallback(
-    (id: string) => {
-      const next = settings.iptvPlaylists.filter((s) => s.id !== id);
-      update({ iptvPlaylists: next });
-      clearPlaylistCache(id);
-      if (activeId === id) {
-        const fallback = next[0]?.id ?? null;
-        setActiveId(fallback);
-        writeActiveId(fallback);
-      }
-    },
-    [settings.iptvPlaylists, update, activeId],
-  );
+  const { addPlaylist, removePlaylist, editPlaylist, reorderPlaylist, movePlaylistTop } =
+    usePlaylistMutations({ activeId, setActiveId: selectActive, refresh });
 
-  const reorderPlaylist = useCallback(
-    (id: string, delta: number) => {
-      const arr = settings.iptvPlaylists;
-      const i = arr.findIndex((s) => s.id === id);
-      const j = i + delta;
-      if (i < 0 || j < 0 || j >= arr.length) return;
-      const next = arr.slice();
-      [next[i], next[j]] = [next[j], next[i]];
-      update({ iptvPlaylists: next });
-    },
-    [settings.iptvPlaylists, update],
-  );
-
-  const movePlaylistTop = useCallback(
-    (id: string) => {
-      const arr = settings.iptvPlaylists;
-      const i = arr.findIndex((s) => s.id === id);
-      if (i <= 0) return;
-      const next = arr.slice();
-      const [item] = next.splice(i, 1);
-      next.unshift(item);
-      update({ iptvPlaylists: next });
-    },
-    [settings.iptvPlaylists, update],
-  );
-
-  const editPlaylist = useCallback(
-    (id: string, entry: PlaylistFormValue) => {
-      const next = settings.iptvPlaylists.map((s) =>
-        s.id === id ? materializePlaylistEntry(id, entry) : s,
-      );
-      update({ iptvPlaylists: next });
-      clearPlaylistCache(id);
-      if (activeId === id) refresh();
-    },
-    [settings.iptvPlaylists, update, activeId, refresh],
-  );
-
-  const exportPlaylist = useCallback(
-    async (id: string) => {
-      if (id !== activeId || !playlist) {
-        return;
-      }
-      const source = settings.iptvPlaylists.find((s) => s.id === id);
-      const filename = suggestExportFilename(source?.name ?? "playlist");
-      try {
-        const target = await saveDialog({
-          defaultPath: filename,
-          filters: [{ name: "M3U Playlist", extensions: ["m3u", "m3u8"] }],
-        });
-        if (!target) return;
-        const body = buildM3u(playlist.channels, playlist.epgUrl);
-        await writeTextFile(target, body);
-      } catch (e) {
-        console.warn("[live] export playlist failed", e);
-      }
-    },
-    [activeId, playlist, settings.iptvPlaylists],
-  );
-
-  const handlePlay = useCallback(
-    (ch: IptvChannel) => {
-      recordChannelPlay(ch);
-      const meta = synthChannelMeta(ch);
-      const programs = ch.tvgId ? epg?.byChannel.get(ch.tvgId) : undefined;
-      const liveProgram = findCurrent(programs, Date.now()).current?.title ?? undefined;
-      openPlayer({
-        meta,
-        url: ch.url,
-        title: ch.name,
-        subtitle: ch.group ?? "Live",
-        notWebReady: true,
-        liveProgram,
-      });
-    },
-    [openPlayer, epg],
-  );
-
-  const handlePlayCatchup = useCallback(
-    (ch: IptvChannel, program: EpgProgram) => {
-      const url = buildCatchupUrl(ch, program.startMs, program.endMs);
-      if (!url) {
-        handlePlay(ch);
-        return;
-      }
-      openPlayer({
-        meta: synthChannelMeta(ch),
-        url,
-        title: program.title || ch.name,
-        subtitle: `${ch.name} · catch up`,
-        notWebReady: true,
-        liveProgram: program.title || undefined,
-      });
-    },
-    [openPlayer, handlePlay],
-  );
+  const { handlePlay, handlePlayCatchup, exportPlaylist } = useLiveActions({
+    epg,
+    activeId,
+    playlist,
+  });
 
   const scrollRef = useRef<HTMLDivElement>(null);
   useScrollMemory("live", scrollRef, active);
@@ -486,112 +377,4 @@ export function LiveView({ active }: { active: boolean }) {
       </div>
     </main>
   );
-}
-
-function ViewModeToggle({ mode, onChange }: { mode: ViewMode; onChange: (m: ViewMode) => void }) {
-  return (
-    <div className="flex h-11 shrink-0 items-center gap-0.5 rounded-xl border border-edge-soft/55 bg-elevated p-1">
-      <ToggleButton
-        active={mode === "home"}
-        onClick={() => onChange("home")}
-        icon={<Home size={14} strokeWidth={2} />}
-        label="Home"
-      />
-      <ToggleButton
-        active={mode === "grid"}
-        onClick={() => onChange("grid")}
-        icon={<LayoutGrid size={14} strokeWidth={2} />}
-        label="Grid"
-      />
-      <ToggleButton
-        active={mode === "guide"}
-        onClick={() => onChange("guide")}
-        icon={<ListTree size={14} strokeWidth={2} />}
-        label="Guide"
-      />
-      {isWindowsDesktop() && (
-        <ToggleButton
-          active={mode === "multiview"}
-          onClick={() => onChange("multiview")}
-          icon={<Grid2x2 size={14} strokeWidth={2} />}
-          label="Multiview"
-        />
-      )}
-    </div>
-  );
-}
-
-function ToggleButton({
-  active,
-  onClick,
-  icon,
-  label,
-}: {
-  active: boolean;
-  onClick: () => void;
-  icon: React.ReactNode;
-  label: string;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`flex h-full items-center gap-1.5 rounded-lg px-3 text-[13px] font-semibold transition-colors ${
-        active ? "bg-ink text-canvas" : "text-ink-muted hover:bg-raised hover:text-ink"
-      }`}
-    >
-      {icon}
-      {label}
-    </button>
-  );
-}
-
-function synthChannelMeta(ch: IptvChannel): Meta {
-  return {
-    id: `iptv:${ch.id}`,
-    type: "tv",
-    name: ch.name,
-    poster: ch.logo ?? undefined,
-    logo: ch.logo ?? undefined,
-    background: ch.logo ?? undefined,
-    description: ch.group ? `Live channel: ${ch.group}` : "Live channel",
-    releaseInfo: "Live",
-  };
-}
-
-function materializePlaylistEntry(id: string, entry: PlaylistFormValue) {
-  if (entry.kind === "xtream") {
-    const { m3u, epg } = buildXtreamUrls(
-      entry.xtream.server,
-      entry.xtream.username,
-      entry.xtream.password,
-    );
-    return {
-      id,
-      name: entry.name,
-      url: m3u,
-      epgUrl: epg,
-      kind: "xtream" as const,
-      xtream: {
-        server: entry.xtream.server.replace(/\/+$/, ""),
-        username: entry.xtream.username,
-        password: entry.xtream.password,
-      },
-    };
-  }
-  if (entry.kind === "epg") {
-    return {
-      id,
-      name: entry.name,
-      url: "",
-      epgUrl: entry.epgUrl,
-      kind: "epg" as const,
-    };
-  }
-  return {
-    id,
-    name: entry.name,
-    url: entry.url,
-    epgUrl: entry.epgUrl || undefined,
-    kind: "m3u" as const,
-  };
 }

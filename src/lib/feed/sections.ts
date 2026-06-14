@@ -1,8 +1,10 @@
 import { topMovies, type Meta } from "@/lib/cinemeta";
+import type { Settings } from "@/lib/settings";
 import { topEntries } from "@/lib/discover/affinity";
 import { getStore } from "@/lib/discover/store";
 import { recentlyPlayed, watchTitleKey } from "@/lib/playback-history";
 import { tmdbDiscover, tmdbMovieRow, tmdbSeriesRow, tmdbTrending } from "@/lib/providers/tmdb";
+import { localizeFloor } from "./locale";
 import { getDownvotedIds, getUpvotedIds } from "./preferences";
 import { rankMetasByAffinity } from "./rank";
 import { MOVIE_GENRES } from "./tags";
@@ -40,9 +42,11 @@ function tasteSeedGenres(): number[] {
   return out;
 }
 
-export async function fetchFeatured(tmdbKey: string): Promise<Meta[]> {
+export async function fetchFeatured(tmdbKey: string, settings?: Settings): Promise<Meta[]> {
   const blocked = votedIds();
   const watched = recentlyPlayed();
+  const loc = (floor: Record<string, string>) =>
+    settings ? localizeFloor(floor, settings, "movie") : floor;
   const skip = (m: Meta) =>
     blocked.has(m.id) || watched.ids.has(m.id) || watched.titles.has(watchTitleKey(m.name));
   if (!tmdbKey) {
@@ -51,23 +55,31 @@ export async function fetchFeatured(tmdbKey: string): Promise<Meta[]> {
     return rankMetasByAffinity(pool).slice(0, 10);
   }
   const seedReqs = tasteSeedGenres().map((gid) =>
-    tmdbDiscover(tmdbKey, "movie", {
-      with_genres: String(gid),
-      "vote_average.gte": "6.8",
-      "vote_count.gte": "600",
-      sort_by: "popularity.desc",
-      page: "1",
-    }),
+    tmdbDiscover(
+      tmdbKey,
+      "movie",
+      loc({
+        with_genres: String(gid),
+        "vote_average.gte": "6.8",
+        "vote_count.gte": "600",
+        sort_by: "popularity.desc",
+        page: "1",
+      }),
+    ),
   );
   const [topRated, trending, acclaimed, ...seeds] = await Promise.all([
-    tmdbMovieRow(tmdbKey, "top_rated", "US", 1),
+    tmdbMovieRow(tmdbKey, "top_rated", settings?.region ?? "US", 1),
     tmdbTrending(tmdbKey, "movie", "week", 1),
-    tmdbDiscover(tmdbKey, "movie", {
-      "vote_average.gte": "8.0",
-      "vote_count.gte": "3000",
-      sort_by: "vote_count.desc",
-      page: "1",
-    }),
+    tmdbDiscover(
+      tmdbKey,
+      "movie",
+      loc({
+        "vote_average.gte": "8.0",
+        "vote_count.gte": "3000",
+        sort_by: "vote_count.desc",
+        page: "1",
+      }),
+    ),
     ...seedReqs,
   ]);
   const seen = new Set<string>();
@@ -87,39 +99,57 @@ export async function fetchFeatured(tmdbKey: string): Promise<Meta[]> {
   return rankMetasByAffinity(pool).slice(0, 10);
 }
 
-export async function fetchCriticsPickList(tmdbKey: string): Promise<Meta[]> {
+export async function fetchCriticsPickList(tmdbKey: string, settings?: Settings): Promise<Meta[]> {
   if (!tmdbKey) return [];
+  const loc = (floor: Record<string, string>) =>
+    settings ? localizeFloor(floor, settings, "movie") : floor;
   const dayOfYear = Math.floor(
     (Date.now() - new Date(new Date().getUTCFullYear(), 0, 0).getTime()) / 86_400_000,
   );
   const pageOf = (offset: number) => String(((dayOfYear + offset) % 5) + 1);
   const queries = await Promise.all([
-    tmdbDiscover(tmdbKey, "movie", {
-      "vote_average.gte": "8.0",
-      "vote_count.gte": "5000",
-      sort_by: "vote_average.desc",
-      page: pageOf(0),
-    }),
-    tmdbDiscover(tmdbKey, "movie", {
-      "vote_average.gte": "7.6",
-      "vote_count.gte": "1500",
-      "primary_release_date.gte": "2018-01-01",
-      sort_by: "vote_average.desc",
-      page: pageOf(1),
-    }),
-    tmdbDiscover(tmdbKey, "movie", {
-      "vote_average.gte": "7.5",
-      "vote_count.gte": "1200",
-      sort_by: "vote_count.desc",
-      page: pageOf(2),
-    }),
-    tmdbDiscover(tmdbKey, "movie", {
-      "vote_average.gte": "7.5",
-      "vote_count.gte": "800",
-      "primary_release_date.lte": "1999-12-31",
-      sort_by: "vote_average.desc",
-      page: pageOf(3),
-    }),
+    tmdbDiscover(
+      tmdbKey,
+      "movie",
+      loc({
+        "vote_average.gte": "8.0",
+        "vote_count.gte": "5000",
+        sort_by: "vote_average.desc",
+        page: pageOf(0),
+      }),
+    ),
+    tmdbDiscover(
+      tmdbKey,
+      "movie",
+      loc({
+        "vote_average.gte": "7.6",
+        "vote_count.gte": "1500",
+        "primary_release_date.gte": "2018-01-01",
+        sort_by: "vote_average.desc",
+        page: pageOf(1),
+      }),
+    ),
+    tmdbDiscover(
+      tmdbKey,
+      "movie",
+      loc({
+        "vote_average.gte": "7.5",
+        "vote_count.gte": "1200",
+        sort_by: "vote_count.desc",
+        page: pageOf(2),
+      }),
+    ),
+    tmdbDiscover(
+      tmdbKey,
+      "movie",
+      loc({
+        "vote_average.gte": "7.5",
+        "vote_count.gte": "800",
+        "primary_release_date.lte": "1999-12-31",
+        sort_by: "vote_average.desc",
+        page: pageOf(3),
+      }),
+    ),
   ]);
   const watched = recentlyPlayed();
   const seen = new Set<string>();

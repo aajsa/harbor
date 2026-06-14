@@ -87,7 +87,7 @@ export function EpgMatchModal({
             <button
               key={e.id}
               onClick={() => assign(e.id)}
-              className={`flex w-full items-center gap-2.5 px-5 py-2 text-left transition-colors hover:bg-elevated/70 ${
+              className={`flex w-full items-center gap-2.5 px-5 py-2 text-start transition-colors hover:bg-elevated/70 ${
                 current === e.id ? "bg-elevated text-ink" : "text-ink-muted"
               }`}
             >

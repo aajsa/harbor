@@ -66,7 +66,7 @@ export function DownloadMenu({
         {busy ? "Saving…" : "Download"}
       </button>
       {open && (
-        <div className="absolute right-0 top-[calc(100%+8px)] z-30 flex w-44 flex-col overflow-hidden rounded-xl border border-edge-soft bg-elevated shadow-[0_18px_50px_-15px_rgba(0,0,0,0.6)] backdrop-blur-md animate-in fade-in slide-in-from-top-1 duration-150">
+        <div className="absolute end-0 top-[calc(100%+8px)] z-30 flex w-44 flex-col overflow-hidden rounded-xl border border-edge-soft bg-elevated shadow-[0_18px_50px_-15px_rgba(0,0,0,0.6)] backdrop-blur-md animate-in fade-in slide-in-from-top-1 duration-150">
           <DownloadOption label="Plain text (.txt)" onClick={() => void exportAs("txt")} />
           <DownloadOption label="JSON (.json)" onClick={() => void exportAs("json")} />
           <DownloadOption label="PDF (print)" onClick={() => void exportAs("pdf")} />
@@ -81,7 +81,7 @@ function DownloadOption({ label, onClick }: { label: string; onClick: () => void
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center px-3.5 py-2.5 text-left text-[12.5px] text-ink-muted transition-colors hover:bg-raised hover:text-ink"
+      className="flex w-full items-center px-3.5 py-2.5 text-start text-[12.5px] text-ink-muted transition-colors hover:bg-raised hover:text-ink"
     >
       {label}
     </button>
@@ -115,7 +115,7 @@ export function SavePill({ path, onDismiss }: { path: string; onDismiss: () => v
   const dir = path.slice(0, Math.max(0, path.length - name.length)).replace(/[\\/]+$/, "");
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-6 z-[120] flex justify-center px-4">
-      <div className="pointer-events-auto flex max-w-[min(560px,90vw)] items-center gap-3 rounded-full border border-edge bg-elevated/95 py-2 pl-3 pr-2 shadow-[0_18px_50px_-15px_rgba(0,0,0,0.7)] backdrop-blur-md animate-in fade-in slide-in-from-bottom-2 duration-200">
+      <div className="pointer-events-auto flex max-w-[min(560px,90vw)] items-center gap-3 rounded-full border border-edge bg-elevated/95 py-2 ps-3 pe-2 shadow-[0_18px_50px_-15px_rgba(0,0,0,0.7)] backdrop-blur-md animate-in fade-in slide-in-from-bottom-2 duration-200">
         <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-300">
           <Check size={13} strokeWidth={2.8} />
         </span>
@@ -128,7 +128,7 @@ export function SavePill({ path, onDismiss }: { path: string; onDismiss: () => v
         <button
           type="button"
           onClick={reveal}
-          className="ml-1 flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-raised px-3 text-[11.5px] font-semibold text-ink-muted transition-colors hover:bg-canvas hover:text-ink"
+          className="ms-1 flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-raised px-3 text-[11.5px] font-semibold text-ink-muted transition-colors hover:bg-canvas hover:text-ink"
         >
           <FolderOpen size={13} strokeWidth={2.2} />
           Show

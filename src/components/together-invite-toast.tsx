@@ -91,7 +91,7 @@ export function TogetherInviteToast() {
           )}
         </div>
 
-        <div className="flex min-w-0 flex-col gap-0.5 pr-1">
+        <div className="flex min-w-0 flex-col gap-0.5 pe-1">
           <span className="text-[10.5px] font-semibold uppercase tracking-[0.18em] text-accent">
             {guestPick ? "Pick your source" : `${name} started watching`}
           </span>

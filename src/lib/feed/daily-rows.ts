@@ -73,7 +73,7 @@ function expandCandidates(affinity: Affinity, base: number, settings: Settings):
   return out;
 }
 
-function toRail(tmdbKey: string, base: number, row: ExpandedRow): RailDef {
+function toRail(tmdbKey: string, base: number, row: ExpandedRow, settings: Settings): RailDef {
   const id = row.key;
   let recorded = false;
   return {
@@ -84,7 +84,7 @@ function toRail(tmdbKey: string, base: number, row: ExpandedRow): RailDef {
         recorded = true;
         recordKey(base, row.key);
       }
-      return fetchRowWithFallback(tmdbKey, row, page);
+      return fetchRowWithFallback(tmdbKey, row, page, settings);
     },
   };
 }
@@ -143,7 +143,9 @@ function settingsHash(settings: Settings): string {
   const enabled = (Object.keys(settings.streaming) as StreamingService[])
     .filter((s) => settings.streaming[s])
     .join(",");
-  return `${settings.region}|${enabled}`;
+  const langs = (settings.preferredLanguages ?? []).join(",");
+  const bias = settings.feedLocaleBias ? "1" : "0";
+  return `${settings.region}|${enabled}|${langs}|${settings.tmdbLanguage}|${bias}`;
 }
 
 export function selectDailyRows(
@@ -166,6 +168,6 @@ export function selectDailyRows(
   const candidates = expandCandidates(affinity, base, settings);
   const ordered = orderRows(candidates, base, count);
   cacheKey = key;
-  cacheRows = ordered.map((row) => toRail(tmdbKey, base, row));
+  cacheRows = ordered.map((row) => toRail(tmdbKey, base, row, settings));
   return cacheRows;
 }

@@ -212,7 +212,7 @@ function PickTile({
       type="button"
       onClick={onClick}
       aria-pressed={selected}
-      className={`flex flex-col gap-0.5 rounded-xl border px-3 py-2.5 text-left transition-all duration-150 ${
+      className={`flex flex-col gap-0.5 rounded-xl border px-3 py-2.5 text-start transition-all duration-150 ${
         selected
           ? "border-ink bg-elevated text-ink ring-2 ring-ink/30 shadow-[0_0_0_3px_rgba(255,255,255,0.05)]"
           : "border-edge-soft bg-canvas/30 text-ink-muted hover:border-edge hover:text-ink"

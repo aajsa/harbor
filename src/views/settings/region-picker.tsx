@@ -1,5 +1,6 @@
 import { Check, ChevronDown } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useT } from "@/lib/i18n";
 import flagAe from "@/assets/regions/ae.svg";
 import flagAr from "@/assets/regions/ar.svg";
 import flagAu from "@/assets/regions/au.svg";
@@ -155,6 +156,7 @@ export function RegionPicker({
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const t = useT();
   const wrapRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const current = REGIONS.find((r) => r.code === value) ?? { code: value, label: value };
@@ -197,7 +199,7 @@ export function RegionPicker({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className={`flex h-14 w-full items-center gap-3.5 rounded-2xl border bg-elevated px-4 text-left transition-all ${
+        className={`flex h-14 w-full items-center gap-3.5 rounded-2xl border bg-elevated px-4 text-start transition-all ${
           open
             ? "border-ink shadow-[0_0_0_3px_rgba(255,255,255,0.04)]"
             : "border-edge hover:border-edge"
@@ -206,7 +208,7 @@ export function RegionPicker({
         <FlagChip code={current.code} size={36} />
         <span className="flex min-w-0 flex-1 flex-col">
           <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-subtle">
-            Region
+            {t("Region")}
           </span>
           <span className="truncate text-[15px] font-medium text-ink">{current.label}</span>
         </span>
@@ -238,13 +240,13 @@ export function RegionPicker({
               ref={inputRef}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search countries..."
+              placeholder={t("Search countries...")}
               className="h-7 flex-1 bg-transparent text-[14px] text-ink placeholder:text-ink-subtle/60 outline-none"
             />
           </div>
           <div className="flex-1 overflow-y-auto py-1.5">
             {filtered.length === 0 ? (
-              <div className="px-4 py-6 text-center text-[13px] text-ink-subtle">No matches</div>
+              <div className="px-4 py-6 text-center text-[13px] text-ink-subtle">{t("No matches")}</div>
             ) : (
               filtered.map((r) => {
                 const selected = r.code === current.code;
@@ -255,7 +257,7 @@ export function RegionPicker({
                       onChange(r.code);
                       setOpen(false);
                     }}
-                    className={`flex h-12 w-full items-center gap-3 px-3 text-left transition-colors ${
+                    className={`flex h-12 w-full items-center gap-3 px-3 text-start transition-colors ${
                       selected ? "bg-raised text-ink" : "text-ink-muted hover:bg-canvas/50 hover:text-ink"
                     }`}
                   >
@@ -264,7 +266,7 @@ export function RegionPicker({
                     <span className="shrink-0 font-mono text-[10.5px] tracking-wider text-ink-subtle">
                       {r.code}
                     </span>
-                    {selected && <Check size={14} strokeWidth={2.4} className="ml-1 text-ink" />}
+                    {selected && <Check size={14} strokeWidth={2.4} className="ms-1 text-ink" />}
                   </button>
                 );
               })

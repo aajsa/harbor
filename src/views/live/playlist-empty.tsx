@@ -50,13 +50,13 @@ function Intro({ onContinue }: { onContinue: () => void }) {
           <div className="pt-2">
             <button
               onClick={onContinue}
-              className="group inline-flex h-12 items-center gap-2.5 rounded-full bg-ink pl-6 pr-5 text-[14.5px] font-semibold text-canvas transition-all duration-150 ease-out hover:opacity-90 active:scale-[0.97]"
+              className="group inline-flex h-12 items-center gap-2.5 rounded-full bg-ink ps-6 pe-5 text-[14.5px] font-semibold text-canvas transition-all duration-150 ease-out hover:opacity-90 active:scale-[0.97]"
             >
               Connect a provider
               <ArrowRight
                 size={16}
                 strokeWidth={2.4}
-                className="transition-transform group-hover:translate-x-0.5"
+                className="dir-icon transition-transform group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5"
               />
             </button>
           </div>
@@ -201,12 +201,12 @@ function Form({
       <div className="mx-auto flex w-full max-w-[640px] flex-1 flex-col justify-center gap-8">
         <button
           onClick={onBack}
-          className="group inline-flex h-11 items-center gap-2 self-start rounded-full border border-edge-soft bg-elevated/60 pl-3.5 pr-5 text-[14px] font-semibold text-ink-muted transition-all duration-150 ease-out hover:border-edge hover:bg-elevated hover:text-ink active:scale-[0.97]"
+          className="group inline-flex h-11 items-center gap-2 self-start rounded-full border border-edge-soft bg-elevated/60 ps-3.5 pe-5 text-[14px] font-semibold text-ink-muted transition-all duration-150 ease-out hover:border-edge hover:bg-elevated hover:text-ink active:scale-[0.97]"
         >
           <ArrowLeft
             size={16}
             strokeWidth={2.4}
-            className="transition-transform group-hover:-translate-x-0.5"
+            className="dir-icon transition-transform group-hover:-translate-x-0.5 rtl:group-hover:translate-x-0.5"
           />
           Back
         </button>
@@ -230,7 +230,7 @@ function Form({
                 key={k.id}
                 type="button"
                 onClick={() => setKind(k.id)}
-                className={`group flex items-center gap-4 rounded-2xl border px-5 py-4 text-left transition-all duration-150 ${
+                className={`group flex items-center gap-4 rounded-2xl border px-5 py-4 text-start transition-all duration-150 ${
                   selected
                     ? "border-ink/40 bg-elevated"
                     : "border-edge-soft/60 bg-elevated/30 hover:border-edge hover:bg-elevated/55"
@@ -373,7 +373,7 @@ function Form({
               className="flex h-12 items-center gap-2 rounded-full bg-ink px-6 text-[14px] font-semibold text-canvas transition-all duration-150 ease-out hover:opacity-90 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-30"
             >
               Save and continue
-              <ArrowRight size={15} strokeWidth={2.4} />
+              <ArrowRight size={15} strokeWidth={2.4} className="dir-icon" />
             </button>
           </div>
         </div>

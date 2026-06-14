@@ -1,6 +1,9 @@
 const EVENT = "harbor:deeplink-install";
+const OPEN_EVENT = "harbor:deeplink-open";
 
 type DeepLinkDetail = { rawUrl: string };
+type DeepLinkOpen = { type: string; id: string; videoId?: string };
+type DeepLinkOpenDetail = { open: DeepLinkOpen };
 
 let pendingUrl: string | null = null;
 
@@ -32,6 +35,40 @@ export function onDeepLinkInstall(handler: (rawUrl: string) => void): () => void
   return () => window.removeEventListener(EVENT, listener);
 }
 
+export function emitDeepLinkOpen(open: DeepLinkOpen): void {
+  window.dispatchEvent(new CustomEvent<DeepLinkOpenDetail>(OPEN_EVENT, { detail: { open } }));
+}
+
+export function onDeepLinkOpen(handler: (open: DeepLinkOpen) => void): () => void {
+  const listener = (e: Event) => {
+    const ev = e as CustomEvent<DeepLinkOpenDetail>;
+    if (ev.detail?.open) handler(ev.detail.open);
+  };
+  window.addEventListener(OPEN_EVENT, listener);
+  return () => window.removeEventListener(OPEN_EVENT, listener);
+}
+
+function parseDetailPath(path: string): DeepLinkOpen | null {
+  const parts = path.split("/").filter((p) => p.length > 0);
+  if (parts[0] !== "detail" || parts.length < 3) return null;
+  const type = decodeURIComponent(parts[1]);
+  const id = decodeURIComponent(parts[2]);
+  if (!type || !id) return null;
+  const videoId = parts[3] ? decodeURIComponent(parts[3]) : undefined;
+  return { type, id, videoId };
+}
+
+export function parseStremioOpen(url: string): DeepLinkOpen | null {
+  if (url.startsWith("stremio://")) return parseDetailPath(url.slice("stremio://".length));
+  const hash = url.indexOf("#");
+  if (hash !== -1 && url.includes("stremio.com")) {
+    let frag = url.slice(hash + 1);
+    if (frag.startsWith("/")) frag = frag.slice(1);
+    return parseDetailPath(frag);
+  }
+  return null;
+}
+
 function shouldForward(url: string): boolean {
   if (url.startsWith("harbor://")) return true;
   if (url.startsWith("stremio://")) {
@@ -51,6 +88,11 @@ export async function startDeepLinkBridge(): Promise<() => void> {
     const handle = (urls: string[]) => {
       for (const u of urls) {
         if (typeof u !== "string" || u.length === 0) continue;
+        const open = parseStremioOpen(u);
+        if (open) {
+          emitDeepLinkOpen(open);
+          continue;
+        }
         if (shouldForward(u)) emitDeepLinkInstall(u);
       }
     };
@@ -59,6 +101,11 @@ export async function startDeepLinkBridge(): Promise<() => void> {
     const unlistenNative = await listen<string>("harbor:stremio-deeplink", (e) => {
       const u = e.payload;
       if (typeof u !== "string" || !u) return;
+      const open = parseStremioOpen(u);
+      if (open) {
+        emitDeepLinkOpen(open);
+        return;
+      }
       if (shouldForward(u)) emitDeepLinkInstall(u);
     });
     let lastCap = "";
@@ -66,6 +113,11 @@ export async function startDeepLinkBridge(): Promise<() => void> {
     const forwardLinuxBrowserInstall = async (e: { payload: string }) => {
       const u = e.payload;
       if (typeof u !== "string" || !u) return;
+      const open = parseStremioOpen(u);
+      if (open) {
+        emitDeepLinkOpen(open);
+        return;
+      }
       const now = Date.now();
       if (u === lastCap && now - lastCapAt < 2500) return;
       lastCap = u;

@@ -52,11 +52,7 @@ export function FeedHero({
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-y-0 left-0 w-[58%]"
-          style={{
-            background:
-              "linear-gradient(to right, oklch(0.10 0.02 260 / 0.62) 0%, transparent 100%)",
-          }}
+          className="pointer-events-none absolute inset-y-0 start-0 w-[58%] bg-gradient-to-r from-[oklch(0.10_0.02_260_/_0.62)] to-transparent rtl:bg-gradient-to-l"
         />
 
         <MetaAwardsCorner meta={meta} imdbId={resolvedImdb} />

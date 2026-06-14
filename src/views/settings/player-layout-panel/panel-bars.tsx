@@ -61,7 +61,7 @@ export function ThemeTabs({ value, onChange }: { value: ThemeId; onChange: (v: T
             key={t.id}
             type="button"
             onClick={() => onChange(t.id)}
-            className={`flex flex-1 flex-col items-start gap-0.5 rounded-xl px-4 py-2.5 text-left transition-colors ${
+            className={`flex flex-1 flex-col items-start gap-0.5 rounded-xl px-4 py-2.5 text-start transition-colors ${
               selected
                 ? "bg-elevated text-ink shadow-[inset_0_0_0_1px_var(--color-edge)]"
                 : "text-ink-muted hover:bg-elevated/60 hover:text-ink"

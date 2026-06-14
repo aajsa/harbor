@@ -13,7 +13,7 @@ export function BrowseRow({ resolved, onOpen }: { resolved: ResolvedAddon; onOpe
       tabIndex={0}
       onClick={onOpen}
       onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onOpen()}
-      className="group relative flex cursor-pointer items-start gap-5 overflow-hidden rounded-2xl border border-edge-soft bg-elevated px-5 py-5 text-left transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:border-edge hover:shadow-[0_18px_36px_-22px_rgba(0,0,0,0.4)]"
+      className="group relative flex cursor-pointer items-start gap-5 overflow-hidden rounded-2xl border border-edge-soft bg-elevated px-5 py-5 text-start transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:border-edge hover:shadow-[0_18px_36px_-22px_rgba(0,0,0,0.4)]"
     >
       <CardArtBackdrop logo={logo} background={resolved.manifest?.background} />
       <AddonLogo
@@ -31,7 +31,7 @@ export function BrowseRow({ resolved, onOpen }: { resolved: ResolvedAddon; onOpe
           {resolved.manifest?.description ?? subtitleFromManifest(resolved)}
         </p>
       </div>
-      <ChevronRight size={16} className="relative mt-1.5 shrink-0 text-ink-subtle" />
+      <ChevronRight size={16} className="dir-icon relative mt-1.5 shrink-0 text-ink-subtle" />
     </div>
   );
 }

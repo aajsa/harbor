@@ -126,7 +126,7 @@ export function ChannelPicker({
       </header>
 
       <div className="flex min-h-0 flex-1">
-        <aside className="w-60 shrink-0 overflow-y-auto border-r border-edge-soft/40 p-3">
+        <aside className="w-60 shrink-0 overflow-y-auto border-e border-edge-soft/40 p-3">
           {showLoading ? (
             <RailSkeleton />
           ) : (
@@ -240,7 +240,7 @@ function RailItem({
   return (
     <button
       onClick={onClick}
-      className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-[13px] transition-colors ${
+      className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-start text-[13px] transition-colors ${
         active ? "bg-ink text-canvas" : "text-ink-muted hover:bg-elevated hover:text-ink"
       }`}
     >
@@ -301,7 +301,7 @@ function PlaylistDropdown({
         />
       </button>
       {open && (
-        <div className="absolute left-0 top-[calc(100%+6px)] z-[310] w-[240px] overflow-hidden rounded-xl border border-edge-soft bg-elevated shadow-[0_18px_50px_-15px_rgba(0,0,0,0.6)]">
+        <div className="absolute start-0 top-[calc(100%+6px)] z-[310] w-[240px] overflow-hidden rounded-xl border border-edge-soft bg-elevated shadow-[0_18px_50px_-15px_rgba(0,0,0,0.6)]">
           <PlaylistOption
             label="All playlists"
             sub={`${sumChannels(playlists)} channels`}
@@ -348,7 +348,7 @@ function PlaylistOption({
     <button
       type="button"
       onClick={onClick}
-      className={`flex w-full flex-col gap-0.5 px-3.5 py-2.5 text-left transition-colors ${
+      className={`flex w-full flex-col gap-0.5 px-3.5 py-2.5 text-start transition-colors ${
         active ? "bg-raised text-ink" : "text-ink-muted hover:bg-raised hover:text-ink"
       }`}
     >

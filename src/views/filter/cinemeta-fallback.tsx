@@ -2,12 +2,14 @@ import { Loader2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PickCard } from "@/components/pick-card";
 import { type Meta, topMovies, topSeries } from "@/lib/cinemeta";
+import { useT } from "@/lib/i18n";
 import type { MetaFilter } from "@/lib/view";
 
 const PAGE_SIZE = 100;
 const MAX_ITEMS = 600;
 
 export function CinemetaFallback({ filter }: { filter: MetaFilter }) {
+  const t = useT();
   const [items, setItems] = useState<Meta[]>([]);
   const [loading, setLoading] = useState(false);
   const [exhausted, setExhausted] = useState(false);
@@ -76,10 +78,13 @@ export function CinemetaFallback({ filter }: { filter: MetaFilter }) {
   if (filter.kind !== "genre") {
     return (
       <div className="rounded-2xl border border-dashed border-edge bg-canvas/30 p-8 text-center">
-        <p className="text-[14px] font-semibold text-ink">Add a TMDB key to browse by this filter.</p>
+        <p className="text-[14px] font-semibold text-ink">
+          {t("Add a TMDB key to browse by this filter.")}
+        </p>
         <p className="mt-1 text-[12.5px] text-ink-muted">
-          Year, runtime, language, and country filters need TMDB.
-          Genre browsing falls back to Cinemeta automatically.
+          {t(
+            "Year, runtime, language, and country filters need TMDB. Genre browsing falls back to Cinemeta automatically.",
+          )}
         </p>
       </div>
     );
@@ -108,12 +113,16 @@ export function CinemetaFallback({ filter }: { filter: MetaFilter }) {
       )}
       {exhausted && items.length > 0 && (
         <p className="pt-1 text-center text-[11.5px] text-ink-subtle">
-          That&apos;s everything Cinemeta has for {genre}. Add a TMDB key for deeper rails.
+          {t("That's everything Cinemeta has for {genre}. Add a TMDB key for deeper rails.", {
+            genre: genre ?? "",
+          })}
         </p>
       )}
       {exhausted && items.length === 0 && (
         <p className="rounded-xl border border-dashed border-edge bg-canvas/30 px-5 py-6 text-center text-[12.5px] text-ink-subtle">
-          Cinemeta didn&apos;t return anything for {genre}. Try a different genre or add a TMDB key.
+          {t("Cinemeta didn't return anything for {genre}. Try a different genre or add a TMDB key.", {
+            genre: genre ?? "",
+          })}
         </p>
       )}
     </div>

@@ -12,6 +12,7 @@ import { fetchAddonCatalogPage, loadAddonRows, normalizeName, type AddonRow } fr
 import type { Meta } from "@/lib/cinemeta";
 import { findTopAward, parseAwardYear, uniqueWinnerFranchisesAcrossSources } from "@/lib/anime-awards";
 import { publishResumeStates } from "@/lib/hover-preview/store";
+import { useT } from "@/lib/i18n";
 import { useAnimeTopPicks } from "@/lib/use-anime-top-picks";
 import { useCrunchyrollAwardMetas } from "@/lib/use-crunchyroll-award-metas";
 import { useWatchHistoryRecommendations } from "@/lib/use-watch-history-recs";
@@ -46,6 +47,7 @@ function cleanMeta(m: Meta): Meta {
 }
 
 export function AnimeView({ active = true }: { active?: boolean }) {
+  const t = useT();
   const [rowsByKey, setRowsByKey] = useState<Record<string, RowState>>(() => {
     const init: Record<string, RowState> = {};
     for (const s of SPECS) init[s.key] = EMPTY_ROW;
@@ -410,11 +412,11 @@ export function AnimeView({ active = true }: { active?: boolean }) {
               <button
                 type="button"
                 onClick={() => setShowPicker(true)}
-                title="Tune your Top Picks"
-                className="absolute right-4 top-4 z-10 flex h-9 items-center gap-1.5 rounded-full border border-edge-soft/60 bg-canvas/80 px-3 text-[12px] font-semibold text-ink-muted shadow-[0_8px_24px_-8px_rgba(0,0,0,0.6)] backdrop-blur-md transition-colors hover:border-accent/50 hover:text-accent"
+                title={t("Tune your Top Picks")}
+                className="absolute end-4 top-4 z-10 flex h-9 items-center gap-1.5 rounded-full border border-edge-soft/60 bg-canvas/80 px-3 text-[12px] font-semibold text-ink-muted shadow-[0_8px_24px_-8px_rgba(0,0,0,0.6)] backdrop-blur-md transition-colors hover:border-accent/50 hover:text-accent"
               >
                 <Sparkles size={13} strokeWidth={2.1} />
-                Tune picks
+                {t("Tune picks")}
                 {favoriteGenres.length > 0 && (
                   <span className="rounded-full bg-accent/15 px-1.5 text-[10px] font-bold text-accent">
                     {favoriteGenres.length}
@@ -425,7 +427,7 @@ export function AnimeView({ active = true }: { active?: boolean }) {
           )}
           {!anilistHidden.includes("yourLists") && <AnilistRows />}
           {continueWatching.length > 0 && (
-            <Row title="Continue Watching" min={260} shape="landscape" scrollKey="anime:cw">
+            <Row title={t("Continue Watching")} min={260} shape="landscape" scrollKey="anime:cw">
               {continueWatching.map((item) => (
                 <ContinueCard key={item._id} item={item} />
               ))}
@@ -436,7 +438,7 @@ export function AnimeView({ active = true }: { active?: boolean }) {
           {!anilistHidden.includes("top100") && <AnilistTopRow />}
           {awardWinnerMetas.length > 0 && (
             <div data-scroll-anchor="row:anime-awards">
-              <Row title="Award Winning Anime" scrollKey="anime:awards">
+              <Row title={t("Award Winning Anime")} scrollKey="anime:awards">
                 {awardWinnerMetas.map((m) => (
                   <PickCard key={m.id} meta={m} awardLookupName={awardLookupByMetaId[m.id]} />
                 ))}
@@ -449,17 +451,23 @@ export function AnimeView({ active = true }: { active?: boolean }) {
             if (r.ready && r.metas.length === 0) return null;
             const viewAll = () =>
               openGrid({
-                title: spec.title,
+                title: t(spec.title),
                 fetcher: (p) => spec.fetcher(p).then((ms) => ms.map(cleanMeta)),
                 initial: r.metas,
               });
             return (
               <div key={spec.key} data-scroll-anchor={`row:${spec.key}`}>
                 {!r.ready ? (
-                  <RowSkeleton title={spec.rank ? `Top 10 ${spec.title.replace(/^Top\s*/i, "")}` : spec.title} />
+                  <RowSkeleton
+                    title={
+                      spec.rank
+                        ? t("Top 10 {name}", { name: t(spec.title).replace(/^Top\s*/i, "") })
+                        : t(spec.title)
+                    }
+                  />
                 ) : spec.rank && r.metas.length >= 10 ? (
                   <Row
-                    title={`Top 10 ${spec.title.replace(/^Top\s*/i, "")}`}
+                    title={t("Top 10 {name}", { name: t(spec.title).replace(/^Top\s*/i, "") })}
                     min={180}
                     shape="rank"
                     scrollKey={`anime:${spec.key}`}
@@ -471,7 +479,7 @@ export function AnimeView({ active = true }: { active?: boolean }) {
                   </Row>
                 ) : (
                   <Row
-                    title={spec.title}
+                    title={t(spec.title)}
                     scrollKey={`anime:${spec.key}`}
                     onEndReached={r.hasMore ? () => loadMore(spec.key) : undefined}
                     onViewAll={viewAll}

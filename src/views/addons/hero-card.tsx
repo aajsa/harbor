@@ -27,7 +27,7 @@ export function HeroCard({
       tabIndex={0}
       onClick={onOpen}
       onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onOpen()}
-      className="group relative flex min-h-[260px] w-full cursor-pointer overflow-hidden rounded-3xl border border-edge-soft bg-surface text-left transition-all hover:border-edge hover:shadow-[0_24px_60px_-30px_rgba(0,0,0,0.6)]"
+      className="group relative flex min-h-[260px] w-full cursor-pointer overflow-hidden rounded-3xl border border-edge-soft bg-surface text-start transition-all hover:border-edge hover:shadow-[0_24px_60px_-30px_rgba(0,0,0,0.6)]"
     >
       {isTorrentio ? (
         <TorrentioHeroArt />
@@ -35,10 +35,10 @@ export function HeroCard({
         <>
           <div
             aria-hidden
-            className={`absolute inset-y-0 right-0 w-1/2 opacity-60 bg-gradient-to-l ${c.hero.accent}`}
+            className={`absolute inset-y-0 end-0 w-1/2 opacity-60 bg-gradient-to-l rtl:bg-gradient-to-r ${c.hero.accent}`}
           />
-          <div className="absolute inset-y-0 right-0 w-2/3 bg-gradient-to-l from-transparent to-surface" />
-          <div className="pointer-events-none absolute right-[8%] top-1/2 hidden -translate-y-1/2 md:block">
+          <div className="absolute inset-y-0 end-0 w-2/3 bg-gradient-to-l rtl:bg-gradient-to-r from-transparent to-surface" />
+          <div className="pointer-events-none absolute end-[8%] top-1/2 hidden -translate-y-1/2 md:block">
             <AddonLogo
               addonId={resolved.curated?.id ?? ""}
               addonName={resolved.manifest?.name ?? c.hero.title}
@@ -80,7 +80,7 @@ export function HeroCard({
           </button>
           <span className="inline-flex h-9 items-center gap-1 rounded-full px-4 text-[12.5px] font-medium text-ink-muted transition-colors group-hover:text-ink">
             View details
-            <ChevronRight size={13} strokeWidth={2.4} className="transition-transform group-hover:translate-x-0.5" />
+            <ChevronRight size={13} strokeWidth={2.4} className="transition-transform group-hover:translate-x-0.5 rtl:-scale-x-100" />
           </span>
         </div>
       </div>

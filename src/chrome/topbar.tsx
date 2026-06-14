@@ -10,6 +10,7 @@ import {
   formatBindingForDisplay,
   isTypingTarget,
 } from "@/lib/hotkeys";
+import { useT } from "@/lib/i18n";
 import { useSearch } from "@/lib/search-context";
 import { useSettings } from "@/lib/settings";
 import { useTogether } from "@/lib/together/provider";
@@ -24,6 +25,7 @@ const IS_TAURI = typeof window !== "undefined" && "__TAURI_INTERNALS__" in windo
 export function Topbar() {
   const { chromeHidden, canGoBack, view, setView, topKind } = useView();
   const { settings } = useSettings();
+  const t = useT();
   const preview = useThemePreview();
   const maxed = useMaximized();
   if (chromeHidden) return null;
@@ -32,13 +34,17 @@ export function Topbar() {
   const sidebarHidden = view === "settings" || onLiveRoot || topKind === "picker";
   const hideSearch = view === "addons";
   const sidebarOffset =
-    layout === "stremio" ? "pl-[80px]" : "pl-[84px] lg:pl-[260px]";
+    layout === "stremio"
+      ? "ps-[80px]"
+      : settings.sidebarCollapsed
+        ? "ps-[84px]"
+        : "ps-[84px] lg:ps-[260px]";
   const searchWidth = canGoBack
     ? "w-[14rem] sm:w-[18rem] lg:w-[22rem] xl:w-[24rem]"
     : "w-[14rem] sm:w-[20rem] lg:w-[24rem] xl:w-[28rem] hover:w-[18rem] sm:hover:w-[24rem] lg:hover:w-[28rem] xl:hover:w-[34rem] focus-within:w-[18rem] sm:focus-within:w-[24rem] lg:focus-within:w-[28rem] xl:focus-within:w-[34rem]";
   const dragProps = IS_TAURI ? { "data-tauri-drag-region": true } : {};
   return (
-    <header className="fixed top-0 left-0 right-0 z-[55] h-20">
+    <header className="fixed inset-x-0 top-0 z-[55] h-20">
       <div
         {...dragProps}
         className="relative z-10 grid h-full grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 sm:px-8"
@@ -54,11 +60,11 @@ export function Topbar() {
           {onLiveRoot && (
             <button
               onClick={() => setView("home")}
-              aria-label="Back"
-              className="flex h-11 shrink-0 items-center gap-2 rounded-full border border-edge-soft/60 bg-canvas/85 pl-3 pr-4 text-[13.5px] font-medium text-ink-muted transition-colors hover:bg-canvas hover:text-ink"
+              aria-label={t("common.back")}
+              className="flex h-11 shrink-0 items-center gap-2 rounded-full border border-edge-soft/60 bg-canvas/85 ps-3 pe-4 text-[13.5px] font-medium text-ink-muted transition-colors hover:bg-canvas hover:text-ink"
             >
-              <ArrowLeft size={15} strokeWidth={2.2} />
-              Back
+              <ArrowLeft size={15} strokeWidth={2.2} className="dir-icon" />
+              {t("common.back")}
             </button>
           )}
           {onLiveRoot && (
@@ -68,7 +74,7 @@ export function Topbar() {
                 className="text-[18px] font-medium leading-none"
                 style={{ fontFamily: '"Fraunces", "Iowan Old Style", "Georgia", serif' }}
               >
-                Live
+                {t("Live")}
               </span>
             </div>
           )}
@@ -87,13 +93,13 @@ export function Topbar() {
           <RecordingPill />
           {!onLiveRoot && <TogetherButton />}
           {IS_TAURI && !settings.useNativeTitleBar && (
-            <div className="ml-1 flex items-center gap-1.5">
-              <Control label="Minimize" onClick={minimize}>
+            <div className="ms-1 flex items-center gap-1.5">
+              <Control label={t("chrome.minimize")} onClick={minimize}>
                 <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
                   <path d="M3 6.5h7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
                 </svg>
               </Control>
-              <Control label={maxed ? "Restore" : "Maximize"} onClick={toggleMaximize}>
+              <Control label={maxed ? t("chrome.restore") : t("chrome.maximize")} onClick={toggleMaximize}>
                 <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
                   {maxed ? (
                     <>
@@ -105,7 +111,7 @@ export function Topbar() {
                   )}
                 </svg>
               </Control>
-              <Control label="Close" onClick={close}>
+              <Control label={t("common.close")} onClick={close}>
                 <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
                   <path d="M3.5 3.5l6 6M9.5 3.5l-6 6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
                 </svg>
@@ -131,6 +137,7 @@ export function TogetherButton({
 } = {}) {
   const { snapshot, modalOpen, openModal, closeModal, clientId } = useTogether();
   const { avatar: selfAvatar, color: selfColor } = useSelfIdentity();
+  const t = useT();
   const live = snapshot.state === "joined";
   const wrapRef = useRef<HTMLDivElement>(null);
 
@@ -156,8 +163,8 @@ export function TogetherButton({
   const above = popoverPlacement === "above-left";
   const idleSize = live
     ? variant === "ghost"
-      ? "h-9 gap-2 pl-3 pr-2"
-      : "h-11 gap-2.5 pl-3 pr-2"
+      ? "h-9 gap-2 ps-3 pe-2"
+      : "h-11 gap-2.5 ps-3 pe-2"
     : variant === "ghost"
       ? "h-9 w-9 justify-center"
       : "h-11 w-11 justify-center";
@@ -181,7 +188,7 @@ export function TogetherButton({
   return (
     <div ref={wrapRef} className={`relative ${modalOpen && !above ? "harbor-wt-wrap flex flex-col self-stretch justify-end" : ""}`}>
       <button
-        aria-label="Watch together"
+        aria-label={t("chrome.watchTogether")}
         onClick={() => (modalOpen ? closeModal() : openModal())}
         className={`relative flex items-center transition-colors duration-150 ${modalOpen && !above ? "harbor-wt-tab" : ""} ${sizing} ${chrome}`}
       >
@@ -238,7 +245,7 @@ export function TogetherButton({
       {modalOpen && (
         <div
           className={`harbor-wt-modal absolute z-50 ${
-            above ? "bottom-[calc(100%-1px)] left-0" : "right-0 top-[calc(100%-1px)]"
+            above ? "bottom-[calc(100%-1px)] start-0" : "end-0 top-[calc(100%-1px)]"
           }`}
         >
           <TogetherPopover placement={popoverPlacement} connectStyle={connectStyle} />
@@ -257,6 +264,7 @@ function nameHue(name: string): number {
 function SearchPill() {
   const { setOpen } = useSearch();
   const { settings } = useSettings();
+  const t = useT();
   const binding = effectiveBinding("globalSearchFocus", settings.hotkeys ?? {});
 
   useEffect(() => {
@@ -275,10 +283,10 @@ function SearchPill() {
       type="button"
       data-tauri-drag-region="false"
       onClick={() => setOpen(true)}
-      className="flex h-11 w-full items-center gap-3 rounded-full border border-edge-soft/60 bg-elevated/80 px-5 text-left opacity-80 transition-[opacity,background-color] duration-200 hover:bg-elevated hover:opacity-100"
+      className="flex h-11 w-full items-center gap-3 rounded-full border border-edge-soft/60 bg-elevated/80 px-5 text-start opacity-80 transition-[opacity,background-color] duration-200 hover:bg-elevated hover:opacity-100"
     >
       <Search size={16} strokeWidth={1.75} className="text-ink-subtle" />
-      <span className="flex-1 truncate text-[14px] text-ink-subtle">Search movies, shows, people…</span>
+      <span className="flex-1 truncate text-[14px] text-ink-subtle">{t("search.placeholder")}</span>
       <kbd className="hidden shrink-0 rounded-md border border-edge-soft bg-canvas/50 px-1.5 py-0.5 font-mono text-[10.5px] font-medium text-ink-subtle sm:inline">
         {formatBindingForDisplay(binding)}
       </kbd>

@@ -44,7 +44,7 @@ export function ProfileTile({
         {profile.passwordHash && (
           <span
             aria-label="Locked"
-            className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-canvas text-ink shadow-md ring-1 ring-edge"
+            className="absolute -bottom-1 -end-1 flex h-7 w-7 items-center justify-center rounded-full bg-canvas text-ink shadow-md ring-1 ring-edge"
           >
             <Lock size={12} strokeWidth={2.4} />
           </span>
@@ -57,7 +57,7 @@ export function ProfileTile({
               onEdit();
             }}
             aria-label={`Edit ${profile.name}`}
-            className="absolute -right-1 -top-1 flex h-7 w-7 items-center justify-center rounded-full bg-canvas/95 text-ink opacity-0 ring-1 ring-edge transition-opacity duration-150 group-hover:opacity-100 hover:bg-elevated"
+            className="absolute -end-1 -top-1 flex h-7 w-7 items-center justify-center rounded-full bg-canvas/95 text-ink opacity-0 ring-1 ring-edge transition-opacity duration-150 group-hover:opacity-100 hover:bg-elevated"
           >
             <Pencil size={12} strokeWidth={2.4} />
           </button>

@@ -245,20 +245,18 @@ function Row({
           <button
             aria-label="Scroll left"
             onClick={() => scrollPage(-1)}
-            style={{ position: "absolute", left: 0, top: "50%", transform: "translate(-50%, -50%)", zIndex: 10 }}
-            className="flex h-11 w-11 items-center justify-center rounded-full border border-edge-soft/55 bg-canvas/90 text-ink opacity-0 backdrop-blur transition-opacity duration-150 hover:bg-canvas group-hover/row:opacity-100 focus-visible:opacity-100"
+            className="absolute start-0 top-1/2 z-10 flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-edge-soft/55 bg-canvas/90 text-ink opacity-0 backdrop-blur transition-opacity duration-150 hover:bg-canvas group-hover/row:opacity-100 focus-visible:opacity-100 rtl:translate-x-1/2"
           >
-            <ChevronLeft size={18} strokeWidth={2.2} />
+            <ChevronLeft size={18} strokeWidth={2.2} className="dir-icon" />
           </button>
         )}
         {canNext && (
           <button
             aria-label="Scroll right"
             onClick={() => scrollPage(1)}
-            style={{ position: "absolute", right: 0, top: "50%", transform: "translate(50%, -50%)", zIndex: 10 }}
-            className="flex h-11 w-11 items-center justify-center rounded-full border border-edge-soft/55 bg-canvas/90 text-ink opacity-0 backdrop-blur transition-opacity duration-150 hover:bg-canvas group-hover/row:opacity-100 focus-visible:opacity-100"
+            className="absolute end-0 top-1/2 z-10 flex h-11 w-11 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-edge-soft/55 bg-canvas/90 text-ink opacity-0 backdrop-blur transition-opacity duration-150 hover:bg-canvas group-hover/row:opacity-100 focus-visible:opacity-100 rtl:-translate-x-1/2"
           >
-            <ChevronRight size={18} strokeWidth={2.2} />
+            <ChevronRight size={18} strokeWidth={2.2} className="dir-icon" />
           </button>
         )}
       </div>
@@ -282,7 +280,7 @@ function NetworkCard({
       onClick={onClick}
       title={resolved.def.displayName}
       style={{ width, height: CARD_HEIGHT, flex: `0 0 ${width}px` }}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-edge-soft/55 bg-elevated text-left transition-colors duration-150 hover:border-edge hover:bg-raised"
+      className="group flex flex-col overflow-hidden rounded-2xl border border-edge-soft/55 bg-elevated text-start transition-colors duration-150 hover:border-edge hover:bg-raised"
     >
       <div
         className="flex shrink-0 items-center justify-center bg-surface/70 p-3"

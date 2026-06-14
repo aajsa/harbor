@@ -49,7 +49,7 @@ export function CustomCodeCard() {
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="flex items-start justify-between gap-3 text-left"
+        className="flex items-start justify-between gap-3 text-start"
       >
         <div className="flex flex-col gap-0.5">
           <span className="text-[14px] font-medium text-ink">Custom code</span>

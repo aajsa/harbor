@@ -5,6 +5,7 @@ import { meta as fetchMeta, narrowMediaType, type Meta } from "@/lib/cinemeta";
 import { animeKitsuMeta } from "@/lib/providers/anime-kitsu-addon";
 import { tmdbLiteMeta } from "@/lib/providers/tmdb/tmdb-lite";
 import { useContextMenu } from "@/lib/context-menu";
+import { useT } from "@/lib/i18n";
 import { readSnapshot, useSnapshotVersion } from "@/lib/snapshots";
 import { episodeFromVideoId, libraryMetaType, type LibraryItem } from "@/lib/stremio";
 import { useHasNewEpisode } from "@/lib/new-episodes";
@@ -19,6 +20,7 @@ type Props = {
 
 export const ContinueCard = memo(function ContinueCard({ item, watched = false, onDismiss }: Props) {
   const { openMeta, openPicker } = useView();
+  const t = useT();
   const { settings } = useSettings();
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
@@ -30,7 +32,7 @@ export const ContinueCard = memo(function ContinueCard({ item, watched = false, 
   const dur = item.state?.duration ?? 0;
   const off = item.state?.timeOffset ?? 0;
   const progress = dur > 0 ? Math.min(1, off / dur) : 0;
-  const remaining = dur > 0 && !isExternal ? formatRemaining(dur - off) : "";
+  const remaining = dur > 0 && !isExternal ? formatRemaining(t, dur - off) : "";
   const upNext = item.upNext === true;
   const kitsuThreeSeg =
     /^(kitsu|mal|anilist|anidb):/.test(item._id) &&
@@ -165,7 +167,7 @@ export const ContinueCard = memo(function ContinueCard({ item, watched = false, 
         ref={cardRef}
         onClick={onClick}
         onContextMenu={(e) => openContextMenu(e, { kind: "meta", meta })}
-        className="flex w-full min-w-0 flex-col gap-2.5 text-left"
+        className="flex w-full min-w-0 flex-col gap-2.5 text-start"
       >
       <div className="harbor-poster relative aspect-[16/9] overflow-hidden rounded-xl bg-elevated shadow-[0_2px_8px_-2px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.06)] transition-transform duration-[220ms] ease-[cubic-bezier(0.22,0.61,0.36,1)] group-hover:scale-[1.02]">
         <div className="absolute inset-0 bg-gradient-to-br from-raised via-elevated to-surface" />
@@ -183,16 +185,16 @@ export const ContinueCard = memo(function ContinueCard({ item, watched = false, 
         <div className="absolute inset-0 shadow-[inset_0_0_100px_rgba(0,0,0,0.45)]" />
         {watched && (
           <span
-            className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-400/22 text-emerald-200 ring-1 ring-emerald-400/40 backdrop-blur-sm"
-            title="Watched on Trakt"
+            className="absolute start-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-400/22 text-emerald-200 ring-1 ring-emerald-400/40 backdrop-blur-sm"
+            title={t("Watched on Trakt")}
           >
             <Check size={12} strokeWidth={3} />
           </span>
         )}
         {newEpisode && (
           <span
-            className={`absolute top-2 flex h-6 items-center rounded-full bg-accent/90 px-2 text-[10px] font-bold tracking-[0.1em] text-canvas ${watched ? "left-10" : "left-2"}`}
-            title="New episode released since you last watched"
+            className={`absolute top-2 flex h-6 items-center rounded-full bg-accent/90 px-2 text-[10px] font-bold tracking-[0.1em] text-canvas ${watched ? "start-10" : "start-2"}`}
+            title={t("New episode released since you last watched")}
           >
             +1
           </span>
@@ -210,16 +212,16 @@ export const ContinueCard = memo(function ContinueCard({ item, watched = false, 
         )}
         <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-canvas/80 to-transparent" />
         {(sub || remaining || isExternal || upNext) && (
-          <div className="absolute bottom-2 left-2 flex items-center gap-1.5 rounded-md bg-canvas/95 px-2 py-1 text-[11px]">
+          <div className="absolute bottom-2 start-2 flex items-center gap-1.5 rounded-md bg-canvas/95 px-2 py-1 text-[11px]">
             {isExternal ? (
-              <img src={simklLogo} alt="" className="h-3.5 w-3.5 rounded-sm" title="Paused on Simkl" />
+              <img src={simklLogo} alt="" className="h-3.5 w-3.5 rounded-sm" title={t("Paused on Simkl")} />
             ) : (
               <Play size={11} fill="currentColor" className="text-ink" />
             )}
             {sub && <span className="font-medium text-ink">{sub}</span>}
             {sub && (upNext || remaining) && <span className="text-ink-subtle">·</span>}
             {upNext ? (
-              <span className="font-medium text-accent">Up Next</span>
+              <span className="font-medium text-accent">{t("Up Next")}</span>
             ) : (
               remaining && <span className="text-ink-muted">{remaining}</span>
             )}
@@ -237,8 +239,8 @@ export const ContinueCard = memo(function ContinueCard({ item, watched = false, 
         <button
           type="button"
           onClick={onPlay}
-          aria-label="Play"
-          title="Play"
+          aria-label={t("Play")}
+          title={t("Play")}
           className="pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full bg-canvas ring-1 ring-white/15 shadow-[0_10px_28px_-8px_rgba(0,0,0,0.6)] transition-transform duration-150 hover:scale-[1.06]"
         >
           <Play size={22} fill="currentColor" className="ml-0.5 text-ink" />
@@ -251,8 +253,8 @@ export const ContinueCard = memo(function ContinueCard({ item, watched = false, 
             e.stopPropagation();
             onDismiss(item._id);
           }}
-          aria-label="Remove from Continue Watching"
-          className="group/x absolute right-0.5 top-0.5 z-10 flex h-11 w-11 items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-visible:opacity-100"
+          aria-label={t("Remove from Continue Watching")}
+          className="group/x absolute end-0.5 top-0.5 z-10 flex h-11 w-11 items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-visible:opacity-100"
         >
           <span className="flex h-9 w-9 items-center justify-center rounded-full bg-canvas/85 text-ink-muted ring-1 ring-white/12 backdrop-blur-sm transition-colors group-hover/x:bg-canvas group-hover/x:text-ink">
             <X size={20} strokeWidth={2.4} />
@@ -268,10 +270,10 @@ function downscaleTmdb(url?: string): string | undefined {
   return url.replace(/\/t\/p\/(original|w1280|w780|w500)\//, "/t/p/w300/");
 }
 
-function formatRemaining(ms: number) {
+function formatRemaining(t: (key: string, vars?: Record<string, string | number>) => string, ms: number) {
   const minutes = Math.max(0, Math.round(ms / 60000));
-  if (minutes < 60) return `${minutes}m left`;
+  if (minutes < 60) return t("{m}m left", { m: minutes });
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
-  return m === 0 ? `${h}h left` : `${h}h ${m}m left`;
+  return m === 0 ? t("{h}h left", { h }) : t("{h}h {m}m left", { h, m });
 }

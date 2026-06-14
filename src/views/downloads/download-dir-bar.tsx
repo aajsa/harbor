@@ -4,8 +4,10 @@ import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import { FolderOpen, RotateCcw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSettings } from "@/lib/settings";
+import { useT } from "@/lib/i18n";
 
 export function DownloadDirBar() {
+  const t = useT();
   const { settings, update } = useSettings();
   const [systemDefault, setSystemDefault] = useState("");
 
@@ -38,15 +40,15 @@ export function DownloadDirBar() {
       <FolderOpen size={17} strokeWidth={2} className="shrink-0 text-ink-subtle" />
       <div className="flex min-w-0 flex-1 flex-col">
         <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-subtle">
-          {isCustom ? "Saving to" : "Saving to system default"}
+          {isCustom ? t("Saving to") : t("Saving to system default")}
         </span>
         <button
           type="button"
           onClick={() => current && void revealItemInDir(current)}
-          title={current ? `${current} (open folder)` : undefined}
-          className="truncate text-left font-mono text-[12.5px] text-ink-muted transition-colors hover:text-ink"
+          title={current ? t("{path} (open folder)", { path: current }) : undefined}
+          className="truncate text-start font-mono text-[12.5px] text-ink-muted transition-colors hover:text-ink"
         >
-          {current || "Detecting..."}
+          {current || t("Detecting...")}
         </button>
       </div>
       <button
@@ -54,14 +56,14 @@ export function DownloadDirBar() {
         onClick={pick}
         className="shrink-0 rounded-lg border border-edge-soft px-3.5 py-2 text-[12.5px] font-semibold text-ink-muted transition-colors hover:border-edge hover:text-ink"
       >
-        Change
+        {t("Change")}
       </button>
       {isCustom && (
         <button
           type="button"
           onClick={() => update({ downloadDir: "" })}
-          aria-label="Reset to default folder"
-          title="Reset to default"
+          aria-label={t("Reset to default folder")}
+          title={t("Reset to default")}
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-ink-subtle transition-colors hover:bg-ink/10 hover:text-ink"
         >
           <RotateCcw size={15} strokeWidth={2.2} />

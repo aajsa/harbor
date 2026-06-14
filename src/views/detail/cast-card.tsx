@@ -22,7 +22,7 @@ export function CastCard({ cast }: { cast: CastEntry }) {
     <Wrap
       {...wrapProps}
       data-person-card
-      className={`group flex w-full min-w-0 flex-col gap-2.5 text-left ${isResolved ? "" : "cursor-default"}`}
+      className={`group flex w-full min-w-0 flex-col gap-2.5 text-start ${isResolved ? "" : "cursor-default"}`}
     >
       <div
         className={`relative transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0.24,1)] ${isResolved ? "group-hover:-translate-y-2" : ""}`}

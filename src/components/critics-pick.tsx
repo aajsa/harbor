@@ -196,7 +196,7 @@ export function CriticsPick({ meta }: { meta: Meta }) {
         <button
           type="button"
           onClick={() => openMeta({ ...meta, logo: logo ?? meta.logo })}
-          className="group relative min-h-[520px] overflow-hidden rounded-2xl border border-edge-soft bg-canvas text-left transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0.24,1)] hover:-translate-y-1"
+          className="group relative min-h-[520px] overflow-hidden rounded-2xl border border-edge-soft bg-canvas text-start transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0.24,1)] hover:-translate-y-1"
           style={{ isolation: "isolate" }}
         >
           {(() => {
@@ -225,7 +225,7 @@ export function CriticsPick({ meta }: { meta: Meta }) {
                 "linear-gradient(to top, oklch(0.10 0.02 260 / 0.92) 0%, oklch(0.10 0.02 260 / 0.30) 40%, transparent 70%)",
             }}
           />
-          <div className="absolute right-7 top-6 flex h-11 w-11 items-center justify-center rounded-full bg-ink/95 text-canvas opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+          <div className="absolute end-7 top-6 flex h-11 w-11 items-center justify-center rounded-full bg-ink/95 text-canvas opacity-0 transition-opacity duration-200 group-hover:opacity-100">
             <Play size={18} fill="currentColor" />
           </div>
           <MetaAwardsCorner meta={meta} imdbId={resolvedImdb} />
@@ -238,7 +238,7 @@ export function CriticsPick({ meta }: { meta: Meta }) {
                   decoding="async"
                   onLoad={() => setLogoLoaded(true)}
                   onError={() => setLogo(null)}
-                  className="max-h-[84px] w-auto max-w-[60%] object-contain object-left drop-shadow-[0_4px_20px_rgba(0,0,0,0.55)]"
+                  className="max-h-[84px] w-auto max-w-[60%] object-contain object-left rtl:object-right drop-shadow-[0_4px_20px_rgba(0,0,0,0.55)]"
                   style={{
                     opacity: logoLoaded ? 1 : 0,
                     transition: "opacity 420ms cubic-bezier(0.32, 0.72, 0.24, 1)",
@@ -285,7 +285,7 @@ export function CriticsPick({ meta }: { meta: Meta }) {
                         openUrl(activeReview.url!);
                       }}
                       aria-label="Open review source"
-                      className="ml-0.5 inline-flex h-4 w-4 items-center justify-center rounded text-ink-subtle transition-colors hover:text-ink"
+                      className="ms-0.5 inline-flex h-4 w-4 items-center justify-center rounded text-ink-subtle transition-colors hover:text-ink"
                     >
                       <ExternalLink size={11} strokeWidth={2} />
                     </button>
@@ -293,14 +293,14 @@ export function CriticsPick({ meta }: { meta: Meta }) {
                 </div>
                 <div className="flex items-center gap-1">
                   {reviews.length > 1 && (
-                    <div className="mr-1 flex items-center gap-0.5">
+                    <div className="me-1 flex items-center gap-0.5">
                       <button
                         type="button"
                         onClick={() => setReviewIdx((i) => (i - 1 + reviews.length) % reviews.length)}
                         aria-label="Previous review"
                         className="flex h-5 w-5 items-center justify-center rounded text-ink-subtle transition-colors hover:bg-elevated hover:text-ink"
                       >
-                        <ChevronLeft size={12} />
+                        <ChevronLeft size={12} className="dir-icon" />
                       </button>
                       <span className="font-mono text-[10px] text-ink-subtle">
                         {reviewIdx + 1}/{reviews.length}
@@ -311,7 +311,7 @@ export function CriticsPick({ meta }: { meta: Meta }) {
                         aria-label="Next review"
                         className="flex h-5 w-5 items-center justify-center rounded text-ink-subtle transition-colors hover:bg-elevated hover:text-ink"
                       >
-                        <ChevronRight size={12} />
+                        <ChevronRight size={12} className="dir-icon" />
                       </button>
                     </div>
                   )}
@@ -325,24 +325,35 @@ export function CriticsPick({ meta }: { meta: Meta }) {
                 </div>
               </div>
             ) : (
-              <div className="flex items-center gap-3 text-[11.5px] text-ink-muted">
-                {meta.imdbRating && (
-                  <span className="inline-flex items-center gap-1.5">
-                    <ImdbIcon className="h-[12px] w-auto rounded-[2px]" />
-                    {meta.imdbRating}
-                  </span>
-                )}
-                {settings.showRtBadge && omdb?.rtCritics != null && (
-                  <span className="inline-flex items-center gap-1.5">
-                    <RtBadge score={omdb.rtCritics} className="h-[14px] w-auto" />
-                    {omdb.rtCritics}%
-                  </span>
-                )}
-                {omdb?.metascore != null && (
-                  <span className="inline-flex items-center gap-1.5">
-                    <span className="rounded-[3px] bg-[#ffcc33] px-1 text-[9.5px] font-bold tracking-wider text-black">M</span>
-                    {omdb.metascore}
-                  </span>
+              <div className="flex items-center justify-between gap-3 text-[11.5px] text-ink-muted">
+                <div className="flex items-center gap-3">
+                  {meta.imdbRating && (
+                    <span className="inline-flex items-center gap-1.5">
+                      <ImdbIcon className="h-[12px] w-auto rounded-[2px]" />
+                      {meta.imdbRating}
+                    </span>
+                  )}
+                  {settings.showRtBadge && omdb?.rtCritics != null && (
+                    <span className="inline-flex items-center gap-1.5">
+                      <RtBadge score={omdb.rtCritics} className="h-[14px] w-auto" />
+                      {omdb.rtCritics}%
+                    </span>
+                  )}
+                  {omdb?.metascore != null && (
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="rounded-[3px] bg-[#ffcc33] px-1 text-[9.5px] font-bold tracking-wider text-black">M</span>
+                      {omdb.metascore}
+                    </span>
+                  )}
+                </div>
+                {overview && (
+                  <button
+                    type="button"
+                    onClick={() => setOverviewOpen(true)}
+                    className="shrink-0 text-[11.5px] font-semibold uppercase tracking-[0.14em] text-accent transition-opacity hover:opacity-80"
+                  >
+                    Read full
+                  </button>
                 )}
               </div>
             )}
@@ -371,7 +382,7 @@ export function CriticsPick({ meta }: { meta: Meta }) {
                       aria-label="Scroll cast left"
                       className="flex h-6 w-6 items-center justify-center rounded-full border border-edge-soft text-ink-muted transition-colors duration-150 hover:bg-elevated hover:text-ink"
                     >
-                      <ChevronLeft size={14} />
+                      <ChevronLeft size={14} className="dir-icon" />
                     </button>
                     <button
                       type="button"
@@ -379,7 +390,7 @@ export function CriticsPick({ meta }: { meta: Meta }) {
                       aria-label="Scroll cast right"
                       className="flex h-6 w-6 items-center justify-center rounded-full border border-edge-soft text-ink-muted transition-colors duration-150 hover:bg-elevated hover:text-ink"
                     >
-                      <ChevronRight size={14} />
+                      <ChevronRight size={14} className="dir-icon" />
                     </button>
                   </div>
                 )}

@@ -24,7 +24,7 @@ export function TitlePlate({ title, logo, loading }: { title: string; logo?: str
           decoding="async"
           onLoad={() => setLogoLoaded(true)}
           onError={() => setLogoFailed(true)}
-          className="absolute bottom-0 left-0 max-h-[124px] w-auto max-w-[440px] object-contain object-left drop-shadow-[0_6px_24px_rgba(0,0,0,0.45)]"
+          className="absolute bottom-0 start-0 max-h-[124px] w-auto max-w-[440px] object-contain object-left rtl:object-right drop-shadow-[0_6px_24px_rgba(0,0,0,0.45)]"
           style={{
             opacity: logoLoaded ? 1 : 0,
             transition: "opacity 360ms cubic-bezier(0.32, 0.72, 0.24, 1)",

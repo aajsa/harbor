@@ -340,7 +340,7 @@ export function ServiceCard({
     >
       <ServiceLogo service={service} height={26} />
       {active && (
-        <span className="absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full bg-ink">
+        <span className="absolute end-2 top-2 flex h-4 w-4 items-center justify-center rounded-full bg-ink">
           <Check size={11} strokeWidth={3} className="text-canvas" />
         </span>
       )}

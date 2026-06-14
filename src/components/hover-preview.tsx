@@ -20,9 +20,7 @@ import {
   CLOSE_SCALE_TO,
   EASE_OUT,
   GUTTER_PX,
-  HALO_BLOOM_MS,
   HALO_MORPH_MS,
-  HALO_OPACITY,
   HARD_CLOSE_MS,
   MORPH_FADE_IN_MS,
   MORPH_FADE_OUT_MS,
@@ -40,7 +38,6 @@ import { activeLayout } from "@/lib/theme";
 import { useView } from "@/lib/view";
 import { PreviewBlock } from "./hover-preview/block";
 import { PreviewCrown } from "./hover-preview/crown";
-import { PreviewHalo } from "./hover-preview/halo";
 import { useMedia, type Scene } from "./hover-preview/scene";
 import { crownHeightFor, panelWidthFor, placePanel } from "./hover-preview/use-preview-position";
 
@@ -81,7 +78,6 @@ export function HoverPreview() {
 
   const frameRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
-  const haloRef = useRef<HTMLDivElement>(null);
   const layerEls = useRef(new Map<number, HTMLDivElement>());
   const layerKeyRef = useRef(0);
   const revealedSeqRef = useRef(0);
@@ -172,11 +168,6 @@ export function HoverPreview() {
         ],
         { duration: CHILD_MS, delay: group * STAGGER_STEP_MS, easing: EASE_OUT, fill: "backwards" },
       );
-    });
-    haloRef.current?.animate([{ opacity: 0 }, { opacity: HALO_OPACITY }], {
-      duration: HALO_BLOOM_MS,
-      easing: EASE_OUT,
-      fill: "backwards",
     });
   }, [scene, reduced]);
 
@@ -322,7 +313,6 @@ export function HoverPreview() {
   if (!scene) return null;
 
   const revealed = scene.pos !== null;
-  const halo = scene.current.payload.data;
 
   return (
     <div className="pointer-events-none fixed inset-0 z-[110]">
@@ -339,7 +329,6 @@ export function HoverPreview() {
           transition: scene.outgoing && !reduced ? `transform ${MORPH_MOVE_MS}ms ${OPEN_EASE}` : undefined,
         }}
       >
-        <PreviewHalo key={scene.seq} ref={haloRef} art={halo.art} seed={halo.meta.id} />
         <div
           ref={panelRef}
           role="presentation"
@@ -350,7 +339,7 @@ export function HoverPreview() {
           onPointerDown={onPanelPointerDown}
           onClick={onPanelClick}
           onContextMenu={onPanelContextMenu}
-          className={`group relative cursor-pointer overflow-hidden rounded-xl bg-elevated ring-1 ring-edge-soft ${
+          className={`group relative cursor-pointer overflow-hidden rounded-xl bg-elevated shadow-[0_24px_60px_-20px_rgba(0,0,0,0.78)] ring-1 ring-edge-soft ${
             revealed && !reduced ? "animate-preview-in" : ""
           }`}
           style={{

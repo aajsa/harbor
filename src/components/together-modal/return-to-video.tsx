@@ -5,7 +5,7 @@ export function ReturnToVideo({ media, onReturn }: { media: SyncState; onReturn:
   return (
     <button
       onClick={onReturn}
-      className="group flex items-center gap-3 rounded-xl border border-accent/40 bg-accent/10 p-2 text-left transition-colors hover:bg-accent/15"
+      className="group flex items-center gap-3 rounded-xl border border-accent/40 bg-accent/10 p-2 text-start transition-colors hover:bg-accent/15"
     >
       <div className="relative h-12 w-8 shrink-0 overflow-hidden rounded-md bg-canvas/60 ring-1 ring-edge-soft/60">
         {media.posterUrl ? (
@@ -32,7 +32,7 @@ export function ReturnToVideo({ media, onReturn }: { media: SyncState; onReturn:
           </span>
         )}
       </div>
-      <span className="mr-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink text-canvas transition-transform group-hover:scale-105">
+      <span className="me-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink text-canvas transition-transform group-hover:scale-105">
         <Play size={14} strokeWidth={2.4} className="translate-x-px" />
       </span>
     </button>

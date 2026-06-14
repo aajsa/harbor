@@ -1,4 +1,5 @@
 import { ArrowLeft, FileX } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 export function LocalFileError({
   path,
@@ -11,6 +12,7 @@ export function LocalFileError({
   onBack: () => void;
   onRetry: () => void;
 }) {
+  const t = useT();
   const filename = path.split(/[\\/]/).pop() ?? path;
   const looksLikeOneDrive = /onedrive/i.test(path);
   return (
@@ -20,15 +22,16 @@ export function LocalFileError({
           <FileX size={26} strokeWidth={1.8} />
         </span>
         <div className="flex flex-col gap-2">
-          <h2 className="font-display text-[24px] font-semibold text-white">Couldn't open this file</h2>
+          <h2 className="font-display text-[24px] font-semibold text-white">{t("Couldn't open this file")}</h2>
           <p className="text-[13.5px] leading-relaxed text-white/70">
             {filename}
           </p>
         </div>
         {looksLikeOneDrive && (
           <p className="rounded-xl border border-amber-300/30 bg-amber-400/10 px-4 py-3 text-[12.5px] leading-relaxed text-amber-100/85">
-            This file is in OneDrive. If "Files On-Demand" is on, the file is a cloud placeholder until it's downloaded.
-            Right-click it in Explorer and pick <span className="font-semibold">Always keep on this device</span>, then try again.
+            {t("This file is in OneDrive. If \"Files On-Demand\" is on, the file is a cloud placeholder until it's downloaded. Right-click it in Explorer and pick")}{" "}
+            <span className="font-semibold">{t("Always keep on this device")}</span>
+            {t(", then try again.")}
           </p>
         )}
         {errorMessage && !looksLikeOneDrive && (
@@ -41,14 +44,14 @@ export function LocalFileError({
             onClick={onBack}
             className="flex h-11 items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-5 text-[13px] font-medium text-white/75 transition-colors hover:border-white/30 hover:bg-white/10 hover:text-white"
           >
-            <ArrowLeft size={14} strokeWidth={2} />
-            Back to library
+            <ArrowLeft size={14} strokeWidth={2} className="dir-icon" />
+            {t("Back to library")}
           </button>
           <button
             onClick={onRetry}
             className="flex h-11 items-center rounded-xl bg-white px-5 text-[13px] font-semibold text-black transition-colors hover:bg-white/85"
           >
-            Try again
+            {t("Try again")}
           </button>
         </div>
       </div>

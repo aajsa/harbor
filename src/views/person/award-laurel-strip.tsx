@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { AwardLogo, laurelColorFor } from "@/components/icons/award-logo";
 import { Laurel } from "@/components/icons/laurel";
 import type { AwardType } from "@/lib/providers/wikidata";
+import { useT } from "@/lib/i18n";
 
 export function AwardLaurelStrip({
   chips,
@@ -11,6 +12,7 @@ export function AwardLaurelStrip({
   chips: { type: AwardType; wins: number; nominations: number }[];
   onOpen: (t: AwardType, anchor: DOMRect) => void;
 }) {
+  const tr = useT();
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [atStart, setAtStart] = useState(true);
   const [atEnd, setAtEnd] = useState(true);
@@ -93,22 +95,22 @@ export function AwardLaurelStrip({
       <button
         type="button"
         onClick={() => scrollBy(-1)}
-        aria-label="Scroll awards left"
-        className={`absolute left-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-edge-soft/40 bg-canvas/70 text-ink-muted backdrop-blur-md transition-opacity duration-200 hover:bg-canvas hover:text-ink ${
+        aria-label={tr("Scroll awards left")}
+        className={`absolute start-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-edge-soft/40 bg-canvas/70 text-ink-muted backdrop-blur-md transition-opacity duration-200 hover:bg-canvas hover:text-ink ${
           atStart ? "pointer-events-none opacity-0" : "opacity-100"
         }`}
       >
-        <ChevronLeft size={14} strokeWidth={2.2} />
+        <ChevronLeft size={14} strokeWidth={2.2} className="dir-icon" />
       </button>
       <button
         type="button"
         onClick={() => scrollBy(1)}
-        aria-label="Scroll awards right"
-        className={`absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-edge-soft/40 bg-canvas/70 text-ink-muted backdrop-blur-md transition-opacity duration-200 hover:bg-canvas hover:text-ink ${
+        aria-label={tr("Scroll awards right")}
+        className={`absolute end-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-edge-soft/40 bg-canvas/70 text-ink-muted backdrop-blur-md transition-opacity duration-200 hover:bg-canvas hover:text-ink ${
           atEnd ? "pointer-events-none opacity-0" : "opacity-100"
         }`}
       >
-        <ChevronRight size={14} strokeWidth={2.2} />
+        <ChevronRight size={14} strokeWidth={2.2} className="dir-icon" />
       </button>
     </div>
   );
@@ -125,24 +127,33 @@ function AwardChip({
   noms: number;
   onClick: (rect: DOMRect) => void;
 }) {
+  const tr = useT();
   const tint = laurelColorFor(type);
   return (
     <button
       type="button"
       onClick={(e) => onClick(e.currentTarget.getBoundingClientRect())}
-      title={`${labelFor(type)} details`}
-      className="group relative flex h-14 shrink-0 items-center gap-2.5 rounded-full border border-edge-soft bg-canvas/50 pl-1.5 pr-4 transition-all hover:border-edge hover:bg-canvas/80 hover:scale-[1.03]"
+      title={tr("{label} details", { label: labelFor(type) })}
+      className="group relative flex h-14 shrink-0 items-center gap-2.5 rounded-full border border-edge-soft bg-canvas/50 ps-1.5 pe-4 transition-all hover:border-edge hover:bg-canvas/80 hover:scale-[1.03]"
     >
       <span className="text-ink-muted" style={tint ? { color: tint } : undefined}>
         <Laurel size={48}>
           <AwardLogo type={type} size={20} />
         </Laurel>
       </span>
-      <div className="flex flex-col leading-tight text-left">
+      <div className="flex flex-col leading-tight text-start">
         <span className="text-[12.5px] font-semibold text-ink">
-          {wins > 0 ? `${wins} ${wins === 1 ? "win" : "wins"}` : `${noms} ${noms === 1 ? "nom" : "noms"}`}
+          {wins > 0
+            ? wins === 1
+              ? tr("{n} win", { n: wins })
+              : tr("{n} wins", { n: wins })
+            : noms === 1
+              ? tr("{n} nom", { n: noms })
+              : tr("{n} noms", { n: noms })}
           {wins > 0 && noms > 0 && (
-            <span className="ml-1.5 font-medium text-ink-subtle">· {noms} nom{noms === 1 ? "" : "s"}</span>
+            <span className="ms-1.5 font-medium text-ink-subtle">
+              {noms === 1 ? tr("· {n} nom", { n: noms }) : tr("· {n} noms", { n: noms })}
+            </span>
           )}
         </span>
         <span className="text-[10.5px] uppercase tracking-[0.16em] text-ink-subtle">{labelFor(type)}</span>

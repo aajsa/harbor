@@ -255,7 +255,7 @@ function PeekSlide({
               alt={meta.name}
               decoding="async"
               onLoad={() => setLogoLoaded(true)}
-              className="max-h-[80px] w-auto max-w-[360px] object-contain object-left drop-shadow-[0_4px_18px_rgba(0,0,0,0.55)]"
+              className="max-h-[80px] w-auto max-w-[360px] object-contain object-left rtl:object-right drop-shadow-[0_4px_18px_rgba(0,0,0,0.55)]"
               style={{
                 opacity: logoLoaded ? 1 : 0,
                 transition: "opacity 320ms ease-out",

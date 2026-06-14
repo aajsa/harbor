@@ -1,5 +1,6 @@
 import { Check, Download, ExternalLink, Loader2, Play, Zap } from "lucide-react";
 import { Flag } from "@/components/flag";
+import { CopyLinkButton, resolveStreamLink } from "@/components/player/copy-link-button";
 import { FormatBadge, streamBadges } from "@/components/format-badge";
 import { HostMatchChip } from "@/components/host-match-chip";
 import type { Meta } from "@/lib/cinemeta";
@@ -41,6 +42,7 @@ export function PrimaryCard({
   const libraryDebrids = debrids.filter((d) => stream.inLibrary[d.slug]);
   const cachedDebrid = cachedDebrids[0] ?? null;
   const externalOnly = !stream.url && !stream.infoHash && !!(stream.externalUrl || stream.ytId);
+  const link = resolveStreamLink(stream);
   const isCached =
     (stream.url != null && !stream.infoHash && !hasUncachedMarker(stream)) ||
     cachedDebrid != null ||
@@ -255,6 +257,13 @@ export function PrimaryCard({
               </button>
             )}
             <PlayProvenance stream={stream} debrids={debrids} isCached={isCached} addonLogo={addonLogo} />
+            {link && (
+              <CopyLinkButton
+                url={link}
+                size={15}
+                className="h-9 w-9 ring-1 ring-edge-soft/60"
+              />
+            )}
           </div>
         </div>
       </div>

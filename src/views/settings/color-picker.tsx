@@ -158,7 +158,7 @@ export function ColorPopoverTrigger({
           <div
             className={`absolute z-30 ${
               direction === "up" ? "bottom-[calc(100%+8px)]" : "top-[calc(100%+8px)]"
-            } ${align === "right" ? "right-0" : "left-0"}`}
+            } ${align === "right" ? "end-0" : "start-0"}`}
           >
             {panel}
           </div>

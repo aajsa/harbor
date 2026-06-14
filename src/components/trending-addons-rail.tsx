@@ -105,7 +105,7 @@ function MoverCard({
         }
       >
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-surface via-surface/30 to-transparent" />
-        <span className="absolute right-2.5 top-2.5 flex items-center gap-1 rounded-full bg-rose-500/90 px-2 py-0.5 text-[11px] font-bold text-white ring-1 ring-white/20 backdrop-blur-sm">
+        <span className="absolute end-2.5 top-2.5 flex items-center gap-1 rounded-full bg-rose-500/90 px-2 py-0.5 text-[11px] font-bold text-white ring-1 ring-white/20 backdrop-blur-sm">
           <TrendingUp size={10} strokeWidth={2.8} />+{entry.delta}
         </span>
         {logo && (
@@ -113,7 +113,7 @@ function MoverCard({
             src={logo}
             alt=""
             draggable={false}
-            className="absolute bottom-2.5 left-2.5 h-10 w-10 rounded-lg bg-canvas/80 object-contain p-1 ring-1 ring-edge-soft"
+            className="absolute bottom-2.5 start-2.5 h-10 w-10 rounded-lg bg-canvas/80 object-contain p-1 ring-1 ring-edge-soft"
           />
         )}
       </div>

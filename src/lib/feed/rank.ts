@@ -1,6 +1,11 @@
 import type { Meta } from "@/lib/cinemeta";
 import type { FeedItem } from "@/lib/feed";
 import { getStore } from "@/lib/discover/store";
+import { loadStoredSettings } from "@/lib/settings/load";
+import { localeWeights } from "./locale";
+
+type Affinity = ReturnType<typeof getStore>["affinity"];
+type Locale = ReturnType<typeof localeWeights>;
 
 function decadeOf(year?: string): string | undefined {
   if (!year) return undefined;
@@ -18,9 +23,18 @@ function maxAbs(map: Record<string, number>): number {
   return max;
 }
 
-function scoreItem(item: FeedItem, affinity: ReturnType<typeof getStore>["affinity"]): number {
-  if (affinity.totalEvents === 0) return 0;
-  let score = 0;
+function localeScore(meta: Meta, locale: Locale, affinity: Affinity): number {
+  if (locale.penalty === 0) return 0;
+  const code = meta.originalLanguage;
+  if (!code || locale.codes.has(code)) return 0;
+  const langMax = maxAbs(affinity.languages) || 1;
+  const liked = Math.max(0, (affinity.languages[code] ?? 0) / langMax);
+  return -locale.penalty * (1 - liked);
+}
+
+function scoreItem(item: FeedItem, affinity: Affinity, locale: Locale): number {
+  let score = localeScore(item.meta, locale, affinity);
+  if (affinity.totalEvents === 0) return score;
   const genreMax = maxAbs(affinity.genres) || 1;
   for (const g of item.meta.genres ?? []) {
     const w = affinity.genres[g] ?? 0;
@@ -37,10 +51,11 @@ function scoreItem(item: FeedItem, affinity: ReturnType<typeof getStore>["affini
 
 export function rankByAffinity(items: FeedItem[]): FeedItem[] {
   const { affinity } = getStore();
-  if (affinity.totalEvents < 1) return items;
+  const locale = localeWeights(loadStoredSettings());
+  if (affinity.totalEvents < 1 && locale.penalty === 0) return items;
   const scored = items.map((item, idx) => ({
     item,
-    score: scoreItem(item, affinity),
+    score: scoreItem(item, affinity, locale),
     idx,
   }));
   scored.sort((a, b) => {

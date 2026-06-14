@@ -2,6 +2,7 @@ import { ArrowDownToLine, Check, RotateCw, X } from "lucide-react";
 import type { Meta } from "@/lib/cinemeta";
 import { activeDownloadFor, cancelDownload, useDownloads } from "@/lib/download/downloads-store";
 import { useView, type PlayEpisode } from "@/lib/view";
+import { useT } from "@/lib/i18n";
 
 export function EpisodeDownloadButton({
   meta,
@@ -14,6 +15,7 @@ export function EpisodeDownloadButton({
   size?: number;
   variant?: "row" | "bar";
 }) {
+  const t = useT();
   const { openPicker } = useView();
   useDownloads();
   const dl = activeDownloadFor(meta.id, episode?.season ?? null, episode?.episode ?? null);
@@ -61,21 +63,21 @@ export function EpisodeDownloadButton({
       onClick={onClick}
       aria-label={
         downloading
-          ? `Downloading ${pct} percent, click to cancel`
+          ? t("Downloading {pct} percent, click to cancel", { pct })
           : done
-            ? "Saved offline"
+            ? t("Saved offline")
             : failed
-              ? "Download failed, click to retry"
-              : "Download for offline"
+              ? t("Download failed, click to retry")
+              : t("Download for offline")
       }
       title={
         downloading
-          ? `Downloading ${pct}%  ·  click to cancel`
+          ? t("Downloading {pct}%  ·  click to cancel", { pct })
           : done
-            ? "Saved offline"
+            ? t("Saved offline")
             : failed
-              ? "Download failed  ·  click to retry"
-              : "Download for offline"
+              ? t("Download failed  ·  click to retry")
+              : t("Download for offline")
       }
       className={wrapperClass}
       style={{ width: dim, height: dim }}

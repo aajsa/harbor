@@ -4,7 +4,10 @@ import type { Meta } from "@/lib/cinemeta";
 import { Poster } from "@/components/poster";
 import { useSettings } from "@/lib/settings";
 import { useView } from "@/lib/view";
+import { useT } from "@/lib/i18n";
 import { EpisodeDownloadButton } from "./episode-download-button";
+
+type Translator = (key: string, vars?: Record<string, string | number>) => string;
 
 type CinemetaVideo = NonNullable<Meta["videos"]>[number];
 
@@ -15,6 +18,7 @@ export function CinemetaEpisodes({
   meta: Meta;
   videos: NonNullable<Meta["videos"]>;
 }) {
+  const t = useT();
   const grouped = useMemo(() => {
     const map = new Map<number, CinemetaVideo[]>();
     const flat: CinemetaVideo[] = [];
@@ -60,7 +64,7 @@ export function CinemetaEpisodes({
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-end justify-between gap-6">
-        <h3 className="text-[22px] font-medium tracking-tight text-ink">Episodes</h3>
+        <h3 className="text-[22px] font-medium tracking-tight text-ink">{t("Episodes")}</h3>
         {grouped.length > 1 && (
           <SeasonDropdown
             seasons={grouped.map((g) => g.seasonNumber)}
@@ -70,7 +74,9 @@ export function CinemetaEpisodes({
         )}
       </div>
       <p className="text-[13px] text-ink-subtle">
-        {activeEps.length} episode{activeEps.length === 1 ? "" : "s"}
+        {activeEps.length === 1
+          ? t("{n} episode", { n: activeEps.length })
+          : t("{n} episodes", { n: activeEps.length })}
       </p>
       <div className="flex flex-col gap-1">
         {activeEps.map((ep, i) => (
@@ -95,6 +101,7 @@ export function CinemetaEpisodeRow({
   ep: CinemetaVideo;
   flatIndex?: number;
 }) {
+  const t = useT();
   const { openPicker } = useView();
   const { settings } = useSettings();
   const aired = ep.released ?? ep.firstAired ?? null;
@@ -114,7 +121,7 @@ export function CinemetaEpisodeRow({
     >
       <button
         onClick={() => openPicker(meta, playEpisode, { autoPlay: settings.instantPlay })}
-        className="flex min-w-0 flex-1 gap-6 text-left"
+        className="flex min-w-0 flex-1 gap-6 text-start"
       >
         <div className="relative w-[200px] shrink-0 overflow-hidden rounded-lg">
           <Poster
@@ -128,14 +135,14 @@ export function CinemetaEpisodeRow({
             </div>
           </div>
           {ep.season != null && (
-            <span className="absolute left-2 top-2 rounded-md bg-canvas/95 px-1.5 py-0.5 text-[11px] font-semibold text-ink">
+            <span className="absolute start-2 top-2 rounded-md bg-canvas/95 px-1.5 py-0.5 text-[11px] font-semibold text-ink">
               {epNumber}
             </span>
           )}
         </div>
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
           <h4 className="truncate text-[16px] font-semibold text-ink">
-            {ep.name || ep.title || formatAired(aired) || `Episode ${epNumber}`}
+            {ep.name || ep.title || formatAired(aired) || t("Episode {n}", { n: epNumber })}
           </h4>
           <p className="text-[12px] text-ink-subtle">
             {[ep.season != null ? `S${ep.season} E${epNumber}` : null, formatAired(aired)]
@@ -158,6 +165,7 @@ function SeasonDropdown({
   active: number;
   onChange: (n: number) => void;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -181,16 +189,16 @@ function SeasonDropdown({
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex h-10 items-center gap-2 rounded-full border border-edge-soft bg-canvas/90 pl-4 pr-3 text-[13.5px] font-medium text-ink transition-colors hover:bg-canvas"
+        className="flex h-10 items-center gap-2 rounded-full border border-edge-soft bg-canvas/90 ps-4 pe-3 text-[13.5px] font-medium text-ink transition-colors hover:bg-canvas"
       >
-        <span>{seasonLabel(active)}</span>
+        <span>{seasonLabel(t, active)}</span>
         <ChevronDown
           size={15}
           className={`text-ink-muted transition-transform ${open ? "rotate-180" : ""}`}
         />
       </button>
       {open && (
-        <div className="animate-fade-in absolute right-0 top-full z-30 mt-2 w-44 overflow-hidden rounded-2xl border border-edge-soft bg-canvas py-1.5 shadow-2xl">
+        <div className="animate-fade-in absolute end-0 top-full z-30 mt-2 w-44 overflow-hidden rounded-2xl border border-edge-soft bg-canvas py-1.5 shadow-2xl">
           <div className="max-h-[60vh] overflow-y-auto">
             {seasons.map((s) => {
               const isActive = s === active;
@@ -201,13 +209,13 @@ function SeasonDropdown({
                     onChange(s);
                     setOpen(false);
                   }}
-                  className={`flex w-full items-center px-4 py-2.5 text-left text-[13.5px] transition-colors ${
+                  className={`flex w-full items-center px-4 py-2.5 text-start text-[13.5px] transition-colors ${
                     isActive
                       ? "bg-ink/10 text-ink"
                       : "text-ink-muted hover:bg-elevated/60 hover:text-ink"
                   }`}
                 >
-                  {seasonLabel(s)}
+                  {seasonLabel(t, s)}
                 </button>
               );
             })}
@@ -218,10 +226,10 @@ function SeasonDropdown({
   );
 }
 
-function seasonLabel(n: number): string {
-  if (n === 0) return "Specials";
-  if (n === -1) return "Videos";
-  return `Season ${n}`;
+function seasonLabel(t: Translator, n: number): string {
+  if (n === 0) return t("Specials");
+  if (n === -1) return t("Videos");
+  return t("Season {n}", { n });
 }
 
 function formatAired(date: string | null | undefined): string | null {

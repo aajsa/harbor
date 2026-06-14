@@ -7,7 +7,8 @@ import { useSettings } from "@/lib/settings";
 import { SPOILER_TEXT_CLASS, SPOILER_THUMB_CLASS, type SpoilerMask } from "@/lib/spoilers";
 import { useView } from "@/lib/view";
 import { formatAirDate } from "@/lib/dates";
-import { UpcomingBadge } from "./badges";
+import { useT } from "@/lib/i18n";
+import { FillerBadge, UpcomingBadge } from "./badges";
 import { isUpcomingDate } from "./helpers";
 
 type Progress = { ratio: number; watched: boolean; startedAt: number };
@@ -54,6 +55,7 @@ function AnimeEpisodeStripCard({
   spoiler?: SpoilerMask;
   onContextMenu?: (e: React.MouseEvent, season: number, episode: number, watched: boolean) => void;
 }) {
+  const t = useT();
   const { openPicker } = useView();
   const { settings } = useSettings();
   const upcoming = isUpcomingDate(ep.airdate);
@@ -79,14 +81,14 @@ function AnimeEpisodeStripCard({
           { autoPlay: settings.instantPlay },
         )
       }
-      className="group flex w-[244px] shrink-0 flex-col gap-2.5 text-left"
+      className="group flex w-[244px] shrink-0 flex-col gap-2.5 text-start"
     >
       <div className="relative aspect-video overflow-hidden rounded-xl">
         <div className={`${spoiler?.thumb ? SPOILER_THUMB_CLASS : ""} ${upcoming ? "opacity-55 saturate-50" : ""}`}>
           <Poster src={ep.thumbnail ?? undefined} seed={String(ep.id)} ratio="landscape" className="" />
         </div>
         {upcoming && (
-          <span className="absolute bottom-2 left-2">
+          <span className="absolute bottom-2 start-2">
             <UpcomingBadge />
           </span>
         )}
@@ -95,11 +97,11 @@ function AnimeEpisodeStripCard({
             <Play size={16} fill="currentColor" />
           </div>
         </div>
-        <span className="absolute left-2 top-2 rounded-md bg-canvas/95 px-1.5 py-0.5 text-[11px] font-semibold text-ink">
+        <span className="absolute start-2 top-2 rounded-md bg-canvas/95 px-1.5 py-0.5 text-[11px] font-semibold text-ink">
           {ep.number}
         </span>
         {progress.watched && (
-          <span className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-400/22 text-emerald-200 ring-1 ring-emerald-400/40 backdrop-blur-sm">
+          <span className="absolute end-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-400/22 text-emerald-200 ring-1 ring-emerald-400/40 backdrop-blur-sm">
             <Check size={12} strokeWidth={3} />
           </span>
         )}
@@ -110,12 +112,15 @@ function AnimeEpisodeStripCard({
         )}
       </div>
       <div className="flex flex-col gap-0.5 px-0.5">
-        <span className={`truncate text-[13.5px] font-semibold text-ink ${spoiler?.title ? SPOILER_TEXT_CLASS : ""}`}>
-          {ep.title || `Episode ${ep.number}`}
+        <span className="flex items-center gap-2">
+          <span className={`truncate text-[13.5px] font-semibold text-ink ${spoiler?.title ? SPOILER_TEXT_CLASS : ""}`}>
+            {ep.title || t("Episode {n}", { n: ep.number })}
+          </span>
+          {ep.filler && <FillerBadge />}
         </span>
         <span className="text-[11.5px] text-ink-subtle">
           E{ep.number}
-          {ep.length ? ` · ${ep.length} min` : ""}
+          {ep.length ? ` · ${t("{n} min", { n: ep.length })}` : ""}
           {upcoming && ep.airdate ? ` · ${formatAirDate(ep.airdate)}` : ""}
         </span>
       </div>

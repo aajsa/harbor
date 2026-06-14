@@ -3,6 +3,7 @@ mod browser;
 mod cast;
 mod cast_hls;
 mod cast_server;
+mod cast_subs;
 mod cf_relay;
 mod discord_rp;
 mod dlna;
@@ -109,6 +110,59 @@ fn make_main_transparent(app: &tauri::AppHandle) {
     if let Err(e) = res {
         eprintln!("[harbor::transparent] with_webview FAILED: {:?}", e);
     }
+}
+
+#[cfg(windows)]
+const HARBOR_MAXGUARD_SUBCLASS_ID: usize = 0x4842_4D47;
+
+#[cfg(windows)]
+unsafe extern "system" fn maxguard_subclass_proc(
+    hwnd: windows::Win32::Foundation::HWND,
+    msg: u32,
+    wparam: windows::Win32::Foundation::WPARAM,
+    lparam: windows::Win32::Foundation::LPARAM,
+    _id: usize,
+    _data: usize,
+) -> windows::Win32::Foundation::LRESULT {
+    use windows::Win32::Graphics::Gdi::{
+        GetMonitorInfoW, MonitorFromWindow, MONITORINFO, MONITOR_DEFAULTTONEAREST,
+    };
+    use windows::Win32::UI::Shell::DefSubclassProc;
+    use windows::Win32::UI::WindowsAndMessaging::{MINMAXINFO, WM_GETMINMAXINFO};
+    let res = DefSubclassProc(hwnd, msg, wparam, lparam);
+    if msg == WM_GETMINMAXINFO {
+        let monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+        let mut mi = MONITORINFO {
+            cbSize: std::mem::size_of::<MONITORINFO>() as u32,
+            ..Default::default()
+        };
+        if GetMonitorInfoW(monitor, &mut mi).as_bool() {
+            let mmi = &mut *(lparam.0 as *mut MINMAXINFO);
+            mmi.ptMaxPosition.x = mi.rcWork.left - mi.rcMonitor.left;
+            mmi.ptMaxPosition.y = mi.rcWork.top - mi.rcMonitor.top;
+            mmi.ptMaxSize.x = mi.rcWork.right - mi.rcWork.left;
+            mmi.ptMaxSize.y = mi.rcWork.bottom - mi.rcWork.top;
+        }
+    }
+    res
+}
+
+#[cfg(windows)]
+fn install_maximize_guard(app: &tauri::AppHandle) {
+    use tauri::Manager;
+    use windows::Win32::UI::Shell::SetWindowSubclass;
+    let Some(window) = app.get_webview_window("main") else {
+        eprintln!("[harbor::maxguard] main window missing");
+        return;
+    };
+    let Ok(hwnd) = window.hwnd() else {
+        eprintln!("[harbor::maxguard] hwnd unavailable");
+        return;
+    };
+    unsafe {
+        let _ = SetWindowSubclass(hwnd, Some(maxguard_subclass_proc), HARBOR_MAXGUARD_SUBCLASS_ID, 0);
+    }
+    eprintln!("[harbor::maxguard] WM_GETMINMAXINFO work-area guard installed");
 }
 
 #[tauri::command]
@@ -297,6 +351,8 @@ pub fn run() {
             }
             #[cfg(windows)]
             make_main_transparent(&app.handle());
+            #[cfg(windows)]
+            install_maximize_guard(&app.handle());
             #[cfg(target_os = "macos")]
             {
                 use tauri::Manager;

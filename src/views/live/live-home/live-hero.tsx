@@ -121,7 +121,7 @@ export function LiveHero({
       )}
 
       {items.length > 1 && (
-        <div className="absolute right-6 top-6 z-10 flex gap-2">
+        <div className="absolute end-6 top-6 z-10 flex gap-2">
           {items.map((_, i) => (
             <button
               key={i}
@@ -145,7 +145,7 @@ function ChannelBug({ logo }: { logo: string }) {
   const [err, setErr] = useState(false);
   if (err) return null;
   return (
-    <div className="absolute left-6 top-6 z-10 flex h-12 items-center rounded-lg bg-canvas/85 px-3 backdrop-blur">
+    <div className="absolute start-6 top-6 z-10 flex h-12 items-center rounded-lg bg-canvas/85 px-3 backdrop-blur">
       <img
         src={logo}
         alt=""

@@ -10,6 +10,7 @@ import {
   type DurationKind,
 } from "./utils";
 import { Footer, Section } from "./shared";
+import { useT } from "@/lib/i18n";
 
 const LAST_DIR_KEY = "harbor.dvr.lastDir";
 
@@ -49,9 +50,10 @@ export function NewRecordingView({
   }) => Promise<void>;
   getDefaultDir: () => Promise<string>;
 }) {
+  const t = useT();
   const choices = useMemo(
-    () => buildChoices(currentProgram, nextProgram),
-    [currentProgram, nextProgram],
+    () => buildChoices(currentProgram, nextProgram, t),
+    [currentProgram, nextProgram, t],
   );
   const defaultKind = choices.find((c) => c.kind !== "custom")?.kind ?? "custom";
   const [selectedKind, setSelectedKind] = useState<DurationKind>(defaultKind);
@@ -96,7 +98,7 @@ export function NewRecordingView({
         programTitle: chosen.programTitle,
       });
     } catch (e) {
-      setError(prettifyError(String(e)));
+      setError(prettifyError(String(e), t));
     } finally {
       setBusy(false);
     }
@@ -105,7 +107,7 @@ export function NewRecordingView({
   return (
     <>
       <div className="flex flex-1 flex-col gap-5 overflow-y-auto px-5 py-5">
-        <Section icon={<Tv size={14} strokeWidth={2.1} />} label="What to record">
+        <Section icon={<Tv size={14} strokeWidth={2.1} />} label={t("What to record")}>
           <div className="flex flex-col gap-2">
             {choices.map((c) => (
               <ChoiceRow
@@ -129,23 +131,23 @@ export function NewRecordingView({
           </div>
         </Section>
 
-        <Section icon={<FolderOpen size={14} strokeWidth={2.1} />} label="Save to">
+        <Section icon={<FolderOpen size={14} strokeWidth={2.1} />} label={t("Save to")}>
           <div className="flex items-center gap-2">
             <div className="flex h-10 flex-1 items-center truncate rounded-lg border border-edge-soft bg-canvas/60 px-3 text-[13px] text-ink-muted">
-              {dir || "Choose a folder..."}
+              {dir || t("Choose a folder...")}
             </div>
             <button
               onClick={handleBrowse}
               className="flex h-10 items-center rounded-lg bg-raised px-3 text-[13px] font-semibold text-ink transition-colors hover:bg-raised/70"
             >
-              Browse
+              {t("Browse")}
             </button>
           </div>
           <input
             type="text"
             value={filename}
             onChange={(e) => setFilename(e.target.value)}
-            placeholder="Filename"
+            placeholder={t("Filename")}
             className="h-10 rounded-lg border border-edge-soft bg-canvas/60 px-3 text-[13px] text-ink outline-none transition-colors focus:border-edge"
           />
         </Section>
@@ -155,7 +157,7 @@ export function NewRecordingView({
           {error ? (
             <span className="truncate text-amber-300" title={error}>{error}</span>
           ) : (
-            <span className="text-ink-subtle">Saved as .ts (works in mpv, VLC, ffmpeg)</span>
+            <span className="text-ink-subtle">{t("Saved as .ts (works in mpv, VLC, ffmpeg)")}</span>
           )}
         </div>
         <button
@@ -164,7 +166,7 @@ export function NewRecordingView({
           className="flex h-10 shrink-0 items-center gap-2 rounded-lg bg-danger px-4 text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <span className="h-2 w-2 rounded-full bg-white" />
-          Start recording
+          {t("Start recording")}
         </button>
       </Footer>
     </>
@@ -185,7 +187,7 @@ function ChoiceRow({
   return (
     <button
       onClick={onSelect}
-      className={`flex items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors ${
+      className={`flex items-center gap-3 rounded-xl border px-3.5 py-3 text-start transition-colors ${
         selected
           ? "border-ink bg-canvas/70"
           : "border-edge-soft bg-canvas/40 hover:bg-canvas/60"
@@ -216,6 +218,7 @@ function CustomMinutes({
   onChange: (v: number) => void;
   active: boolean;
 }) {
+  const t = useT();
   return (
     <div className={`flex items-center gap-2 transition-opacity ${active ? "opacity-100" : "opacity-55"}`}>
       <input
@@ -226,9 +229,9 @@ function CustomMinutes({
         value={value}
         onChange={(e) => onChange(Math.max(5, Math.min(720, Number(e.target.value) || 5)))}
         onClick={(e) => e.stopPropagation()}
-        className="h-8 w-16 rounded-md border border-edge-soft bg-canvas px-2 text-right text-[13px] font-mono tabular-nums text-ink outline-none focus:border-edge"
+        className="h-8 w-16 rounded-md border border-edge-soft bg-canvas px-2 text-end text-[13px] font-mono tabular-nums text-ink outline-none focus:border-edge"
       />
-      <span className="text-[12px] text-ink-muted">min</span>
+      <span className="text-[12px] text-ink-muted">{t("min")}</span>
     </div>
   );
 }

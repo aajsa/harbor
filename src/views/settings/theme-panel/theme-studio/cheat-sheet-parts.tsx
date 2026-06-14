@@ -73,7 +73,7 @@ export function CopyName({ text }: { text: string }) {
         type="button"
         onClick={copy}
         aria-label={`Copy ${text}`}
-        className="group/cn relative inline-grid cursor-pointer justify-items-start text-left [perspective:600px]"
+        className="group/cn relative inline-grid cursor-pointer justify-items-start text-start [perspective:600px]"
       >
         <code
           className="col-start-1 row-start-1 font-mono text-[13.5px] font-semibold text-ink transition-[transform,opacity,color] duration-300 group-hover/cn:text-accent"

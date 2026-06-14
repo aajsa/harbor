@@ -114,7 +114,7 @@ function ArrowButton({
       aria-label={side === "left" ? "Scroll left" : "Scroll right"}
       onClick={onClick}
       className={`absolute top-[55px] z-10 -translate-y-1/2 ${
-        side === "left" ? "left-1" : "right-1"
+        side === "left" ? "start-1" : "end-1"
       } flex h-10 w-10 items-center justify-center rounded-full bg-canvas/85 text-ink backdrop-blur-md transition-opacity duration-200 hover:bg-canvas focus:outline-none ${
         visible
           ? "opacity-0 group-hover/people:opacity-100 pointer-events-auto"
@@ -122,9 +122,9 @@ function ArrowButton({
       }`}
     >
       {side === "left" ? (
-        <ChevronLeft size={18} strokeWidth={2.4} />
+        <ChevronLeft size={18} strokeWidth={2.4} className="dir-icon" />
       ) : (
-        <ChevronRight size={18} strokeWidth={2.4} />
+        <ChevronRight size={18} strokeWidth={2.4} className="dir-icon" />
       )}
     </button>
   );

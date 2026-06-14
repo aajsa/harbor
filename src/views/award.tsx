@@ -320,7 +320,7 @@ function WinnerRow({
           <button
             type="button"
             onClick={onWorkClick}
-            className="self-start text-left text-[16px] font-medium leading-tight text-ink transition-colors hover:text-accent"
+            className="self-start text-start text-[16px] font-medium leading-tight text-ink transition-colors hover:text-accent"
           >
             {entry.workTitle}
           </button>
@@ -345,7 +345,7 @@ function WinnerRow({
                       }
                     }}
                     disabled={resolving}
-                    className="text-left transition-colors hover:text-ink disabled:cursor-default disabled:hover:text-ink-muted"
+                    className="text-start transition-colors hover:text-ink disabled:cursor-default disabled:hover:text-ink-muted"
                   >
                     {r}
                   </button>
@@ -358,7 +358,7 @@ function WinnerRow({
         )}
       </div>
       {workClickable && (
-        <ArrowUpRight size={14} className="text-ink-subtle" strokeWidth={2.2} />
+        <ArrowUpRight size={14} className="dir-icon text-ink-subtle" strokeWidth={2.2} />
       )}
     </li>
   );

@@ -117,6 +117,7 @@ export function GuideProgramBlock({
       >
         <div className="flex h-full flex-col justify-between gap-1 px-2.5 py-1.5">
           <div
+            dir="auto"
             className={`truncate font-semibold leading-tight ${
               isPast ? "text-ink-muted" : "text-ink"
             } ${veryCompact ? "text-[11px]" : "text-[12.5px]"}`}
@@ -206,7 +207,7 @@ function ProgramTooltip({
             </span>
           )}
         </div>
-        <h3 className="text-[14px] font-semibold leading-tight text-ink">
+        <h3 dir="auto" className="text-[14px] font-semibold leading-tight text-ink">
           {program.title}
         </h3>
         <div className="flex items-center gap-1.5 text-[11.5px] tabular-nums text-ink-muted">
@@ -220,6 +221,7 @@ function ProgramTooltip({
       {program.description && (
         <div className="border-t border-edge-soft/40 px-3.5 py-2.5">
           <p
+            dir="auto"
             className="text-[12.5px] leading-relaxed text-ink-muted [display:-webkit-box] [-webkit-line-clamp:5] [-webkit-box-orient:vertical] overflow-hidden"
           >
             {program.description}

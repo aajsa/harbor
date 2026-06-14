@@ -173,7 +173,7 @@ function HotkeyRow({
       {isCapturing ? (
         <div className="flex items-center gap-2">
           <span className="rounded-md border border-accent/60 bg-accent/12 px-3 py-1.5 text-[12px] font-semibold uppercase tracking-[0.12em] text-accent">
-            <Keyboard size={12} strokeWidth={2.4} className="mr-1.5 inline-block" />
+            <Keyboard size={12} strokeWidth={2.4} className="me-1.5 inline-block" />
             Press a key…
           </span>
           <button

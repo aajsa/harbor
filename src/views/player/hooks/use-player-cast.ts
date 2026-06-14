@@ -6,6 +6,7 @@ import {
   getPlaybackPosition,
   setPlaybackClock,
 } from "@/lib/player/playback-clock";
+import type { Settings } from "@/lib/settings";
 import type { PlayerSrc } from "@/lib/view";
 import { useCastPick } from "./use-cast-pick";
 import { useCastSession } from "./use-cast-session";
@@ -15,14 +16,17 @@ export function usePlayerCast(params: {
   debrids: ReturnType<typeof useDebridClients>;
   snapRef: RefObject<PlayerSnapshot>;
   bridgeRef: RefObject<PlayerBridge | null>;
+  settings: Settings;
 }) {
-  const { src, debrids, snapRef, bridgeRef } = params;
+  const { src, debrids, snapRef, bridgeRef, settings } = params;
   const session = useCastSession(bridgeRef);
   const pick = useCastPick({
     src,
     debrids,
     snapRef,
     bridgeRef,
+    settings,
+    burnSubsOnTv: session.burnSubsOnTv,
     closeCastMenu: session.closeCastMenu,
     pickCastDevice: session.pickCastDevice,
     setCastErrorInfo: session.setCastErrorInfo,

@@ -18,7 +18,7 @@ export function RelaySection({
     return (
       <div
         key="relay-panel"
-        className="animate-in fade-in slide-in-from-left-3 duration-300 ease-[cubic-bezier(0.32,0.72,0.24,1)]"
+        className="animate-in fade-in slide-in-from-left-3 rtl:slide-in-from-right-3 duration-300 ease-[cubic-bezier(0.32,0.72,0.24,1)]"
       >
         <Section
           title="Harbor Relay"
@@ -40,7 +40,7 @@ export function RelaySection({
     return (
       <div
         key="relay-docs"
-        className="animate-in fade-in slide-in-from-right-3 duration-300 ease-[cubic-bezier(0.32,0.72,0.24,1)]"
+        className="animate-in fade-in slide-in-from-right-3 rtl:slide-in-from-left-3 duration-300 ease-[cubic-bezier(0.32,0.72,0.24,1)]"
       >
         <RelayDocs onBack={() => onModeChange("panel")} />
       </div>
@@ -49,7 +49,7 @@ export function RelaySection({
   return (
     <div
       key="relay-deploy"
-      className="animate-in fade-in slide-in-from-right-3 duration-300 ease-[cubic-bezier(0.32,0.72,0.24,1)]"
+      className="animate-in fade-in slide-in-from-right-3 rtl:slide-in-from-left-3 duration-300 ease-[cubic-bezier(0.32,0.72,0.24,1)]"
     >
       <TogetherDeployModal inline onClose={() => onModeChange("panel")} />
     </div>

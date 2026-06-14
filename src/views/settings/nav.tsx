@@ -519,7 +519,7 @@ export function SettingsNav({
           onChange(id);
           setQuery("");
         }}
-        className={`group flex h-14 w-full items-center gap-3 rounded-xl px-2.5 text-left transition-colors ${
+        className={`group flex h-14 w-full items-center gap-3 rounded-xl px-2.5 text-start transition-colors ${
           isActive
             ? "bg-raised text-ink shadow-[inset_0_0_0_1px_var(--color-edge)]"
             : "text-ink-muted hover:bg-elevated/70 hover:text-ink"
@@ -631,7 +631,7 @@ export function SettingsNav({
                       onChange(o.section, o.anchorTitle ? settingsAnchor(o.anchorTitle) : undefined);
                       setQuery("");
                     }}
-                    className="group flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left text-ink-muted transition-colors hover:bg-elevated/70 hover:text-ink"
+                    className="group flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-start text-ink-muted transition-colors hover:bg-elevated/70 hover:text-ink"
                   >
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-canvas/60 text-ink-subtle group-hover:text-ink-muted">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -666,7 +666,7 @@ export function SettingsNav({
                 <button
                   key={id}
                   onClick={() => onChange(id)}
-                  className={`group flex h-14 w-full items-center gap-3 rounded-xl px-2.5 text-left transition-colors ${
+                  className={`group flex h-14 w-full items-center gap-3 rounded-xl px-2.5 text-start transition-colors ${
                     isActive
                       ? "bg-raised text-ink shadow-[inset_0_0_0_1px_var(--color-edge)]"
                       : "text-ink-muted hover:bg-elevated/70 hover:text-ink"

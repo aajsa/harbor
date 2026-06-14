@@ -4,6 +4,7 @@ import type { PlayerSnapshot } from "@/lib/player/bridge";
 import { getPlaybackPosition, usePlaybackFlag } from "@/lib/player/playback-clock";
 import { isLocalUrl } from "@/lib/player/local-url";
 import type { PlayerSrc } from "@/lib/view";
+import { useT } from "@/lib/i18n";
 import { LoaderLogoOrText } from "./loader-logo-or-text";
 import { readinessScore, type EngineStats } from "@/lib/torrent/engine-stats";
 import { isBundledEngineUrl } from "@/lib/stremio-server";
@@ -23,6 +24,7 @@ export function CinematicPlayerLoader({
   engineStats?: EngineStats | null;
   onShowingChange?: (showing: boolean) => void;
 }) {
+  const t = useT();
   const isLocal = isLocalUrl(src.url);
   const isInfoHash = isBundledEngineUrl(src.url) && !src.url.includes("/hlsv2/");
   const pct = Math.round(readinessScore(engineStats ?? null, isInfoHash));
@@ -50,8 +52,8 @@ export function CinematicPlayerLoader({
       setMounted(true);
       return;
     }
-    const t = window.setTimeout(() => setMounted(false), 320);
-    return () => window.clearTimeout(t);
+    const timer = window.setTimeout(() => setMounted(false), 320);
+    return () => window.clearTimeout(timer);
   }, [showing]);
   if (!mounted) return null;
   const backdrop = src.episode?.still || src.meta.background || src.meta.poster;
@@ -94,17 +96,17 @@ export function CinematicPlayerLoader({
               />
             </div>
             <p className="text-[12.5px] font-medium tracking-wide text-white/55">
-              {snap.buffering ? "Buffering" : "Preparing stream"}
+              {snap.buffering ? t("Buffering") : t("Preparing stream")}
               {engineStats ? ` (${pct}%)` : ""}
             </p>
           </div>
         ) : (
-          <HarborLoader size="md" caption={isLocal ? "Loading" : "Connecting"} />
+          <HarborLoader size="md" caption={isLocal ? t("Loading") : t("Connecting")} />
         )}
       </div>
       <button
         onClick={onCancel}
-        className="absolute bottom-10 left-1/2 z-10 flex h-11 -translate-x-1/2 cursor-pointer items-center gap-2 rounded-full border border-white/12 bg-black/45 px-6 text-[13.5px] font-medium text-white/75 backdrop-blur-md transition-colors hover:border-white/25 hover:bg-black/60 hover:text-white"
+        className="absolute bottom-10 left-1/2 z-10 flex h-11 -translate-x-1/2 cursor-pointer items-center gap-2 rounded-full border border-white/15 bg-black/45 px-6 text-[13.5px] font-medium text-white/75 backdrop-blur-md transition-colors hover:border-white/30 hover:bg-black/60 hover:text-white"
       >
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
           <path
@@ -114,7 +116,7 @@ export function CinematicPlayerLoader({
             strokeLinecap="round"
           />
         </svg>
-        Cancel
+        {t("Cancel")}
       </button>
     </div>
   );

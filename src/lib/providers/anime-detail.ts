@@ -2,6 +2,7 @@ import type { Meta } from "@/lib/cinemeta";
 import { aniZipByKitsu, pickEpisodeTitle } from "@/lib/providers/anizip";
 import { animeKitsuMeta } from "@/lib/providers/anime-kitsu-addon";
 import { kitsuToTvdb, externalToKitsu } from "@/lib/providers/anime-mapping";
+import { enrichEpisodes } from "@/lib/providers/anime-episode-enrich";
 import { fanartMovie, fanartTv } from "@/lib/providers/fanart";
 import {
   kitsuAnime,
@@ -62,6 +63,7 @@ function emptyDetail(kind: "movie" | "tv"): TmdbDetail {
     trailerYtId: null,
     trailerCandidates: [],
     extraVideos: [],
+    gallery: { backdrops: [], posters: [], logos: [] },
     cast: [],
     crew: [],
     directors: [],
@@ -304,6 +306,8 @@ export async function animeDetails(
     }
   }
 
+  await enrichEpisodes(episodes, settings, kitsuId);
+
   const kind: "movie" | "tv" = anime.subtype === "movie" ? "movie" : "tv";
 
   const toCast = (chars: typeof characters): CastEntry[] =>
@@ -473,6 +477,12 @@ export async function animeDetails(
     networks,
     trailerYtId: anime.trailerYtId ?? null,
     trailerCandidates: anime.trailerYtId ? [anime.trailerYtId] : [],
+    extraVideos: tmdbFull?.extraVideos ?? [],
+    gallery: {
+      backdrops: Array.from(new Set([...backdrops, ...(tmdbFull?.gallery.backdrops ?? [])])),
+      posters: tmdbFull?.gallery.posters ?? [],
+      logos: tmdbFull?.gallery.logos ?? [],
+    },
     cast: cast.length > 0 ? cast : (tmdbFull?.cast ?? []),
     crew: tmdbFull?.crew ?? [],
     directors: tmdbFull?.directors ?? [],

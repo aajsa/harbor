@@ -47,6 +47,15 @@ export function clearCountries(sourceId: string): void {
   update(sourceId, () => ({ selected: [] }));
 }
 
+export function removeCountryPrefs(sourceId: string): void {
+  if (!sourceId) return;
+  const map = load();
+  if (!(sourceId in map)) return;
+  const next = { ...map };
+  delete next[sourceId];
+  persist(next);
+}
+
 export function useCountryPrefs(sourceId: string): CountryPrefs {
   const map = useSyncExternalStore(
     (cb) => {

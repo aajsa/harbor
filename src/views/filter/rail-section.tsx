@@ -2,6 +2,7 @@ import { useContext, useEffect, useRef, useState } from "react";
 import { PickCard } from "@/components/pick-card";
 import { Row } from "@/components/row";
 import type { Meta } from "@/lib/cinemeta";
+import { useT } from "@/lib/i18n";
 import { useClaimSeenIds, useDedupOnSeenIds } from "@/lib/feed/seen-ids";
 import { tmdbDiscover } from "@/lib/providers/tmdb";
 import { useSettings } from "@/lib/settings";
@@ -10,6 +11,7 @@ import type { StandardRail } from "./rails-config";
 import { MAX_PAGES, MIN_INITIAL_FILL, SpotlightGateContext } from "./spotlight-gate";
 
 export function RailSection({ filter, rail }: { filter: MetaFilter; rail: StandardRail }) {
+  const t = useT();
   const { settings } = useSettings();
   const gate = useContext(SpotlightGateContext);
   const noDedup = rail.noDedup === true;
@@ -102,9 +104,9 @@ export function RailSection({ filter, rail }: { filter: MetaFilter; rail: Standa
 
   const title = (
     <span className="flex flex-col">
-      <span className="text-[20px] font-medium tracking-tight text-ink">{rail.title}</span>
+      <span className="text-[20px] font-medium tracking-tight text-ink">{t(rail.title)}</span>
       <span className="text-[12px] font-medium uppercase tracking-[0.18em] text-ink-subtle">
-        {rail.kicker}
+        {t(rail.kicker)}
       </span>
     </span>
   );

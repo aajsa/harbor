@@ -1,0 +1,59 @@
+const downloads: Record<string, string> = {
+  Download: "تنزيل",
+  "Download video": "تنزيل الفيديو",
+  "Download to disk": "التنزيل إلى القرص",
+  "Download for offline": "التنزيل للاستخدام دون اتصال",
+  "Retry download": "إعادة محاولة التنزيل",
+  "Download failed": "فشل التنزيل",
+  "Download failed, click to retry": "فشل التنزيل، انقر لإعادة المحاولة",
+  "Download failed  ·  click to retry": "فشل التنزيل  ·  انقر لإعادة المحاولة",
+  "Downloading...": "جارٍ التنزيل...",
+  "Downloading {pct}%, click to cancel": "جارٍ التنزيل {pct}%، انقر للإلغاء",
+  "Downloading {pct} percent, click to cancel": "جارٍ التنزيل {pct} بالمئة، انقر للإلغاء",
+  "Downloading {pct}%  ·  cancel": "جارٍ التنزيل {pct}%  ·  إلغاء",
+  "Downloading {pct}%  ·  click to cancel": "جارٍ التنزيل {pct}%  ·  انقر للإلغاء",
+  "click to cancel": "انقر للإلغاء",
+  "Cancel autoplay": "إلغاء التشغيل التلقائي",
+
+  "All complete": "اكتمل الكل",
+  "Saved offline": "محفوظ دون اتصال",
+  "Saved to disk": "محفوظ على القرص",
+  "Saved to {folder} · open folder": "محفوظ في {folder} · فتح المجلد",
+  "Show downloaded file": "إظهار الملف المُنزّل",
+  "Show in folder": "إظهار في المجلد",
+  "Open folder": "فتح المجلد",
+  "{path} (open folder)": "{path} (فتح المجلد)",
+  "Always keep on this device": "الاحتفاظ دائمًا على هذا الجهاز",
+
+  "Add folder": "إضافة مجلد",
+  "Add files from your computer": "إضافة ملفات من جهازك",
+  "Choose folder": "اختيار مجلد",
+  "Choose a folder...": "اختر مجلدًا...",
+  "Save to": "الحفظ في",
+  "Saving to": "جارٍ الحفظ في",
+  "Saving to system default": "جارٍ الحفظ في الإعداد الافتراضي للنظام",
+  "Reset to default folder": "الإعادة إلى المجلد الافتراضي",
+  Scanning: "جارٍ الفحص",
+  Filename: "اسم الملف",
+  File: "ملف",
+  "Same file": "الملف نفسه",
+  "{shown} of {total} file from your computer": "{shown} من {total} ملف من جهازك",
+  "{shown} of {total} files from your computer": "{shown} من {total} ملف من جهازك",
+
+  "Point Harbor at a folder. We scan it for movies and shows, parse titles from filenames, and enrich them with TMDB so they look the same as everything else here. We just remember the path; nothing is copied or moved.":
+    "وجّه Harbor إلى مجلد. نفحصه بحثًا عن الأفلام والمسلسلات، ونستخرج العناوين من أسماء الملفات، ونُثريها بـ TMDB لتبدو مثل كل شيء آخر هنا. نتذكّر المسار فقط؛ لا يُنسخ أو يُنقل شيء.",
+  "No video files found in that folder.": "لم يُعثر على ملفات فيديو في ذلك المجلد.",
+  "Couldn't scan that folder.": "تعذّر فحص ذلك المجلد.",
+  "Couldn't open this file": "تعذّر فتح هذا الملف",
+  "This file is in OneDrive. If \"Files On-Demand\" is on, the file is a cloud placeholder until it's downloaded. Right-click it in Explorer and pick":
+    "هذا الملف في OneDrive. إذا كانت ميزة \"الملفات عند الطلب\" مفعّلة، فالملف عنصر نائب سحابي حتى يُنزَّل. انقر عليه بزرّ الفأرة الأيمن في مستكشف الملفات واختر",
+  ", then try again.": "، ثم حاول مرة أخرى.",
+
+  "You're offline": "أنت غير متصل",
+  "You're offline. Your downloads still play.": "أنت غير متصل. ما زالت تنزيلاتك تعمل.",
+
+  "Saving GIF…": "جارٍ حفظ الـ GIF…",
+  "Continue Watching screenshots": "لقطات متابعة المشاهدة",
+};
+
+export default downloads;

@@ -79,7 +79,7 @@ export function OverviewModal({
           type="button"
           onClick={onClose}
           aria-label="Close overview"
-          className="absolute right-5 top-5 flex h-9 w-9 items-center justify-center rounded-full border border-edge-soft text-ink-muted transition-colors duration-150 hover:bg-elevated hover:text-ink"
+          className="absolute end-5 top-5 flex h-9 w-9 items-center justify-center rounded-full border border-edge-soft text-ink-muted transition-colors duration-150 hover:bg-elevated hover:text-ink"
         >
           <X size={18} />
         </button>
@@ -92,7 +92,7 @@ export function OverviewModal({
         {review ? (
           <>
             <Quote size={22} className="shrink-0 text-accent" />
-            <div ref={contentRef} className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-2">
+            <div ref={contentRef} className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pe-2">
               <p className="font-display text-[15px] leading-[1.65] text-ink/90 whitespace-pre-wrap">
                 <LinkedReview text={review.content} people={people} onPersonClick={onPersonClick} />
               </p>
@@ -116,7 +116,7 @@ export function OverviewModal({
                       aria-label="Previous review"
                       className="flex h-7 w-7 items-center justify-center rounded-full border border-edge-soft text-ink-muted transition-colors hover:bg-elevated hover:text-ink"
                     >
-                      <ChevronLeft size={15} strokeWidth={2.2} />
+                      <ChevronLeft size={15} strokeWidth={2.2} className="dir-icon" />
                     </button>
                     <span className="min-w-[2.75rem] text-center text-[11.5px] tabular-nums text-ink-subtle">
                       {(reviewIndex ?? 0) + 1} / {reviewCount}
@@ -127,7 +127,7 @@ export function OverviewModal({
                       aria-label="Next review"
                       className="flex h-7 w-7 items-center justify-center rounded-full border border-edge-soft text-ink-muted transition-colors hover:bg-elevated hover:text-ink"
                     >
-                      <ChevronRight size={15} strokeWidth={2.2} />
+                      <ChevronRight size={15} strokeWidth={2.2} className="dir-icon" />
                     </button>
                   </div>
                 )}
@@ -151,7 +151,7 @@ export function OverviewModal({
                 <p className="font-display text-[16px] italic leading-[1.55] text-ink/90">{tagline}</p>
               </>
             )}
-            <p className="overflow-y-auto pr-2 text-[14px] leading-[1.65] text-ink-muted">
+            <p className="overflow-y-auto pe-2 text-[14px] leading-[1.65] text-ink-muted">
               <LinkedReview text={overview} people={people} onPersonClick={onPersonClick} />
             </p>
           </>

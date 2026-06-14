@@ -9,6 +9,7 @@ import {
   hoverPreviewFocus,
   hoverPreviewLeave,
 } from "@/lib/hover-preview/store";
+import { useT } from "@/lib/i18n";
 import { useTmdbImdbId } from "@/lib/providers/tmdb";
 import { useSettings } from "@/lib/settings";
 import { useView } from "@/lib/view";
@@ -21,7 +22,7 @@ function AwardDot({ name, year }: { name: string; year?: number }) {
   const src = awardSourceMeta(win.source);
   return (
     <span
-      className="pointer-events-none absolute left-1.5 top-1.5 flex h-6 items-center gap-1 rounded-md bg-canvas/90 px-1.5 text-[9px] font-bold uppercase tracking-[0.14em] text-ink ring-1 ring-edge-soft/60 backdrop-blur-sm"
+      className="pointer-events-none absolute start-1.5 top-1.5 flex h-6 items-center gap-1 rounded-md bg-canvas/90 px-1.5 text-[9px] font-bold uppercase tracking-[0.14em] text-ink ring-1 ring-edge-soft/60 backdrop-blur-sm"
       title={`${src.name} · ${win.categoryName} (${win.year})`}
     >
       <img
@@ -38,11 +39,12 @@ function AwardDot({ name, year }: { name: string; year?: number }) {
 }
 
 function WatchlistDot() {
+  const t = useT();
   return (
     <span
-      className="pointer-events-none absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-canvas/85 text-ink ring-1 ring-edge-soft/70 backdrop-blur-sm"
-      title="In your watchlist"
-      aria-label="In watchlist"
+      className="pointer-events-none absolute end-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-canvas/85 text-ink ring-1 ring-edge-soft/70 backdrop-blur-sm"
+      title={t("In your watchlist")}
+      aria-label={t("In watchlist")}
     >
       <Bookmark size={11} strokeWidth={2.6} fill="currentColor" />
     </span>
@@ -68,7 +70,7 @@ export const TopRankCard = memo(function TopRankCard({ meta, rank }: { meta: Met
     >
       <span
         aria-hidden
-        className="pointer-events-none absolute -left-[3%] top-0 font-bold leading-[0.85] text-transparent"
+        className="pointer-events-none absolute -start-[3%] top-0 font-bold leading-[0.85] text-transparent"
         style={{
           fontFamily: '"Fraunces", "Iowan Old Style", "Georgia", serif',
           fontSize: "calc(100cqw * 240 / 228)",
@@ -82,7 +84,7 @@ export const TopRankCard = memo(function TopRankCard({ meta, rank }: { meta: Met
         data-preview-anchor
         onPointerEnter={(e) => hoverPreviewEnter(meta, e.currentTarget, e.buttons)}
         onPointerLeave={(e) => hoverPreviewLeave(e.currentTarget)}
-        className="absolute right-0 top-0 z-10 w-[60%] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0.24,1)] group-hover:-translate-y-2"
+        className="absolute end-0 top-0 z-10 w-[60%] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0.24,1)] group-hover:-translate-y-2"
       >
         <Poster
           src={poster.src}
@@ -94,7 +96,7 @@ export const TopRankCard = memo(function TopRankCard({ meta, rank }: { meta: Met
         {inWatchlist && <WatchlistDot />}
         <AwardDot name={meta.name} year={parseAwardYear(meta.releaseInfo)} />
       </div>
-      <p className="absolute bottom-0 right-0 w-[63%] truncate text-[12px] text-ink-subtle">
+      <p className="absolute bottom-0 end-0 w-[63%] truncate text-[12px] text-ink-subtle">
         {meta.name}
       </p>
     </button>
@@ -120,7 +122,7 @@ export const AnimeRankCard = memo(function AnimeRankCard({ meta, rank }: { meta:
     >
       <span
         aria-hidden
-        className="font-anime pointer-events-none absolute -left-[3%] top-0 font-bold leading-[0.85] text-transparent"
+        className="font-anime pointer-events-none absolute -start-[3%] top-0 font-bold leading-[0.85] text-transparent"
         style={{
           fontSize: "calc(100cqw * 240 / 228)",
           letterSpacing: "-0.02em",
@@ -133,7 +135,7 @@ export const AnimeRankCard = memo(function AnimeRankCard({ meta, rank }: { meta:
         data-preview-anchor
         onPointerEnter={(e) => hoverPreviewEnter(meta, e.currentTarget, e.buttons)}
         onPointerLeave={(e) => hoverPreviewLeave(e.currentTarget)}
-        className="absolute right-0 top-0 z-10 w-[60%] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0.24,1)] group-hover:-translate-y-2"
+        className="absolute end-0 top-0 z-10 w-[60%] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0.24,1)] group-hover:-translate-y-2"
       >
         <Poster
           src={poster.src}
@@ -145,7 +147,7 @@ export const AnimeRankCard = memo(function AnimeRankCard({ meta, rank }: { meta:
         {inWatchlist && <WatchlistDot />}
         <AwardDot name={meta.name} year={parseAwardYear(meta.releaseInfo)} />
       </div>
-      <p className="absolute bottom-0 right-0 w-[63%] truncate text-[12px] text-ink-subtle">
+      <p className="absolute bottom-0 end-0 w-[63%] truncate text-[12px] text-ink-subtle">
         {meta.name}
       </p>
     </button>

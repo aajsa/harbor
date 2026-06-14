@@ -70,7 +70,7 @@ function SpeedResultBadge({ value }: { value: string }) {
       {open && (
         <div
           role="tooltip"
-          className="absolute right-0 top-[calc(100%+8px)] z-30 w-[300px] origin-top-right rounded-xl border border-edge bg-elevated p-3.5 text-left shadow-[0_18px_48px_-12px_rgba(0,0,0,0.65)]"
+          className="absolute end-0 top-[calc(100%+8px)] z-30 w-[300px] origin-top-right rtl:origin-top-left rounded-xl border border-edge bg-elevated p-3.5 text-start shadow-[0_18px_48px_-12px_rgba(0,0,0,0.65)]"
           style={{ animation: "harbor-fade-in 140ms ease-out both" }}
         >
           <div className="mb-2 flex items-center gap-2">

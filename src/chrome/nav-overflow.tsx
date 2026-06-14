@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 export type NavEntry = {
   key: string;
@@ -79,7 +80,7 @@ export function OverflowNav({
       <div
         ref={ghostRef}
         aria-hidden
-        className="pointer-events-none invisible absolute left-0 top-0 flex w-0 items-center overflow-hidden"
+        className="pointer-events-none invisible absolute start-0 top-0 flex w-0 items-center overflow-hidden"
         style={{ gap: gapPx }}
       >
         {entries.map((e) => (
@@ -121,7 +122,7 @@ function MoreMenu({ entries, buttonClassName }: { entries: NavEntry[]; buttonCla
     <div ref={ref} className="relative shrink-0">
       <MoreButton className={buttonClassName} open={open} active={anyActive} onClick={() => setOpen((o) => !o)} />
       {open && (
-        <div className="absolute left-0 top-[calc(100%+8px)] z-50 flex min-w-[184px] flex-col overflow-hidden rounded-xl border border-edge bg-canvas/95 p-1 shadow-[0_18px_50px_-15px_rgba(0,0,0,0.7)] backdrop-blur-2xl">
+        <div className="absolute start-0 top-[calc(100%+8px)] z-50 flex min-w-[184px] flex-col overflow-hidden rounded-xl border border-edge bg-canvas/95 p-1 shadow-[0_18px_50px_-15px_rgba(0,0,0,0.7)] backdrop-blur-2xl">
           {entries.map((e) => (
             <button
               key={e.key}
@@ -130,7 +131,7 @@ function MoreMenu({ entries, buttonClassName }: { entries: NavEntry[]; buttonCla
                 e.onSelect();
                 setOpen(false);
               }}
-              className={`flex h-9 items-center rounded-lg px-3 text-left text-[13px] font-medium transition-colors hover:bg-raised ${
+              className={`flex h-9 items-center rounded-lg px-3 text-start text-[13px] font-medium transition-colors hover:bg-raised ${
                 e.active ? "text-ink" : "text-ink-muted hover:text-ink"
               }`}
             >
@@ -154,6 +155,7 @@ function MoreButton({
   active: boolean;
   onClick?: () => void;
 }) {
+  const t = useT();
   return (
     <button
       type="button"
@@ -162,7 +164,7 @@ function MoreButton({
       aria-expanded={open}
       className={`${className} ${active || open ? "text-ink" : ""}`}
     >
-      More
+      {t("common.more")}
       <ChevronDown size={14} strokeWidth={2.2} className={`transition-transform ${open ? "rotate-180" : ""}`} />
     </button>
   );

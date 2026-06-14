@@ -197,7 +197,7 @@ function SourceToggle({
       type="button"
       onClick={() => !disabled && onChange(!on)}
       disabled={disabled}
-      className={`flex items-center justify-between gap-4 rounded-lg border px-3.5 py-3 text-left transition-colors ${
+      className={`flex items-center justify-between gap-4 rounded-lg border px-3.5 py-3 text-start transition-colors ${
         disabled
           ? "cursor-not-allowed border-edge-soft/50 bg-canvas/20 opacity-70"
           : effective
@@ -227,8 +227,8 @@ function SourceToggle({
         }`}
       >
         <span
-          className={`absolute top-0.5 h-4 w-4 rounded-full bg-canvas transition-transform ${
-            effective ? "translate-x-[18px]" : "translate-x-0.5"
+          className={`absolute start-0 top-0.5 h-4 w-4 rounded-full bg-canvas transition-transform ${
+            effective ? "translate-x-[18px] rtl:-translate-x-[18px]" : "translate-x-0.5 rtl:-translate-x-0.5"
           }`}
         />
       </span>

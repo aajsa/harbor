@@ -40,7 +40,7 @@ export function TmdbStep() {
       <div className="flex flex-col gap-3">
         <h1 className="flex flex-wrap items-center font-display text-[36px] font-medium leading-[1.08] tracking-tight text-ink">
           Connect
-          <img src={tmdbLogo} alt="" className="ml-4 mr-1.5 h-8 w-8 rounded-md" />
+          <img src={tmdbLogo} alt="" className="ms-4 me-1.5 h-8 w-8 rounded-md" />
           TMDB
         </h1>
         <p className="text-[15px] leading-relaxed text-ink-muted">

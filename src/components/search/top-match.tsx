@@ -35,12 +35,12 @@ export function TopMatch({
           }}
         />
       )}
-      <div className="absolute inset-0 -z-10 bg-gradient-to-r from-canvas/95 via-canvas/85 to-canvas/55" />
+      <div className="absolute inset-0 -z-10 bg-gradient-to-r from-canvas/95 via-canvas/85 to-canvas/55 rtl:bg-gradient-to-l" />
 
       <button
         type="button"
         onClick={handleOpen}
-        className="group flex w-full items-stretch gap-7 p-7 text-left transition-transform duration-200 hover:scale-[1.005] active:scale-[0.995]"
+        className="group flex w-full items-stretch gap-7 p-7 text-start transition-transform duration-200 hover:scale-[1.005] active:scale-[0.995]"
       >
         <div className="relative w-[180px] shrink-0 overflow-hidden rounded-2xl shadow-[0_20px_60px_-20px_rgba(0,0,0,0.7)] ring-1 ring-edge-soft">
           <Poster

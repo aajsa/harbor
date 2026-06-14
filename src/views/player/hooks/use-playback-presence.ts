@@ -22,10 +22,12 @@ export function usePlaybackPresence(params: {
     const year =
       typeof src.meta.releaseInfo === "string" ? src.meta.releaseInfo.slice(0, 4) : undefined;
     const epLabel = season != null && episode != null ? `S${season} E${episode}` : undefined;
+    const epTitle = src.episode?.name?.trim();
+    const epLine = epLabel && epTitle ? `${epLabel} · ${epTitle}` : epLabel;
     setPlaybackPresence({
       title: src.meta.name ?? "Untitled",
-      subtitle: epLabel || year,
-      posterUrl: src.meta.poster ?? undefined,
+      subtitle: epLine || year,
+      posterUrl: src.episode?.still ?? src.meta.poster ?? undefined,
       year,
       paused: snap.status === "paused",
       positionSec: getPlaybackPosition(),
@@ -38,6 +40,8 @@ export function usePlaybackPresence(params: {
     src.meta.name,
     src.meta.poster,
     src.meta.releaseInfo,
+    src.episode?.name,
+    src.episode?.still,
     src.liveProgram,
     season,
     episode,

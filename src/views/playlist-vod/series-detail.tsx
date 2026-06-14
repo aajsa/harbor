@@ -21,7 +21,7 @@ export function SeriesDetail({ series, onBack, onPlay }: Props) {
           aria-label="Back to library"
           className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-edge-soft/55 bg-elevated text-ink-muted transition-colors hover:bg-raised hover:text-ink"
         >
-          <ArrowLeft size={18} strokeWidth={2} />
+          <ArrowLeft size={18} strokeWidth={2} className="dir-icon" />
         </button>
         <div className="w-20 shrink-0">
           <Poster src={series.logo ?? undefined} seed={series.title} className="w-full" />
@@ -57,7 +57,7 @@ export function SeriesDetail({ series, onBack, onPlay }: Props) {
           <button
             key={`${ep.season}-${ep.episode}`}
             onClick={() => onPlay(ep)}
-            className="group flex items-center gap-3.5 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-elevated"
+            className="group flex items-center gap-3.5 rounded-xl px-3 py-2.5 text-start transition-colors hover:bg-elevated"
           >
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-elevated text-[13px] font-semibold tabular-nums text-ink-muted group-hover:bg-raised group-hover:text-ink">
               {ep.episode}

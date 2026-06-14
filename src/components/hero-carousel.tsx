@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { observe, usePageVisible } from "@/lib/visibility";
+import { isRtl, useT, useUiLanguage } from "@/lib/i18n";
 import { Hero } from "./hero";
 import type { Meta } from "@/lib/cinemeta";
 
@@ -18,6 +19,8 @@ export function HeroCarousel({ slides }: { slides: Slide[] }) {
   const [offset, setOffset] = useState(0);
   const [inViewport, setInViewport] = useState(true);
   const pageVisible = usePageVisible();
+  const t = useT();
+  const rtl = isRtl(useUiLanguage());
 
   const viewportRef = useRef<HTMLDivElement>(null);
 
@@ -124,6 +127,7 @@ export function HeroCarousel({ slides }: { slides: Slide[] }) {
     >
       <div
         ref={viewportRef}
+        dir="ltr"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={endDrag}
@@ -136,6 +140,7 @@ export function HeroCarousel({ slides }: { slides: Slide[] }) {
       >
         <div
           className="flex"
+          dir="ltr"
           style={{
             gap: `${SLIDE_GAP_PX}px`,
             transform: trackTransform,
@@ -150,6 +155,7 @@ export function HeroCarousel({ slides }: { slides: Slide[] }) {
             return (
               <div
                 key={`${s.meta.id}-${i}`}
+                dir={rtl ? "rtl" : "ltr"}
                 aria-hidden={!isActive}
                 className="w-full shrink-0"
                 style={{
@@ -180,7 +186,7 @@ export function HeroCarousel({ slides }: { slides: Slide[] }) {
             <button
               key={i}
               onClick={() => setActive(i)}
-              aria-label={`Slide ${i + 1}`}
+              aria-label={t("Slide {n}", { n: i + 1 })}
               className={`h-1.5 rounded-full transition-all duration-300 ${
                 i === active ? "w-12 bg-ink" : "w-6 bg-ink-muted/70 hover:bg-ink-muted"
               }`}

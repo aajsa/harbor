@@ -18,7 +18,7 @@ export function SportsCard({ game, onSelect }: { game: SportsGame; onSelect: (g:
     <button
       type="button"
       onClick={() => onSelect(game)}
-      className="flex h-24 w-[260px] shrink-0 flex-col justify-between rounded-xl border border-edge-soft/55 bg-elevated p-3 text-left transition-colors duration-150 hover:border-edge"
+      className="flex h-24 w-[260px] shrink-0 flex-col justify-between rounded-xl border border-edge-soft/55 bg-elevated p-3 text-start transition-colors duration-150 hover:border-edge"
     >
       <div className="flex items-center justify-between">
         <Status game={game} />
@@ -52,7 +52,7 @@ function SideRow({ side, active, dim }: { side: SportsSide; active: boolean; dim
         {side.abbr || side.name}
       </span>
       <span
-        className={`w-9 shrink-0 text-right text-[20px] font-bold tabular-nums ${
+        className={`w-9 shrink-0 text-end text-[20px] font-bold tabular-nums ${
           active ? (dim ? "text-ink-muted" : "text-ink") : "text-ink-subtle"
         }`}
       >

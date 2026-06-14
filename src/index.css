@@ -39,6 +39,7 @@
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
   --font-channel: "General Sans", "Switzer", "Inter", system-ui, sans-serif;
   --font-anime: "WonderfulFontyCure", "Sentient", "Georgia", serif;
+  --font-arabic: "Geeza Pro", "SF Arabic", "Segoe UI", "Tahoma", "Noto Naskh Arabic", serif;
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
@@ -196,6 +197,24 @@ body {
 
 .animate-nudge-in {
   animation: harbor-nudge-in 380ms var(--ease-out) both;
+}
+
+@keyframes harbor-welcome-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes harbor-welcome-aura {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 0.5; transform: scale(1); }
+}
+
+.animate-welcome-rise {
+  animation: harbor-welcome-rise 560ms var(--ease-out) both;
+}
+
+.animate-welcome-aura {
+  animation: harbor-welcome-aura 700ms var(--ease-out) 120ms both;
 }
 
 @keyframes harbor-home-roof {
@@ -1300,5 +1319,35 @@ html[data-theme-card="glass"] .harbor-together-pill {
   border-color: color-mix(in srgb, var(--color-ink) 14%, transparent) !important;
   backdrop-filter: blur(12px) saturate(140%);
   -webkit-backdrop-filter: blur(12px) saturate(140%);
+}
+
+.dir-icon {
+  display: inline-flex;
+}
+[dir="rtl"] .dir-icon {
+  transform: scaleX(-1);
+}
+
+[dir="rtl"] .dots-anim {
+  text-align: right;
+}
+
+[dir="rtl"] .animate-popover-in,
+[dir="rtl"] .harbor-royal-menu {
+  transform-origin: top left;
+}
+
+[dir="rtl"] .animate-pirate-peek {
+  transform-origin: bottom center;
+}
+
+[dir="rtl"] .harbor-key {
+  transform-origin: 69% 65%;
+}
+
+html[data-theme-card="crunch"][dir="rtl"] .harbor-profile-dropdown {
+  right: auto !important;
+  left: 0 !important;
+  box-shadow: 10px 0 30px -10px color-mix(in srgb, var(--color-canvas) 65%, transparent) !important;
 }
 

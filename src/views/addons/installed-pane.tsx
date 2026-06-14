@@ -1,6 +1,8 @@
 import { ArrowUpDown, Settings2 } from "lucide-react";
 import { useState } from "react";
 import { AddonLogo, resolveAddonLogo } from "@/components/addon-logo";
+import { HoverTooltip } from "@/components/hover-tooltip";
+import { isAddonEnabled, setAddonEnabled } from "@/lib/addon-store";
 import type { ResolvedAddon } from "@/lib/addons-store/store";
 import { addonKey, idOf, nameOf, subtitleFromManifest } from "./addons-utils";
 
@@ -91,6 +93,7 @@ function InstalledRow({
 }) {
   const r = resolved;
   const [busy, setBusy] = useState(false);
+  const [enabled, setEnabled] = useState(() => isAddonEnabled(r.transportUrl));
   const isConfigurable =
     r.manifest?.behaviorHints?.configurable === true ||
     r.manifest?.behaviorHints?.configurationRequired === true;
@@ -107,30 +110,67 @@ function InstalledRow({
     }
   };
 
+  const handleToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const next = !enabled;
+    setEnabled(next);
+    setAddonEnabled(r.transportUrl, next);
+    window.dispatchEvent(
+      new CustomEvent("harbor:addons-changed", { detail: { id: idOf(r), enabled: next } }),
+    );
+  };
+
   return (
     <div
       role="button"
       tabIndex={0}
       onClick={() => !busy && onOpen(idOf(r))}
       onKeyDown={(e) => !busy && (e.key === "Enter" || e.key === " ") && onOpen(idOf(r))}
-      className={`flex items-center gap-3.5 rounded-xl border bg-elevated px-4 py-3 text-left transition-all ${
+      className={`flex items-center gap-3.5 rounded-xl border bg-elevated px-4 py-3 text-start transition-all ${
         busy
           ? "border-edge-soft cursor-wait opacity-60"
           : "border-edge-soft cursor-pointer hover:border-edge hover:bg-raised"
       }`}
     >
-      <AddonLogo
-        addonId={idOf(r)}
-        addonName={nameOf(r)}
-        manifestLogo={resolveAddonLogo(r.manifest?.logo, r.transportUrl)}
-        size="lg"
-      />
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+      <div className={enabled ? "" : "opacity-45 transition-opacity"}>
+        <AddonLogo
+          addonId={idOf(r)}
+          addonName={nameOf(r)}
+          manifestLogo={resolveAddonLogo(r.manifest?.logo, r.transportUrl)}
+          size="lg"
+        />
+      </div>
+      <div className={`flex min-w-0 flex-1 flex-col gap-0.5 ${enabled ? "" : "opacity-55"}`}>
         <span className="truncate text-[14px] font-medium text-ink">{nameOf(r)}</span>
         <span className="truncate text-[11.5px] text-ink-subtle">
-          {subtitleFromManifest(r)}
+          {enabled ? subtitleFromManifest(r) : "Off · catalogs and streams hidden"}
         </span>
       </div>
+      {!busy && (
+        <HoverTooltip
+          side="top"
+          align="center"
+          className="shrink-0"
+          label={enabled ? "Enabled" : "Disabled"}
+          sublabel={enabled ? "Click to turn off" : "Click to turn on"}
+        >
+          <button
+            onClick={handleToggle}
+            role="switch"
+            aria-checked={enabled}
+            aria-label={enabled ? `Turn ${nameOf(r)} off` : `Turn ${nameOf(r)} on`}
+            className={`relative h-[22px] w-10 shrink-0 rounded-full outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-accent/50 ${
+              enabled ? "bg-accent" : "bg-edge/70 ring-1 ring-inset ring-edge-soft"
+            }`}
+          >
+            <span
+              className={`absolute start-[3px] top-[3px] h-4 w-4 rounded-full bg-ink shadow-[0_1px_2px_rgba(0,0,0,0.5)] transition-transform duration-200 ${
+                enabled ? "translate-x-[18px] rtl:-translate-x-[18px]" : "translate-x-0"
+              }`}
+            />
+          </button>
+        </HoverTooltip>
+      )}
       {isConfigurable && transportUrl && onManage && !busy && (
         <button
           onClick={(e) => {

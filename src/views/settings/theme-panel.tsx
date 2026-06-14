@@ -112,7 +112,7 @@ function NativeTitleBarRow() {
       >
         <span
           className={`h-5 w-5 rounded-full bg-canvas shadow-sm transition-transform ${
-            on ? "translate-x-5" : "translate-x-0"
+            on ? "translate-x-5 rtl:-translate-x-5" : "translate-x-0"
           }`}
         />
       </button>

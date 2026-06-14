@@ -48,14 +48,14 @@ export function FileTree({
             <div key={f.id} className="group/row relative">
               {on && (
                 <span
-                  className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-full"
+                  className="absolute start-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-full"
                   style={{ background: IDE.accent }}
                 />
               )}
               <button
                 type="button"
                 onClick={() => onSelect(f.id)}
-                className="flex h-11 w-full items-center gap-2.5 rounded-lg pl-6 pr-2.5 text-left transition-colors hover:bg-white/[0.04]"
+                className="flex h-11 w-full items-center gap-2.5 rounded-lg ps-6 pe-2.5 text-start transition-colors hover:bg-white/[0.04]"
                 style={{ background: on ? "rgba(255,255,255,0.06)" : "transparent" }}
               >
                 <Icon size={18} strokeWidth={2} style={{ color: f.tint }} />
@@ -78,7 +78,7 @@ export function FileTree({
                 type="button"
                 onClick={() => onDownload(f.id)}
                 aria-label={`Download ${f.name}`}
-                className="absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md opacity-0 transition-opacity hover:bg-white/10 group-hover/row:opacity-100"
+                className="absolute end-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md opacity-0 transition-opacity hover:bg-white/10 group-hover/row:opacity-100"
                 style={{ color: IDE.textDim }}
               >
                 <Download size={16} strokeWidth={2.2} />

@@ -48,7 +48,7 @@ function CreateTile({ onCreate }: { onCreate: () => void }) {
     <button
       type="button"
       onClick={onCreate}
-      className="group relative flex h-full min-h-[252px] flex-col items-start justify-between overflow-hidden rounded-2xl border border-accent/30 p-5 text-left transition-all hover:-translate-y-0.5 hover:border-accent hover:shadow-[0_18px_40px_-22px_var(--color-accent-soft)]"
+      className="group relative flex h-full min-h-[252px] flex-col items-start justify-between overflow-hidden rounded-2xl border border-accent/30 p-5 text-start transition-all hover:-translate-y-0.5 hover:border-accent hover:shadow-[0_18px_40px_-22px_var(--color-accent-soft)]"
       style={{
         background:
           "linear-gradient(160deg, var(--color-accent-soft) 0%, var(--color-surface) 60%, var(--color-surface) 100%)",
@@ -57,7 +57,7 @@ function CreateTile({ onCreate }: { onCreate: () => void }) {
     >
       <span
         aria-hidden
-        className="pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full opacity-40 blur-2xl transition-opacity duration-500 group-hover:opacity-70"
+        className="pointer-events-none absolute -end-12 -top-12 h-44 w-44 rounded-full opacity-40 blur-2xl transition-opacity duration-500 group-hover:opacity-70"
         style={{ background: "var(--color-accent)" }}
       />
       <div className="relative flex flex-col gap-1.5">
@@ -76,7 +76,7 @@ function CreateTile({ onCreate }: { onCreate: () => void }) {
         >
           <Palette size={20} strokeWidth={2} />
         </span>
-        <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-accent transition-transform group-hover:translate-x-0.5">
+        <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-accent transition-transform group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5">
           Open studio →
         </span>
       </div>
@@ -111,7 +111,7 @@ function ImportTile({ onUpload }: { onUpload: (file: File) => void }) {
         const f = e.dataTransfer.files?.[0];
         if (f) onUpload(f);
       }}
-      className={`group relative flex h-full min-h-[252px] flex-col items-start justify-between overflow-hidden rounded-2xl border p-5 text-left transition-all duration-200 ${
+      className={`group relative flex h-full min-h-[252px] flex-col items-start justify-between overflow-hidden rounded-2xl border p-5 text-start transition-all duration-200 ${
         dragOver
           ? "border-accent bg-accent-soft"
           : "border-edge-soft bg-canvas/40 hover:-translate-y-0.5 hover:border-edge hover:bg-canvas/55"
@@ -188,7 +188,7 @@ function LibraryCard({
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/0 via-black/0 to-black/35" />
         <CategoryBadge category={category} active={active} />
         {active && (
-          <span className="absolute right-3 top-3 flex h-7 items-center gap-1 rounded-full bg-accent px-2.5 text-[10.5px] font-bold uppercase tracking-[0.18em] text-canvas shadow-[0_4px_12px_-4px_rgba(0,0,0,0.4)]">
+          <span className="absolute end-3 top-3 flex h-7 items-center gap-1 rounded-full bg-accent px-2.5 text-[10.5px] font-bold uppercase tracking-[0.18em] text-canvas shadow-[0_4px_12px_-4px_rgba(0,0,0,0.4)]">
             <Check size={11} strokeWidth={3} /> Active
           </span>
         )}
@@ -239,7 +239,7 @@ function CategoryBadge({
   const isFeatured = category === "Featured";
   return (
     <span
-      className={`absolute left-3 top-3 flex items-center gap-1 rounded-full px-2.5 py-1 text-[9.5px] font-bold uppercase tracking-[0.2em] backdrop-blur-sm ${
+      className={`absolute start-3 top-3 flex items-center gap-1 rounded-full px-2.5 py-1 text-[9.5px] font-bold uppercase tracking-[0.2em] backdrop-blur-sm ${
         isFeatured
           ? "bg-canvas/65 text-accent ring-1 ring-accent/40"
           : "bg-canvas/65 text-ink/85 ring-1 ring-white/15"

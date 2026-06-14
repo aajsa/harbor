@@ -65,7 +65,7 @@ function HeroCard({
     <button
       type="button"
       onClick={onClick}
-      className={`group relative flex h-full min-h-[200px] flex-col items-start justify-between overflow-hidden rounded-2xl border p-6 text-left transition-all hover:-translate-y-0.5 ${
+      className={`group relative flex h-full min-h-[200px] flex-col items-start justify-between overflow-hidden rounded-2xl border p-6 text-start transition-all hover:-translate-y-0.5 ${
         accent
           ? "border-accent/40 hover:border-accent"
           : "border-edge-soft bg-surface hover:border-edge hover:bg-canvas/55"
@@ -82,7 +82,7 @@ function HeroCard({
       {accent && (
         <span
           aria-hidden
-          className="pointer-events-none absolute -right-16 -top-16 h-52 w-52 rounded-full opacity-30 blur-3xl transition-opacity duration-500 group-hover:opacity-60"
+          className="pointer-events-none absolute -end-16 -top-16 h-52 w-52 rounded-full opacity-30 blur-3xl transition-opacity duration-500 group-hover:opacity-60"
           style={{ background: "var(--color-accent)" }}
         />
       )}
@@ -100,12 +100,12 @@ function HeroCard({
         <span className="max-w-[28ch] text-[13.5px] leading-relaxed text-ink-muted">{body}</span>
       </div>
       <span
-        className={`relative inline-flex items-center gap-1.5 text-[13px] font-semibold transition-transform group-hover:translate-x-1 ${
+        className={`relative inline-flex items-center gap-1.5 text-[13px] font-semibold transition-transform group-hover:translate-x-1 rtl:group-hover:-translate-x-1 ${
           accent ? "text-accent" : "text-ink"
         }`}
       >
         {cta}
-        <ArrowRight size={14} strokeWidth={2.2} />
+        <ArrowRight size={14} strokeWidth={2.2} className="dir-icon" />
       </span>
     </button>
   );
@@ -121,7 +121,7 @@ function ImportBadge({ name }: { name: string }) {
   return (
     <span
       ref={ref}
-      className="absolute right-3 top-3 z-20"
+      className="absolute end-3 top-3 z-20"
       onMouseEnter={show}
       onMouseLeave={() => setTip(null)}
     >
@@ -135,7 +135,7 @@ function ImportBadge({ name }: { name: string }) {
         createPortal(
           <div
             style={{ position: "fixed", top: tip.top, right: tip.right, zIndex: 9999 }}
-            className="pointer-events-none w-max max-w-[260px] rounded-lg border border-edge bg-elevated px-3 py-2 text-left text-[12.5px] leading-snug text-ink shadow-[0_18px_44px_-16px_rgba(0,0,0,0.75)]"
+            className="pointer-events-none w-max max-w-[260px] rounded-lg border border-edge bg-elevated px-3 py-2 text-start text-[12.5px] leading-snug text-ink shadow-[0_18px_44px_-16px_rgba(0,0,0,0.75)]"
           >
             <span className="font-semibold text-accent">{name}</span> imported to your library
           </div>,

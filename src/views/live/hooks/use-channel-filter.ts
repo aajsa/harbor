@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { FAVORITES_GROUP_KEY } from "@/lib/iptv/favorites";
+import { arabicAwareMatch } from "@/lib/iptv/rtl";
 import type { IptvChannel } from "@/lib/iptv/types";
 
 export function useChannelFilter(
@@ -28,8 +29,8 @@ export function useChannelFilter(
         return false;
       }
       if (q) {
-        const hay = `${ch.name} ${ch.group ?? ""}`.toLowerCase();
-        if (!hay.includes(q)) return false;
+        const hay = `${ch.name} ${ch.group ?? ""}`;
+        if (!arabicAwareMatch(hay, q)) return false;
       }
       return true;
     });

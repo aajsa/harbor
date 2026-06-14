@@ -27,6 +27,23 @@ export type CastStatus = {
   connected: boolean;
 };
 
+export type CastSubStyle = {
+  font_size: number;
+  font_color: string;
+  border_color: string;
+  border_size: number;
+  margin_y: number;
+  align_x: "left" | "center" | "right";
+};
+
+export type CastSubInfo = {
+  kind: "external" | "embedded";
+  url?: string;
+  src_index?: number;
+  format?: "srt" | "ass" | "ssa" | "vtt";
+  off: boolean;
+};
+
 export async function discoverCastDevices(): Promise<CastDeviceInfo[]> {
   if (!isTauri) return [];
   try {
@@ -50,6 +67,8 @@ export async function castLoad(opts: {
   headers?: Record<string, string>;
   transcode?: boolean;
   profile?: TranscodeProfile;
+  subtitle?: CastSubInfo | null;
+  subStyle?: CastSubStyle | null;
 }): Promise<{ ok: boolean; error: string | null }> {
   if (!isTauri) return { ok: false, error: "Casting requires the desktop build." };
   try {
@@ -66,6 +85,8 @@ export async function castLoad(opts: {
       headers: opts.headers ?? null,
       transcode: opts.transcode ?? false,
       profile: opts.profile ?? null,
+      subtitle: opts.subtitle ?? null,
+      subStyle: opts.subStyle ?? null,
     });
     return { ok: true, error: null };
   } catch (e) {

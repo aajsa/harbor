@@ -19,14 +19,24 @@ import { StreamingRail } from "@/components/streaming-rail";
 import { TopRankCard } from "@/components/top-rank-card";
 import { hasTmdbProviderAddon, loadAddonRows, userAddons, type AddonRow } from "@/lib/addons";
 import { isAnimeRow } from "@/views/anime";
+import { buildArabicHomeRows } from "@/lib/arabic/home-rows";
 import { useAuth } from "@/lib/auth";
 import { type Meta } from "@/lib/cinemeta";
+import { t, useT, useUiLanguage } from "@/lib/i18n";
 import { useSettings, type StreamingService } from "@/lib/settings";
 import { trackEvent } from "@/lib/discover";
 import { publishResumeStates } from "@/lib/hover-preview/store";
-import { readResumeEntry, saveResumeBatch } from "@/lib/resume";
+import { clearResume, readResumeEntry, saveResumeBatch } from "@/lib/resume";
 import { repairLibraryNames } from "@/lib/stremio-repair";
-import { episodeFromVideoId, isAnimeCwItem, library, libraryPut, type LibraryItem } from "@/lib/stremio";
+import {
+  cwSortKey,
+  episodeFromVideoId,
+  isAnimeCwItem,
+  isCwMember,
+  library,
+  libraryPut,
+  type LibraryItem,
+} from "@/lib/stremio";
 import { useTrakt } from "@/lib/trakt/provider";
 import { buildTraktHomeRows } from "@/lib/trakt/home-rails";
 import { fetchWatchedKeySet } from "@/lib/trakt/history";
@@ -54,9 +64,12 @@ import { RowSkeleton } from "./home/row-skeleton";
 export function Home({ active = true }: { active?: boolean }) {
   const { authKey, user } = useAuth();
   const { settings, update } = useSettings();
+  const t = useT();
+  const uiLang = useUiLanguage();
   const [editMode, setEditMode] = useState(false);
   const [rows, setRows] = useState<HomeRow[]>([]);
   const [animeRows, setAnimeRows] = useState<HomeRow[]>([]);
+  const [arabicRows, setArabicRows] = useState<HomeRow[]>([]);
   const [traktRows, setTraktRows] = useState<HomeRow[]>([]);
   const [simklRows, setSimklRows] = useState<HomeRow[]>([]);
   const [simklCw, setSimklCw] = useState<LibraryItem[]>([]);
@@ -178,6 +191,22 @@ export function Home({ active = true }: { active?: boolean }) {
       cancelled = true;
     };
   }, [settings.hideContent.anime, settings.homeMode]);
+
+  useEffect(() => {
+    if (uiLang !== "ar" || settings.homeMode === "classic" || !settings.tmdbKey) {
+      setArabicRows([]);
+      return;
+    }
+    let cancelled = false;
+    buildArabicHomeRows(settings.tmdbKey)
+      .then((rs) => {
+        if (!cancelled) setArabicRows(rs);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [uiLang, settings.homeMode, settings.tmdbKey, settings.tmdbLanguage]);
 
   useEffect(() => {
     if (!traktConnected) {
@@ -311,10 +340,6 @@ export function Home({ active = true }: { active?: boolean }) {
   }, [authKey, active]);
 
   const continueWatching = useMemo(() => {
-    const ts = (s: string) => {
-      const n = Date.parse(s);
-      return Number.isFinite(n) ? n : 0;
-    };
     const eligible = [...items, ...simklCw]
       .filter(
         (i) =>
@@ -322,15 +347,12 @@ export function Home({ active = true }: { active?: boolean }) {
           !i._id.startsWith("iptv:") &&
           !dismissed.has(i._id) &&
           !(i.external === "simkl" && dismissed.has(`simkl|${i._id}`)) &&
-          (!i.removed || i.temp) &&
-          i.state &&
-          i.state.timeOffset > 0 &&
+          isCwMember(i) &&
           !(settings.animeOnlyInAnimeRoom && isAnimeCwItem(i)),
       )
-      .sort(
-        (a, b) =>
-          ts(b.state?.lastWatched ?? b._mtime) - ts(a.state?.lastWatched ?? a._mtime),
-      );
+      .map((i) => ({ i, k: cwSortKey(i) }))
+      .sort((a, b) => b.k - a.k)
+      .map((e) => e.i);
     const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "").trim();
     const ns = (id: string) => (id.startsWith("tt") ? "tt" : id.split(":")[0]);
     const seenId = new Set<string>();
@@ -371,6 +393,12 @@ export function Home({ active = true }: { active?: boolean }) {
         return;
       }
       if (!authKey || !target.state) return;
+      const se = episodeFromVideoId(target.state.video_id);
+      clearResume(
+        target._id,
+        target.state.season ?? se?.season,
+        target.state.episode ?? se?.episode,
+      );
       void libraryPut(authKey, {
         ...target,
         state: { ...target.state, timeOffset: 0 },
@@ -465,8 +493,8 @@ export function Home({ active = true }: { active?: boolean }) {
 
   const homeRowsCustom = settings.homeRows;
   const allCustomizableRows = useMemo(
-    () => [...personalRows, ...traktRows, ...simklRows, ...restRows, ...animeRows],
-    [personalRows, traktRows, simklRows, restRows, animeRows],
+    () => [...arabicRows, ...personalRows, ...traktRows, ...simklRows, ...restRows, ...animeRows],
+    [arabicRows, personalRows, traktRows, simklRows, restRows, animeRows],
   );
   const visibleRows = useMemo(
     () => applyHomeRowCustomization(allCustomizableRows, homeRowsCustom, false),
@@ -533,14 +561,14 @@ export function Home({ active = true }: { active?: boolean }) {
             <div data-scroll-anchor="hero" className="relative">
               {editMode && (
                 <PinnedRowControls
-                  label="Featured hero"
+                  label={t("Featured hero")}
                   hidden={false}
                   onToggleHidden={() => handleToggleHidden("hero")}
                 />
               )}
               <HeroCarousel slides={heroSlides} />
               {!editMode && (
-                <div className="pointer-events-none absolute -bottom-3 right-5 z-20 flex justify-end [&>*]:pointer-events-auto">
+                <div className="pointer-events-none absolute -bottom-3 end-5 z-20 flex justify-end [&>*]:pointer-events-auto">
                   <CustomizeBar
                     editMode={editMode}
                     customization={homeRowsCustom}
@@ -553,13 +581,13 @@ export function Home({ active = true }: { active?: boolean }) {
           )}
           {editMode && homeRowsCustom.hidden.includes("hero") && (
             <PinnedRowControls
-              label="Featured hero"
+              label={t("Featured hero")}
               hidden
               onToggleHidden={() => handleToggleHidden("hero")}
             />
           )}
           {!editMode && settings.homeMode !== "classic" && homeRowsCustom.hidden.includes("hero") && (
-            <div className="pointer-events-none absolute right-0 top-0 z-20 [&>*]:pointer-events-auto">
+            <div className="pointer-events-none absolute end-0 top-0 z-20 [&>*]:pointer-events-auto">
               <CustomizeBar
                 editMode={editMode}
                 customization={homeRowsCustom}
@@ -585,13 +613,13 @@ export function Home({ active = true }: { active?: boolean }) {
             <div data-scroll-anchor="top10" style={{ contentVisibility: "auto", containIntrinsicSize: "auto 380px" }}>
               {editMode && (
                 <PinnedRowControls
-                  label="Top 10 Trending This Week"
+                  label={t("Top 10 Trending This Week")}
                   hidden={false}
                   onToggleHidden={() => handleToggleHidden("top10")}
                 />
               )}
               <Row
-                title={rows[0].name.toLowerCase().includes("top") ? rows[0].name : `Top 10 ${rows[0].name}`}
+                title={rows[0].name.toLowerCase().includes("top") ? t(rows[0].name) : t("Top 10 {name}", { name: t(rows[0].name) })}
                 min={180}
                 shape="rank"
               >
@@ -603,7 +631,7 @@ export function Home({ active = true }: { active?: boolean }) {
           )}
           {editMode && settings.homeMode !== "classic" && top10.length >= 10 && homeRowsCustom.hidden.includes("top10") && (
             <PinnedRowControls
-              label="Top 10 Trending This Week"
+              label={t("Top 10 Trending This Week")}
               hidden
               onToggleHidden={() => handleToggleHidden("top10")}
             />
@@ -613,7 +641,7 @@ export function Home({ active = true }: { active?: boolean }) {
               <CollectionsRow />
             </div>
           )}
-          {rows.length === 0 && traktRows.length === 0 && simklRows.length === 0 && animeRows.length === 0 ? (
+          {rows.length === 0 && traktRows.length === 0 && simklRows.length === 0 && animeRows.length === 0 && arabicRows.length === 0 ? (
             Array.from({ length: 7 }).map((_, i) => <RowSkeleton key={`skel-${i}`} />)
           ) : (
             <CustomizableRows
@@ -632,7 +660,7 @@ export function Home({ active = true }: { active?: boolean }) {
         </div>
       </ScrollRootContext.Provider>
       {!editMode && settings.homeMode === "classic" && (
-        <div className="pointer-events-none fixed bottom-16 right-5 z-30 flex items-center justify-end gap-2 [&>*]:pointer-events-auto">
+        <div className="pointer-events-none fixed bottom-16 end-5 z-30 flex items-center justify-end gap-2 [&>*]:pointer-events-auto">
           <CustomizeBar
             editMode={editMode}
             customization={homeRowsCustom}
@@ -642,7 +670,7 @@ export function Home({ active = true }: { active?: boolean }) {
         </div>
       )}
       {editMode && (
-        <div className="pointer-events-none fixed bottom-16 right-5 z-30 flex items-center justify-end gap-2 [&>*]:pointer-events-auto">
+        <div className="pointer-events-none fixed bottom-16 end-5 z-30 flex items-center justify-end gap-2 [&>*]:pointer-events-auto">
           <CustomizeBar
             editMode={editMode}
             customization={homeRowsCustom}
@@ -669,17 +697,17 @@ function PinnedRowControls({
     <div className="mb-3 flex items-center justify-between gap-3 rounded-xl border border-edge-soft/60 bg-elevated/40 px-4 py-2">
       <span className="flex items-center gap-2 text-[13px] font-semibold text-ink">
         <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] uppercase tracking-[0.16em] text-accent">
-          Pinned
+          {t("Pinned")}
         </span>
         {label}
-        {hidden && <span className="text-[11.5px] font-normal text-ink-subtle">· currently hidden</span>}
+        {hidden && <span className="text-[11.5px] font-normal text-ink-subtle">{t("· currently hidden")}</span>}
       </span>
       <button
         type="button"
         onClick={onToggleHidden}
         className="h-8 rounded-md border border-edge-soft/60 bg-canvas/70 px-3 text-[12px] font-medium text-ink-muted transition-colors hover:bg-canvas hover:text-ink"
       >
-        {hidden ? "Show" : "Hide"}
+        {hidden ? t("Show") : t("Hide")}
       </button>
     </div>
   );

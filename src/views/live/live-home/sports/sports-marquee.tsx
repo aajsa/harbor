@@ -33,7 +33,7 @@ export function SportsMarquee({
   }, [games.length]);
 
   return (
-    <div className="flex flex-col gap-2.5 pl-[9px]">
+    <div className="flex flex-col gap-2.5 ps-[9px]">
       <div className="flex items-center gap-2.5 text-[12px] font-semibold uppercase tracking-[0.18em] text-ink-subtle">
         Live &amp; Upcoming
         {live > 0 && (
@@ -94,7 +94,7 @@ function LeagueChip({
   return (
     <button
       onClick={onClick}
-      className={`flex h-9 shrink-0 items-center gap-1.5 rounded-full border pl-1.5 pr-3.5 text-[12.5px] font-medium transition-colors ${
+      className={`flex h-9 shrink-0 items-center gap-1.5 rounded-full border ps-1.5 pe-3.5 text-[12.5px] font-medium transition-colors ${
         active
           ? "border-transparent bg-ink text-canvas"
           : "border-edge-soft/60 bg-elevated text-ink-muted hover:border-edge hover:text-ink"

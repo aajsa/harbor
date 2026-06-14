@@ -6,6 +6,7 @@ import { resolveMeta } from "@/lib/meta-resource";
 import { useSettings } from "@/lib/settings";
 import { useView } from "@/lib/view";
 import { useInWatchlist } from "@/lib/watchlist";
+import { useT } from "@/lib/i18n";
 
 export type Tab = "watchlist" | "history" | "local" | "trakt" | "anilist" | "simkl";
 
@@ -55,24 +56,25 @@ export function FilterBar({
   counts: { all: number; movie: number; series: number };
   trailing?: React.ReactNode;
 }) {
+  const t = useT();
   return (
     <div className="flex flex-wrap items-center gap-3">
       <div className="flex items-center gap-1 rounded-full bg-elevated/40 p-0.5 ring-1 ring-edge-soft/60">
         <FilterPill active={type === "all"} onClick={() => setType("all")}>
-          All <span className="ml-1 text-ink-subtle">{counts.all}</span>
+          {t("All")} <span className="ms-1 text-ink-subtle">{counts.all}</span>
         </FilterPill>
         <FilterPill active={type === "movie"} onClick={() => setType("movie")}>
-          Movies <span className="ml-1 text-ink-subtle">{counts.movie}</span>
+          {t("Movies")} <span className="ms-1 text-ink-subtle">{counts.movie}</span>
         </FilterPill>
         <FilterPill active={type === "series"} onClick={() => setType("series")}>
-          Shows <span className="ml-1 text-ink-subtle">{counts.series}</span>
+          {t("Shows")} <span className="ms-1 text-ink-subtle">{counts.series}</span>
         </FilterPill>
       </div>
       <input
         type="search"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search title…"
+        placeholder={t("Search title…")}
         className="min-w-[220px] flex-1 max-w-md rounded-full bg-elevated/40 px-4 py-2 text-[13px] text-ink placeholder:text-ink-subtle ring-1 ring-edge-soft/60 outline-none focus:ring-edge"
       />
       {trailing}
@@ -159,12 +161,13 @@ export function GroupedGrid<
   groups: Array<{ label: string; items: T[] }>;
   onRemove?: (stremioId: string) => void;
 }) {
+  const t = useT();
   return (
     <div className="flex flex-col gap-7">
       {groups.map((g) => (
         <div key={g.label} className="flex flex-col gap-3">
           <h3 className="text-[11px] font-bold uppercase tracking-[0.24em] text-ink-subtle">
-            {g.label} <span className="ml-1 text-ink-subtle/70">{g.items.length}</span>
+            {t(g.label)} <span className="ms-1 text-ink-subtle/70">{g.items.length}</span>
           </h3>
           <Grid>
             {g.items.map((it) => (
@@ -255,6 +258,7 @@ export function loadLocalIds(): Set<string> {
 }
 
 export function WatchlistCard({ meta, onRemove }: { meta: Meta; onRemove?: () => void }) {
+  const t = useT();
   const { openMeta } = useView();
   const { settings } = useSettings();
   const inList = useInWatchlist(meta.id);
@@ -299,7 +303,7 @@ export function WatchlistCard({ meta, onRemove }: { meta: Meta; onRemove?: () =>
   return (
     <div
       ref={cardRef}
-      className="group relative flex flex-col gap-2 text-left"
+      className="group relative flex flex-col gap-2 text-start"
       onMouseLeave={() => setConfirm(false)}
     >
       <div
@@ -321,7 +325,7 @@ export function WatchlistCard({ meta, onRemove }: { meta: Meta; onRemove?: () =>
           onError={() => setPosterFailed(true)}
         />
         {inList && (
-          <span className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-ink/80 text-canvas backdrop-blur-sm">
+          <span className="absolute start-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-ink/80 text-canvas backdrop-blur-sm">
             <Bookmark size={12} strokeWidth={2.6} fill="currentColor" />
           </span>
         )}
@@ -337,19 +341,19 @@ export function WatchlistCard({ meta, onRemove }: { meta: Meta; onRemove?: () =>
                 setConfirm(true);
               }
             }}
-            className={`absolute right-2 top-2 flex h-7 items-center justify-center gap-1 rounded-full text-white shadow-[0_2px_8px_rgba(0,0,0,0.4)] transition-all duration-200 ${
+            className={`absolute end-2 top-2 flex h-7 items-center justify-center gap-1 rounded-full text-white shadow-[0_2px_8px_rgba(0,0,0,0.4)] transition-all duration-200 ${
               confirm
                 ? "bg-danger px-2.5 text-[11px] font-semibold"
                 : "w-7 bg-canvas/70 opacity-0 backdrop-blur-sm hover:bg-canvas/90 group-hover:opacity-100"
             }`}
-            aria-label={confirm ? "Confirm remove from library" : "Remove from library"}
+            aria-label={confirm ? t("Confirm remove from library") : t("Remove from library")}
           >
             <Trash2 size={12} strokeWidth={2.2} />
-            {confirm && "Remove"}
+            {confirm && t("Remove")}
           </button>
         )}
       </div>
-      <button type="button" onClick={open} className="text-left">
+      <button type="button" onClick={open} className="text-start">
         <p className="truncate text-[13px] font-medium text-ink transition-colors hover:text-accent">
           {display.name || meta.id}
         </p>
@@ -362,15 +366,16 @@ export function WatchlistCard({ meta, onRemove }: { meta: Meta; onRemove?: () =>
 }
 
 export function EmptyWatchlist({ connected }: { connected: boolean }) {
+  const t = useT();
   return (
     <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-edge-soft bg-canvas/30 px-8 py-16 text-center">
       <Bookmark size={28} strokeWidth={1.6} className="text-ink-subtle" />
-      <h2 className="text-[16px] font-semibold text-ink">Your watchlist is empty</h2>
+      <h2 className="text-[16px] font-semibold text-ink">{t("Your watchlist is empty")}</h2>
       <p className="max-w-md text-[13px] leading-relaxed text-ink-muted">
-        Right-click any title in Harbor or hit "Add to Watchlist" on its detail page to save it here.
+        {t("Right-click any title in Harbor or hit \"Add to Watchlist\" on its detail page to save it here.")}
         {connected
-          ? " Anything you save also syncs to your Trakt account."
-          : " Connect Trakt in Settings to sync this list across devices."}
+          ? t(" Anything you save also syncs to your Trakt account.")
+          : t(" Connect Trakt in Settings to sync this list across devices.")}
       </p>
     </div>
   );

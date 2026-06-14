@@ -3,6 +3,7 @@ import { PickCard } from "@/components/pick-card";
 import { Row } from "@/components/row";
 import type { Meta } from "@/lib/cinemeta";
 import { type Spotlight } from "@/lib/feed/genre-spotlights";
+import { useT } from "@/lib/i18n";
 import { useClaimSeenIds } from "@/lib/feed/seen-ids";
 import { genreEquivalents } from "@/lib/feed/tags";
 import {
@@ -90,6 +91,7 @@ export function SpotlightSection({
   spotlight: Spotlight;
   genreId: number;
 }) {
+  const t = useT();
   const { settings } = useSettings();
   const { openPerson } = useView();
   const claim = useClaimSeenIds(`spotlight:${spotlight.name}`);
@@ -180,10 +182,10 @@ export function SpotlightSection({
   const title = (
     <span className="flex flex-col">
       <span className="text-[20px] font-medium tracking-tight text-ink">
-        {spotlight.name}'s {spotlight.sub}
+        {t("{name}'s {sub}", { name: spotlight.name, sub: t(spotlight.sub) })}
       </span>
       <span className="text-[12px] font-medium uppercase tracking-[0.18em] text-ink-subtle">
-        Spotlight
+        {t("Spotlight")}
       </span>
     </span>
   );
@@ -195,7 +197,7 @@ export function SpotlightSection({
         onClick={() => personId != null && openPerson(personId)}
         disabled={personId == null}
         style={{ gridColumn: "span 2" }}
-        className="group relative h-[216px] w-[280px] shrink-0 overflow-hidden rounded-xl border border-edge-soft text-left transition-transform duration-300 hover:-translate-y-0.5"
+        className="group relative h-[216px] w-[280px] shrink-0 overflow-hidden rounded-xl border border-edge-soft text-start transition-transform duration-300 hover:-translate-y-0.5"
       >
         {profileUrl ? (
           <img
@@ -219,7 +221,7 @@ export function SpotlightSection({
         />
         <div className="absolute inset-x-4 bottom-3.5 flex flex-col gap-1">
           <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-accent">
-            {spotlight.sub}
+            {t(spotlight.sub)}
           </span>
           <span className="font-display text-[26px] font-medium leading-[0.98] tracking-tight text-ink drop-shadow-[0_2px_18px_rgba(0,0,0,0.4)]">
             {spotlight.name}

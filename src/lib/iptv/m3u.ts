@@ -6,7 +6,7 @@ const EXTVLCOPT = "#EXTVLCOPT:";
 const KODIPROP = "#KODIPROP:";
 
 export function parseM3u(text: string, baseId: string): IptvChannel[] {
-  const lines = text.split(/\r?\n/);
+  const lines = text.replace(/^﻿/, "").split(/\r?\n/);
   const out: IptvChannel[] = [];
   let pending: PendingEntry | null = null;
   let autoIndex = 0;
@@ -22,7 +22,12 @@ export function parseM3u(text: string, baseId: string): IptvChannel[] {
       if (pending) pending.attrs["group-title"] = line.slice(EXTGRP.length).trim();
       continue;
     }
-    if (line.startsWith(EXTVLCOPT) || line.startsWith(KODIPROP)) {
+    if (line.startsWith(EXTVLCOPT)) {
+      if (pending) captureVlcOpt(line.slice(EXTVLCOPT.length), pending.attrs);
+      continue;
+    }
+    if (line.startsWith(KODIPROP)) {
+      if (pending) captureKodiProp(line.slice(KODIPROP.length), pending.attrs);
       continue;
     }
     if (line.startsWith("#")) continue;
@@ -61,10 +66,8 @@ function isDecorativeRow(name: string): boolean {
   const trimmed = name.trim();
   if (trimmed.length === 0) return true;
   if (/^[#=─━▓█▀▄░♦◆■▼▲★☆\-_*+~|·•:.\s]+$/.test(trimmed)) return true;
-  if (/^#{2,}\s|\s#{2,}$/.test(trimmed)) return true;
-  if (/^={3,}|={3,}$|^─{3,}|─{3,}$/.test(trimmed)) return true;
-  const letters = trimmed.match(/\p{L}/gu);
-  if (!letters || letters.length < 2) return true;
+  const alphanumeric = trimmed.match(/[\p{L}\p{N}]/gu);
+  if (!alphanumeric || alphanumeric.length < 1) return true;
   return false;
 }
 
@@ -75,7 +78,7 @@ type PendingEntry = {
 };
 
 function parseExtinf(rest: string): PendingEntry {
-  const commaIdx = lastUnquotedComma(rest);
+  const commaIdx = attrTitleSplit(rest);
   const attrsPart = commaIdx >= 0 ? rest.slice(0, commaIdx) : rest;
   const titlePart = commaIdx >= 0 ? rest.slice(commaIdx + 1).trim() : "";
   const tokens = attrsPart.trim().split(/\s+/);
@@ -119,15 +122,47 @@ function countQuotes(s: string): number {
   return n;
 }
 
-function lastUnquotedComma(s: string): number {
+function attrTitleSplit(s: string): number {
   let inQuote = false;
-  let last = -1;
+  let lastQuoteClose = -1;
   for (let i = 0; i < s.length; i++) {
+    if (s[i] !== '"') continue;
+    if (inQuote) lastQuoteClose = i;
+    inQuote = !inQuote;
+  }
+  const after = firstUnquotedComma(s, lastQuoteClose >= 0 ? lastQuoteClose + 1 : 0);
+  if (after >= 0) return after;
+  return firstUnquotedComma(s, 0);
+}
+
+function firstUnquotedComma(s: string, start: number): number {
+  let inQuote = false;
+  for (let i = start; i < s.length; i++) {
     const c = s[i];
     if (c === '"') inQuote = !inQuote;
-    else if (c === "," && !inQuote) last = i;
+    else if (c === "," && !inQuote) return i;
   }
-  return last;
+  return -1;
+}
+
+function captureVlcOpt(rest: string, attrs: Record<string, string>): void {
+  const eq = rest.indexOf("=");
+  if (eq < 0) return;
+  const key = rest.slice(0, eq).trim().toLowerCase();
+  const val = rest.slice(eq + 1).trim().replace(/^"|"$/g, "");
+  if (!val) return;
+  if (key === "http-user-agent") attrs["vlcopt-user-agent"] = val;
+  else if (key === "http-referrer") attrs["vlcopt-referrer"] = val;
+}
+
+function captureKodiProp(rest: string, attrs: Record<string, string>): void {
+  const eq = rest.indexOf("=");
+  if (eq < 0) return;
+  const key = rest.slice(0, eq).trim().toLowerCase();
+  const val = rest.slice(eq + 1).trim();
+  if (!val) return;
+  if (key === "inputstream.adaptive.license_type") attrs["kodiprop-license-type"] = val;
+  else if (key === "inputstream.adaptive.license_key") attrs["kodiprop-license-key"] = val;
 }
 
 export function groupChannels(channels: IptvChannel[]): Map<string, IptvChannel[]> {

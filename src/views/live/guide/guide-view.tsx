@@ -56,6 +56,13 @@ export function GuideView({
   const epgMapVersion = useEpgMapVersion();
   const [matchTarget, setMatchTarget] = useState<IptvChannel | null>(null);
 
+  const programsByChannel = useMemo(() => {
+    const m = new Map<string, EpgProgram[]>();
+    for (const ch of channels) m.set(ch.id, epgProgramsForChannel(ch, epg, tvgIdCounts) ?? []);
+    return m;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [channels, epg, tvgIdCounts, epgMapVersion]);
+
   const [colPx, setColPx] = useState<number>(loadColPx);
   const dragRef = useRef<{ startX: number; startW: number } | null>(null);
   useEffect(() => {
@@ -184,8 +191,7 @@ export function GuideView({
             />
           </div>
           {channels.map((ch, i) => {
-            void epgMapVersion;
-            const programs = epgProgramsForChannel(ch, epg, tvgIdCounts) ?? [];
+            const programs = programsByChannel.get(ch.id) ?? [];
             return (
               <div
                 key={ch.id}

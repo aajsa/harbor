@@ -2,6 +2,7 @@ import { ChevronLeft, Maximize, Minimize, Pause, Play } from "lucide-react";
 import { useRef, useState } from "react";
 import type { PlayerShellProps } from "@/lib/player-shells/types";
 import { usePlaybackPositionGated } from "@/lib/player/playback-clock";
+import { useT } from "@/lib/i18n";
 
 export function MinimalShell({
   snap,
@@ -14,6 +15,7 @@ export function MinimalShell({
   onFullscreen,
   title,
 }: PlayerShellProps) {
+  const t = useT();
   if (pipMode) return null;
 
   const playing = snap.status === "playing";
@@ -28,14 +30,14 @@ export function MinimalShell({
         <button
           onClick={onBack}
           className="flex h-10 w-10 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur-md transition-colors hover:bg-black/85"
-          aria-label="Back"
+          aria-label={t("Back")}
         >
-          <ChevronLeft size={18} strokeWidth={2.2} />
+          <ChevronLeft size={18} strokeWidth={2.2} className="dir-icon" />
         </button>
         <button
           onClick={onPlayPause}
           className="flex h-12 w-12 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-md transition-colors hover:bg-white/25"
-          aria-label={playing ? "Pause" : "Play"}
+          aria-label={playing ? t("Pause") : t("Play")}
         >
           {playing ? (
             <Pause size={22} strokeWidth={1.8} fill="currentColor" />
@@ -52,7 +54,7 @@ export function MinimalShell({
         <button
           onClick={onFullscreen}
           className="flex h-10 w-10 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur-md transition-colors hover:bg-black/85"
-          aria-label={fullscreen ? "Exit fullscreen" : "Fullscreen"}
+          aria-label={fullscreen ? t("Exit fullscreen") : t("Fullscreen")}
         >
           {fullscreen ? <Minimize size={16} strokeWidth={2.2} /> : <Maximize size={16} strokeWidth={2.2} />}
         </button>

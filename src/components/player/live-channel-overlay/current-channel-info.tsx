@@ -8,6 +8,7 @@ import { formatTimeLabel } from "@/views/live/guide/guide-utils";
 import { FavoriteButton } from "@/views/live/favorite-button";
 import { HoverTooltip } from "@/components/hover-tooltip";
 import type { EpgProgram, IptvChannel } from "@/lib/iptv/types";
+import { useT } from "@/lib/i18n";
 
 export function CurrentChannelInfo({
   channel,
@@ -110,6 +111,7 @@ function Body({
   hydrated: Meta | null;
   now: number;
 }) {
+  const t = useT();
   const title = hydrated?.name?.trim() || channel.name;
   const description = current?.description || hydrated?.description || null;
   const progress =
@@ -125,7 +127,7 @@ function Body({
       <div className="flex items-center gap-2">
         <span className="flex h-5 items-center gap-1 rounded-full bg-danger px-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-canvas">
           <span className="h-1.5 w-1.5 rounded-full bg-canvas" />
-          Live
+          {t("Live")}
         </span>
         {channel.group && (
           <span className="truncate text-[10.5px] font-semibold uppercase tracking-[0.18em] text-ink-subtle">
@@ -155,7 +157,7 @@ function Body({
             {remainingMin != null && (
               <>
                 <span className="text-ink-subtle">·</span>
-                <span className="tabular-nums">{remainingMin}m left</span>
+                <span className="tabular-nums">{t("{m}m left", { m: remainingMin })}</span>
               </>
             )}
           </div>
@@ -174,7 +176,7 @@ function Body({
       ) : description ? (
         <p className="truncate text-[12.5px] text-ink-muted/85">{description}</p>
       ) : (
-        <p className="text-[12.5px] text-ink-subtle">No program info available</p>
+        <p className="text-[12.5px] text-ink-subtle">{t("No program info available")}</p>
       )}
     </div>
   );

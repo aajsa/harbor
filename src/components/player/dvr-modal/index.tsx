@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { EpgProgram } from "@/lib/iptv/types";
 import { useDvr } from "@/lib/dvr/provider";
 import { HoverTooltip } from "@/components/hover-tooltip";
+import { useT } from "@/lib/i18n";
 import { ActiveView } from "./active-view";
 import { NewRecordingView } from "./new-view";
 
@@ -89,13 +90,14 @@ function Header({
   channelLogo: string | null;
   onClose: () => void;
 }) {
+  const t = useT();
   return (
     <div className="flex items-center gap-4 border-b border-edge-soft px-6 py-5">
       <ChannelMark logo={channelLogo} name={channelName} />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.24em] text-ink-subtle">
           <span className="h-1.5 w-1.5 rounded-full bg-danger" />
-          Record from live TV
+          {t("Record from live TV")}
         </span>
         <HoverTooltip label={channelName} className="min-w-0">
           <span className="block truncate text-[18px] font-semibold leading-tight tracking-[-0.005em] text-ink">
@@ -105,7 +107,7 @@ function Header({
       </div>
       <button
         onClick={onClose}
-        aria-label="Close"
+        aria-label={t("Close")}
         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-raised text-ink-muted transition-colors hover:bg-raised/70 hover:text-ink"
       >
         <X size={17} strokeWidth={2.1} />

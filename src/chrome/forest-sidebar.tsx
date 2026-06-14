@@ -14,7 +14,9 @@ import { SettingsIcon } from "@/components/icons/settings-icon";
 import { TvIcon } from "@/components/icons/tv-icon";
 import { HarborMark } from "@/components/icons/harbor-mark";
 import { ProfileChip } from "@/chrome/sidebar/profile-chip";
+import { CollapseToggle } from "@/chrome/sidebar/collapse-toggle";
 import { ParentalPinModal } from "@/components/parental-pin-modal";
+import { isRtl, useT, useUiLanguage } from "@/lib/i18n";
 import { useParental, type LockableTab } from "@/lib/parental";
 import { useSettings } from "@/lib/settings";
 import { useView, type View } from "@/lib/view";
@@ -25,7 +27,7 @@ const MIST = "oklch(0.72 0.05 150)";
 
 type NavDef = {
   render: (active: boolean) => ReactNode;
-  label: string;
+  labelKey: string;
   view: View;
   hideKey?: "anime" | "liveTv" | "sports";
   parentalKey?: LockableTab;
@@ -33,27 +35,29 @@ type NavDef = {
 };
 
 const PRIMARY: NavDef[] = [
-  { render: (a) => <HomeIcon active={a} />, label: "Home", view: "home" },
-  { render: (a) => <DiscoverIcon active={a} />, label: "Discover", view: "discover", parentalKey: "discover" },
-  { render: (a) => <MoviesIcon active={a} />, label: "Movies", view: "movies", parentalKey: "movies" },
-  { render: (a) => <TvIcon active={a} />, label: "Shows", view: "shows", parentalKey: "shows" },
-  { render: (a) => <AnimeIcon active={a} />, label: "Anime", view: "anime", hideKey: "anime", parentalKey: "anime" },
-  { render: (a) => <LiveTvIcon active={a} />, label: "Live TV", view: "live", hideKey: "liveTv", parentalKey: "liveTv" },
-  { render: (a) => <PlaylistVodIcon active={a} />, label: "Playlists", view: "vod" },
+  { render: (a) => <HomeIcon active={a} />, labelKey: "nav.home", view: "home" },
+  { render: (a) => <DiscoverIcon active={a} />, labelKey: "nav.discover", view: "discover", parentalKey: "discover" },
+  { render: (a) => <MoviesIcon active={a} />, labelKey: "nav.movies", view: "movies", parentalKey: "movies" },
+  { render: (a) => <TvIcon active={a} />, labelKey: "nav.shows", view: "shows", parentalKey: "shows" },
+  { render: (a) => <AnimeIcon active={a} />, labelKey: "nav.anime", view: "anime", hideKey: "anime", parentalKey: "anime" },
+  { render: (a) => <LiveTvIcon active={a} />, labelKey: "nav.live", view: "live", hideKey: "liveTv", parentalKey: "liveTv" },
+  { render: (a) => <PlaylistVodIcon active={a} />, labelKey: "nav.playlists", view: "vod" },
 ];
 
 const COLLECTIONS: NavDef[] = [
-  { render: (a) => <CalendarIcon active={a} />, label: "Calendar", view: "calendar", parentalKey: "calendar" },
-  { render: (a) => <LibraryIcon active={a} />, label: "My Library", view: "library", parentalKey: "library" },
-  { render: (a) => <DownloadsNavIcon active={a} />, label: "Downloads", view: "downloads" },
-  { render: (a) => <AddonsIcon active={a} />, label: "Addons", view: "addons", parentalKey: "addons" },
-  { render: (a) => <SettingsIcon active={a} />, label: "Settings", view: "settings", pinGated: true },
+  { render: (a) => <CalendarIcon active={a} />, labelKey: "nav.calendar", view: "calendar", parentalKey: "calendar" },
+  { render: (a) => <LibraryIcon active={a} />, labelKey: "nav.library", view: "library", parentalKey: "library" },
+  { render: (a) => <DownloadsNavIcon active={a} />, labelKey: "nav.downloads", view: "downloads" },
+  { render: (a) => <AddonsIcon active={a} />, labelKey: "nav.addons", view: "addons", parentalKey: "addons" },
+  { render: (a) => <SettingsIcon active={a} />, labelKey: "nav.settings", view: "settings", pinGated: true },
 ];
 
 export function ForestSidebar() {
   const { view, setView, chromeHidden } = useView();
   const { locked, unlock, hiddenTabs } = useParental();
   const { settings } = useSettings();
+  const t = useT();
+  const collapsed = settings.sidebarCollapsed;
   const [pinFor, setPinFor] = useState<View | null>(null);
 
   const isVisible = (item: NavDef) => {
@@ -75,8 +79,10 @@ export function ForestSidebar() {
     <>
       <aside
         aria-hidden={chromeHidden}
-        className={`relative z-[60] flex w-[78px] shrink-0 flex-col transition-[opacity,transform] duration-[320ms] ease-[cubic-bezier(0.32,0.72,0.24,1)] lg:w-60 ${
-          chromeHidden ? "pointer-events-none -translate-x-2 opacity-0" : "translate-x-0 opacity-100"
+        className={`relative z-[60] flex w-[78px] shrink-0 flex-col transition-[opacity,transform,width] duration-[320ms] ease-[cubic-bezier(0.32,0.72,0.24,1)] ${
+          collapsed ? "" : "lg:w-60"
+        } ${
+          chromeHidden ? "pointer-events-none -translate-x-2 rtl:translate-x-2 opacity-0" : "translate-x-0 opacity-100"
         }`}
       >
         <div
@@ -84,34 +90,38 @@ export function ForestSidebar() {
           style={{ background: "linear-gradient(180deg, var(--color-elevated), var(--color-canvas) 50%)" }}
         >
           <Canopy />
-          <span aria-hidden className="pointer-events-none absolute inset-y-0 right-0 w-px" style={{ background: tint(LEAF, 0.12) }} />
+          <span aria-hidden className="pointer-events-none absolute inset-y-0 end-0 w-px" style={{ background: tint(LEAF, 0.12) }} />
 
           <div
             data-tauri-drag-region
-            className="relative z-10 flex h-20 shrink-0 items-center justify-center px-3 lg:justify-start lg:px-6"
+            className={`relative z-10 flex h-20 shrink-0 items-center justify-center px-3 ${
+              collapsed ? "" : "lg:justify-start lg:px-6"
+            }`}
           >
             <button
               type="button"
               onClick={() => setView("home")}
-              aria-label="Harbor home"
+              aria-label={t("chrome.harborHome")}
               className="flex items-center gap-2.5 text-ink"
             >
               <HarborMark className="h-[26px] w-[26px] shrink-0 drop-shadow-[0_0_11px_var(--color-accent-soft)]" />
-              <span
-                className="hidden text-[27px] font-medium leading-none lg:inline"
-                style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.2px" }}
-              >
-                Harbor
-              </span>
+              {!collapsed && (
+                <span
+                  className="hidden text-[27px] font-medium leading-none lg:inline"
+                  style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.2px" }}
+                >
+                  Harbor
+                </span>
+              )}
             </button>
           </div>
 
           <nav className="relative z-10 flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto px-2.5 pb-4 pt-2 [scrollbar-width:none] lg:px-3 [&::-webkit-scrollbar]:hidden">
             {PRIMARY.filter(isVisible).map((item) => (
-              <NavRow key={item.view} item={item} active={view === item.view} onClick={() => go(item)} />
+              <NavRow key={item.view} item={item} active={view === item.view} collapsed={collapsed} onClick={() => go(item)} />
             ))}
 
-            <SectionLabel>Library</SectionLabel>
+            {!collapsed && <SectionLabel>{t("chrome.sectionLibrary")}</SectionLabel>}
 
             {COLLECTIONS.filter(isVisible).map((item) => (
               <NavRow
@@ -119,28 +129,38 @@ export function ForestSidebar() {
                 item={item}
                 active={view === item.view}
                 gated={!!item.pinGated && locked}
+                collapsed={collapsed}
                 onClick={() => go(item)}
               />
             ))}
           </nav>
 
-          <div className="relative z-10 shrink-0 px-2.5 pb-3 pt-1 lg:px-3">
+          <div className={`relative z-10 shrink-0 px-2.5 pb-3 pt-1 ${collapsed ? "" : "lg:px-3"}`}>
             <MossLine className="mb-2" />
+            <div className={`mb-1 flex ${collapsed ? "justify-center" : ""}`}>
+              <CollapseToggle collapsed={collapsed} />
+            </div>
             {locked ? (
-              <div className="flex items-center justify-center gap-3 py-2.5 lg:justify-start lg:px-3">
+              <div
+                className={`flex items-center justify-center gap-3 py-2.5 ${
+                  collapsed ? "" : "lg:justify-start lg:px-3"
+                }`}
+              >
                 <div
                   className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-ink-subtle"
                   style={{ boxShadow: "inset 0 0 0 1.5px var(--color-edge)" }}
                 >
                   <Lock size={16} />
                 </div>
-                <div className="hidden min-w-0 lg:block">
-                  <div className="truncate text-[13px] font-medium text-ink-muted">Locked</div>
-                  <div className="truncate text-[11.5px] text-ink-subtle">Parental controls on</div>
-                </div>
+                {!collapsed && (
+                  <div className="hidden min-w-0 lg:block">
+                    <div className="truncate text-[13px] font-medium text-ink-muted">{t("chrome.locked")}</div>
+                    <div className="truncate text-[11.5px] text-ink-subtle">{t("chrome.parentalOn")}</div>
+                  </div>
+                )}
               </div>
             ) : (
-              <ProfileChip />
+              <ProfileChip collapsed={collapsed} />
             )}
           </div>
         </div>
@@ -168,49 +188,59 @@ function NavRow({
   item,
   active,
   gated,
+  collapsed,
   onClick,
 }: {
   item: NavDef;
   active: boolean;
   gated?: boolean;
+  collapsed?: boolean;
   onClick: () => void;
 }) {
+  const t = useT();
+  const rtl = isRtl(useUiLanguage());
+  const label = t(item.labelKey);
+  const glowX = rtl ? "82%" : "18%";
   return (
     <button
       onClick={onClick}
-      aria-label={gated ? `${item.label} (locked, requires PIN)` : item.label}
-      title={gated ? `${item.label} : locked` : item.label}
-      className={`group relative flex h-12 items-center justify-center gap-3.5 transition-colors duration-200 lg:justify-start lg:px-4 ${
+      aria-label={gated ? t("chrome.lockedRequiresPin", { label }) : label}
+      title={gated ? t("chrome.lockedShort", { label }) : label}
+      className={`group relative flex h-12 items-center justify-center gap-3.5 transition-colors duration-200 ${
+        collapsed ? "" : "lg:justify-start lg:px-4"
+      } ${
         active ? "text-accent" : "text-ink-muted hover:text-ink"
       }`}
     >
       {active ? (
         <span
           aria-hidden
-          className="absolute inset-y-0 -left-1 right-2"
-          style={{ background: `radial-gradient(70% 140% at 18% 50%, ${tint(LEAF, 0.22)}, transparent 72%)` }}
+          className="absolute inset-y-0 -start-1 end-2"
+          style={{ background: `radial-gradient(70% 140% at ${glowX} 50%, ${tint(LEAF, 0.22)}, transparent 72%)` }}
         />
       ) : (
         <span
           aria-hidden
-          className="absolute inset-y-0 -left-1 right-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
-          style={{ background: `radial-gradient(70% 140% at 18% 50%, ${tint(LEAF, 0.1)}, transparent 72%)` }}
+          className="absolute inset-y-0 -start-1 end-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+          style={{ background: `radial-gradient(70% 140% at ${glowX} 50%, ${tint(LEAF, 0.1)}, transparent 72%)` }}
         />
       )}
       <span className={`relative ${gated ? "opacity-70" : ""} ${active ? "drop-shadow-[0_0_8px_var(--color-accent-soft)]" : ""}`}>
         {item.render(false)}
         {gated && (
           <span
-            className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-canvas text-ink-subtle"
+            className="absolute -bottom-1 -end-1 flex h-4 w-4 items-center justify-center rounded-full bg-canvas text-ink-subtle"
             style={{ boxShadow: "0 0 0 1px var(--color-edge)" }}
           >
             <Lock size={9} strokeWidth={2.4} />
           </span>
         )}
       </span>
-      <span className="relative hidden flex-1 text-left text-[16px] font-medium tracking-tight lg:inline">
-        {item.label}
-      </span>
+      {!collapsed && (
+        <span className="relative hidden flex-1 text-start text-[16px] font-medium tracking-tight lg:inline">
+          {label}
+        </span>
+      )}
     </button>
   );
 }

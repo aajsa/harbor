@@ -48,7 +48,7 @@ export function CategoryGrid({ onCategorySelect }: { onCategorySelect: (cat: str
               alt=""
               aria-hidden
               draggable={false}
-              className={`pointer-events-none absolute right-4 top-4 select-none opacity-55 ${
+              className={`pointer-events-none absolute end-4 top-4 select-none opacity-55 ${
                 t.cat === "streams" ? "h-16 w-16" : "h-14 w-14"
               }`}
             />

@@ -1,10 +1,12 @@
 import { CircleStop, FolderOpen } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useDvr } from "@/lib/dvr/provider";
+import { useT } from "@/lib/i18n";
 import type { DvrSession } from "@/lib/dvr/types";
 
 export function RecordingPill() {
   const { sessions, stop, reveal, dismiss } = useDvr();
+  const t = useT();
   const active = sessions.filter((s) => s.state === "recording");
   const recent = sessions.filter((s) => s.state === "done" || s.state === "error");
   const [open, setOpen] = useState(false);
@@ -38,7 +40,7 @@ export function RecordingPill() {
     <div ref={wrapRef} className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        aria-label="Recordings"
+        aria-label={t("Recordings")}
         className={`relative flex h-11 items-center gap-2 rounded-xl px-3 transition-colors duration-150 ${
           showRecording
             ? "bg-elevated/85 text-ink hover:bg-elevated"
@@ -56,7 +58,7 @@ export function RecordingPill() {
           )}
         </span>
         <span className="text-[11.5px] font-semibold uppercase tracking-[0.22em]">
-          {showRecording ? "Rec" : "Done"}
+          {showRecording ? t("Rec") : t("Done")}
         </span>
         {active.length > 1 && (
           <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-canvas/70 px-1 text-[10.5px] font-semibold text-ink">
@@ -64,19 +66,19 @@ export function RecordingPill() {
           </span>
         )}
         {primary && (
-          <span className="ml-1 hidden font-mono text-[10.5px] tabular-nums text-ink-muted lg:inline">
+          <span className="ms-1 hidden font-mono text-[10.5px] tabular-nums text-ink-muted lg:inline">
             {Math.round(ratio * 100)}%
           </span>
         )}
       </button>
       {open && (
-        <div className="absolute right-0 top-[calc(100%+10px)] z-50 w-[min(360px,calc(100vw-32px))] overflow-hidden rounded-2xl border border-edge bg-elevated/97 shadow-[0_28px_72px_-20px_rgba(0,0,0,0.85)] animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute end-0 top-[calc(100%+10px)] z-50 w-[min(360px,calc(100vw-32px))] overflow-hidden rounded-2xl border border-edge bg-elevated/97 shadow-[0_28px_72px_-20px_rgba(0,0,0,0.85)] animate-in fade-in zoom-in-95 duration-150">
           <div className="flex items-center justify-between border-b border-edge-soft px-4 py-3">
             <span className="text-[10.5px] font-semibold uppercase tracking-[0.22em] text-ink-subtle">
-              Recordings
+              {t("Recordings")}
             </span>
             <span className="text-[11px] text-ink-subtle">
-              {active.length > 0 ? `${active.length} active` : "All complete"}
+              {active.length > 0 ? t("{n} active", { n: active.length }) : t("All complete")}
             </span>
           </div>
           <div className="flex max-h-[60vh] flex-col gap-2 overflow-y-auto px-3 py-3">
@@ -109,6 +111,7 @@ function SessionRow({
   onReveal: () => void;
   onDismiss?: () => void;
 }) {
+  const t = useT();
   const isActive = session.state === "recording";
   const isError = session.state === "error";
   const ratio = session.plannedDurationSec > 0
@@ -149,7 +152,7 @@ function SessionRow({
           className="flex h-7 items-center gap-1 rounded-md bg-raised px-2 text-[11.5px] font-semibold text-ink-muted transition-colors hover:bg-raised/70 hover:text-ink"
         >
           <FolderOpen size={12} strokeWidth={2.2} />
-          Show
+          {t("Show")}
         </button>
         {isActive && onStop && (
           <button
@@ -157,15 +160,15 @@ function SessionRow({
             className="flex h-7 items-center gap-1 rounded-md bg-danger/85 px-2 text-[11.5px] font-semibold text-white transition-opacity hover:opacity-90"
           >
             <CircleStop size={12} strokeWidth={2.2} />
-            Stop
+            {t("Stop")}
           </button>
         )}
         {!isActive && onDismiss && (
           <button
             onClick={onDismiss}
-            className="ml-auto text-[11px] font-semibold text-ink-subtle transition-colors hover:text-ink"
+            className="ms-auto text-[11px] font-semibold text-ink-subtle transition-colors hover:text-ink"
           >
-            Dismiss
+            {t("Dismiss")}
           </button>
         )}
       </div>

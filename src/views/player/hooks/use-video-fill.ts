@@ -1,14 +1,65 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 import type { PlayerBridge } from "@/lib/player/bridge";
+import { useSettings } from "@/lib/settings";
+
+type CropMode = {
+  id: string;
+  label: string;
+  panscan: number;
+  aspect: string;
+  zoom: number;
+};
+
+const ZOOM_MIN = 0;
+const ZOOM_MAX = 1;
+
+const MODES: CropMode[] = [
+  { id: "fit", label: "Fit", panscan: 0, aspect: "-1", zoom: 0 },
+  { id: "fill", label: "Fill", panscan: 1, aspect: "-1", zoom: 0 },
+  { id: "zoom", label: "Zoom", panscan: 0, aspect: "-1", zoom: 0 },
+  { id: "16:9", label: "16:9", panscan: 0, aspect: "16:9", zoom: 0 },
+  { id: "4:3", label: "4:3", panscan: 0, aspect: "4:3", zoom: 0 },
+  { id: "original", label: "2.39:1 (Original)", panscan: 0, aspect: "2.39:1", zoom: 0 },
+];
+
+const modeIndex = (id: string) => {
+  const i = MODES.findIndex((m) => m.id === id);
+  return i < 0 ? 0 : i;
+};
 
 export function useVideoFill(bridgeRef: RefObject<PlayerBridge | null>, srcKey: string) {
+  const { settings, update } = useSettings();
   const [pill, setPill] = useState<string | null>(null);
-  const level = useRef(0);
+  const index = useRef(modeIndex(settings.cropMode));
+  const zoom = useRef(0);
   const timer = useRef<number | null>(null);
 
+  const flash = (text: string) => {
+    setPill(text);
+    if (timer.current) window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => setPill(null), 1200);
+  };
+
+  const apply = (i: number, zoomLevel: number, showPill: boolean) => {
+    const mode = MODES[i];
+    const bridge = bridgeRef.current;
+    if (bridge) {
+      bridge.setPanscan(mode.panscan);
+      bridge.setAspectOverride(mode.aspect);
+      bridge.setVideoZoom(mode.id === "zoom" ? zoomLevel : 0);
+    }
+    if (!showPill) return;
+    if (mode.id === "zoom" && zoomLevel > 0) {
+      flash(`Zoom ${Math.round(Math.pow(2, zoomLevel) * 100)}%`);
+    } else {
+      flash(mode.label);
+    }
+  };
+
   useEffect(() => {
-    level.current = 0;
-    bridgeRef.current?.setPanscan(0);
+    index.current = modeIndex(settings.cropMode);
+    zoom.current = 0;
+    apply(index.current, 0, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [srcKey]);
 
@@ -19,17 +70,23 @@ export function useVideoFill(bridgeRef: RefObject<PlayerBridge | null>, srcKey: 
     [],
   );
 
-  const apply = (next: number) => {
-    level.current = next;
-    bridgeRef.current?.setPanscan(next);
-    setPill(next <= 0 ? "Fit to screen" : `Panscan ${Math.round(next * 100)}%`);
-    if (timer.current) window.clearTimeout(timer.current);
-    timer.current = window.setTimeout(() => setPill(null), 1200);
+  const cycle = () => {
+    const next = (index.current + 1) % MODES.length;
+    index.current = next;
+    if (MODES[next].id !== "zoom") zoom.current = 0;
+    apply(next, zoom.current, true);
+    update({ cropMode: MODES[next].id });
   };
 
-  const toggle = () => apply(level.current > 0 ? 0 : 1);
-  const step = (delta: number) =>
-    apply(Math.max(0, Math.min(1, Math.round((level.current + delta) * 10) / 10)));
+  const step = (delta: number) => {
+    const zoomIdx = modeIndex("zoom");
+    if (index.current !== zoomIdx) {
+      index.current = zoomIdx;
+      update({ cropMode: "zoom" });
+    }
+    zoom.current = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, Math.round((zoom.current + delta) * 100) / 100));
+    apply(zoomIdx, zoom.current, true);
+  };
 
-  return { toggle, step, pill };
+  return { cycle, step, pill };
 }

@@ -30,7 +30,6 @@ pub async fn harbor_fetch(args: HarborFetchArgs) -> Result<HarborFetchResponse, 
     let timeout = Duration::from_millis(args.timeout_ms.unwrap_or(30_000));
     let client = reqwest::Client::builder()
         .timeout(timeout)
-        .user_agent(BROWSER_UA)
         .no_proxy()
         .build()
         .map_err(|e| format!("client: {}", e))?;
@@ -45,13 +44,17 @@ pub async fn harbor_fetch(args: HarborFetchArgs) -> Result<HarborFetchResponse, 
 
     let mut req = client.request(parsed_method, &args.url);
 
+    let mut has_user_agent = false;
     if let Some(headers) = args.headers {
         for (k, v) in headers {
             if k.eq_ignore_ascii_case("user-agent") {
-                continue;
+                has_user_agent = true;
             }
             req = req.header(k, v);
         }
+    }
+    if !has_user_agent {
+        req = req.header("User-Agent", BROWSER_UA);
     }
     req = req.header("Accept", "application/json, text/plain, */*");
     req = req.header("Accept-Language", "en-US,en;q=0.9");

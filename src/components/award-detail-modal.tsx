@@ -203,7 +203,7 @@ function AwardRow({
       type="button"
       onClick={handleOpen}
       disabled={!interactive}
-      className={`flex w-full items-center gap-2.5 rounded-lg px-1.5 py-1.5 text-left transition-colors ${
+      className={`flex w-full items-center gap-2.5 rounded-lg px-1.5 py-1.5 text-start transition-colors ${
         interactive ? "hover:bg-canvas/60" : "cursor-default"
       }`}
     >

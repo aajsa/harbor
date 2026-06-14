@@ -43,7 +43,18 @@ export type EpgProgram = {
   iconUrl: string | null;
 };
 
+export type EpgChannelMeta = {
+  displayName: string | null;
+  icon: string | null;
+};
+
 export type EpgIndex = {
   byChannel: Map<string, EpgProgram[]>;
+  channelMeta?: Map<string, EpgChannelMeta>;
   fetchedAt: number;
+};
+
+export type XmltvParseResult = {
+  programs: EpgProgram[];
+  channelMeta: Map<string, EpgChannelMeta>;
 };

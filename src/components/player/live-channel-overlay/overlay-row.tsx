@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Play, Tv } from "lucide-react";
 import type { EpgProgram, IptvChannel } from "@/lib/iptv/types";
+import { useT } from "@/lib/i18n";
 
 export function OverlayChannelRow({
   channel,
@@ -15,6 +16,7 @@ export function OverlayChannelRow({
   onPlay: (ch: IptvChannel) => void;
   now: number;
 }) {
+  const t = useT();
   const [errored, setErrored] = useState(false);
   const showLogo = channel.logo && !errored;
   const progress =
@@ -24,7 +26,7 @@ export function OverlayChannelRow({
   return (
     <button
       onClick={() => onPlay(channel)}
-      className={`group flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors duration-150 ${
+      className={`group flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-start transition-colors duration-150 ${
         isCurrent
           ? "border-danger/50 bg-danger/10"
           : "border-edge-soft/55 bg-elevated/55 hover:border-edge hover:bg-raised"
@@ -49,7 +51,7 @@ export function OverlayChannelRow({
           {isCurrent && (
             <span className="flex h-4 items-center gap-1 rounded-full bg-danger px-1.5 text-[9px] font-semibold uppercase tracking-[0.18em] text-canvas">
               <span className="h-1 w-1 rounded-full bg-canvas" />
-              On now
+              {t("On now")}
             </span>
           )}
           <span className="truncate text-[14.5px] font-semibold text-ink">

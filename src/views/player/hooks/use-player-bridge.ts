@@ -4,6 +4,7 @@ import { probeMpv } from "@/lib/player/mpv";
 import type { PlayerSrc } from "@/lib/view";
 import type { Settings } from "@/lib/settings";
 import { setPlaybackClock } from "@/lib/player/playback-clock";
+import { isWindowsDesktop } from "@/lib/platform";
 import { pickBridge } from "../player-utils";
 
 function snapChangedIgnoringClock(a: PlayerSnapshot, b: PlayerSnapshot): boolean {
@@ -41,7 +42,9 @@ export function usePlayerBridge(params: {
   const [engine, setEngine] = useState<"html5" | "mpv">("html5");
   const [autoFallbackTried, setAutoFallbackTried] = useState(false);
 
-  const bridgeKey = `${autoFallbackTried ? "mpv" : settings.playerEngine}|${settings.playerAnime4k}|${settings.playerHdrToSdr}|${settings.playerAnime4kShaders.join(",")}`;
+  const hdrOpaqueWindow = isWindowsDesktop() && settings.playerHdrOpaqueWindow;
+  const embedActive = settings.playerMpvEmbed && !hdrOpaqueWindow;
+  const bridgeKey = `${autoFallbackTried ? "mpv" : settings.playerEngine}|${settings.playerAnime4k}|${settings.playerHdrToSdr}|${embedActive}|${settings.playerAnime4kShaders.join(",")}`;
   const [bridgeReady, setBridgeReady] = useState(false);
   useEffect(() => {
     const host = videoMountRef.current;
@@ -71,7 +74,7 @@ export function usePlayerBridge(params: {
       const { bridge: choose, engine: chosen } = await pickBridge(want, src.notWebReady === true, {
         anime4k: settings.playerAnime4k,
         hdrToSdr: settings.playerHdrToSdr,
-        embed: settings.playerMpvEmbed,
+        embed: embedActive,
         d3d11Flip: settings.playerD3d11Flip,
         anime4kShaders: settings.playerAnime4k && settings.playerAnime4kShaders.length > 0
           ? settings.playerAnime4kShaders
@@ -114,5 +117,5 @@ export function usePlayerBridge(params: {
     })();
   }, [engine, autoFallbackTried, snap.errorCode, snap.noAudio, settings.playerEngine]);
 
-  return { snap, engine, bridgeReady, bridgeKey };
+  return { snap, engine, bridgeReady, bridgeKey, embedActive };
 }

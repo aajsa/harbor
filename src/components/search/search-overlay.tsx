@@ -140,7 +140,7 @@ export function SearchOverlay() {
           {trimmed && !magnetInput && results?.intent && (
             <button
               onClick={onIntent}
-              className="mb-5 flex h-14 w-full items-center gap-3 rounded-2xl border border-accent/40 bg-accent/10 px-5 text-left transition-colors hover:bg-accent/15"
+              className="mb-5 flex h-14 w-full items-center gap-3 rounded-2xl border border-accent/40 bg-accent/10 px-5 text-start transition-colors hover:bg-accent/15"
             >
               <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent/20 text-accent">
                 {results.intent.kind === "year" ? (
@@ -155,7 +155,7 @@ export function SearchOverlay() {
                 </span>
                 <span className="text-[15px] font-semibold text-ink">{results.intent.label}</span>
               </span>
-              <CornerDownLeft size={15} className="ml-auto text-ink-subtle" />
+              <CornerDownLeft size={15} className="ms-auto text-ink-subtle" />
             </button>
           )}
 

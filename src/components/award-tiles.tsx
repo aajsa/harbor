@@ -33,7 +33,7 @@ function AwardTile({ type, name, sub }: { type: AwardType; name: string; sub: st
     <button
       type="button"
       onClick={() => openAward(type)}
-      className="group relative aspect-[5/4] w-full cursor-pointer overflow-hidden rounded-2xl border border-edge-soft text-left transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0.24,1)] hover:-translate-y-1"
+      className="group relative aspect-[5/4] w-full cursor-pointer overflow-hidden rounded-2xl border border-edge-soft text-start transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0.24,1)] hover:-translate-y-1"
       style={{
         background: `linear-gradient(150deg, oklch(from ${tint} 0.26 calc(c * 0.45) h), oklch(from ${tint} 0.11 calc(c * 0.3) h))`,
       }}
@@ -63,7 +63,7 @@ function AwardTile({ type, name, sub }: { type: AwardType; name: string; sub: st
           <span className="truncate text-[11.5px] font-medium text-white/65">{sub}</span>
         </div>
         <span
-          className="shrink-0 text-[18px] text-white/80 transition-transform duration-200 group-hover:translate-x-1"
+          className="dir-icon shrink-0 text-[18px] text-white/80 transition-transform duration-200 group-hover:translate-x-1 rtl:group-hover:-translate-x-1"
           aria-hidden
         >
           ›

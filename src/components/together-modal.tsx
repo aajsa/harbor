@@ -112,8 +112,8 @@ export function TogetherPopover({
             ? "rounded-t-2xl rounded-b-none"
             : "rounded-b-2xl rounded-t-none"
           : placement === "above-left"
-            ? "rounded-2xl rounded-bl-none"
-            : "rounded-2xl rounded-tr-none"
+            ? "rounded-2xl rounded-es-none"
+            : "rounded-2xl rounded-se-none"
       }`}
     >
       <header className="flex items-center justify-between gap-3">
@@ -289,7 +289,7 @@ export function TogetherPopover({
                 return (
                   <li
                     key={p.id}
-                    className="flex items-center gap-1.5 rounded-full bg-elevated/70 py-0.5 pl-0.5 pr-2.5"
+                    className="flex items-center gap-1.5 rounded-full bg-elevated/70 py-0.5 ps-0.5 pe-2.5"
                   >
                     <Avatar name={p.name} src={avatarSrc} color={color} />
                     <span className="text-[12px] text-ink">{p.name}</span>
@@ -327,7 +327,7 @@ export function TogetherPopover({
             >
               <span
                 className={`block h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
-                  settings.togetherShareCursors ? "translate-x-4" : "translate-x-0"
+                  settings.togetherShareCursors ? "translate-x-4 rtl:-translate-x-4" : "translate-x-0"
                 }`}
               />
             </span>

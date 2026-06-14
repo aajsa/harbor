@@ -86,6 +86,7 @@ impl HlsState {
         media_url: String,
         headers: HashMap<String, String>,
         seek_start_sec: f64,
+        burn_sub: Option<(String, String)>,
     ) -> Result<String, String> {
         let probe = probe_source(&media_url, &headers).await?;
         let id = Uuid::new_v4().to_string();
@@ -102,6 +103,7 @@ impl HlsState {
             probe.duration_sec,
             &temp_dir,
             kill_handle.clone(),
+            burn_sub,
         )
         .await?;
         let session = Arc::new(HlsSession {
@@ -374,10 +376,19 @@ async fn spawn_continuous_ffmpeg(
     _total_duration: f64,
     temp_dir: &std::path::Path,
     kill: Arc<KillHandle>,
+    burn_sub: Option<(String, String)>,
 ) -> Result<(), String> {
     let ffmpeg = crate::transcode::locate_ffmpeg().ok_or_else(|| "ffmpeg not found".to_string())?;
     let segment_pattern = temp_dir.join("seg%05d.ts");
     let playlist_path = temp_dir.join("playlist.m3u8");
+    let mut vf = String::from(
+        "scale='if(gt(ih,1080),min(1920,iw),iw)':'if(gt(ih,1080),1080,ih)':force_original_aspect_ratio=decrease,scale=trunc(iw/2)*2:trunc(ih/2)*2",
+    );
+    if let Some((path, force_style)) = burn_sub.as_ref() {
+        vf.push(',');
+        vf.push_str(&crate::cast_subs::burn_filter(path, force_style));
+        eprintln!("[cast-hls] subtitle burn-in filter: {}", vf);
+    }
     let mut cmd = tokio::process::Command::new(&ffmpeg);
     cmd.arg("-hide_banner")
         .arg("-loglevel")
@@ -424,7 +435,7 @@ async fn spawn_continuous_ffmpeg(
         .arg("-b:a")
         .arg("192k")
         .arg("-vf")
-        .arg("scale='if(gt(ih,1080),min(1920,iw),iw)':'if(gt(ih,1080),1080,ih)':force_original_aspect_ratio=decrease,scale=trunc(iw/2)*2:trunc(ih/2)*2")
+        .arg(&vf)
         .arg("-f")
         .arg("hls")
         .arg("-hls_time")

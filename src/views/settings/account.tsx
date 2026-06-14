@@ -116,7 +116,7 @@ export function AccountStub() {
             ) : (
               <button
                 onClick={() => setEditingName(true)}
-                className="flex flex-wrap items-baseline gap-x-2 gap-y-0 self-start rounded-lg px-1 py-0.5 text-left transition-colors hover:bg-canvas/50"
+                className="flex flex-wrap items-baseline gap-x-2 gap-y-0 self-start rounded-lg px-1 py-0.5 text-start transition-colors hover:bg-canvas/50"
               >
                 <span className="font-display text-[24px] font-medium leading-tight tracking-tight text-ink">
                   {displayName}
@@ -174,7 +174,7 @@ export function AccountStub() {
               src={stremioWordmark}
               alt=""
               aria-hidden
-              className="pointer-events-none absolute right-5 bottom-4 h-9 w-auto opacity-45 select-none"
+              className="pointer-events-none absolute end-5 bottom-4 h-9 w-auto opacity-45 select-none"
               style={{ filter: "invert(1) grayscale(1) brightness(1.1)" }}
               draggable={false}
             />

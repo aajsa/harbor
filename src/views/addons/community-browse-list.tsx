@@ -314,7 +314,7 @@ function CommunityRow({
       onClick={open}
       onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && open()}
       style={{ contentVisibility: "auto", containIntrinsicSize: "auto 116px" }}
-      className="group relative flex cursor-pointer items-start gap-5 overflow-hidden rounded-2xl border border-edge-soft bg-elevated px-5 py-5 text-left transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:border-edge hover:shadow-[0_18px_36px_-22px_rgba(0,0,0,0.4)]"
+      className="group relative flex cursor-pointer items-start gap-5 overflow-hidden rounded-2xl border border-edge-soft bg-elevated px-5 py-5 text-start transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:border-edge hover:shadow-[0_18px_36px_-22px_rgba(0,0,0,0.4)]"
     >
       <CardArtBackdrop logo={logo} background={m?.background} />
       <AddonLogo
@@ -336,7 +336,7 @@ function CommunityRow({
             <span className="inline-flex h-5 items-center gap-1 rounded-full bg-rose-500/15 px-1.5 text-[10.5px] font-bold text-rose-300 ring-1 ring-rose-500/40">
               <TrendingUp size={9} strokeWidth={2.6} />+{risingDelta}
               {risingWindow != null && (
-                <span className="ml-0.5 font-medium text-rose-300/70">
+                <span className="ms-0.5 font-medium text-rose-300/70">
                   / {risingWindow === 1 ? "24h" : `${risingWindow}d`}
                 </span>
               )}
@@ -372,7 +372,7 @@ function CommunityRow({
             Installed
           </span>
         )}
-        <ChevronRight size={16} className="text-ink-subtle" />
+        <ChevronRight size={16} className="dir-icon text-ink-subtle" />
       </div>
     </div>
   );

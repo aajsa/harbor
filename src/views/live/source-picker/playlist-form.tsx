@@ -92,7 +92,7 @@ export function PlaylistForm({
                 key={k.id}
                 type="button"
                 onClick={() => setKind(k.id)}
-                className={`flex flex-col items-start gap-0.5 rounded-lg border px-2.5 py-2 text-left transition-colors ${
+                className={`flex flex-col items-start gap-0.5 rounded-lg border px-2.5 py-2 text-start transition-colors ${
                   selected
                     ? "border-ink bg-elevated text-ink"
                     : "border-edge-soft/60 bg-canvas/40 text-ink-muted hover:border-edge hover:text-ink"

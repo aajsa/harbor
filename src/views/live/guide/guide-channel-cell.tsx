@@ -69,9 +69,9 @@ export function GuideChannelCell({
             )}
           </div>
           <div className="flex min-w-0 flex-1 flex-col">
-            <span className="truncate text-[13px] font-semibold text-ink">{displayName}</span>
+            <span dir="auto" className="truncate text-[13px] font-semibold text-ink">{displayName}</span>
             {channel.group && (
-              <span className="truncate text-[11px] text-ink-subtle">{channel.group}</span>
+              <span dir="auto" className="truncate text-[11px] text-ink-subtle">{channel.group}</span>
             )}
           </div>
         </button>

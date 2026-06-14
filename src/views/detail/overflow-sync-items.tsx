@@ -20,6 +20,7 @@ import {
 } from "@/lib/simkl/list-status";
 import { useSimkl } from "@/lib/simkl/provider";
 import type { SimklTarget } from "@/lib/simkl/types";
+import { useT } from "@/lib/i18n";
 
 const ANILIST_LABELS: Record<MediaListStatus, string> = {
   CURRENT: "Watching",
@@ -54,7 +55,7 @@ function GroupRow({
     <button
       role="menuitem"
       onClick={onClick}
-      className="flex h-9 items-center gap-2.5 rounded-lg px-3 text-left text-[13px] text-ink transition-colors hover:bg-raised"
+      className="flex h-9 items-center gap-2.5 rounded-lg px-3 text-start text-[13px] text-ink transition-colors hover:bg-raised"
     >
       <img src={logo} alt="" className="h-[14px] w-[14px] rounded-[3px] object-contain" />
       <span className="flex-1 truncate">{label}</span>
@@ -81,7 +82,7 @@ function StatusRow({
     <button
       role="menuitem"
       onClick={onClick}
-      className={`flex h-8 items-center justify-between gap-2 rounded-lg py-1 pl-9 pr-3 text-left text-[12.5px] transition-colors ${
+      className={`flex h-8 items-center justify-between gap-2 rounded-lg py-1 ps-9 pe-3 text-start text-[12.5px] transition-colors ${
         danger
           ? "text-ink-muted hover:bg-danger/15 hover:text-danger"
           : active
@@ -107,6 +108,7 @@ export function SimklMenuItems({
   type: "movie" | "series";
   onAction: () => void;
 }) {
+  const t = useT();
   const { isConnected } = useSimkl();
   const [target, setTarget] = useState<SimklTarget | null>(null);
   const [status, setStatus] = useState<WatchlistStatus | null>(null);
@@ -152,7 +154,7 @@ export function SimklMenuItems({
     return (
       <GroupRow
         logo={simklLogo}
-        label="Add to Simkl"
+        label={t("Add to Simkl")}
         open={false}
         onClick={() => {
           void setSimklStatus(target, "plantowatch").catch(() => {});
@@ -165,7 +167,7 @@ export function SimklMenuItems({
     <>
       <GroupRow
         logo={simklLogo}
-        label={`Simkl  ·  ${SIMKL_STATUS_LABELS[status]}`}
+        label={`Simkl  ·  ${t(SIMKL_STATUS_LABELS[status])}`}
         open={open}
         onClick={() => setOpen((v) => !v)}
       />
@@ -174,7 +176,7 @@ export function SimklMenuItems({
           {order.map((s) => (
             <StatusRow
               key={s}
-              label={SIMKL_STATUS_LABELS[s]}
+              label={t(SIMKL_STATUS_LABELS[s])}
               active={s === status}
               onClick={() => {
                 void setSimklStatus(target, s).catch(() => {});
@@ -183,7 +185,7 @@ export function SimklMenuItems({
             />
           ))}
           <StatusRow
-            label="Remove from list"
+            label={t("Remove from list")}
             danger
             onClick={() => {
               void clearSimklStatus(target).catch(() => {});
@@ -203,6 +205,7 @@ export function AnilistMenuItems({
   harborId: string;
   onAction: () => void;
 }) {
+  const t = useT();
   const { isConnected } = useAnilist();
   const [mediaId, setMediaId] = useState<number | null>(null);
   const [entryId, setEntryId] = useState<number | null>(null);
@@ -238,7 +241,7 @@ export function AnilistMenuItems({
     return (
       <GroupRow
         logo={anilistLogo}
-        label="Add to AniList"
+        label={t("Add to AniList")}
         open={false}
         onClick={() => {
           void saveListEntry({ mediaId, status: "PLANNING" }).catch(() => {});
@@ -251,7 +254,7 @@ export function AnilistMenuItems({
     <>
       <GroupRow
         logo={anilistLogo}
-        label={`AniList  ·  ${ANILIST_LABELS[status]}`}
+        label={`AniList  ·  ${t(ANILIST_LABELS[status])}`}
         open={open}
         onClick={() => setOpen((v) => !v)}
       />
@@ -260,7 +263,7 @@ export function AnilistMenuItems({
           {ANILIST_ORDER.map((s) => (
             <StatusRow
               key={s}
-              label={ANILIST_LABELS[s]}
+              label={t(ANILIST_LABELS[s])}
               active={s === status}
               onClick={() => {
                 void saveListEntry({ mediaId, status: s }).catch(() => {});
@@ -270,7 +273,7 @@ export function AnilistMenuItems({
           ))}
           {entryId != null && (
             <StatusRow
-              label="Remove from list"
+              label={t("Remove from list")}
               danger
               onClick={() => {
                 void deleteListEntry(entryId).catch(() => {});

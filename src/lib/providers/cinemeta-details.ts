@@ -109,6 +109,7 @@ function toDetail(m: CinemetaMeta, kind: "movie" | "tv", related: Meta[]): TmdbD
     trailerYtId,
     trailerCandidates,
     extraVideos: [],
+    gallery: { backdrops: [], posters: [], logos: [] },
     cast,
     crew: [],
     directors,

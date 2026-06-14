@@ -133,7 +133,7 @@ export function BigCardStack({
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerCancel}
-      className={`group relative block h-full min-h-[420px] w-full min-w-0 overflow-hidden rounded-2xl border border-edge-soft bg-canvas text-left transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0.24,1)] hover:-translate-y-1 ${
+      className={`group relative block h-full min-h-[420px] w-full min-w-0 overflow-hidden rounded-2xl border border-edge-soft bg-canvas text-start transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0.24,1)] hover:-translate-y-1 ${
         dragging ? "cursor-grabbing select-none" : "cursor-pointer"
       }`}
       style={{ isolation: "isolate", touchAction: "pan-y" }}
@@ -175,7 +175,7 @@ export function BigCardStack({
             "linear-gradient(to top, oklch(0.10 0.02 260 / 0.92) 0%, oklch(0.10 0.02 260 / 0.20) 38%, transparent 60%)",
         }}
       />
-      <div className="absolute left-7 top-6 flex items-center gap-2 text-[10.5px] font-semibold uppercase tracking-[0.22em] text-accent">
+      <div className="absolute start-7 top-6 flex items-center gap-2 text-[10.5px] font-semibold uppercase tracking-[0.22em] text-accent">
         <span className="rounded-full bg-canvas/55 px-2.5 py-1">Featured</span>
       </div>
       <div
@@ -196,7 +196,7 @@ export function BigCardStack({
           )}
         </div>
       </div>
-      <div className="pointer-events-none absolute right-7 top-6 z-10">
+      <div className="pointer-events-none absolute end-7 top-6 z-10">
         <MetaAwardsCorner meta={current} imdbId={resolvedImdb} />
       </div>
       {onPrev && items.length > 1 && (
@@ -209,10 +209,10 @@ export function BigCardStack({
             e.stopPropagation();
             onPrev();
           }}
-          style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", zIndex: 10 }}
+          style={{ position: "absolute", insetInlineStart: 12, top: "50%", transform: "translateY(-50%)", zIndex: 10 }}
           className="flex h-12 w-12 items-center justify-center rounded-full bg-canvas/65 text-ink opacity-0 backdrop-blur-md transition-all duration-200 hover:bg-canvas/85 hover:scale-105 group-hover:opacity-100"
         >
-          <ChevronLeft size={22} strokeWidth={2.2} />
+          <ChevronLeft size={22} strokeWidth={2.2} className="dir-icon" />
         </button>
       )}
       {onNext && items.length > 1 && (
@@ -225,10 +225,10 @@ export function BigCardStack({
             e.stopPropagation();
             onNext();
           }}
-          style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", zIndex: 10 }}
+          style={{ position: "absolute", insetInlineEnd: 12, top: "50%", transform: "translateY(-50%)", zIndex: 10 }}
           className="flex h-12 w-12 items-center justify-center rounded-full bg-canvas/65 text-ink opacity-0 backdrop-blur-md transition-all duration-200 hover:bg-canvas/85 hover:scale-105 group-hover:opacity-100"
         >
-          <ChevronRight size={22} strokeWidth={2.2} />
+          <ChevronRight size={22} strokeWidth={2.2} className="dir-icon" />
         </button>
       )}
       <ThumbsDock meta={current} />
@@ -253,7 +253,7 @@ function TitlePlate({ title, logo }: { title: string; logo?: string }) {
           decoding="async"
           onLoad={() => setLogoLoaded(true)}
           onError={() => setLogoFailed(true)}
-          className="max-h-[88px] w-auto max-w-[58%] object-contain object-left drop-shadow-[0_4px_20px_rgba(0,0,0,0.55)]"
+          className="max-h-[88px] w-auto max-w-[58%] object-contain object-left rtl:object-right drop-shadow-[0_4px_20px_rgba(0,0,0,0.55)]"
           style={{
             opacity: logoLoaded ? 1 : 0,
             transition: "opacity 420ms cubic-bezier(0.32, 0.72, 0.24, 1)",

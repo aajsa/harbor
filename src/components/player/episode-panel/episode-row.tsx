@@ -1,6 +1,7 @@
 import { Check, ChevronDown, Play } from "lucide-react";
 import { SPOILER_TEXT_CLASS, SPOILER_THUMB_CLASS, type SpoilerMask } from "@/lib/spoilers";
 import type { PlayEpisode } from "@/lib/view";
+import { useT } from "@/lib/i18n";
 
 export function EpisodeRow({
   episode,
@@ -21,6 +22,7 @@ export function EpisodeRow({
   watched?: boolean;
   spoiler?: SpoilerMask;
 }) {
+  const t = useT();
   const epLabel = `S${episode.season} · E${String(episode.episode).padStart(2, "0")}`;
   const hasStill = !!episode.still;
   return (
@@ -43,13 +45,13 @@ export function EpisodeRow({
             </div>
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/45 to-transparent" />
-          <span className="absolute bottom-1.5 left-2 text-[10.5px] font-bold uppercase tracking-[0.18em] text-white/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.7)]">
+          <span className="absolute bottom-1.5 start-2 text-[10.5px] font-bold uppercase tracking-[0.18em] text-white/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.7)]">
             {epLabel}
           </span>
           {watched && !isCurrent && (
             <span
-              title="Watched"
-              className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/55 text-emerald-400 ring-1 ring-white/15 backdrop-blur-sm"
+              title={t("Watched")}
+              className="absolute end-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/55 text-emerald-400 ring-1 ring-white/15 backdrop-blur-sm"
             >
               <Check size={12} strokeWidth={3} />
             </span>
@@ -58,11 +60,11 @@ export function EpisodeRow({
         <div className="flex min-w-0 flex-1 flex-col justify-between gap-2">
           <div className="flex items-start justify-between gap-2">
             <p className={`line-clamp-2 text-[14.5px] font-semibold leading-snug text-ink ${spoiler?.title ? SPOILER_TEXT_CLASS : ""}`}>
-              {episode.name ?? `Episode ${episode.episode}`}
+              {episode.name ?? t("Episode {n}", { n: episode.episode })}
             </p>
             {isCurrent && (
               <span className="shrink-0 rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-accent ring-1 ring-accent/30">
-                Now Playing
+                {t("Now Playing")}
               </span>
             )}
           </div>
@@ -72,12 +74,12 @@ export function EpisodeRow({
               className="flex h-11 flex-1 items-center justify-center gap-2 rounded-full bg-accent px-4 text-[14px] font-semibold text-canvas shadow-[0_6px_18px_-8px_var(--color-accent)] transition-opacity hover:opacity-90"
             >
               <Play size={16} fill="currentColor" />
-              Play
+              {t("Play")}
             </button>
             {manualMode && (
               <button
                 onClick={onToggle}
-                aria-label={expanded ? "Hide streams" : "Show streams"}
+                aria-label={expanded ? t("Hide streams") : t("Show streams")}
                 className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-elevated text-ink-muted ring-1 ring-edge-soft transition-colors hover:bg-raised hover:text-ink"
               >
                 <ChevronDown

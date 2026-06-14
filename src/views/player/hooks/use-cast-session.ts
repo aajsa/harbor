@@ -7,6 +7,8 @@ import {
   castStatus,
   castStop,
   type CastDeviceInfo,
+  type CastSubInfo,
+  type CastSubStyle,
   type TranscodeProfile,
 } from "@/lib/cast";
 import type { PlayerBridge } from "@/lib/player/bridge";
@@ -23,6 +25,8 @@ type LoadParams = {
   headers?: Record<string, string>;
   transcode?: boolean;
   profile?: TranscodeProfile;
+  subtitle?: CastSubInfo | null;
+  subStyle?: CastSubStyle | null;
 };
 
 function buildActionableCastError(
@@ -102,6 +106,7 @@ export function useCastSession(bridgeRef?: RefObject<PlayerBridge | null>) {
   const [castErrorInfo, setCastErrorInfo] = useState<CastErrorInfo | null>(null);
   const [castPlaying, setCastPlaying] = useState<boolean>(true);
   const [castPositionSec, setCastPositionSec] = useState<number>(0);
+  const [burnSubsOnTv, setBurnSubsOnTv] = useState<boolean>(true);
   const lastCastPositionRef = useRef<number>(0);
   const castStartTargetRef = useRef<number>(0);
   const castSeekConfirmedRef = useRef<boolean>(false);
@@ -263,6 +268,8 @@ export function useCastSession(bridgeRef?: RefObject<PlayerBridge | null>) {
     dismissCastErrorInfo,
     castPlaying,
     castPositionSec,
+    burnSubsOnTv,
+    setBurnSubsOnTv,
     openCastMenu,
     closeCastMenu,
     pickCastDevice,

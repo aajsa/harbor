@@ -1,4 +1,5 @@
 import { useDvr } from "@/lib/dvr/provider";
+import { useT } from "@/lib/i18n";
 import { BigButton } from "./big-button";
 import { DvrIcon } from "./dvr-icon";
 import { Tooltip } from "./tooltip";
@@ -10,6 +11,7 @@ export function DvrButton({
   channelName: string;
   onClick: () => void;
 }) {
+  const t = useT();
   const { sessions } = useDvr();
   const active = sessions.find(
     (s) => s.channelName === channelName && s.state === "recording",
@@ -17,7 +19,7 @@ export function DvrButton({
 
   if (!active) {
     return (
-      <BigButton onClick={onClick} ariaLabel="Record from TV (DVR)" tooltip="DVR">
+      <BigButton onClick={onClick} ariaLabel={t("Record from TV (DVR)")} tooltip={t("DVR")}>
         <DvrIcon size={20} />
       </BigButton>
     );
@@ -29,15 +31,18 @@ export function DvrButton({
   const pct = Math.round(ratio * 100);
   const remaining = Math.max(0, active.plannedDurationSec - active.elapsedSec);
   const remainingLabel =
-    remaining < 60 ? `${Math.round(remaining)}s left`
-    : remaining < 3600 ? `${Math.round(remaining / 60)}m left`
-    : `${Math.floor(remaining / 3600)}h ${Math.round((remaining % 3600) / 60)}m left`;
+    remaining < 60 ? t("{s}s left", { s: Math.round(remaining) })
+    : remaining < 3600 ? t("{m}m left", { m: Math.round(remaining / 60) })
+    : t("{h}h {m}m left", {
+        h: Math.floor(remaining / 3600),
+        m: Math.round((remaining % 3600) / 60),
+      });
 
   return (
-    <Tooltip label={`Recording · ${pct}% · ${remainingLabel} · click to manage`}>
+    <Tooltip label={t("Recording · {pct}% · {remaining} · click to manage", { pct, remaining: remainingLabel })}>
       <button
         onClick={onClick}
-        aria-label="Manage recording"
+        aria-label={t("Manage recording")}
         className="relative flex h-12 w-12 items-center justify-center rounded-full text-white transition-[background-color] hover:bg-white/10"
       >
         <ProgressRing ratio={ratio} />

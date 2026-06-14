@@ -1,5 +1,6 @@
 import { ChevronDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useT } from "@/lib/i18n";
 
 export function SeasonPicker({
   seasons,
@@ -10,6 +11,7 @@ export function SeasonPicker({
   active: number;
   onChange: (n: number) => void;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -38,9 +40,9 @@ export function SeasonPicker({
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className="flex h-9 items-center gap-1.5 rounded-full bg-elevated pl-3.5 pr-2.5 text-[13px] font-semibold text-ink ring-1 ring-edge-soft transition-colors hover:bg-raised"
+        className="flex h-9 items-center gap-1.5 rounded-full bg-elevated ps-3.5 pe-2.5 text-[13px] font-semibold text-ink ring-1 ring-edge-soft transition-colors hover:bg-raised"
       >
-        Season {active}
+        {t("Season {n}", { n: active })}
         <ChevronDown
           size={15}
           strokeWidth={2.4}
@@ -48,7 +50,7 @@ export function SeasonPicker({
         />
       </button>
       {open && (
-        <div className="absolute right-0 top-full z-30 mt-2 max-h-[52vh] w-44 overflow-y-auto rounded-2xl border border-edge bg-elevated p-1.5 shadow-[0_18px_44px_-14px_rgba(0,0,0,0.7)] animate-in fade-in slide-in-from-top-1 duration-150">
+        <div className="absolute end-0 top-full z-30 mt-2 max-h-[52vh] w-44 overflow-y-auto rounded-2xl border border-edge bg-elevated p-1.5 shadow-[0_18px_44px_-14px_rgba(0,0,0,0.7)] animate-in fade-in slide-in-from-top-1 duration-150">
           {seasons.map((n) => (
             <button
               key={n}
@@ -56,13 +58,13 @@ export function SeasonPicker({
                 onChange(n);
                 setOpen(false);
               }}
-              className={`flex w-full items-center rounded-xl px-3.5 py-2.5 text-left text-[13.5px] transition-colors ${
+              className={`flex w-full items-center rounded-xl px-3.5 py-2.5 text-start text-[13.5px] transition-colors ${
                 n === active
                   ? "bg-accent font-semibold text-canvas"
                   : "text-ink-muted hover:bg-raised hover:text-ink"
               }`}
             >
-              Season {n}
+              {t("Season {n}", { n })}
             </button>
           ))}
         </div>

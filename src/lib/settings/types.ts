@@ -1,4 +1,5 @@
 import type { ThemeSettings } from "@/lib/theme";
+import type { CustomList } from "@/lib/lists/types";
 
 export type StreamingService =
   | "netflix"
@@ -124,6 +125,7 @@ export type Settings = {
   hoverPreview: boolean;
   mdblistKey: string;
   playerD3d11Flip: boolean;
+  playerHdrOpaqueWindow: boolean;
   opensubtitlesApiKey: string;
   jimakuToken: string;
   audioNormalize: boolean;
@@ -231,4 +233,16 @@ export type Settings = {
       password: string;
     };
   }>;
+  iptvLiveContainer: "ts" | "m3u8";
+  iptvForceProxy: boolean;
+  iptvEpgOffsetHours: number;
+  sidebarCollapsed: boolean;
+  feedLocaleBias: boolean;
+  uiLanguage: "en" | "ar";
+  arabicWelcomeSeen: boolean;
+  cropMode: string;
+  customLists: CustomList[];
+  pauseListStatusOnPause: boolean;
+  translateTitles: boolean;
+  translateDescriptions: boolean;
 };

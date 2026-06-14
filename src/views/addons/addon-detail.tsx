@@ -178,7 +178,7 @@ export function AddonDetail({
           <button
             type="button"
             onClick={openRate}
-            className="absolute right-12 top-32 flex items-baseline gap-2 leading-none transition-opacity hover:opacity-80"
+            className="absolute end-12 top-32 flex items-baseline gap-2 leading-none transition-opacity hover:opacity-80"
             title="Rate on stremio-addons.net"
           >
             <Star
@@ -294,7 +294,7 @@ export function AddonDetail({
                 </button>
                 <button
                   onClick={() => openUrl(addonSiteUrl(community.slug))}
-                  className="flex h-11 items-center gap-2 rounded-full border border-edge-soft pl-2 pr-5 text-[13.5px] font-semibold text-ink-muted transition-colors hover:border-edge hover:text-ink"
+                  className="flex h-11 items-center gap-2 rounded-full border border-edge-soft ps-2 pe-5 text-[13.5px] font-semibold text-ink-muted transition-colors hover:border-edge hover:text-ink"
                 >
                   <span className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-canvas ring-1 ring-edge-soft">
                     <img
@@ -319,7 +319,7 @@ export function AddonDetail({
       {c?.warnings && c.warnings.length > 0 && (
         <section className="mt-8 rounded-2xl border border-amber-300/30 bg-amber-300/[0.06] p-5">
           <h3 className="text-[13.5px] font-semibold text-amber-200">Worth knowing</h3>
-          <ul className="mt-2 ml-1 list-disc pl-4 text-[13px] text-ink-muted">
+          <ul className="mt-2 ms-1 list-disc ps-4 text-[13px] text-ink-muted">
             {c.warnings.map((w) => (
               <li key={w}>{w}</li>
             ))}
@@ -348,7 +348,7 @@ export function AddonDetail({
                   }`}
                 >
                   <dt className="text-[12px] uppercase tracking-[0.16em] text-ink-subtle">{label}</dt>
-                  <dd className="truncate text-right text-[13.5px] font-medium text-ink">{value}</dd>
+                  <dd className="truncate text-end text-[13.5px] font-medium text-ink">{value}</dd>
                 </div>
               ))}
             </dl>

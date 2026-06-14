@@ -37,6 +37,22 @@ export function setEpgOverride(channelId: string, tvgId: string | null): void {
   persist(next);
 }
 
+export function removeEpgOverridesForSource(sourceId: string): void {
+  if (!sourceId) return;
+  const map = load();
+  const prefix = `${sourceId}::`;
+  let changed = false;
+  const next: Record<string, string> = {};
+  for (const [id, tvgId] of Object.entries(map)) {
+    if (id.startsWith(prefix)) {
+      changed = true;
+      continue;
+    }
+    next[id] = tvgId;
+  }
+  if (changed) persist(next);
+}
+
 export function useEpgMapVersion(): number {
   return useSyncExternalStore(
     (cb) => {

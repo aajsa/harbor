@@ -2,6 +2,7 @@ import { Minus, Plus, Volume2, VolumeX } from "lucide-react";
 import { useRef } from "react";
 import type { PlayerCapabilities, PlayerSnapshot } from "@/lib/player/bridge";
 import type { VolumeStyle } from "@/lib/player-chrome";
+import { useT } from "@/lib/i18n";
 import { Tooltip } from "./tooltip";
 import {
   NORMAL_FRACTION,
@@ -25,6 +26,7 @@ export function VolumeControl({
   capabilities: PlayerCapabilities;
   style?: VolumeStyle;
 }) {
+  const tr = useT();
   const allowBoost = capabilities.engine === "mpv";
   const max = allowBoost ? VOL_MAX : 1;
   const v = snap.muted ? 0 : Math.max(0, Math.min(max, snap.volume));
@@ -63,7 +65,7 @@ export function VolumeControl({
   const muted = snap.muted || v === 0;
   const pct = Math.round(v * 100);
   const boosting = allowBoost && v > 1.001;
-  const label = muted ? "Unmute" : "Mute";
+  const label = muted ? tr("Unmute") : tr("Mute");
 
   const breakPct = NORMAL_FRACTION * 100;
   const filledPct = fillFraction * 100;
@@ -102,11 +104,11 @@ export function VolumeControl({
     return (
       <div className="flex items-center gap-1" onWheel={onWheel}>
         {muteBtn}
-        <Tooltip label="Volume down">
+        <Tooltip label={tr("Volume down")}>
           <button
             onClick={() => step(-0.05)}
             className="flex h-9 w-9 items-center justify-center rounded-full text-white/85 transition-colors hover:bg-white/10 hover:text-white"
-            aria-label="Volume down"
+            aria-label={tr("Volume down")}
           >
             <Minus size={16} strokeWidth={2.4} />
           </button>
@@ -114,11 +116,11 @@ export function VolumeControl({
         <span className="min-w-[2.5rem] text-center font-mono text-[12px] tabular-nums text-white/85">
           {pct}%
         </span>
-        <Tooltip label="Volume up">
+        <Tooltip label={tr("Volume up")}>
           <button
             onClick={() => step(0.05)}
             className="flex h-9 w-9 items-center justify-center rounded-full text-white/85 transition-colors hover:bg-white/10 hover:text-white"
-            aria-label="Volume up"
+            aria-label={tr("Volume up")}
           >
             <Plus size={16} strokeWidth={2.4} />
           </button>

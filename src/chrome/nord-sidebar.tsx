@@ -14,7 +14,9 @@ import { SettingsIcon } from "@/components/icons/settings-icon";
 import { TvIcon } from "@/components/icons/tv-icon";
 import { HarborMark } from "@/components/icons/harbor-mark";
 import { ProfileChip } from "@/chrome/sidebar/profile-chip";
+import { CollapseToggle } from "@/chrome/sidebar/collapse-toggle";
 import { ParentalPinModal } from "@/components/parental-pin-modal";
+import { useT } from "@/lib/i18n";
 import { useParental, type LockableTab } from "@/lib/parental";
 import { useSettings } from "@/lib/settings";
 import { useView, type View } from "@/lib/view";
@@ -24,7 +26,7 @@ const RAIL = "linear-gradient(180deg, #8fbcbb59, #88c0d033 44%, #b48ead2b 78%, #
 
 type NavDef = {
   render: (active: boolean) => ReactNode;
-  label: string;
+  labelKey: string;
   view: View;
   hideKey?: "anime" | "liveTv" | "sports";
   parentalKey?: LockableTab;
@@ -32,27 +34,29 @@ type NavDef = {
 };
 
 const PRIMARY: NavDef[] = [
-  { render: (a) => <HomeIcon active={a} />, label: "Home", view: "home" },
-  { render: (a) => <DiscoverIcon active={a} />, label: "Discover", view: "discover", parentalKey: "discover" },
-  { render: (a) => <MoviesIcon active={a} />, label: "Movies", view: "movies", parentalKey: "movies" },
-  { render: (a) => <TvIcon active={a} />, label: "Shows", view: "shows", parentalKey: "shows" },
-  { render: (a) => <AnimeIcon active={a} />, label: "Anime", view: "anime", hideKey: "anime", parentalKey: "anime" },
-  { render: (a) => <LiveTvIcon active={a} />, label: "Live TV", view: "live", hideKey: "liveTv", parentalKey: "liveTv" },
-  { render: (a) => <PlaylistVodIcon active={a} />, label: "Playlists", view: "vod" },
+  { render: (a) => <HomeIcon active={a} />, labelKey: "nav.home", view: "home" },
+  { render: (a) => <DiscoverIcon active={a} />, labelKey: "nav.discover", view: "discover", parentalKey: "discover" },
+  { render: (a) => <MoviesIcon active={a} />, labelKey: "nav.movies", view: "movies", parentalKey: "movies" },
+  { render: (a) => <TvIcon active={a} />, labelKey: "nav.shows", view: "shows", parentalKey: "shows" },
+  { render: (a) => <AnimeIcon active={a} />, labelKey: "nav.anime", view: "anime", hideKey: "anime", parentalKey: "anime" },
+  { render: (a) => <LiveTvIcon active={a} />, labelKey: "nav.live", view: "live", hideKey: "liveTv", parentalKey: "liveTv" },
+  { render: (a) => <PlaylistVodIcon active={a} />, labelKey: "nav.playlists", view: "vod" },
 ];
 
 const COLLECTIONS: NavDef[] = [
-  { render: (a) => <CalendarIcon active={a} />, label: "Calendar", view: "calendar", parentalKey: "calendar" },
-  { render: (a) => <LibraryIcon active={a} />, label: "My Library", view: "library", parentalKey: "library" },
-  { render: (a) => <DownloadsNavIcon active={a} />, label: "Downloads", view: "downloads" },
-  { render: (a) => <AddonsIcon active={a} />, label: "Addons", view: "addons", parentalKey: "addons" },
-  { render: (a) => <SettingsIcon active={a} />, label: "Settings", view: "settings", pinGated: true },
+  { render: (a) => <CalendarIcon active={a} />, labelKey: "nav.calendar", view: "calendar", parentalKey: "calendar" },
+  { render: (a) => <LibraryIcon active={a} />, labelKey: "nav.library", view: "library", parentalKey: "library" },
+  { render: (a) => <DownloadsNavIcon active={a} />, labelKey: "nav.downloads", view: "downloads" },
+  { render: (a) => <AddonsIcon active={a} />, labelKey: "nav.addons", view: "addons", parentalKey: "addons" },
+  { render: (a) => <SettingsIcon active={a} />, labelKey: "nav.settings", view: "settings", pinGated: true },
 ];
 
 export function NordSidebar() {
   const { view, setView, chromeHidden } = useView();
   const { locked, unlock, hiddenTabs } = useParental();
   const { settings } = useSettings();
+  const t = useT();
+  const collapsed = settings.sidebarCollapsed;
   const [pinFor, setPinFor] = useState<View | null>(null);
 
   const isVisible = (item: NavDef) => {
@@ -74,8 +78,10 @@ export function NordSidebar() {
     <>
       <aside
         aria-hidden={chromeHidden}
-        className={`relative z-[60] flex w-[78px] shrink-0 flex-col transition-[opacity,transform] duration-[320ms] ease-[cubic-bezier(0.32,0.72,0.24,1)] lg:w-56 ${
-          chromeHidden ? "pointer-events-none -translate-x-2 opacity-0" : "translate-x-0 opacity-100"
+        className={`relative z-[60] flex w-[78px] shrink-0 flex-col transition-[opacity,transform,width] duration-[320ms] ease-[cubic-bezier(0.32,0.72,0.24,1)] ${
+          collapsed ? "" : "lg:w-56"
+        } ${
+          chromeHidden ? "pointer-events-none -translate-x-2 rtl:translate-x-2 opacity-0" : "translate-x-0 opacity-100"
         }`}
       >
         <div
@@ -86,21 +92,25 @@ export function NordSidebar() {
 
           <div
             data-tauri-drag-region
-            className="relative flex h-20 shrink-0 items-center justify-center lg:justify-start lg:pl-[27px]"
+            className={`relative flex h-20 shrink-0 items-center justify-center ${
+              collapsed ? "" : "lg:justify-start lg:ps-[27px]"
+            }`}
           >
             <button
               type="button"
               onClick={() => setView("home")}
-              aria-label="Harbor home"
+              aria-label={t("chrome.harborHome")}
               className="flex items-center gap-2.5 text-ink"
             >
               <HarborMark className="h-[26px] w-[26px] shrink-0 drop-shadow-[0_0_10px_#88c0d05c]" />
-              <span
-                className="hidden text-[27px] font-medium leading-none lg:inline"
-                style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.4px" }}
-              >
-                Harbor
-              </span>
+              {!collapsed && (
+                <span
+                  className="hidden text-[27px] font-medium leading-none lg:inline"
+                  style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.4px" }}
+                >
+                  Harbor
+                </span>
+              )}
             </button>
           </div>
 
@@ -108,7 +118,7 @@ export function NordSidebar() {
             <div className="relative flex flex-col">
               <span
                 aria-hidden
-                className="pointer-events-none absolute left-[39px] top-0 bottom-0 w-px -translate-x-1/2"
+                className="pointer-events-none absolute start-[39px] top-0 bottom-0 w-px -translate-x-1/2 rtl:translate-x-1/2"
                 style={{
                   background: RAIL,
                   maskImage: "linear-gradient(180deg, transparent, #000 7%, #000 93%, transparent)",
@@ -117,7 +127,7 @@ export function NordSidebar() {
               />
 
               {PRIMARY.filter(isVisible).map((item) => (
-                <Station key={item.view} item={item} active={view === item.view} onClick={() => go(item)} />
+                <Station key={item.view} item={item} active={view === item.view} collapsed={collapsed} onClick={() => go(item)} />
               ))}
 
               {COLLECTIONS.filter(isVisible).map((item) => (
@@ -126,29 +136,39 @@ export function NordSidebar() {
                   item={item}
                   active={view === item.view}
                   gated={!!item.pinGated && locked}
+                  collapsed={collapsed}
                   onClick={() => go(item)}
                 />
               ))}
             </div>
           </nav>
 
-          <div className="relative shrink-0 px-2 pb-3 pt-1 lg:px-3">
+          <div className={`relative shrink-0 px-2 pb-3 pt-1 ${collapsed ? "" : "lg:px-3"}`}>
             <FrostLine className="mb-2" />
+            <div className={`mb-1 flex ${collapsed ? "justify-center" : ""}`}>
+              <CollapseToggle collapsed={collapsed} />
+            </div>
             {locked ? (
-              <div className="flex items-center justify-center gap-3 py-2.5 lg:justify-start lg:px-3">
+              <div
+                className={`flex items-center justify-center gap-3 py-2.5 ${
+                  collapsed ? "" : "lg:justify-start lg:px-3"
+                }`}
+              >
                 <div
                   className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-ink-subtle"
                   style={{ boxShadow: "inset 0 0 0 1.5px var(--color-edge)" }}
                 >
                   <Lock size={16} />
                 </div>
-                <div className="hidden min-w-0 lg:block">
-                  <div className="truncate text-[13px] font-medium text-ink-muted">Locked</div>
-                  <div className="truncate text-[11.5px] text-ink-subtle">Parental controls on</div>
-                </div>
+                {!collapsed && (
+                  <div className="hidden min-w-0 lg:block">
+                    <div className="truncate text-[13px] font-medium text-ink-muted">{t("chrome.locked")}</div>
+                    <div className="truncate text-[11.5px] text-ink-subtle">{t("chrome.parentalOn")}</div>
+                  </div>
+                )}
               </div>
             ) : (
-              <ProfileChip />
+              <ProfileChip collapsed={collapsed} />
             )}
           </div>
         </div>
@@ -176,18 +196,22 @@ function Station({
   item,
   active,
   gated,
+  collapsed,
   onClick,
 }: {
   item: NavDef;
   active: boolean;
   gated?: boolean;
+  collapsed?: boolean;
   onClick: () => void;
 }) {
+  const t = useT();
+  const label = t(item.labelKey);
   return (
     <button
       onClick={onClick}
-      aria-label={gated ? `${item.label} (locked, requires PIN)` : item.label}
-      title={gated ? `${item.label} : locked` : item.label}
+      aria-label={gated ? t("chrome.lockedRequiresPin", { label }) : label}
+      title={gated ? t("chrome.lockedShort", { label }) : label}
       className="group relative z-10 flex h-[52px] w-full items-center"
     >
       <span className="flex w-[78px] shrink-0 items-center justify-center">
@@ -208,10 +232,10 @@ function Station({
               className="absolute inset-0 rounded-full bg-canvas ring-[1.5px] ring-[#4c566a] transition-all duration-200 group-hover:ring-[#88c0d0]"
             />
           )}
-          <span className="relative [&_svg]:h-[24px] [&_svg]:w-[24px]">{item.render(false)}</span>
+          <span className="relative overflow-hidden [&_svg]:h-[24px] [&_svg]:w-[24px]">{item.render(false)}</span>
           {gated && (
             <span
-              className="absolute -bottom-0.5 -right-0.5 z-10 flex h-4 w-4 items-center justify-center rounded-full bg-canvas text-ink-subtle"
+              className="absolute -bottom-0.5 -end-0.5 z-10 flex h-4 w-4 items-center justify-center rounded-full bg-canvas text-ink-subtle"
               style={{ boxShadow: "0 0 0 1px var(--color-edge)" }}
             >
               <Lock size={9} strokeWidth={2.4} />
@@ -219,13 +243,15 @@ function Station({
           )}
         </span>
       </span>
-      <span
-        className={`hidden flex-1 pr-4 text-left text-[16.5px] tracking-tight transition-colors duration-200 lg:block ${
-          active ? "font-semibold text-ink" : "font-medium text-ink-muted group-hover:text-ink"
-        }`}
-      >
-        {item.label}
-      </span>
+      {!collapsed && (
+        <span
+          className={`hidden flex-1 pe-4 text-start text-[16.5px] tracking-tight transition-colors duration-200 lg:block ${
+            active ? "font-semibold text-ink" : "font-medium text-ink-muted group-hover:text-ink"
+          }`}
+        >
+          {label}
+        </span>
+      )}
     </button>
   );
 }
@@ -244,7 +270,7 @@ function GlacierEdge() {
   return (
     <span
       aria-hidden
-      className="pointer-events-none absolute inset-y-0 right-0 w-px"
+      className="pointer-events-none absolute inset-y-0 end-0 w-px"
       style={{ background: "linear-gradient(180deg, #88c0d04d, #4c566a3d 38%, #4c566a3d)" }}
     />
   );

@@ -1,6 +1,7 @@
 import { ChevronDown, Download, ExternalLink, Loader2, Play, Zap } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { AddonLogo, AddonLogoStack } from "@/components/addon-logo";
+import { CopyLinkButton, resolveStreamLink } from "@/components/player/copy-link-button";
 import { FlagStack } from "@/components/flag";
 import { FormatBadge } from "@/components/format-badge";
 import { HostMatchChip } from "@/components/host-match-chip";
@@ -161,6 +162,7 @@ function SourceRow({
   const cachedDebrids = debrids.filter((d) => stream.cached[d.slug]);
   const libraryDebrids = debrids.filter((d) => stream.inLibrary[d.slug]);
   const summary = streamSummaryParts(stream);
+  const link = resolveStreamLink(stream);
 
   return (
     <li className={divider ? "border-t border-edge-soft/30" : ""}>
@@ -190,6 +192,7 @@ function SourceRow({
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-3 pt-0.5">
+          {link && <CopyLinkButton url={link} />}
           <HostMatchChip match={match} />
           {stream.audioLanguages.filter((l) => l.toLowerCase() !== "unknown").length > 0 && (
             <FlagStack

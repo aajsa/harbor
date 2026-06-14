@@ -89,7 +89,7 @@ function GenreTile({ genre }: { genre: string }) {
     <button
       type="button"
       onClick={onOpen}
-      className="group relative aspect-[5/4] w-full cursor-pointer overflow-hidden rounded-2xl border border-edge-soft text-left transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0.24,1)] hover:-translate-y-1"
+      className="group relative aspect-[5/4] w-full cursor-pointer overflow-hidden rounded-2xl border border-edge-soft text-start transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0.24,1)] hover:-translate-y-1"
       style={{
         background: `linear-gradient(150deg, ${palette.from}, ${palette.to})`,
       }}
@@ -118,7 +118,7 @@ function GenreTile({ genre }: { genre: string }) {
           {genre}
         </h3>
         <span
-          className="text-[18px] transition-transform duration-200 group-hover:translate-x-1"
+          className="dir-icon text-[18px] transition-transform duration-200 group-hover:translate-x-1 rtl:group-hover:-translate-x-1"
           style={{ color: palette.ink }}
           aria-hidden
         >

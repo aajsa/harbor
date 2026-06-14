@@ -284,6 +284,7 @@ pub async fn handle_transcode(
     url: &str,
     headers: &HashMap<String, String>,
     profile: &TranscodeProfile,
+    burn_sub: Option<&(String, String)>,
 ) -> Response {
     let ffmpeg = match locate_ffmpeg() {
         Some(p) => p,
@@ -304,7 +305,7 @@ pub async fn handle_transcode(
 
     let video_is_h264 = probed.video.as_deref() == Some("h264");
     let audio_is_aac = probed.audio.as_deref() == Some("aac");
-    let reencode_video = profile.force_h264 || !video_is_h264;
+    let reencode_video = profile.force_h264 || !video_is_h264 || burn_sub.is_some();
     let reencode_audio = profile.force_aac || !audio_is_aac;
     eprintln!(
         "[harbor::transcode] plan: reencode_video={} reencode_audio={}",
@@ -361,6 +362,12 @@ pub async fn handle_transcode(
         .arg("0:a?");
 
     if reencode_video {
+        let mut vf = scale_filter(profile.max_height);
+        if let Some((path, force_style)) = burn_sub {
+            vf.push(',');
+            vf.push_str(&crate::cast_subs::burn_filter(path, force_style));
+            eprintln!("[harbor::transcode] subtitle burn-in filter: {}", vf);
+        }
         cmd.arg("-c:v")
             .arg("libx264")
             .arg("-preset")
@@ -378,7 +385,7 @@ pub async fn handle_transcode(
             .arg("-sc_threshold")
             .arg("0")
             .arg("-vf")
-            .arg(scale_filter(profile.max_height));
+            .arg(&vf);
         if let Some(kbps) = profile.max_video_kbps {
             cmd.arg("-maxrate")
                 .arg(format!("{}k", kbps))

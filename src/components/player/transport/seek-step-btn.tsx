@@ -1,5 +1,6 @@
 import { RotateCcw, RotateCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useT } from "@/lib/i18n";
 import { Tooltip } from "./tooltip";
 
 const SKIP_OPTIONS = [5, 10, 15, 30, 60, 90];
@@ -13,8 +14,9 @@ export function SeekStepBtn({
   seconds: number;
   onSeekStep: (delta: number) => void;
 }) {
+  const t = useT();
   const Icon = direction === "back" ? RotateCcw : RotateCw;
-  const word = direction === "back" ? "Back" : "Forward";
+  const word = direction === "back" ? t("Back") : t("Forward");
   const storageKey = `harbor.seek-step.${direction}`;
   const [seconds, setSeconds] = useState<number>(() => {
     const saved = typeof localStorage !== "undefined" ? localStorage.getItem(storageKey) : null;
@@ -86,7 +88,7 @@ export function SeekStepBtn({
 
   return (
     <div ref={wrapRef} className="relative">
-      <Tooltip label={`${word} ${seconds}s · hold for options`}>
+      <Tooltip label={t("{word} {n}s · hold for options", { word, n: seconds })}>
         <button
           type="button"
           onPointerDown={onPointerDown}
@@ -97,7 +99,7 @@ export function SeekStepBtn({
             e.preventDefault();
             setPickerOpen(true);
           }}
-          aria-label={`${word} ${seconds} seconds. Hold for options`}
+          aria-label={t("{word} {n} seconds. Hold for options", { word, n: seconds })}
           className={`relative flex h-14 w-14 items-center justify-center rounded-full transition-colors ${
             pickerOpen ? "bg-white/15 text-white" : "text-white/85 hover:bg-white/10 hover:text-white"
           }`}
@@ -126,7 +128,7 @@ export function SeekStepBtn({
                       ? "bg-elevated text-ink ring-1 ring-edge"
                       : "text-ink-muted hover:bg-canvas/55 hover:text-ink"
                   }`}
-                  aria-label={`${word} ${s} seconds`}
+                  aria-label={t("{word} {n} seconds", { word, n: s })}
                 >
                   {s}s
                 </button>

@@ -210,7 +210,7 @@ export function KeyField({
         )}
         <div
           className={`flex shrink-0 items-center transition-all ${
-            showSave || saved ? "ml-1 w-auto opacity-100" : "w-0 overflow-hidden opacity-0"
+            showSave || saved ? "ms-1 w-auto opacity-100" : "w-0 overflow-hidden opacity-0"
           }`}
         >
           <button
@@ -270,7 +270,7 @@ export function ToggleRow({
     <button
       onClick={() => !locked && onChange(!value)}
       disabled={locked}
-      className={`flex items-center justify-between gap-4 rounded-xl border bg-canvas/40 px-4 py-3 text-left transition-colors ${
+      className={`flex items-center justify-between gap-4 rounded-xl border bg-canvas/40 px-4 py-3 text-start transition-colors ${
         locked
           ? "cursor-not-allowed border-edge-soft/40 opacity-60"
           : "border-edge-soft hover:border-edge"
@@ -280,7 +280,7 @@ export function ToggleRow({
         <span className={`relative ${locked ? "saturate-50 opacity-70" : ""}`}>
           {leading}
           {locked && (
-            <span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-canvas ring-1 ring-edge text-ink-subtle">
+            <span className="absolute -bottom-1 -end-1 flex h-4 w-4 items-center justify-center rounded-full bg-canvas ring-1 ring-edge text-ink-subtle">
               <Lock size={9} strokeWidth={2.4} />
             </span>
           )}
@@ -305,8 +305,8 @@ export function ToggleRow({
         }`}
       >
         <span
-          className={`absolute top-0.5 h-5 w-5 rounded-full bg-canvas transition-transform ${
-            effective ? "translate-x-[18px]" : "translate-x-0.5"
+          className={`absolute start-0 top-0.5 h-5 w-5 rounded-full bg-canvas transition-transform ${
+            effective ? "translate-x-[18px] rtl:-translate-x-[18px]" : "translate-x-0.5 rtl:-translate-x-0.5"
           }`}
         />
       </span>

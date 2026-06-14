@@ -42,7 +42,7 @@ export function LayoutStep() {
               key={opt.id}
               type="button"
               onClick={() => update({ homeMode: opt.id })}
-              className={`group relative h-[200px] overflow-hidden rounded-2xl border bg-canvas text-left transition-all ${
+              className={`group relative h-[200px] overflow-hidden rounded-2xl border bg-canvas text-start transition-all ${
                 selected
                   ? "border-ink shadow-[0_0_0_3px_rgba(255,255,255,0.04)]"
                   : "border-edge-soft hover:border-edge"
@@ -66,14 +66,14 @@ export function LayoutStep() {
                 }`}
               />
               <span
-                className={`absolute right-3 top-3 z-20 flex h-5 w-5 items-center justify-center rounded-full border-2 bg-canvas/85 transition-colors ${
+                className={`absolute end-3 top-3 z-20 flex h-5 w-5 items-center justify-center rounded-full border-2 bg-canvas/85 transition-colors ${
                   selected ? "border-ink" : "border-edge"
                 }`}
               >
                 {selected && <span className="h-2.5 w-2.5 rounded-full bg-ink" />}
               </span>
               <span
-                className={`absolute bottom-4 left-5 z-10 text-[15px] font-semibold tracking-tight text-ink drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)] transition-opacity duration-300 ${
+                className={`absolute bottom-4 start-5 z-10 text-[15px] font-semibold tracking-tight text-ink drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)] transition-opacity duration-300 ${
                   selected ? "opacity-0" : "opacity-100 group-hover:opacity-0"
                 }`}
               >

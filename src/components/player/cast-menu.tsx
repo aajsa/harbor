@@ -1,4 +1,4 @@
-import { Cast, Loader2, X } from "lucide-react";
+import { Cast, Loader2, Subtitles, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { discoverCastDevices, type CastDeviceInfo } from "@/lib/cast";
 import { CastIcon } from "./cast-icon";
@@ -8,11 +8,17 @@ export function CastMenu({
   anchor,
   onClose,
   onPick,
+  hasActiveSub,
+  burnSubsOnTv,
+  setBurnSubsOnTv,
 }: {
   open: boolean;
   anchor: { right: number; bottom: number } | null;
   onClose: () => void;
   onPick: (device: CastDeviceInfo) => void;
+  hasActiveSub: boolean;
+  burnSubsOnTv: boolean;
+  setBurnSubsOnTv: (next: boolean) => void;
 }) {
   const [devices, setDevices] = useState<CastDeviceInfo[]>([]);
   const [loading, setLoading] = useState(false);
@@ -78,6 +84,45 @@ export function CastMenu({
           <X size={13} />
         </button>
       </div>
+      {hasActiveSub && (
+        <>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={burnSubsOnTv}
+            onClick={() => setBurnSubsOnTv(!burnSubsOnTv)}
+            className="group mb-2 flex w-full items-start gap-3 rounded-xl border border-edge-soft bg-canvas/40 px-3 py-2.5 text-left transition-colors hover:border-edge hover:bg-canvas/55"
+          >
+            <span
+              className={`mt-0.5 flex h-[18px] w-8 shrink-0 items-center rounded-full px-[3px] transition-colors duration-200 ${
+                burnSubsOnTv ? "bg-accent" : "bg-raised"
+              }`}
+            >
+              <span
+                className={`h-3 w-3 rounded-full bg-canvas shadow-sm transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                  burnSubsOnTv ? "translate-x-[14px]" : "translate-x-0"
+                }`}
+              />
+            </span>
+            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <span className="flex items-center gap-1.5 text-[12.5px] font-semibold text-ink">
+                <Subtitles
+                  size={12.5}
+                  strokeWidth={2.4}
+                  className={burnSubsOnTv ? "text-accent" : "text-ink-subtle"}
+                />
+                Burn in subtitles
+              </span>
+              <span className="text-[11px] leading-snug text-ink-subtle">
+                {burnSubsOnTv
+                  ? "Subtitles are baked into the picture so they always show. Re-encodes the video."
+                  : "Subtitles may not appear on the TV."}
+              </span>
+            </span>
+          </button>
+          <div className="mb-2 h-px bg-edge-soft" />
+        </>
+      )}
       {loading ? (
         <div className="flex items-center gap-2 px-1 py-3 text-[12.5px] text-ink-muted">
           <Loader2 size={13} strokeWidth={2.2} className="animate-spin" />

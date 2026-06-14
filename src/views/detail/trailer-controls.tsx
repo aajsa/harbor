@@ -1,5 +1,6 @@
 import { Volume1, Volume2, VolumeX } from "lucide-react";
 import { useRef, useState } from "react";
+import { useT } from "@/lib/i18n";
 import { Tooltip } from "./tooltip";
 
 export function formatTime(s: number) {
@@ -120,12 +121,13 @@ export function Scrubber({
 }
 
 export function SpeedPill({ speed, onCycle }: { speed: number; onCycle: () => void }) {
+  const t = useT();
   const label = `${speed}×`;
   return (
-    <Tooltip label="Playback speed">
+    <Tooltip label={t("Playback speed")}>
       <button
         onClick={onCycle}
-        aria-label={`Playback speed ${label}`}
+        aria-label={t("Playback speed {label}", { label })}
         className="flex h-11 min-w-[48px] items-center justify-center rounded-md px-3 text-[13.5px] font-semibold tabular-nums tracking-wide text-white/90 transition-colors hover:bg-white/15 hover:text-white"
       >
         {label}
@@ -135,11 +137,12 @@ export function SpeedPill({ speed, onCycle }: { speed: number; onCycle: () => vo
 }
 
 export function PiPButton({ active, onClick }: { active: boolean; onClick: () => void }) {
+  const t = useT();
   return (
-    <Tooltip label="PiP">
+    <Tooltip label={t("PiP")}>
       <button
         onClick={onClick}
-        aria-label={active ? "Exit Picture in Picture" : "Picture in Picture"}
+        aria-label={active ? t("Exit Picture in Picture") : t("Picture in Picture")}
         className={`flex h-11 w-11 items-center justify-center rounded-md transition-colors active:scale-95 ${
           active ? "bg-white/20 text-white" : "text-white/90 hover:bg-white/15 hover:text-white"
         }`}
@@ -170,6 +173,7 @@ export function VolumeControl({
   onChange: (v: number) => void;
   onToggleMute: () => void;
 }) {
+  const t = useT();
   const effective = muted ? 0 : volume;
   const Icon = muted || effective === 0 ? VolumeX : effective < 0.5 ? Volume1 : Volume2;
   const ref = useRef<HTMLDivElement>(null);
@@ -213,10 +217,10 @@ export function VolumeControl({
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
-      <Tooltip label={muted ? "Unmute · M" : "Mute · M"}>
+      <Tooltip label={muted ? t("Unmute · M") : t("Mute · M")}>
         <button
           onClick={onToggleMute}
-          aria-label={muted ? "Unmute" : "Mute"}
+          aria-label={muted ? t("Unmute") : t("Mute")}
           className="flex h-11 w-11 items-center justify-center rounded-md text-white/90 transition-colors hover:bg-white/15 hover:text-white active:scale-95"
         >
           <Icon size={22} />

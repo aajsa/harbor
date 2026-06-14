@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { fetchTrailer, resolveTrailerQuality, trailerSrc } from "@/lib/trailer";
 import { useSettings } from "@/lib/settings";
 import { useView } from "@/lib/view";
+import { useT } from "@/lib/i18n";
 import { NativeTrailerPlayer } from "./native-trailer-player";
 import { Tooltip } from "./tooltip";
 
@@ -18,6 +19,7 @@ export function TrailerOverlay({
   logo?: string;
   onClose: () => void;
 }) {
+  const t = useT();
   const { setChromeHidden } = useView();
   const { settings } = useSettings();
   const [open, setOpen] = useState(false);
@@ -83,7 +85,7 @@ export function TrailerOverlay({
       }}
     >
       <div
-        className="absolute right-7 top-16 z-10 flex items-center gap-2.5"
+        className="absolute end-7 top-16 z-10 flex items-center gap-2.5"
         style={{
           opacity: open ? 1 : 0,
           transform: open ? "scale(1)" : "scale(0.85)",
@@ -92,14 +94,14 @@ export function TrailerOverlay({
         }}
       >
         {!extractFailed && <CastButton videoRef={videoRef} />}
-        <Tooltip label="Close · Esc">
+        <Tooltip label={t("Close · Esc")}>
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
               dismiss();
             }}
-            aria-label="Close trailer"
+            aria-label={t("Close trailer")}
             className="relative flex h-11 w-11 items-center justify-center rounded-full bg-canvas/90 text-ink shadow-[0_8px_22px_rgba(0,0,0,0.4)] transition-colors duration-200 before:absolute before:-inset-3 before:content-[''] hover:bg-canvas active:scale-[0.94]"
           >
             <X size={18} strokeWidth={2.4} />
@@ -131,7 +133,7 @@ export function TrailerOverlay({
           transition: "opacity 320ms ease 220ms",
         }}
       >
-        Esc or click outside to close
+        {t("Esc or click outside to close")}
       </span>
     </div>,
     document.body,
@@ -165,6 +167,7 @@ function YouTubeEmbed({ id, title }: { id: string; title: string }) {
 }
 
 function TrailerLoader({ title, logo }: { title: string; logo?: string }) {
+  const t = useT();
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center gap-7">
       {logo ? (
@@ -179,7 +182,7 @@ function TrailerLoader({ title, logo }: { title: string; logo?: string }) {
         </p>
       )}
       <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-white/45">
-        Loading trailer
+        {t("Loading trailer")}
       </p>
     </div>
   );
@@ -194,6 +197,7 @@ type RemoteEnabled = HTMLVideoElement & {
 };
 
 function CastButton({ videoRef }: { videoRef: React.RefObject<HTMLVideoElement | null> }) {
+  const t = useT();
   const [available, setAvailable] = useState(false);
 
   useEffect(() => {
@@ -223,7 +227,7 @@ function CastButton({ videoRef }: { videoRef: React.RefObject<HTMLVideoElement |
   if (!available) return null;
 
   return (
-    <Tooltip label="Cast to a device">
+    <Tooltip label={t("Cast to a device")}>
       <button
         type="button"
         onClick={(e) => {
@@ -232,7 +236,7 @@ function CastButton({ videoRef }: { videoRef: React.RefObject<HTMLVideoElement |
           if (!v || !v.remote) return;
           v.remote.prompt().catch(() => {});
         }}
-        aria-label="Cast"
+        aria-label={t("Cast")}
         className="flex h-11 w-11 items-center justify-center rounded-full bg-canvas/90 text-ink shadow-[0_8px_22px_rgba(0,0,0,0.4)] transition-colors duration-200 hover:bg-canvas active:scale-[0.94]"
       >
         <Cast size={20} strokeWidth={2} />

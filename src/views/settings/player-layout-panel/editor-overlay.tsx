@@ -240,7 +240,7 @@ export function EditorOverlay({
             type="button"
             onClick={onSave}
             disabled={!dirty && !justSaved}
-            className={`flex h-11 items-center gap-2 rounded-full pl-3.5 pr-4 text-[13px] font-semibold transition-all duration-150 active:scale-[0.97] ${
+            className={`flex h-11 items-center gap-2 rounded-full ps-3.5 pe-4 text-[13px] font-semibold transition-all duration-150 active:scale-[0.97] ${
               justSaved
                 ? "bg-emerald-500/85 text-white"
                 : dirty
@@ -264,7 +264,7 @@ export function EditorOverlay({
             type="button"
             onClick={onClose}
             aria-label="Close editor"
-            className="flex h-11 items-center gap-2 rounded-full border border-white/15 bg-white/8 pl-3 pr-5 text-[13px] font-medium text-white/85 transition-colors hover:bg-white/15 hover:text-white"
+            className="flex h-11 items-center gap-2 rounded-full border border-white/15 bg-white/8 ps-3 pe-5 text-[13px] font-medium text-white/85 transition-colors hover:bg-white/15 hover:text-white"
           >
             <X size={15} strokeWidth={2.4} />
             Close

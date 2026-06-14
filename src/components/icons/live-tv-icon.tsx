@@ -6,7 +6,7 @@ export function LiveTvIcon({ active = false }: { active?: boolean }) {
       viewBox="0 0 38 18"
       fill="none"
       aria-hidden
-      style={{ overflow: "visible" }}
+      style={{ direction: "ltr" }}
     >
       <rect
         x="1.25"

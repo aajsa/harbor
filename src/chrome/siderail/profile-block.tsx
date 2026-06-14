@@ -2,6 +2,7 @@ import { LogOut, Pencil, Settings as SettingsIcon, Users } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { CatAvatar } from "@/components/icons/cat-avatar";
 import { useAuth } from "@/lib/auth";
+import { useT } from "@/lib/i18n";
 import { useProfiles } from "@/lib/profiles";
 import { useSettings } from "@/lib/settings";
 
@@ -9,6 +10,7 @@ export function ProfileBlock({ onOpenSettings }: { onOpenSettings: () => void })
   const { user, signOut } = useAuth();
   const { settings } = useSettings();
   const { profiles, activeProfile, openPicker, selectProfile } = useProfiles();
+  const t = useT();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -22,7 +24,7 @@ export function ProfileBlock({ onOpenSettings }: { onOpenSettings: () => void })
   }, [open]);
 
   const name =
-    activeProfile?.name ?? user?.fullname ?? user?.email?.split("@")[0] ?? "Profile";
+    activeProfile?.name ?? user?.fullname ?? user?.email?.split("@")[0] ?? t("profile.fallback");
   const color = activeProfile?.color ?? "var(--color-accent)";
   const avatar = activeProfile?.avatar ?? settings.harborAvatar;
   const otherProfiles = profiles.filter((p) => p.id !== activeProfile?.id);
@@ -32,7 +34,7 @@ export function ProfileBlock({ onOpenSettings }: { onOpenSettings: () => void })
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-elevated/50"
+        className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-start transition-colors hover:bg-elevated/50"
       >
         <span
           className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full ring-1 ring-edge-soft"
@@ -73,7 +75,7 @@ export function ProfileBlock({ onOpenSettings }: { onOpenSettings: () => void })
                       selectProfile(p.id);
                     }
                   }}
-                  className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-white/10"
+                  className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-start transition-colors hover:bg-white/10"
                 >
                   <span
                     className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-canvas"
@@ -93,9 +95,9 @@ export function ProfileBlock({ onOpenSettings }: { onOpenSettings: () => void })
                 openPicker({ kind: "list" });
                 setOpen(false);
               }}
-              className="flex items-center gap-2.5 px-4 py-2.5 text-left text-[13px] text-ink-muted transition-colors hover:bg-white/10 hover:text-ink"
+              className="flex items-center gap-2.5 px-4 py-2.5 text-start text-[13px] text-ink-muted transition-colors hover:bg-white/10 hover:text-ink"
             >
-              <Users size={13} strokeWidth={2.2} /> Who's watching
+              <Users size={13} strokeWidth={2.2} /> {t("profile.whoWatching")}
             </button>
             {activeProfile && (
               <button
@@ -104,9 +106,9 @@ export function ProfileBlock({ onOpenSettings }: { onOpenSettings: () => void })
                   openPicker({ kind: "edit", profileId: activeProfile.id });
                   setOpen(false);
                 }}
-                className="flex items-center gap-2.5 px-4 py-2.5 text-left text-[13px] text-ink-muted transition-colors hover:bg-white/10 hover:text-ink"
+                className="flex items-center gap-2.5 px-4 py-2.5 text-start text-[13px] text-ink-muted transition-colors hover:bg-white/10 hover:text-ink"
               >
-                <Pencil size={13} strokeWidth={2.2} /> Edit profile
+                <Pencil size={13} strokeWidth={2.2} /> {t("Edit profile")}
               </button>
             )}
             <button
@@ -115,9 +117,9 @@ export function ProfileBlock({ onOpenSettings }: { onOpenSettings: () => void })
                 onOpenSettings();
                 setOpen(false);
               }}
-              className="flex items-center gap-2.5 px-4 py-2.5 text-left text-[13px] text-ink-muted transition-colors hover:bg-white/10 hover:text-ink"
+              className="flex items-center gap-2.5 px-4 py-2.5 text-start text-[13px] text-ink-muted transition-colors hover:bg-white/10 hover:text-ink"
             >
-              <SettingsIcon size={13} strokeWidth={2.2} /> Settings
+              <SettingsIcon size={13} strokeWidth={2.2} /> {t("nav.settings")}
             </button>
             {user && (
               <button
@@ -126,9 +128,9 @@ export function ProfileBlock({ onOpenSettings }: { onOpenSettings: () => void })
                   signOut();
                   setOpen(false);
                 }}
-                className="flex items-center gap-2.5 border-t border-white/10 px-4 py-2.5 text-left text-[13px] text-ink-muted transition-colors hover:bg-white/10 hover:text-ink"
+                className="flex items-center gap-2.5 border-t border-white/10 px-4 py-2.5 text-start text-[13px] text-ink-muted transition-colors hover:bg-white/10 hover:text-ink"
               >
-                <LogOut size={13} strokeWidth={2.2} /> Sign out
+                <LogOut size={13} strokeWidth={2.2} /> {t("Sign out")}
               </button>
             )}
           </div>

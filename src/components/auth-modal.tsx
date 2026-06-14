@@ -72,7 +72,7 @@ export function AuthModal({ onClose }: { onClose: () => void }) {
           type="button"
           onClick={() => setRemember((v) => !v)}
           disabled={busy}
-          className="flex items-center gap-2.5 self-start text-left"
+          className="flex items-center gap-2.5 self-start text-start"
         >
           <span
             className={`flex h-4 w-4 items-center justify-center rounded-[4px] border transition-colors ${
@@ -161,7 +161,7 @@ function Field({
           spellCheck={false}
           autoComplete={isPassword ? "current-password" : "email"}
           className={`h-11 w-full rounded-xl border border-edge bg-canvas px-3.5 text-[14px] text-ink outline-none transition-colors focus:border-ink disabled:opacity-50 ${
-            isPassword ? "pr-11" : ""
+            isPassword ? "pe-11" : ""
           }`}
         />
         {isPassword && (
@@ -173,7 +173,7 @@ function Field({
             disabled={disabled}
             aria-label={show ? "Hide password" : "Show password"}
             title={show ? "Hide password" : "Show password"}
-            className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-ink-subtle transition-colors hover:text-ink disabled:opacity-50"
+            className="absolute inset-y-0 end-0 flex w-11 items-center justify-center text-ink-subtle transition-colors hover:text-ink disabled:opacity-50"
           >
             {show ? <EyeOff size={17} strokeWidth={2} /> : <Eye size={17} strokeWidth={2} />}
           </button>

@@ -43,7 +43,7 @@ export function Bio({
   return (
     <div className="max-w-2xl">
       <div
-        className="max-h-[210px] overflow-y-auto pr-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="max-h-[210px] overflow-y-auto pe-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         style={{
           maskImage:
             "linear-gradient(to bottom, transparent 0, black 6px, black calc(100% - 8px), transparent 100%)",

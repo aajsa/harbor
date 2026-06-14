@@ -91,7 +91,7 @@ export function GuideModal({ onClose }: { onClose: () => void }) {
           type="button"
           onClick={onClose}
           aria-label="Close guide"
-          className="flex h-10 items-center gap-2 rounded-full border border-edge-soft bg-elevated/70 pl-3 pr-4 text-[13px] font-medium text-ink-muted transition-colors hover:bg-elevated hover:text-ink"
+          className="flex h-10 items-center gap-2 rounded-full border border-edge-soft bg-elevated/70 ps-3 pe-4 text-[13px] font-medium text-ink-muted transition-colors hover:bg-elevated hover:text-ink"
         >
           <X size={14} strokeWidth={2.4} />
           Close

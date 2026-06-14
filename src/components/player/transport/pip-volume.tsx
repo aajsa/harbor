@@ -1,6 +1,7 @@
 import { Volume2, VolumeX } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { PlayerSnapshot } from "@/lib/player/bridge";
+import { useT } from "@/lib/i18n";
 
 export function PipVolume({
   snap,
@@ -13,6 +14,7 @@ export function PipVolume({
   onMute: () => void;
   onVolume: (v: number) => void;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
   const closeTimer = useRef<number | null>(null);
@@ -49,7 +51,7 @@ export function PipVolume({
           setOpen((o) => !o);
         }}
         onMouseEnter={() => setOpen(true)}
-        aria-label={muted ? "Unmute" : "Mute"}
+        aria-label={muted ? t("Unmute") : t("Mute")}
         className="inline-flex h-9 w-9 items-center justify-center rounded-full text-white/85 transition-colors hover:bg-white/10 hover:text-white"
       >
         {muted ? <VolumeX size={16} strokeWidth={2.2} /> : <Volume2 size={16} strokeWidth={2.2} />}
@@ -68,7 +70,7 @@ export function PipVolume({
             value={muted ? 0 : snap.volume}
             onChange={(e) => onVolume(parseFloat(e.target.value))}
             className="h-1 w-32 appearance-none rounded-full bg-white/22"
-            aria-label="Volume"
+            aria-label={t("Volume")}
             style={{
               accentColor: snap.volume > 1 ? `hsl(${Math.max(0, 30 - (snap.volume - 1) * 6)}, 95%, 60%)` : "#ffffff",
             }}

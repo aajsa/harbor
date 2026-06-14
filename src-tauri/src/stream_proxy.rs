@@ -23,6 +23,7 @@ struct Session {
     headers: HashMap<String, String>,
     transcode: bool,
     profile: TranscodeProfile,
+    burn_sub: Option<(String, String)>,
     created_at: Instant,
 }
 
@@ -53,6 +54,10 @@ pub struct RegisterArgs {
     pub target_host: Option<String>,
     #[serde(default)]
     pub start_time_sec: Option<f64>,
+    #[serde(default)]
+    pub burn_sub_path: Option<String>,
+    #[serde(default)]
+    pub burn_sub_style: Option<String>,
 }
 
 impl ProxyState {
@@ -106,6 +111,7 @@ impl ProxyState {
             headers: args.headers,
             transcode: args.transcode,
             profile: args.profile.unwrap_or_default(),
+            burn_sub: None,
             created_at: Instant::now(),
         };
         self.sessions.write().await.insert(id.clone(), session);
@@ -122,11 +128,15 @@ impl ProxyState {
             .and_then(reachable_ip_for)
             .or_else(lan_ip)
             .unwrap_or_else(|| "127.0.0.1".to_string());
+        let burn_sub = args
+            .burn_sub_path
+            .clone()
+            .map(|path| (path, args.burn_sub_style.clone().unwrap_or_default()));
         if args.transcode {
             let seek = args.start_time_sec.unwrap_or(0.0).max(0.0);
             match self
                 .hls
-                .register_with_seek(args.url.clone(), args.headers.clone(), seek)
+                .register_with_seek(args.url.clone(), args.headers.clone(), seek, burn_sub.clone())
                 .await
             {
                 Ok(hid) => {
@@ -135,7 +145,7 @@ impl ProxyState {
                     return RegisterResult { session_id: hid, url };
                 }
                 Err(e) => {
-                    eprintln!("[harbor::proxy] HLS register failed ({}); falling back to direct", e);
+                    eprintln!("[harbor::proxy] HLS register failed ({}); falling back to direct transcode", e);
                 }
             }
         }
@@ -151,6 +161,7 @@ impl ProxyState {
                 headers: args.headers,
                 transcode: false,
                 profile: args.profile.unwrap_or_default(),
+                burn_sub: None,
                 created_at: Instant::now(),
             };
             self.sessions.write().await.insert(id.clone(), session);
@@ -164,6 +175,7 @@ impl ProxyState {
             headers: args.headers,
             transcode: args.transcode,
             profile: args.profile.unwrap_or_default(),
+            burn_sub,
             created_at: Instant::now(),
         };
         self.sessions.write().await.insert(id.clone(), session);
@@ -285,7 +297,7 @@ async fn handle_stream(
     };
 
     if session.transcode {
-        return handle_transcode(&session.url, &session.headers, &session.profile).await;
+        return handle_transcode(&session.url, &session.headers, &session.profile, session.burn_sub.as_ref()).await;
     }
 
     forward_upstream(&state, &session, &session.url, &headers).await

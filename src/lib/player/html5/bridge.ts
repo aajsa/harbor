@@ -486,6 +486,8 @@ export function createHtml5Bridge(): PlayerBridge {
     setPanscan(value) {
       if (video) video.style.objectFit = value > 0 ? "cover" : "contain";
     },
+    setVideoZoom() {},
+    setAspectOverride() {},
     async addSubtitle(url, lang, title, select): Promise<boolean> {
       let resolvedUrl = url;
       if (

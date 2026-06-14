@@ -78,7 +78,7 @@ export function CategorySidebar({
     <aside
       role="listbox"
       aria-label="Channel categories"
-      className="flex w-[220px] shrink-0 flex-col border-r border-l border-edge-soft/40 bg-surface/45"
+      className="flex w-[220px] shrink-0 flex-col border-e border-s border-edge-soft/40 bg-surface/45"
       onKeyDown={handleKey}
     >
       <div className="border-b border-edge-soft/40 px-3 py-2">
@@ -217,7 +217,7 @@ function CategoryItem({
         aria-selected={active}
         tabIndex={active ? 0 : -1}
         onClick={onClick}
-        className={`flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors duration-150 ${
+        className={`flex w-full items-center gap-2.5 px-3 py-2 text-start transition-colors duration-150 ${
           active ? "bg-elevated text-ink" : "text-ink-muted hover:bg-elevated/65 hover:text-ink"
         }`}
       >
@@ -243,7 +243,7 @@ function CategoryItem({
         </span>
         <span className="flex flex-1 items-center gap-1.5 truncate text-[13px] font-medium">
           {pinned && <Pin size={11} strokeWidth={2.4} className="shrink-0 fill-current text-accent" />}
-          <span className="truncate">{label}</span>
+          <span dir="auto" className="truncate">{label}</span>
         </span>
         <span
           className={`shrink-0 rounded-full px-2 py-0.5 text-[10.5px] font-semibold tabular-nums transition-opacity ${
@@ -254,7 +254,7 @@ function CategoryItem({
         </span>
       </button>
       {hasActions && (
-        <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1 opacity-0 transition-opacity group-hover/cat:opacity-100">
+        <div className="absolute end-2 top-1/2 flex -translate-y-1/2 items-center gap-1 opacity-0 transition-opacity group-hover/cat:opacity-100">
           <button
             type="button"
             onClick={(e) => {

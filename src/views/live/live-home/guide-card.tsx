@@ -15,7 +15,7 @@ export function GuideCard({ item, onPlay }: { item: NowItem; onPlay: (ch: IptvCh
       data-art={current?.iconUrl || channel.logo || ""}
       onClick={() => onPlay(channel)}
       title={channel.name}
-      className="group/g flex h-[132px] w-full flex-col justify-between rounded-lg border border-edge-soft/55 bg-elevated p-3.5 text-left transition-colors duration-150 hover:border-edge hover:bg-raised"
+      className="group/g flex h-[132px] w-full flex-col justify-between rounded-lg border border-edge-soft/55 bg-elevated p-3.5 text-start transition-colors duration-150 hover:border-edge hover:bg-raised"
     >
       <div className="flex items-center gap-2">
         <span className="flex h-7 w-12 shrink-0 items-center justify-center overflow-hidden rounded bg-canvas/60">
@@ -42,7 +42,7 @@ export function GuideCard({ item, onPlay }: { item: NowItem; onPlay: (ch: IptvCh
         </span>
       </div>
       <div>
-        <div className="truncate text-[14px] font-semibold leading-tight text-ink">
+        <div dir="auto" className="truncate text-[14px] font-semibold leading-tight text-ink">
           {current?.title || channel.name}
         </div>
         {progress != null && (

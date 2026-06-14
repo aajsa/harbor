@@ -34,7 +34,7 @@ export function TogetherChatToast() {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="pointer-events-none fixed right-6 top-24 z-[55] flex max-w-[320px] flex-col items-end gap-2">
+    <div className="pointer-events-none fixed end-6 top-24 z-[55] flex max-w-[320px] flex-col items-end gap-2">
       {toasts.map((m) => {
         const peer = snapshot.participants.find((p) => p.id === m.from);
         return (
@@ -73,7 +73,7 @@ function ChatBubble({
   const fallbackColor = color ?? `oklch(0.78 0.13 ${nameHue(msg.name)})`;
 
   return (
-    <div className="harbor-chat-toast animate-slide-from-right pointer-events-auto flex w-full max-w-[320px] items-start gap-2.5 rounded-xl border border-edge-soft/70 bg-elevated/80 px-3.5 py-2.5 shadow-[0_18px_50px_-20px_rgba(0,0,0,0.55)] backdrop-blur-sm">
+    <div className="harbor-chat-toast animate-slide-from-right rtl:animate-slide-from-left pointer-events-auto flex w-full max-w-[320px] items-start gap-2.5 rounded-xl border border-edge-soft/70 bg-elevated/80 px-3.5 py-2.5 shadow-[0_18px_50px_-20px_rgba(0,0,0,0.55)] backdrop-blur-sm">
       {avatar && !avatarFailed ? (
         <img
           src={avatar}

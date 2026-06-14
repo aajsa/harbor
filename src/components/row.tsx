@@ -146,11 +146,18 @@ export function Row({
     setCellWidth((available - (fits - 1) * GAP) / fits);
   };
 
+  const isRtlTrack = (el: HTMLDivElement) => getComputedStyle(el).direction === "rtl";
+  const readPos = (el: HTMLDivElement) => (isRtlTrack(el) ? -el.scrollLeft : el.scrollLeft);
+  const writePos = (el: HTMLDivElement, pos: number) => {
+    el.scrollLeft = isRtlTrack(el) ? -pos : pos;
+  };
+
   const measureScroll = () => {
     const el = trackRef.current;
     if (!el) return;
-    setCanPrev(el.scrollLeft > 1);
-    const remaining = el.scrollWidth - (el.scrollLeft + el.clientWidth);
+    const pos = readPos(el);
+    setCanPrev(pos > 1);
+    const remaining = el.scrollWidth - el.clientWidth - pos;
     setCanNext(remaining > 1);
     if (el.clientWidth > 0 && remaining < 800) onEndRef.current?.();
   };
@@ -167,12 +174,12 @@ export function Row({
       const n = recallRowScroll(scrollKey);
       const max = trackEl.scrollWidth - trackEl.clientWidth;
       const target = n != null && n > 0 && max > 0 ? Math.min(n, max) : 0;
-      if (trackEl.scrollLeft !== target) trackEl.scrollLeft = target;
+      if (readPos(trackEl) !== target) writePos(trackEl, target);
       restoredRef.current = true;
       return;
     }
-    if (!userInteractedRef.current && trackEl.scrollLeft !== 0) {
-      trackEl.scrollLeft = 0;
+    if (!userInteractedRef.current && readPos(trackEl) !== 0) {
+      writePos(trackEl, 0);
     }
   }, [children, childCount, cellWidth, trackEl, scrollKey, recallRowScroll, effMin]);
 
@@ -193,7 +200,7 @@ export function Row({
       if (saveTimer != null) window.clearTimeout(saveTimer);
       saveTimer = window.setTimeout(() => {
         saveTimer = null;
-        rememberRowScroll(scrollKey, track.scrollLeft);
+        rememberRowScroll(scrollKey, readPos(track));
       }, 200);
     };
     track.addEventListener("scroll", onScroll, { passive: true });
@@ -218,8 +225,9 @@ export function Row({
           track.style.scrollBehavior = "";
           return;
         }
-        const aligned = Math.max(0, Math.min(Math.round(track.scrollLeft / stride) * stride, max));
-        const target = max - track.scrollLeft < stride * 0.5 ? max : aligned;
+        const pos = readPos(track);
+        const aligned = Math.max(0, Math.min(Math.round(pos / stride) * stride, max));
+        const target = max - pos < stride * 0.5 ? max : aligned;
         glideTo(track, target, true);
       }, 200);
     };
@@ -234,7 +242,7 @@ export function Row({
         window.clearTimeout(saveTimer);
         saveTimer = null;
       }
-      track.scrollLeft = 0;
+      writePos(track, 0);
       rememberRowScroll(scrollKey, 0);
       userInteractedRef.current = false;
       measureScroll();
@@ -250,8 +258,8 @@ export function Row({
       if (saveTimer != null) window.clearTimeout(saveTimer);
       if (wheelSettle != null) window.clearTimeout(wheelSettle);
       if (rafId.current != null) cancelAnimationFrame(rafId.current);
-      if (scrollKey && track.scrollLeft > 0) {
-        rememberRowScroll(scrollKey, track.scrollLeft);
+      if (scrollKey && readPos(track) > 0) {
+        rememberRowScroll(scrollKey, readPos(track));
       }
     };
   }, [scrollKey, rememberRowScroll]);
@@ -260,7 +268,8 @@ export function Row({
     const el = trackRef.current;
     if (!el) return;
     userInteractedRef.current = true;
-    el.scrollBy({ left: dir * el.clientWidth, behavior: "smooth" });
+    const delta = (isRtlTrack(el) ? -dir : dir) * el.clientWidth;
+    el.scrollBy({ left: delta, behavior: "smooth" });
   };
 
   const drag = useRef({
@@ -285,7 +294,8 @@ export function Row({
   };
 
   const glideTo = (el: HTMLDivElement, target: number, snappy = false) => {
-    const start = el.scrollLeft;
+    const rtl = isRtlTrack(el);
+    const start = rtl ? -el.scrollLeft : el.scrollLeft;
     const distance = target - start;
     if (Math.abs(distance) < 2) {
       el.style.scrollSnapType = "";
@@ -299,7 +309,8 @@ export function Row({
     const tick = (now: number) => {
       const t = Math.min(1, (now - startTime) / duration);
       const eased = 1 - Math.pow(1 - t, 3);
-      el.scrollLeft = start + distance * eased;
+      const next = start + distance * eased;
+      el.scrollLeft = rtl ? -next : next;
       if (t < 1) {
         rafId.current = requestAnimationFrame(tick);
       } else {
@@ -375,7 +386,8 @@ export function Row({
     const friction = 0.004;
     const v = d.vel;
     const projection = -((v * Math.abs(v)) / (2 * friction));
-    const projected = el.scrollLeft + projection;
+    const projectedRaw = el.scrollLeft + projection;
+    const projected = isRtlTrack(el) ? -projectedRaw : projectedRaw;
     const stride = (cellWidth ?? effMin) + GAP;
     const max = el.scrollWidth - el.clientWidth;
     const targetIdx = Math.round(projected / stride);
@@ -395,9 +407,9 @@ export function Row({
   };
 
   return (
-    <div className={`flex min-w-0 flex-col gap-5 pl-[9px] ${className}`}>
+    <div className={`flex min-w-0 flex-col gap-5 ps-[9px] ${className}`}>
       {(title || onViewAll) && (
-        <div className="flex items-baseline justify-between gap-4 pr-1">
+        <div className="flex items-baseline justify-between gap-4 pe-1">
           {title && (
             <h3 className="truncate text-[17px] font-medium tracking-tight text-ink">
               {title}
@@ -413,7 +425,7 @@ export function Row({
               <ChevronRight
                 size={14}
                 strokeWidth={2.2}
-                className="transition-transform duration-200 group-hover/va:translate-x-0.5"
+                className="dir-icon transition-transform duration-200 group-hover/va:translate-x-0.5"
               />
             </button>
           )}
@@ -429,7 +441,7 @@ export function Row({
             onPointerCancel={endDrag}
             onClickCapture={onClickCapture}
             onDragStart={(e) => e.preventDefault()}
-            className="grid grid-flow-col gap-5 overflow-x-auto p-5 -m-5 scroll-pl-5 scroll-pr-5 [scroll-snap-type:x_mandatory] [&>*]:[scroll-snap-align:start] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] [overflow-anchor:none] [overscroll-behavior-x:contain] [&_img]:select-none [&_img]:[-webkit-user-drag:none] [will-change:transform]"
+            className="grid grid-flow-col gap-5 overflow-x-auto p-5 -m-5 scroll-ps-5 scroll-pe-5 [scroll-snap-type:x_mandatory] [&>*]:[scroll-snap-align:start] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] [overflow-anchor:none] [overscroll-behavior-x:contain] [&_img]:select-none [&_img]:[-webkit-user-drag:none] [will-change:transform]"
             style={{ gridAutoColumns: cellWidth != null ? `${cellWidth}px` : `${effMin}px` }}
           >
             {Children.map(children, (child, i) => {
@@ -466,7 +478,7 @@ function EdgeArrow({
     return (
       <div
         className={`pointer-events-none absolute inset-y-0 z-30 flex w-14 items-center transition-opacity duration-200 ${
-          side === "left" ? "left-0 justify-start" : "right-0 justify-end"
+          side === "left" ? "start-0 justify-start" : "end-0 justify-end"
         } ${visible ? "opacity-100" : "opacity-0"}`}
       >
         <button
@@ -477,12 +489,16 @@ function EdgeArrow({
             visible ? "pointer-events-auto" : "pointer-events-none"
           }`}
         >
-          {side === "left" ? <ChevronLeft size={22} strokeWidth={2.2} /> : <ChevronRight size={22} strokeWidth={2.2} />}
+          {side === "left" ? (
+            <ChevronLeft size={22} strokeWidth={2.2} className="dir-icon" />
+          ) : (
+            <ChevronRight size={22} strokeWidth={2.2} className="dir-icon" />
+          )}
         </button>
       </div>
     );
   }
-  const sideClass = side === "left" ? "left-0 justify-start" : "right-0 justify-end";
+  const sideClass = side === "left" ? "start-0 justify-start" : "end-0 justify-end";
   return (
     <div className={`pointer-events-none absolute inset-y-0 z-30 flex w-14 items-center ${sideClass}`}>
       <button
@@ -494,9 +510,9 @@ function EdgeArrow({
         }`}
       >
         {side === "left" ? (
-          <ChevronLeft size={22} strokeWidth={2.2} />
+          <ChevronLeft size={22} strokeWidth={2.2} className="dir-icon" />
         ) : (
-          <ChevronRight size={22} strokeWidth={2.2} />
+          <ChevronRight size={22} strokeWidth={2.2} className="dir-icon" />
         )}
       </button>
     </div>

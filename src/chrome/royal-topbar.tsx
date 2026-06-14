@@ -18,6 +18,7 @@ import { AuthModal } from "@/components/auth-modal";
 import { ParentalPinModal } from "@/components/parental-pin-modal";
 import { TogetherButton } from "@/chrome/topbar";
 import { useAuth } from "@/lib/auth";
+import { useT } from "@/lib/i18n";
 import { useProfiles } from "@/lib/profiles";
 import { useSearch } from "@/lib/search-context";
 import { effectiveBinding, eventToBinding, formatBindingForDisplay, isTypingTarget } from "@/lib/hotkeys";
@@ -64,6 +65,7 @@ export function RoyalTopbar() {
   const { locked, unlock, hiddenTabs } = useParental();
   const { settings } = useSettings();
   const { setOpen: setSearchOpen } = useSearch();
+  const t = useT();
   const [pinFor, setPinFor] = useState<View | null>(null);
   const maxed = useMaximized();
 
@@ -86,17 +88,18 @@ export function RoyalTopbar() {
 
   const navEntries: NavEntry[] = [...PRIMARY, ...BAR_SECONDARY].filter(isVisible).map((item) => {
     const active = view === item.view;
+    const label = t(item.label);
     return {
       key: item.view,
-      label: item.label,
+      label,
       active,
       onSelect: () => navigate(item),
       node: (
         <button
           type="button"
           onClick={() => navigate(item)}
-          aria-label={item.label}
-          title={item.label}
+          aria-label={label}
+          title={label}
           className={`relative flex h-9 items-center gap-2 whitespace-nowrap rounded-md px-2.5 text-[13.5px] font-medium leading-none transition-colors duration-150 ${
             active ? "text-accent" : "text-ink-muted hover:text-ink"
           }`}
@@ -110,7 +113,7 @@ export function RoyalTopbar() {
           <span className="grid h-[18px] w-[18px] place-items-center [&_svg]:h-[18px] [&_svg]:w-[18px]">
             {item.render(false)}
           </span>
-          <span className="hidden xl:inline">{item.label}</span>
+          <span className="hidden xl:inline">{label}</span>
         </button>
       ),
     };
@@ -126,14 +129,14 @@ export function RoyalTopbar() {
       >
         <div
           data-tauri-drag-region
-          className="harbor-royal-bar pointer-events-auto grid h-14 w-full grid-cols-[1fr_auto] items-center gap-3 rounded-[10px] border border-[color-mix(in_srgb,var(--color-accent)_22%,var(--color-edge))] bg-canvas/85 pl-3.5 pr-2 shadow-[inset_0_1px_0_color-mix(in_srgb,var(--color-accent)_14%,transparent),0_22px_60px_-26px_rgba(0,0,0,0.85)] backdrop-blur-xl"
+          className="harbor-royal-bar pointer-events-auto grid h-14 w-full grid-cols-[1fr_auto] items-center gap-3 rounded-[10px] border border-[color-mix(in_srgb,var(--color-accent)_22%,var(--color-edge))] bg-canvas/85 ps-3.5 pe-2 shadow-[inset_0_1px_0_color-mix(in_srgb,var(--color-accent)_14%,transparent),0_22px_60px_-26px_rgba(0,0,0,0.85)] backdrop-blur-xl"
         >
           <div className="flex min-w-0 items-center gap-2.5">
             <button
               type="button"
               onClick={() => setView("home")}
               className="flex shrink-0 items-center gap-2.5 text-ink"
-              aria-label="Harbor home"
+              aria-label={t("chrome.harborHome")}
             >
               {customMark ? (
                 <img src={customMark} alt="" draggable={false} className="h-7 w-7 object-contain" />
@@ -166,11 +169,11 @@ export function RoyalTopbar() {
               settingsActive={view === "settings"}
             />
             {IS_TAURI && !settings.useNativeTitleBar && (
-              <div className="ml-0.5 flex items-center gap-1">
-                <WinBtn onClick={minimize} label="Minimize">
+              <div className="ms-0.5 flex items-center gap-1">
+                <WinBtn onClick={minimize} label={t("chrome.minimize")}>
                   <path d="M3 6.5h7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
                 </WinBtn>
-                <WinBtn onClick={toggleMaximize} label={maxed ? "Restore" : "Maximize"}>
+                <WinBtn onClick={toggleMaximize} label={maxed ? t("chrome.restore") : t("chrome.maximize")}>
                   {maxed ? (
                     <>
                       <rect x="2.5" y="4.5" width="6" height="6" stroke="currentColor" strokeWidth="1.4" rx="1" />
@@ -185,7 +188,7 @@ export function RoyalTopbar() {
                     <rect x="3" y="3" width="7" height="7" stroke="currentColor" strokeWidth="1.4" rx="1.2" />
                   )}
                 </WinBtn>
-                <WinBtn onClick={close} label="Close" danger>
+                <WinBtn onClick={close} label={t("common.close")} danger>
                   <path d="M3.5 3.5l6 6M9.5 3.5l-6 6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
                 </WinBtn>
               </div>
@@ -222,6 +225,7 @@ function Filigree() {
 
 function SearchPill({ onOpen }: { onOpen: () => void }) {
   const { settings } = useSettings();
+  const t = useT();
   const binding = effectiveBinding("globalSearchFocus", settings.hotkeys ?? {});
 
   useEffect(() => {
@@ -239,12 +243,12 @@ function SearchPill({ onOpen }: { onOpen: () => void }) {
     <button
       type="button"
       onClick={onOpen}
-      aria-label="Search"
-      className="group hidden h-9 items-center gap-2.5 rounded-full border border-[color-mix(in_srgb,var(--color-accent)_16%,var(--color-edge))] bg-surface/50 pl-3 pr-2 text-ink-subtle transition-colors duration-150 hover:border-[color-mix(in_srgb,var(--color-accent)_42%,transparent)] hover:bg-surface/80 hover:text-ink-muted sm:flex"
+      aria-label={t("common.search")}
+      className="group hidden h-9 items-center gap-2.5 rounded-full border border-[color-mix(in_srgb,var(--color-accent)_16%,var(--color-edge))] bg-surface/50 ps-3 pe-2 text-ink-subtle transition-colors duration-150 hover:border-[color-mix(in_srgb,var(--color-accent)_42%,transparent)] hover:bg-surface/80 hover:text-ink-muted sm:flex"
     >
       <Search size={14} strokeWidth={2.2} />
-      <span className="hidden text-[12.5px] leading-none md:inline">Search</span>
-      <kbd className="ml-2 hidden items-center rounded-[5px] border border-edge-soft bg-elevated/60 px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase leading-none text-ink-subtle md:flex">
+      <span className="hidden text-[12.5px] leading-none md:inline">{t("common.search")}</span>
+      <kbd className="ms-2 hidden items-center rounded-[5px] border border-edge-soft bg-elevated/60 px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase leading-none text-ink-subtle md:flex">
         {formatBindingForDisplay(binding)}
       </kbd>
     </button>
@@ -291,6 +295,7 @@ function RoyalProfileMenu({
   const { user, signOut } = useAuth();
   const { settings } = useSettings();
   const { profiles, activeProfile, openPicker, selectProfile } = useProfiles();
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -305,7 +310,7 @@ function RoyalProfileMenu({
   }, [open]);
 
   const name =
-    activeProfile?.name ?? user?.fullname ?? user?.email?.split("@")[0] ?? "Profile";
+    activeProfile?.name ?? user?.fullname ?? user?.email?.split("@")[0] ?? t("profile.fallback");
   const color = activeProfile?.color ?? "#f08032";
   const avatarSrc = activeProfile?.avatar ?? settings.harborAvatar ?? user?.avatar ?? null;
   const otherProfiles = profiles.filter((p) => p.id !== activeProfile?.id);
@@ -321,7 +326,7 @@ function RoyalProfileMenu({
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="flex h-9 items-center gap-2 rounded-md border border-transparent pl-1 pr-2.5 text-[13px] font-medium text-ink-muted transition-colors duration-150 hover:border-[color-mix(in_srgb,var(--color-accent)_30%,transparent)] hover:text-ink"
+        className="flex h-9 items-center gap-2 rounded-md border border-transparent ps-1 pe-2.5 text-[13px] font-medium text-ink-muted transition-colors duration-150 hover:border-[color-mix(in_srgb,var(--color-accent)_30%,transparent)] hover:text-ink"
       >
         <span
           className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full ring-1 ring-[color-mix(in_srgb,var(--color-accent)_40%,transparent)]"
@@ -336,7 +341,7 @@ function RoyalProfileMenu({
         <span className="hidden max-w-[8rem] truncate md:inline">{name}</span>
       </button>
       {open && (
-        <div className="harbor-royal-menu absolute right-0 top-[calc(100%+10px)] z-40 w-60 overflow-hidden rounded-[10px] border border-[color-mix(in_srgb,var(--color-accent)_24%,var(--color-edge))] bg-canvas/95 shadow-[0_24px_60px_-18px_rgba(0,0,0,0.85)] backdrop-blur-2xl">
+        <div className="harbor-royal-menu absolute end-0 top-[calc(100%+10px)] z-40 w-60 overflow-hidden rounded-[10px] border border-[color-mix(in_srgb,var(--color-accent)_24%,var(--color-edge))] bg-canvas/95 shadow-[0_24px_60px_-18px_rgba(0,0,0,0.85)] backdrop-blur-2xl">
           <div className="border-b border-edge-soft px-4 py-3">
             <div
               className="text-[14px] leading-tight text-ink"
@@ -351,14 +356,14 @@ function RoyalProfileMenu({
           {otherProfiles.length > 0 && (
             <div className="flex flex-col gap-0.5 border-b border-edge-soft p-1.5">
               <span className="px-2.5 pb-1 pt-1 text-[10px] font-bold uppercase tracking-[0.16em] text-ink-subtle">
-                Switch profile
+                {t("profile.switch")}
               </span>
               {otherProfiles.map((p) => (
                 <button
                   key={p.id}
                   type="button"
                   onClick={() => dismiss(() => (p.passwordHash ? openPicker({ kind: "unlock", profileId: p.id }) : selectProfile(p.id)))}
-                  className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-elevated"
+                  className="flex items-center gap-2 rounded-md px-2 py-1.5 text-start transition-colors hover:bg-elevated"
                 >
                   <span
                     className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-canvas"
@@ -373,23 +378,23 @@ function RoyalProfileMenu({
           )}
           <div className="flex flex-col py-1">
             <MenuItem onClick={() => dismiss(() => openPicker({ kind: "list" }))}>
-              <Users size={13} strokeWidth={2.2} /> Who's watching
+              <Users size={13} strokeWidth={2.2} /> {t("profile.whoWatching")}
             </MenuItem>
             {activeProfile && (
               <MenuItem onClick={() => dismiss(() => openPicker({ kind: "edit", profileId: activeProfile.id }))}>
-                <Pencil size={13} strokeWidth={2.2} /> Edit profile
+                <Pencil size={13} strokeWidth={2.2} /> {t("Edit profile")}
               </MenuItem>
             )}
             <MenuItem active={settingsActive} onClick={() => dismiss(onOpenSettings)}>
-              <SettingsLucide size={13} strokeWidth={2.2} /> Settings
+              <SettingsLucide size={13} strokeWidth={2.2} /> {t("nav.settings")}
             </MenuItem>
             {user ? (
               <MenuItem bordered onClick={() => dismiss(signOut)}>
-                <LogOut size={13} strokeWidth={2.2} /> Sign out
+                <LogOut size={13} strokeWidth={2.2} /> {t("Sign out")}
               </MenuItem>
             ) : (
               <MenuItem bordered onClick={() => dismiss(() => setAuthOpen(true))}>
-                <LogIn size={13} strokeWidth={2.2} /> Sign in to Stremio
+                <LogIn size={13} strokeWidth={2.2} /> {t("profile.signIn")}
               </MenuItem>
             )}
           </div>
@@ -415,7 +420,7 @@ function MenuItem({
     <button
       type="button"
       onClick={onClick}
-      className={`flex items-center gap-2.5 px-4 py-2.5 text-left text-[13px] transition-colors hover:bg-elevated hover:text-ink ${
+      className={`flex items-center gap-2.5 px-4 py-2.5 text-start text-[13px] transition-colors hover:bg-elevated hover:text-ink ${
         bordered ? "mt-1 border-t border-edge-soft pt-3" : ""
       } ${active ? "text-accent" : "text-ink-muted"}`}
     >

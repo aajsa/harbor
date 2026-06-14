@@ -1,5 +1,6 @@
 import { PauseCircle, PlayCircle } from "lucide-react";
 import type { PlayerSnapshot } from "@/lib/player/bridge";
+import { useT } from "@/lib/i18n";
 import { Tooltip } from "./tooltip";
 import { PipIconBtn, PipStepBtn } from "./pip-controls";
 import { PipSeekBar } from "./pip-seek-bar";
@@ -38,6 +39,7 @@ export function PipChrome({
   onPrevEp: () => void;
   onNextEp: () => void;
 }) {
+  const t = useT();
   const muted = snap.muted || snap.volume === 0;
   return (
     <>
@@ -52,7 +54,7 @@ export function PipChrome({
           visible ? "opacity-100" : "opacity-0"
         }`}
       >
-        <div className="pointer-events-none flex max-w-[55%] flex-col gap-0.5 truncate text-left text-white/85">
+        <div className="pointer-events-none flex max-w-[55%] flex-col gap-0.5 truncate text-start text-white/85">
           {hoverTitle && (
             <span className="truncate text-[12px] font-semibold leading-tight drop-shadow-[0_1px_4px_rgba(0,0,0,0.6)]">
               {hoverTitle}
@@ -64,11 +66,11 @@ export function PipChrome({
             </span>
           )}
         </div>
-        <Tooltip label="Return to full window" side="bottom">
+        <Tooltip label={t("Return to full window")} side="bottom">
           <button
             onClick={onExitPip}
             className="pointer-events-auto inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/15 bg-black/55 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/95 backdrop-blur-md transition-colors hover:bg-black/85"
-            aria-label="Exit Picture in Picture"
+            aria-label={t("Exit Picture in Picture")}
           >
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
               <path d="M3 9V5a2 2 0 0 1 2-2h4" />
@@ -76,7 +78,7 @@ export function PipChrome({
               <path d="M3 15v4a2 2 0 0 0 2 2h4" />
               <path d="M21 15v4a2 2 0 0 1-2 2h-4" />
             </svg>
-            Exit PiP
+            {t("Exit PiP")}
           </button>
         </Tooltip>
       </div>
@@ -89,7 +91,7 @@ export function PipChrome({
         <PipSeekBar durationSec={snap.durationSec} onSeek={onSeek} />
         <div className="pointer-events-auto flex items-center justify-center gap-1">
           <PipIconBtn
-            label="Previous episode"
+            label={t("Previous episode")}
             onClick={onPrevEp}
             disabled={!hasPrevEp}
             icon={
@@ -100,7 +102,7 @@ export function PipChrome({
             }
           />
           <PipStepBtn
-            label="Back 30 seconds"
+            label={t("Back 30 seconds")}
             onClick={() => onSeekStep(-30)}
             stepText="30s"
             icon={
@@ -110,11 +112,11 @@ export function PipChrome({
               </svg>
             }
           />
-          <Tooltip label={playing ? "Pause" : "Play"}>
+          <Tooltip label={playing ? t("Pause") : t("Play")}>
             <button
               type="button"
               onClick={onPlayPause}
-              aria-label={playing ? "Pause" : "Play"}
+              aria-label={playing ? t("Pause") : t("Play")}
               className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-white/14 text-white transition-[background-color,transform] hover:bg-white/24 active:scale-95"
             >
               {playing ? (
@@ -125,7 +127,7 @@ export function PipChrome({
             </button>
           </Tooltip>
           <PipStepBtn
-            label="Forward 30 seconds"
+            label={t("Forward 30 seconds")}
             onClick={() => onSeekStep(30)}
             stepText="30s"
             icon={
@@ -136,7 +138,7 @@ export function PipChrome({
             }
           />
           <PipIconBtn
-            label="Next episode"
+            label={t("Next episode")}
             onClick={onNextEp}
             disabled={!hasNextEp}
             icon={

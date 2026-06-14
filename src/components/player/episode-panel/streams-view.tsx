@@ -12,6 +12,7 @@ import { useAddons } from "@/views/play-picker/use-addons";
 import { useImdbId } from "@/views/play-picker/use-imdb-id";
 import { usePipelineResult } from "@/views/play-picker/use-pipeline-result";
 import { useStreamIds } from "@/views/play-picker/use-stream-ids";
+import { useT } from "@/lib/i18n";
 import { AddonGroup } from "./addon-group";
 
 export function StreamsView({
@@ -27,6 +28,7 @@ export function StreamsView({
   onClose: () => void;
   onPick: (stream: ScoredStream) => void;
 }) {
+  const t = useT();
   const { authKey } = useAuth();
   const { settings } = useSettings();
   const debrids = useDebridClients();
@@ -89,22 +91,22 @@ export function StreamsView({
     <>
       <header className="flex items-center gap-2 px-4 pb-4 pt-7">
         <button
-          aria-label="Back"
+          aria-label={t("Back")}
           onClick={onBack}
           className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-elevated text-ink-muted transition-colors hover:bg-raised hover:text-ink"
         >
-          <ChevronLeft size={20} strokeWidth={2.2} />
+          <ChevronLeft size={20} strokeWidth={2.2} className="dir-icon" />
         </button>
         <div className="min-w-0 flex-1">
           <p className="text-[10.5px] font-semibold uppercase tracking-[0.32em] text-ink-subtle">
             {epLabel}
           </p>
           <h2 className="mt-0.5 truncate font-display text-[18px] font-semibold leading-tight text-ink">
-            {episode.name ?? `Episode ${episode.episode}`}
+            {episode.name ?? t("Episode {n}", { n: episode.episode })}
           </h2>
         </div>
         <button
-          aria-label="Close"
+          aria-label={t("Close")}
           onClick={onClose}
           className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-elevated text-ink-muted transition-colors hover:bg-raised hover:text-ink"
         >
@@ -115,25 +117,26 @@ export function StreamsView({
         {loading && totalStreams === 0 && (
           <div className="flex flex-col items-center justify-center gap-3 py-16">
             <HarborLoader size="sm" />
-            <p className="text-[12px] text-ink-subtle">Searching sources…</p>
+            <p className="text-[12px] text-ink-subtle">{t("Searching sources…")}</p>
           </div>
         )}
         {!loading && totalStreams === 0 && pipelineDone && (
           <p className="px-2 py-10 text-center text-[13.5px] text-ink-muted">
-            No sources found for this episode.
+            {t("No sources found for this episode.")}
           </p>
         )}
         {totalStreams > 0 && (
           <>
             <div className="mb-3 flex items-center justify-between text-[11.5px] text-ink-subtle">
               <span>
-                {totalStreams} {totalStreams === 1 ? "source" : "sources"} across {groups.length}{" "}
-                addons
+                {totalStreams === 1
+                  ? t("{n} source across {count} addons", { n: totalStreams, count: groups.length })
+                  : t("{n} sources across {count} addons", { n: totalStreams, count: groups.length })}
               </span>
               {!pipelineDone && (
                 <span className="flex items-center gap-1.5">
                   <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
-                  loading more…
+                  {t("loading more…")}
                 </span>
               )}
             </div>

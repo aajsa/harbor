@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, Play, Plus, Popcorn, Star } from "lucide-react";
+import { Check, Play, Plus, Star } from "lucide-react";
 import { animeDetails, franchiseTags, type FranchiseEntry } from "@/lib/providers/anime-detail";
 import { imdbToKitsu, tmdbTvToKitsu } from "@/lib/providers/anime-mapping";
 import { stripFranchiseSuffix } from "@/lib/providers/jikan";
@@ -8,11 +8,8 @@ import { AnimeAwardsBlock } from "@/components/anime-awards-block";
 import { AwardsBlock } from "@/components/awards-block";
 import { BackToTop } from "@/components/back-to-top";
 import { LazyMount } from "@/components/lazy-mount";
-import { ImdbIcon } from "@/components/icons/imdb-icon";
-import { MalLogo } from "@/components/icons/mal-logo";
 import { PickCard } from "@/components/pick-card";
 import { Row } from "@/components/row";
-import { RtBadge } from "@/components/rt-badge";
 import { meta as fetchCinemetaMeta, narrowMediaType, isAddonNativeMeta, type Meta } from "@/lib/cinemeta";
 import { fetchAddonMeta } from "@/lib/addons";
 import { useMdblistScores } from "@/lib/providers/mdblist";
@@ -41,9 +38,11 @@ import { openUrl } from "@/lib/window";
 import { profileFromDetail, trackEvent } from "@/lib/discover";
 import { MOVIE_GENRES, TV_GENRES } from "@/lib/feed/tags";
 import { useScrollMemory, useView } from "@/lib/view";
+import { useT } from "@/lib/i18n";
 import { AddToAnilistButton } from "./detail/add-to-anilist-button";
 import { AddToSimklButton } from "./detail/add-to-simkl-button";
 import { CollectionRow } from "./detail/collection-row";
+import { MediaGallery } from "./detail/media-gallery";
 import { EpisodeDownloadButton } from "./detail/episode-download-button";
 import { isTitleUpcoming } from "./detail/helpers";
 import { HeroAwardsCorner } from "./detail/hero-awards";
@@ -69,9 +68,7 @@ import { Synopsis } from "./detail/synopsis";
 import { CastCard } from "./detail/cast-card";
 import { PreviewIcon } from "./detail/preview-icon";
 import { HeroActionOverflow, useHeroActionOverflow } from "./detail/hero-action-overflow";
-import mdblistLogo from "@/assets/addon-logos/mdblist.png";
-import letterboxdLogo from "@/assets/addon-logos/letterboxd.png";
-import traktLogo from "@/assets/trakt.svg";
+import { HeroRatings } from "./detail/hero-ratings";
 import { TrailerOverlay } from "./detail/trailer-overlay";
 import { SeriesEpisodes } from "./detail/series-episodes";
 import { CinemetaEpisodes } from "./detail/cinemeta-episodes";
@@ -89,6 +86,7 @@ export function DetailView({
   liveContext?: boolean;
   episodeHint?: { season: number; episode: number };
 }) {
+  const t = useT();
   const { settings } = useSettings();
   const [detail, setDetail] = useState<TmdbDetail | null>(null);
   const [animeEpisodes, setAnimeEpisodes] = useState<KitsuEpisode[]>([]);
@@ -421,15 +419,15 @@ export function DetailView({
     : -1;
   const showSeasonPill = isAnime && franchise.length > 1 && franchiseIdx >= 0;
   const seasonPillTags = showSeasonPill ? franchiseTags(franchise) : [];
-  const seasonPillCount = seasonPillTags.filter((t) => t.kind === "season").length;
+  const seasonPillCount = seasonPillTags.filter((tag) => tag.kind === "season").length;
   const seasonPillTag = seasonPillTags[franchiseIdx];
   const seasonPillLabel = !seasonPillTag
     ? ""
     : seasonPillTag.kind === "movie"
-      ? "Movie"
+      ? t("Movie")
       : seasonPillCount > 1
-        ? `Season ${seasonPillTag.seasonNum} of ${seasonPillCount}`
-        : `Season ${seasonPillTag.seasonNum}`;
+        ? t("Season {n} of {m}", { n: seasonPillTag.seasonNum, m: seasonPillCount })
+        : t("Season {n}", { n: seasonPillTag.seasonNum });
 
   const lastPlay = useMemo(() => {
     if (episodeHint) return episodeHint;
@@ -520,10 +518,10 @@ export function DetailView({
     openPicker(playMeta, { season: 1, episode: 1 }, { autoPlay: settings.instantPlay });
   }, [isSeries, isAnime, animeEpisodes, lastPlay, openPicker, playMeta, settings.instantPlay, inSession, claimHost, authKey, meta.id, detail?.imdbId]);
   const smartPlayLabel = inSession && !liveContext
-    ? "Play Together"
+    ? t("Play Together")
     : isSeries && lastPlay
-      ? `Resume S${lastPlay.season}:E${lastPlay.episode}`
-      : "Play";
+      ? t("Resume S{s}:E{e}", { s: lastPlay.season, e: lastPlay.episode })
+      : t("Play");
 
   return (
     <main
@@ -557,7 +555,7 @@ export function DetailView({
             />
           ) : null}
           <div className="absolute inset-0 bg-gradient-to-t from-canvas via-canvas/55 via-45% to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-r from-canvas/85 via-canvas/35 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r rtl:bg-gradient-to-l from-canvas/85 via-canvas/35 to-transparent" />
 
           <div className="absolute inset-x-0 bottom-0 px-12 pb-14">
             <div className="max-w-3xl">
@@ -580,70 +578,16 @@ export function DetailView({
                     {year}
                   </Pill>
                 )}
-                {rating && (
-                  <Pill
-                    onClick={() => {
-                      const id = detail?.imdbId ?? (meta.id.startsWith("tt") ? meta.id : null);
-                      if (id) openUrl(`https://www.imdb.com/title/${id}/`);
-                    }}
-                  >
-                    {isAnime ? (
-                      <MalLogo className="h-[14px] w-auto text-ink-muted" />
-                    ) : (
-                      <ImdbIcon className="h-[15px] w-auto rounded-[3px]" />
-                    )}
-                    <span className="font-semibold text-ink">{rating}</span>
-                  </Pill>
-                )}
-                {settings.showRtBadge && scores?.rtCritics != null && (
-                  <Pill>
-                    <RtBadge score={scores.rtCritics} className="h-[16px] w-auto" />
-                    <span className="font-semibold text-ink">{scores.rtCritics}%</span>
-                  </Pill>
-                )}
-                {settings.showRtBadge && mdblist?.rtAudience != null && (
-                  <Pill>
-                    <Popcorn
-                      size={15}
-                      strokeWidth={2}
-                      className={mdblist.rtAudience >= 60 ? "text-accent" : "text-ink-subtle"}
-                    />
-                    <span className="font-semibold text-ink">{Math.round(mdblist.rtAudience)}%</span>
-                  </Pill>
-                )}
-                {mdblist?.letterboxd != null && (
-                  <Pill
-                    onClick={() => {
-                      const id = detail?.imdbId ?? (meta.id.startsWith("tt") ? meta.id : null);
-                      if (id) openUrl(`https://letterboxd.com/imdb/${id}/`);
-                    }}
-                  >
-                    <img src={letterboxdLogo} alt="Letterboxd" className="h-[14px] w-[14px] rounded-[3px] object-cover" />
-                    <span className="font-semibold text-ink">{mdblist.letterboxd.toFixed(1)}</span>
-                  </Pill>
-                )}
-                {mdblist?.trakt != null && (
-                  <Pill
-                    onClick={() => {
-                      const id = detail?.imdbId ?? (meta.id.startsWith("tt") ? meta.id : null);
-                      if (id) openUrl(`https://trakt.tv/search/imdb/${id}`);
-                    }}
-                  >
-                    <img src={traktLogo} alt="Trakt" className="h-[14px] w-[14px] object-contain" />
-                    <span className="font-semibold text-ink">{Math.round(mdblist.trakt)}%</span>
-                  </Pill>
-                )}
-                {mdblist?.score != null && (
-                  <Pill
-                    onClick={() => {
-                      const id = detail?.imdbId ?? (meta.id.startsWith("tt") ? meta.id : null);
-                      if (id) openUrl(`https://mdblist.com/${meta.type === "movie" ? "movie" : "show"}/${id}`);
-                    }}
-                  >
-                    <img src={mdblistLogo} alt="" className="h-[14px] w-[14px] rounded-[3px] object-contain" />
-                    <span className="font-semibold text-ink">{Math.round(mdblist.score)}</span>
-                  </Pill>
-                )}
+                <HeroRatings
+                  rating={rating}
+                  isAnime={isAnime}
+                  scores={scores}
+                  mdblist={mdblist}
+                  showRtBadge={settings.showRtBadge}
+                  imdbId={detail?.imdbId ?? (meta.id.startsWith("tt") ? meta.id : null)}
+                  mediaType={meta.type === "movie" ? "movie" : "show"}
+                  onOpenUrl={openUrl}
+                />
                 {runtime && (
                   <Pill
                     onClick={() => {
@@ -669,7 +613,7 @@ export function DetailView({
                   </button>
                 )}
                 {meta.addonOrigin ? (
-                  <span className="flex items-center gap-2 rounded-full border border-edge bg-canvas/80 py-1 pl-1.5 pr-3 text-[12.5px] font-medium text-ink-muted">
+                  <span className="flex items-center gap-2 rounded-full border border-edge bg-canvas/80 py-1 ps-1.5 pe-3 text-[12.5px] font-medium text-ink-muted">
                     {meta.addonOrigin.logo ? (
                       <img
                         src={meta.addonOrigin.logo}
@@ -728,7 +672,7 @@ export function DetailView({
                         poster: meta.poster ?? detail?.poster,
                       })
                     }
-                    title={traktConnected ? "Synced to Trakt" : "Saved locally. Connect Trakt in Settings to sync."}
+                    title={traktConnected ? t("Synced to Trakt") : t("Saved locally. Connect Trakt in Settings to sync.")}
                     className={`flex h-12 items-center gap-2.5 rounded-full border px-6 text-[15px] font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-[transform,background-color,border-color] duration-200 active:scale-[0.98] ${
                       inWatchlist
                         ? "border-ink bg-ink/10 text-ink hover:bg-ink/20"
@@ -738,12 +682,12 @@ export function DetailView({
                     {inWatchlist ? (
                       <>
                         <Check size={18} strokeWidth={2.4} />
-                        In Watchlist
+                        {t("In Watchlist")}
                       </>
                     ) : (
                       <>
                         <Plus size={18} strokeWidth={2} />
-                        Add to Watchlist
+                        {t("Add to Watchlist")}
                       </>
                     )}
                   </button>
@@ -804,8 +748,8 @@ export function DetailView({
                           poster: meta.poster ?? detail?.poster,
                         })
                       }
-                      aria-label={isFav ? "Remove from favorites" : "Add to favorites"}
-                      title={isFav ? "Favorited" : "Favorite"}
+                      aria-label={isFav ? t("Remove from favorites") : t("Add to favorites")}
+                      title={isFav ? t("Favorited") : t("Favorite")}
                       className={`group flex h-12 w-12 items-center justify-center rounded-full border transition-[transform,background-color,border-color] duration-200 active:scale-[0.94] ${
                         isFav
                           ? "border-accent/55 bg-accent/15 text-accent hover:bg-accent/22"
@@ -818,8 +762,8 @@ export function DetailView({
                       <button
                         type="button"
                         onClick={() => setTrailerOpen(true)}
-                        aria-label="Watch trailer"
-                        title="Watch trailer"
+                        aria-label={t("Watch trailer")}
+                        title={t("Watch trailer")}
                         className="group flex h-12 w-12 items-center justify-center rounded-full border border-edge bg-canvas/80 text-ink transition-[transform,background-color,border-color] duration-200 hover:border-ink-subtle hover:bg-canvas/95 active:scale-[0.94]"
                       >
                         <PreviewIcon size={20} />
@@ -835,10 +779,10 @@ export function DetailView({
                     className="flex h-12 items-center gap-2 rounded-full border border-edge bg-canvas/80 px-5 text-[14px] font-medium text-ink-muted transition-colors hover:border-ink-subtle hover:bg-canvas/95 hover:text-ink"
                   >
                     {meta.type === "series" || meta.type === "tv"
-                      ? "Open in TV Shows"
+                      ? t("Open in TV Shows")
                       : meta.type === "anime"
-                        ? "Open in Anime"
-                        : "Open in Movies"}
+                        ? t("Open in Anime")
+                        : t("Open in Movies")}
                   </button>
                 )}
               </div>
@@ -915,32 +859,32 @@ export function DetailView({
         {detail && (detail.directors.length > 0 || detail.creators.length > 0 || detail.writers.length > 0) && (
           <div className="grid grid-cols-1 gap-x-12 gap-y-6 border-b border-edge-soft pb-12 sm:grid-cols-2 lg:grid-cols-3">
             {detail.directors.length > 0 && (
-              <Credit label={detail.directors.length === 1 ? "Director" : "Directors"} people={detail.directors} />
+              <Credit label={detail.directors.length === 1 ? t("Director") : t("Directors")} people={detail.directors} />
             )}
             {detail.creators.length > 0 && (
-              <Credit label={detail.creators.length === 1 ? "Creator" : "Creators"} people={detail.creators} />
+              <Credit label={detail.creators.length === 1 ? t("Creator") : t("Creators")} people={detail.creators} />
             )}
             {detail.writers.length > 0 && (
-              <Credit label={detail.writers.length === 1 ? "Writer" : "Writers"} people={detail.writers.slice(0, 6)} />
+              <Credit label={detail.writers.length === 1 ? t("Writer") : t("Writers")} people={detail.writers.slice(0, 6)} />
             )}
             {detail.producers.length > 0 && (
-              <Credit label="Producers" people={detail.producers.slice(0, 6)} />
+              <Credit label={t("Producers")} people={detail.producers.slice(0, 6)} />
             )}
             {detail.cinematography.length > 0 && (
-              <Credit label="Cinematography" people={detail.cinematography} />
+              <Credit label={t("Cinematography")} people={detail.cinematography} />
             )}
             {detail.composer.length > 0 && (
-              <Credit label="Music" people={detail.composer} />
+              <Credit label={t("Music")} people={detail.composer} />
             )}
             {detail.editor.length > 0 && (
-              <Credit label={detail.editor.length === 1 ? "Editor" : "Editors"} people={detail.editor} />
+              <Credit label={detail.editor.length === 1 ? t("Editor") : t("Editors")} people={detail.editor} />
             )}
           </div>
         )}
 
         {detail && detail.cast.length > 0 && (
           <LazyMount minHeight={240}>
-            <Row title={`Cast · ${detail.cast.length}`} min={128}>
+            <Row title={t("Cast · {n}", { n: detail.cast.length })} min={128}>
               {detail.cast.map((c, i) => (
                 <CastCard key={`${c.id}-${i}`} cast={c} />
               ))}
@@ -956,7 +900,7 @@ export function DetailView({
 
         {recommendations.length > 0 && (
           <LazyMount minHeight={280}>
-            <Row title="More Like This">
+            <Row title={t("More Like This")}>
               {recommendations.map((r) => (
                 <PickCard key={r.id} meta={r} />
               ))}
@@ -966,11 +910,17 @@ export function DetailView({
 
         {similar.length > 0 && (
           <LazyMount minHeight={280}>
-            <Row title="You Might Also Like">
+            <Row title={t("You Might Also Like")}>
               {similar.map((r) => (
                 <PickCard key={`s-${r.id}`} meta={r} />
               ))}
             </Row>
+          </LazyMount>
+        )}
+
+        {detail && (
+          <LazyMount minHeight={280}>
+            <MediaGallery detail={detail} title={title} logo={logo} />
           </LazyMount>
         )}
 
@@ -1001,7 +951,7 @@ export function DetailView({
 
         {!loading && !detail && !isAnime && !addonNative && !settings.tmdbKey && (
           <div className="rounded-2xl border border-dashed border-edge px-6 py-12 text-center text-[14px] text-ink-muted">
-            Add a TMDB key in Settings to see cast, related titles, and trailers here.
+            {t("Add a TMDB key in Settings to see cast, related titles, and trailers here.")}
           </div>
         )}
       </div>

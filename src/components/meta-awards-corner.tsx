@@ -36,32 +36,36 @@ export function MetaAwardsCorner({ meta, imdbId }: { meta: Meta; imdbId?: string
   return <ClassicCorner imdbId={imdbId ?? null} name={meta.name} year={parseAwardYear(meta.releaseInfo)} />;
 }
 
-function useHostWide(min = 860) {
+type CornerTier = "full" | "compact" | "hidden";
+
+function useHostTier() {
   const ref = useRef<HTMLDivElement | null>(null);
-  const [wide, setWide] = useState(true);
+  const [tier, setTier] = useState<CornerTier>("full");
   useLayoutEffect(() => {
     let host = ref.current?.offsetParent as HTMLElement | null;
     while (host && host.clientWidth < 340 && host.offsetParent) {
       host = host.offsetParent as HTMLElement;
     }
     if (!host) return;
-    const check = () => setWide(host.clientWidth >= min);
+    const check = () => {
+      const w = host.clientWidth;
+      setTier(w >= 820 ? "full" : w >= 520 ? "compact" : "hidden");
+    };
     check();
     const ro = new ResizeObserver(check);
     ro.observe(host);
     return () => ro.disconnect();
   }, []);
-  return { ref, wide };
+  return { ref, tier };
 }
 
 function AnimeCorner({ name, year }: { name: string; year?: number }) {
-  const { ref, wide } = useHostWide();
+  const { ref, tier } = useHostTier();
   const wins = findAnyAwardWins(name, year);
-  if (wins.length === 0) return null;
+  if (wins.length === 0 || tier === "hidden") return null;
   const top = wins[0];
   const src = awardSourceMeta(top.source);
-  const won = true;
-  const headline = `${src.name} ${top.isAOTY ? "Winner" : "Winner"}`;
+  const compact = tier === "compact";
   const subline = top.isAOTY
     ? `${top.year} Anime of the Year`
     : `${top.year} ${top.categoryName.replace(/^Best\s+/i, "Best ")}`;
@@ -69,51 +73,45 @@ function AnimeCorner({ name, year }: { name: string; year?: number }) {
   return (
     <div
       ref={ref}
-      className={`pointer-events-none absolute bottom-10 right-10 z-10 hidden items-center gap-4 text-right ${wide ? "lg:flex" : ""}`}
+      className="pointer-events-none absolute bottom-10 end-10 z-10 flex max-w-[44%] items-center justify-end gap-3 text-end"
       title={wins.map((w) => `${awardSourceMeta(w.source).shortName} ${w.year} ${w.categoryName}`).join("\n")}
     >
-      <div className="flex flex-col gap-0.5">
-        <span className="text-[10.5px] font-bold uppercase tracking-[0.18em] text-ink/55">
-          {headline}
+      <div className="flex min-w-0 flex-col gap-0.5">
+        <span
+          className={`truncate font-bold uppercase tracking-[0.18em] text-ink/55 ${compact ? "text-[9.5px]" : "text-[10.5px]"}`}
+        >
+          {compact ? "Award Winner" : `${src.name} Winner`}
         </span>
-        <span className="text-[13px] font-semibold text-ink/85">{subline}</span>
-        {otherWins > 0 && (
-          <span className="text-[11px] text-ink-subtle">
+        {!compact && <span className="truncate text-[13px] font-semibold text-ink/85">{subline}</span>}
+        {!compact && otherWins > 0 && (
+          <span className="truncate text-[11px] text-ink-subtle">
             +{otherWins} more award{otherWins === 1 ? "" : "s"}
           </span>
         )}
       </div>
       <span className="shrink-0 text-accent">
-        {won ? (
-          <Laurel size={68}>
-            <img
-              src={src.iconSmall}
-              alt=""
-              className={`h-7 w-7 object-contain ${top.source === "animation_kobe" ? "brightness-0 invert" : ""}`}
-              draggable={false}
-            />
-          </Laurel>
-        ) : (
+        <Laurel size={compact ? 48 : 68}>
           <img
             src={src.iconSmall}
             alt=""
-            className={`h-9 w-9 object-contain opacity-90 ${top.source === "animation_kobe" ? "brightness-0 invert" : ""}`}
+            className={`object-contain ${compact ? "h-5 w-5" : "h-7 w-7"} ${top.source === "animation_kobe" ? "brightness-0 invert" : ""}`}
             draggable={false}
           />
-        )}
+        </Laurel>
       </span>
     </div>
   );
 }
 
 function ClassicCorner({ imdbId, name, year }: { imdbId: string | null; name: string; year?: number }) {
-  const { ref, wide } = useHostWide();
+  const { ref, tier } = useHostTier();
   const live = useAwards(imdbId ?? undefined);
   const awards = useMemo(() => mergeBundledAwards(live, name, year), [live, name, year]);
   const summary = useMemo(() => awardSummary(awards).slice(0, 2), [awards]);
-  if (summary.length === 0) return null;
+  if (summary.length === 0 || tier === "hidden") return null;
   const top = summary[0];
   const won = top.wins > 0;
+  const compact = tier === "compact";
   const lines: string[] = [];
   for (const item of summary) {
     if (item.wins > 0) {
@@ -124,35 +122,42 @@ function ClassicCorner({ imdbId, name, year }: { imdbId: string | null; name: st
       );
     }
   }
-  const headline = `${HEADLINE_FOR[top.type] ?? "Award"} ${won ? "Winner" : "Nominee"}`;
+  const headline = compact
+    ? `Award ${won ? "Winner" : "Nominee"}`
+    : `${HEADLINE_FOR[top.type] ?? "Award"} ${won ? "Winner" : "Nominee"}`;
   const laurelTint = laurelColorFor(top.type);
   return (
     <div
       ref={ref}
-      className={`pointer-events-none absolute bottom-10 right-10 z-10 hidden items-center gap-4 text-right ${wide ? "lg:flex" : ""}`}
+      className="pointer-events-none absolute bottom-10 end-10 z-10 flex max-w-[44%] items-center justify-end gap-3 text-end"
       title={lines.join(" · ")}
     >
-      <div className="flex flex-col gap-0.5">
-        <span className="text-[10.5px] font-bold uppercase tracking-[0.18em] text-ink/55">
+      <div className="flex min-w-0 flex-col gap-0.5">
+        <span
+          className={`truncate font-bold uppercase tracking-[0.18em] text-ink/55 ${compact ? "text-[9.5px]" : "text-[10.5px]"}`}
+        >
           {headline}
         </span>
-        {lines.slice(0, 2).map((l, i) => (
-          <span key={i} className="text-[13px] font-medium text-ink/85">
-            {l}
-          </span>
-        ))}
+        {!compact &&
+          lines.slice(0, 2).map((l, i) => (
+            <span key={i} className="truncate text-[13px] font-medium text-ink/85">
+              {l}
+            </span>
+          ))}
       </div>
       <span
         className="shrink-0 text-accent"
         style={laurelTint ? { color: laurelTint } : undefined}
       >
         {won ? (
-          <Laurel size={68}>
-            <AwardLogo type={top.type as AwardType} size={24} />
+          <Laurel size={compact ? 48 : 68}>
+            <AwardLogo type={top.type as AwardType} size={compact ? 18 : 24} />
           </Laurel>
         ) : (
-          <span className="flex h-16 w-16 items-center justify-center opacity-85">
-            <AwardLogo type={top.type as AwardType} size={36} />
+          <span
+            className={`flex items-center justify-center opacity-85 ${compact ? "h-11 w-11" : "h-16 w-16"}`}
+          >
+            <AwardLogo type={top.type as AwardType} size={compact ? 26 : 36} />
           </span>
         )}
       </span>

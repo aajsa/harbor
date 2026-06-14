@@ -2,6 +2,7 @@ import { LottiePlayer } from "@/components/lottie-player";
 import waitingAnim from "@/assets/lottie/wt-waiting-white.json";
 import { formatNames } from "./player-utils";
 import type { RoomSnapshot } from "@/lib/together/client";
+import { useT } from "@/lib/i18n";
 
 function readyPillClass(ready: boolean, stale: boolean): string {
   if (ready) return "bg-emerald-500/15 text-emerald-300";
@@ -39,6 +40,7 @@ export function WaitingForRoom(props: {
     onPlayWithoutSync,
     onLeave,
   } = props;
+  const t = useT();
   const stillLoading = notReady.length;
   return (
     <div className="pointer-events-auto absolute inset-0 z-30 flex items-center justify-center bg-black/72 backdrop-blur-md">
@@ -46,14 +48,14 @@ export function WaitingForRoom(props: {
         <LottiePlayer data={waitingAnim} className="h-28 w-28" />
         <div className="flex flex-col gap-1.5">
           <h2 className="text-[18px] font-semibold text-white">
-            {isHost ? "Ready when you are" : "Waiting for the host to start"}
+            {isHost ? t("Ready when you are") : t("Waiting for the host to start")}
           </h2>
           <p className="text-[13px] text-white/60">
             {isHost
               ? stillLoading > 0
-                ? `Loading on ${formatNames(notReady.map((p) => p.name))}…`
-                : "Everyone is loaded in. Press play to start watching."
-              : "The host starts playback for the whole room."}
+                ? t("Loading on {names}…", { names: formatNames(notReady.map((p) => p.name)) })
+                : t("Everyone is loaded in. Press play to start watching.")
+              : t("The host starts playback for the whole room.")}
           </p>
         </div>
         {isHost && participants.length > 0 && (
@@ -67,8 +69,8 @@ export function WaitingForRoom(props: {
                 >
                   <span aria-hidden className={`h-1.5 w-1.5 rounded-full ${readyDotClass(p.ready, stale)}`} />
                   {p.name}
-                  {p.id === clientId && " (you)"}
-                  {!p.ready && stale && " · still loading"}
+                  {p.id === clientId && t(" (you)")}
+                  {!p.ready && stale && t(" · still loading")}
                 </span>
               );
             })}
@@ -82,8 +84,8 @@ export function WaitingForRoom(props: {
               className="inline-flex h-10 items-center gap-2 rounded-full bg-white px-5 text-[13px] font-semibold text-black transition-transform hover:scale-[1.02] active:scale-[0.98]"
             >
               {everyoneReady
-                ? "Start watching"
-                : `Start anyway (${stillLoading} still loading)`}
+                ? t("Start watching")
+                : t("Start anyway ({n} still loading)", { n: stillLoading })}
             </button>
           )}
           {!isHost && guestEscapeReady && (
@@ -92,7 +94,7 @@ export function WaitingForRoom(props: {
               onClick={onPlayWithoutSync}
               className="inline-flex h-10 items-center rounded-full bg-white/15 px-5 text-[13px] font-semibold text-white transition-colors hover:bg-white/25"
             >
-              Play without sync
+              {t("Play without sync")}
             </button>
           )}
           <button
@@ -100,7 +102,7 @@ export function WaitingForRoom(props: {
             onClick={onLeave}
             className="inline-flex h-10 items-center rounded-full border border-white/25 px-5 text-[13px] font-semibold text-white/80 transition-colors hover:border-white/45 hover:text-white"
           >
-            Leave
+            {t("Leave")}
           </button>
         </div>
       </div>

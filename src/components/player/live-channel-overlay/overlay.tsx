@@ -22,6 +22,7 @@ import { useEpg, useNowTick } from "@/views/live/hooks/use-epg";
 import { useIptvPlaylist } from "@/views/live/hooks/use-iptv-playlist";
 import { useScrollMemory } from "@/lib/view";
 import { useSettings } from "@/lib/settings";
+import { useT } from "@/lib/i18n";
 import { CurrentChannelInfo } from "./current-channel-info";
 import { InlineSourceSwitcher } from "./inline-source-switcher";
 
@@ -48,6 +49,7 @@ export function LiveChannelOverlay({
   query: string;
   setQuery: (q: string) => void;
 }) {
+  const t = useT();
   const { settings } = useSettings();
   const { state } = useIptvPlaylist(source);
   const { index: epg } = useEpg(source);
@@ -200,11 +202,11 @@ export function LiveChannelOverlay({
       <div className="flex shrink-0 items-start gap-3 px-6 pt-6">
         <button
           onClick={onClose}
-          aria-label="Close guide"
-          className="flex h-11 shrink-0 items-center gap-2 rounded-full border border-edge-soft/60 bg-canvas/80 pl-3 pr-4 text-[13.5px] font-medium text-ink-muted backdrop-blur transition-colors hover:bg-canvas hover:text-ink"
+          aria-label={t("Close guide")}
+          className="flex h-11 shrink-0 items-center gap-2 rounded-full border border-edge-soft/60 bg-canvas/80 ps-3 pe-4 text-[13.5px] font-medium text-ink-muted backdrop-blur transition-colors hover:bg-canvas hover:text-ink"
         >
           <X size={15} strokeWidth={2.2} />
-          Close
+          {t("Close")}
         </button>
         <CurrentChannelInfo channel={currentChannel} current={currentProgram} now={nowMs} />
       </div>
@@ -222,8 +224,10 @@ export function LiveChannelOverlay({
             onChange={(e) => setQuery(e.target.value)}
             placeholder={
               inFavorites
-                ? `Search ${favorites.count} favorite${favorites.count === 1 ? "" : "s"}`
-                : `Search ${playlist?.channels.length ?? 0} channels`
+                ? favorites.count === 1
+                  ? t("Search {n} favorite", { n: favorites.count })
+                  : t("Search {n} favorites", { n: favorites.count })
+                : t("Search {n} channels", { n: playlist?.channels.length ?? 0 })
             }
             className="flex-1 bg-transparent text-[14px] text-ink placeholder:text-ink-subtle focus:outline-none"
             autoFocus
@@ -233,18 +237,18 @@ export function LiveChannelOverlay({
               onClick={() => setQuery("")}
               className="text-[12.5px] font-medium text-ink-subtle transition-colors hover:text-ink"
             >
-              Clear
+              {t("Clear")}
             </button>
           )}
         </div>
         <button
           onClick={toggleGuideStyle}
-          title={guideStyle === "timeline" ? "Switch to channel list (hide program guide)" : "Switch to program guide"}
-          aria-label="Toggle guide layout"
+          title={guideStyle === "timeline" ? t("Switch to channel list (hide program guide)") : t("Switch to program guide")}
+          aria-label={t("Toggle guide layout")}
           className="flex h-11 shrink-0 items-center gap-2 rounded-xl border border-edge-soft/55 bg-elevated px-3.5 text-[13px] font-medium text-ink-muted transition-colors hover:text-ink"
         >
           {guideStyle === "timeline" ? <List size={15} strokeWidth={2} /> : <CalendarRange size={15} strokeWidth={2} />}
-          {guideStyle === "timeline" ? "List" : "Guide"}
+          {guideStyle === "timeline" ? t("List") : t("Guide")}
         </button>
       </div>
       <div className="flex min-h-0 flex-1">
@@ -263,7 +267,7 @@ export function LiveChannelOverlay({
           {inFavorites && loadingFavorites && (
             <div className="mb-3 flex items-center gap-2 rounded-xl border border-edge-soft/55 bg-elevated/70 px-4 py-2 text-[12.5px] text-ink-muted">
               <Loader2 size={13} className="animate-spin text-ink-subtle" />
-              Loading favorites from other providers…
+              {t("Loading favorites from other providers…")}
             </div>
           )}
           {visible.length > 0 && (
@@ -282,10 +286,10 @@ export function LiveChannelOverlay({
           {visible.length === 0 && playlist && (
             <div className="flex h-40 items-center justify-center text-[13px] text-ink-subtle">
               {inFavorites && favorites.count === 0
-                ? "No favorites yet. Star a channel to pin it here."
+                ? t("No favorites yet. Star a channel to pin it here.")
                 : inFavorites && loadingFavorites
-                ? "Loading favorites…"
-                : "No channels match. Try a different category or clear the search."}
+                ? t("Loading favorites…")
+                : t("No channels match. Try a different category or clear the search.")}
             </div>
           )}
         </div>

@@ -11,8 +11,19 @@ export function setTmdbLanguage(lang: string): void {
   tmdbLanguage = lang.trim();
 }
 
+function arabicModeActive(): boolean {
+  if (typeof document === "undefined") return false;
+  const el = document.documentElement;
+  return el.lang.toLowerCase().startsWith("ar") || el.dir === "rtl";
+}
+
+export function effectiveTmdbLanguage(): string {
+  if (tmdbLanguage) return tmdbLanguage;
+  return arabicModeActive() ? "ar" : "";
+}
+
 export function tmdbLanguageIso(): string {
-  return tmdbLanguage.split("-")[0]?.toLowerCase() ?? "";
+  return effectiveTmdbLanguage().split("-")[0]?.toLowerCase() ?? "";
 }
 
 let lastFailureLogged = 0;
@@ -87,7 +98,8 @@ export async function get<T>(
   if (!key) return null;
   const url = new URL(`${TMDB}/${path}`);
   url.searchParams.set("api_key", key);
-  if (tmdbLanguage && !params.language) url.searchParams.set("language", tmdbLanguage);
+  const lang = effectiveTmdbLanguage();
+  if (lang && !params.language) url.searchParams.set("language", lang);
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
   const target = url.toString();
   for (let attempt = 0; attempt < 4; attempt += 1) {

@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useSimkl } from "./provider";
 import { simklScrobble } from "./scrobble";
 import { getPlaybackPosition } from "@/lib/player/playback-clock";
+import { useSettings } from "@/lib/settings";
 import type { PlayerSrc } from "@/lib/view";
 
 type Snap = {
@@ -12,6 +13,9 @@ type Snap = {
 
 export function useSimklScrobble({ src, snap }: { src: PlayerSrc; snap: Snap }): void {
   const { isConnected } = useSimkl();
+  const { settings } = useSettings();
+  const pauseOnPauseRef = useRef(settings.pauseListStatusOnPause);
+  pauseOnPauseRef.current = settings.pauseListStatusOnPause;
   const metaId = src.meta.id;
   const key = `${metaId}|${src.episode?.season ?? ""}|${src.episode?.episode ?? ""}`;
 
@@ -35,7 +39,7 @@ export function useSimklScrobble({ src, snap }: { src: PlayerSrc; snap: Snap }):
     let want: "start" | "pause" | "stop" | null = null;
     if (snap.status === "ended") want = "stop";
     else if (snap.status === "playing") want = "start";
-    else if (snap.status === "paused") want = "pause";
+    else if (snap.status === "paused" && pauseOnPauseRef.current) want = "pause";
     if (!want) return;
 
     const last = sentRef.current;

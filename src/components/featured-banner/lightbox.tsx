@@ -49,7 +49,7 @@ export function Lightbox({
       onClick={onClose}
     >
       <div
-        className="absolute left-8 top-8 flex flex-col gap-1"
+        className="absolute start-8 top-8 flex flex-col gap-1"
         onClick={(e) => e.stopPropagation()}
       >
         <span className="font-display text-[18px] font-medium tracking-tight text-ink">
@@ -67,7 +67,7 @@ export function Lightbox({
           onClose();
         }}
         aria-label="Close image viewer"
-        className="absolute right-8 top-8 flex h-12 w-12 items-center justify-center rounded-full border border-edge-soft bg-elevated/50 text-ink-muted transition-colors duration-200 hover:bg-elevated hover:text-ink"
+        className="absolute end-8 top-8 flex h-12 w-12 items-center justify-center rounded-full border border-edge-soft bg-elevated/50 text-ink-muted transition-colors duration-200 hover:bg-elevated hover:text-ink"
       >
         <X size={22} />
       </button>
@@ -81,9 +81,9 @@ export function Lightbox({
               prev();
             }}
             aria-label="Previous image"
-            className="absolute left-8 top-1/2 flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full border border-edge-soft bg-elevated/50 text-ink-muted transition-colors duration-200 hover:bg-elevated hover:text-ink"
+            className="absolute start-8 top-1/2 flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full border border-edge-soft bg-elevated/50 text-ink-muted transition-colors duration-200 hover:bg-elevated hover:text-ink"
           >
-            <ChevronLeft size={28} />
+            <ChevronLeft size={28} className="dir-icon" />
           </button>
           <button
             type="button"
@@ -92,9 +92,9 @@ export function Lightbox({
               next();
             }}
             aria-label="Next image"
-            className="absolute right-8 top-1/2 flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full border border-edge-soft bg-elevated/50 text-ink-muted transition-colors duration-200 hover:bg-elevated hover:text-ink"
+            className="absolute end-8 top-1/2 flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full border border-edge-soft bg-elevated/50 text-ink-muted transition-colors duration-200 hover:bg-elevated hover:text-ink"
           >
-            <ChevronRight size={28} />
+            <ChevronRight size={28} className="dir-icon" />
           </button>
         </>
       )}

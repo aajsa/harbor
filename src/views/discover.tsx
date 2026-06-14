@@ -50,11 +50,18 @@ export function Discover({ active = true }: { active?: boolean }) {
 
   useEffect(() => {
     let cancelled = false;
-    fetchFeatured(settings.tmdbKey).then((m) => !cancelled && setFeatured(m));
+    fetchFeatured(settings.tmdbKey, settings).then((m) => !cancelled && setFeatured(m));
     return () => {
       cancelled = true;
     };
-  }, [settings.tmdbKey, settings.tmdbLanguage, tasteVersion]);
+  }, [
+    settings.tmdbKey,
+    settings.tmdbLanguage,
+    settings.region,
+    settings.feedLocaleBias,
+    settings.preferredLanguages,
+    tasteVersion,
+  ]);
 
   useEffect(() => {
     let cancelled = false;
@@ -64,13 +71,19 @@ export function Discover({ active = true }: { active?: boolean }) {
       const { filterQueuePool } = await import("@/lib/feed/skipped");
       setQueue(filterQueuePool(p).filter((it) => !hidden.has(it.meta.id)));
     });
-    fetchCriticsPickList(settings.tmdbKey).then(
+    fetchCriticsPickList(settings.tmdbKey, settings).then(
       (list) => !cancelled && setCriticsPickList(list.filter((x) => !hidden.has(x.id))),
     );
     return () => {
       cancelled = true;
     };
-  }, [settings.tmdbKey]);
+  }, [
+    settings.tmdbKey,
+    settings.region,
+    settings.feedLocaleBias,
+    settings.preferredLanguages,
+    settings.tmdbLanguage,
+  ]);
 
   useEffect(() => {
     let timer = 0;

@@ -1,6 +1,7 @@
 import { CircleCheck, Download, TriangleAlert, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { DownloadStatus } from "@/views/player/hooks/use-video-download";
+import { useT } from "@/lib/i18n";
 import { BigButton } from "./big-button";
 import { Tooltip } from "./tooltip";
 
@@ -19,17 +20,18 @@ export function DownloadButton({
   onReveal,
   onReset,
 }: Props) {
+  const t = useT();
   useEffect(() => {
     if (status.kind !== "done") return;
-    const t = setTimeout(onReset, 12000);
-    return () => clearTimeout(t);
+    const timer = setTimeout(onReset, 12000);
+    return () => clearTimeout(timer);
   }, [status.kind, onReset]);
 
   const speed = useDownloadSpeed(status);
 
   if (status.kind === "preparing") {
     return (
-      <BigButton ariaLabel="Preparing download" tooltip="Preparing">
+      <BigButton ariaLabel={t("Preparing download")} tooltip={t("Preparing")}>
         <span className="relative flex items-center justify-center">
           <Download size={22} strokeWidth={1.9} className="text-white/40" />
           <span className="absolute -bottom-1 left-1/2 flex -translate-x-1/2 gap-0.5">
@@ -44,12 +46,12 @@ export function DownloadButton({
 
   if (status.kind === "downloading") {
     const pct = Math.round(status.ratio * 100);
-    const detail = formatTooltip(status, speed);
+    const detail = formatTooltip(status, speed, t);
     return (
       <Tooltip label={detail}>
         <button
           onClick={onCancel}
-          aria-label={`Downloading ${pct}%, click to cancel`}
+          aria-label={t("Downloading {pct}%, click to cancel", { pct })}
           className="group relative flex h-12 w-12 items-center justify-center rounded-full text-white/85 transition-[background-color,color] hover:bg-white/10 hover:text-white"
         >
           <ProgressRing ratio={status.ratio} indeterminate={!status.totalBytes} />
@@ -63,7 +65,11 @@ export function DownloadButton({
   if (status.kind === "done") {
     const folder = folderOf(status.path);
     return (
-      <BigButton onClick={onReveal} ariaLabel="Show downloaded file" tooltip={`Saved to ${folder} · open folder`}>
+      <BigButton
+        onClick={onReveal}
+        ariaLabel={t("Show downloaded file")}
+        tooltip={t("Saved to {folder} · open folder", { folder })}
+      >
         <CircleCheck size={22} strokeWidth={1.9} className="text-emerald-300" />
       </BigButton>
     );
@@ -71,14 +77,18 @@ export function DownloadButton({
 
   if (status.kind === "error") {
     return (
-      <BigButton onClick={onReset} ariaLabel="Download failed" tooltip={`Failed: ${status.message}`}>
+      <BigButton
+        onClick={onReset}
+        ariaLabel={t("Download failed")}
+        tooltip={t("Failed: {message}", { message: status.message })}
+      >
         <TriangleAlert size={22} strokeWidth={1.9} className="text-red-300" />
       </BigButton>
     );
   }
 
   return (
-    <BigButton onClick={onStart} ariaLabel="Download video" tooltip="Download">
+    <BigButton onClick={onStart} ariaLabel={t("Download video")} tooltip={t("Download")}>
       <Download size={22} strokeWidth={1.9} />
     </BigButton>
   );
@@ -156,6 +166,7 @@ function useDownloadSpeed(status: DownloadStatus): {
 function formatTooltip(
   status: Extract<DownloadStatus, { kind: "downloading" }>,
   { bytesPerSec, etaSec }: { bytesPerSec: number; etaSec: number | null },
+  t: (key: string, vars?: Record<string, string | number>) => string,
 ): string {
   const parts: string[] = [];
   if (status.totalBytes) {
@@ -164,8 +175,8 @@ function formatTooltip(
     parts.push(formatBytes(status.receivedBytes));
   }
   if (bytesPerSec > 0) parts.push(`${formatBytes(bytesPerSec)}/s`);
-  if (etaSec != null) parts.push(formatEta(etaSec));
-  parts.push("click to cancel");
+  if (etaSec != null) parts.push(formatEta(etaSec, t));
+  parts.push(t("click to cancel"));
   return parts.join(" · ");
 }
 
@@ -176,12 +187,15 @@ function formatBytes(b: number): string {
   return `${(b / 1024 / 1024 / 1024).toFixed(2)} GB`;
 }
 
-function formatEta(s: number): string {
-  if (s < 60) return `${s}s left`;
-  if (s < 3600) return `${Math.round(s / 60)}m left`;
+function formatEta(
+  s: number,
+  t: (key: string, vars?: Record<string, string | number>) => string,
+): string {
+  if (s < 60) return t("{s}s left", { s });
+  if (s < 3600) return t("{m}m left", { m: Math.round(s / 60) });
   const h = Math.floor(s / 3600);
   const m = Math.round((s - h * 3600) / 60);
-  return m > 0 ? `${h}h ${m}m left` : `${h}h left`;
+  return m > 0 ? t("{h}h {m}m left", { h, m }) : t("{h}h left", { h });
 }
 
 function folderOf(path: string): string {

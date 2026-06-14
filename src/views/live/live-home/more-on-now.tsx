@@ -16,7 +16,7 @@ export function MoreOnNow({
   if (items.length === 0) return null;
   return (
     <div className="flex w-[40%] min-w-[300px] shrink-0 flex-col gap-3">
-      <h3 className="pl-0.5 text-[15px] font-medium italic text-ink-muted">On now</h3>
+      <h3 className="ps-0.5 text-[15px] font-medium italic text-ink-muted">On now</h3>
       <div className="flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {items.map((it) => (
           <Pick
@@ -46,7 +46,7 @@ function Pick({
       data-art={hydrated?.background || hydrated?.poster || channel.logo || ""}
       onClick={() => onPlay(channel)}
       title={channel.name}
-      className="group/p flex w-[164px] shrink-0 flex-col gap-2 text-left"
+      className="group/p flex w-[164px] shrink-0 flex-col gap-2 text-start"
     >
       <div className="relative overflow-hidden rounded-lg ring-1 ring-edge-soft/40 transition-shadow duration-200 group-hover/p:ring-edge group-hover/p:shadow-[0_8px_24px_-10px_rgba(0,0,0,0.6)]">
         <Poster
@@ -60,7 +60,7 @@ function Pick({
             <Play size={17} fill="currentColor" />
           </span>
         </div>
-        <span className="absolute left-2 top-2 flex h-[19px] items-center rounded bg-danger px-1.5 text-[9.5px] font-bold uppercase tracking-[0.14em] text-white">
+        <span className="absolute start-2 top-2 flex h-[19px] items-center rounded bg-danger px-1.5 text-[9.5px] font-bold uppercase tracking-[0.14em] text-white">
           Live
         </span>
       </div>

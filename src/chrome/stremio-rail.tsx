@@ -16,6 +16,7 @@ import { SettingsIcon } from "@/components/icons/settings-icon";
 import { TvIcon } from "@/components/icons/tv-icon";
 import { ParentalPinModal } from "@/components/parental-pin-modal";
 import { useAuth } from "@/lib/auth";
+import { useT } from "@/lib/i18n";
 import { useParental, type LockableTab } from "@/lib/parental";
 import { useProfiles } from "@/lib/profiles";
 import { useSettings } from "@/lib/settings";
@@ -50,6 +51,7 @@ export function StremioRail() {
   const { view, setView, chromeHidden } = useView();
   const { locked, unlock, hiddenTabs } = useParental();
   const { settings } = useSettings();
+  const t = useT();
   const [pendingPin, setPendingPin] = useState<View | null>(null);
 
   const themePreset =
@@ -69,7 +71,7 @@ export function StremioRail() {
         aria-hidden={chromeHidden}
         className={`relative z-[60] flex w-20 shrink-0 flex-col transition-[opacity,transform] duration-[320ms] ease-[cubic-bezier(0.32,0.72,0.24,1)] ${
           chromeHidden
-            ? "pointer-events-none -translate-x-2 opacity-0"
+            ? "pointer-events-none -translate-x-2 rtl:translate-x-2 opacity-0"
             : "translate-x-0 opacity-100"
         }`}
       >
@@ -110,7 +112,7 @@ export function StremioRail() {
             <div className="flex h-16 flex-col items-center justify-center gap-1 rounded-xl text-white/35">
               <Lock size={16} />
               <span className="text-[10px] font-semibold uppercase tracking-[0.14em]">
-                Locked
+                {t("chrome.locked")}
               </span>
             </div>
           ) : (
@@ -140,12 +142,13 @@ function RailAvatar() {
   const { user } = useAuth();
   const { settings } = useSettings();
   const { activeProfile, openPicker } = useProfiles();
+  const t = useT();
   const src = activeProfile?.avatar ?? settings.harborAvatar ?? user?.avatar ?? null;
   const ring = activeProfile?.color
     ? { boxShadow: `0 0 0 2px ${activeProfile.color}` }
     : undefined;
   const label =
-    activeProfile?.name ?? user?.fullname ?? user?.email?.split("@")[0] ?? "Profile";
+    activeProfile?.name ?? user?.fullname ?? user?.email?.split("@")[0] ?? t("profile.fallback");
   return (
     <button
       type="button"
@@ -189,15 +192,17 @@ function RailTab({
   gated: boolean;
   onClick: () => void;
 }) {
+  const t = useT();
   const [hovered, setHovered] = useState(false);
+  const translated = t(label);
   return (
     <button
       type="button"
       onClick={onClick}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      aria-label={gated ? `${label} (locked)` : label}
-      title={gated ? `${label} · locked` : label}
+      aria-label={gated ? t("chrome.lockedRequiresPin", { label: translated }) : translated}
+      title={gated ? t("chrome.lockedShort", { label: translated }) : translated}
       className={`group flex h-[4.5rem] w-full flex-col items-center justify-center gap-1.5 rounded-xl transition-colors duration-150 ${
         active
           ? "text-accent"
@@ -207,7 +212,7 @@ function RailTab({
       <span className={`relative flex h-7 w-7 items-center justify-center ${gated ? "opacity-70" : ""}`}>
         {render(hovered)}
         {gated && (
-          <span className="absolute -bottom-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-canvas text-white/55 ring-1 ring-white/15">
+          <span className="absolute -bottom-1 -end-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-canvas text-white/55 ring-1 ring-white/15">
             <Lock size={8} strokeWidth={2.4} />
           </span>
         )}
@@ -217,7 +222,7 @@ function RailTab({
           active ? "opacity-100" : "opacity-0 group-hover:opacity-60"
         }`}
       >
-        {label}
+        {translated}
       </span>
     </button>
   );

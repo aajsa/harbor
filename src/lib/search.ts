@@ -5,6 +5,7 @@ import type { Meta } from "@/lib/cinemeta";
 import type { AddonResultGroup } from "@/lib/search-addons";
 import type { AddonHit } from "@/lib/search-addon-index";
 import { getCachedPlaylist } from "@/lib/iptv/store";
+import { arabicAwareMatch } from "@/lib/iptv/rtl";
 import type { Settings } from "@/lib/settings";
 import { safeFetch } from "@/lib/safe-fetch";
 
@@ -84,9 +85,7 @@ export function searchLiveTvChannels(
     if (!cached) continue;
     for (const ch of cached.channels) {
       if (seenUrl.has(ch.url)) continue;
-      const name = (ch.name ?? "").toLowerCase();
-      const group = (ch.group ?? "").toLowerCase();
-      if (!name.includes(q) && !group.includes(q)) continue;
+      if (!arabicAwareMatch(`${ch.name ?? ""} ${ch.group ?? ""}`, q)) continue;
       seenUrl.add(ch.url);
       hits.push({
         channelId: ch.id,

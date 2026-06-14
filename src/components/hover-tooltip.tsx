@@ -38,7 +38,7 @@ export function HoverTooltip({
   useEffect(() => () => cancel(), []);
 
   const vCls = side === "top" ? "bottom-full mb-2" : "top-full mt-2";
-  const hCls = align === "center" ? "left-1/2 -translate-x-1/2" : "left-2";
+  const hCls = align === "center" ? "left-1/2 -translate-x-1/2" : "start-2";
 
   return (
     <div
@@ -52,7 +52,7 @@ export function HoverTooltip({
       {open && (
         <div
           role="tooltip"
-          className={`pointer-events-none absolute z-50 max-w-[300px] rounded-lg border border-edge-soft/70 bg-elevated/95 px-2.5 py-1.5 text-[12px] leading-snug font-medium text-ink shadow-[0_10px_28px_-12px_rgba(0,0,0,0.7)] backdrop-blur-md animate-popover-in ${vCls} ${hCls}`}
+          className={`pointer-events-none absolute z-50 w-max max-w-[260px] rounded-lg border border-edge-soft/70 bg-elevated/95 px-2.5 py-1.5 text-[12px] leading-snug font-medium text-ink shadow-[0_10px_28px_-12px_rgba(0,0,0,0.7)] backdrop-blur-md animate-popover-in ${vCls} ${hCls}`}
         >
           <span className="block whitespace-normal break-words">{label}</span>
           {sublabel && (

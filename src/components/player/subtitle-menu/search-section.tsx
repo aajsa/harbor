@@ -1,16 +1,20 @@
-import { Loader2, Search as SearchIcon, Download } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { Check, Loader2, Plus, Save, Search as SearchIcon } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Flag } from "@/components/flag";
 import { useAuth } from "@/lib/auth";
-import { userAddons, type Addon } from "@/lib/addons";
+import type { Addon } from "@/lib/addons";
+import { downloadText } from "@/lib/download-text";
+import { gatherSubtitleAddons } from "@/lib/subtitles/addon-source";
 import { languageName } from "@/lib/subtitles/language";
 import { searchSubtitles } from "@/lib/subtitles/search";
 import type { SubResult } from "@/lib/subtitles/types";
 import { useSettings } from "@/lib/settings";
+import { useT } from "@/lib/i18n";
 import type { SubtitleMenuProps } from "./types";
 import { isVeryNewRelease } from "./utils";
 
 export function SearchSection(props: SubtitleMenuProps) {
+  const t = useT();
   const { metaImdbId, metaTitle, season, episode, onAddSubtitle } = props;
   const { settings } = useSettings();
   const { authKey } = useAuth();
@@ -26,12 +30,8 @@ export function SearchSection(props: SubtitleMenuProps) {
   const [addons, setAddons] = useState<Addon[] | null>(null);
 
   useEffect(() => {
-    if (!authKey) {
-      setAddons([]);
-      return;
-    }
     let cancelled = false;
-    userAddons(authKey)
+    gatherSubtitleAddons(authKey)
       .then((a) => {
         if (!cancelled) setAddons(a);
       })
@@ -44,9 +44,9 @@ export function SearchSection(props: SubtitleMenuProps) {
   }, [authKey]);
 
   useEffect(() => {
-    if (!metaImdbId || results !== null) return;
+    if (!metaImdbId || addons === null || results !== null) return;
     void run();
-  }, [metaImdbId]);
+  }, [metaImdbId, addons]);
 
   const run = async () => {
     setLoading(true);
@@ -105,7 +105,7 @@ export function SearchSection(props: SubtitleMenuProps) {
           <SearchIcon
             size={14}
             strokeWidth={2.2}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-subtle"
+            className="absolute start-3 top-1/2 -translate-y-1/2 text-ink-subtle"
           />
           <input
             value={query}
@@ -113,8 +113,8 @@ export function SearchSection(props: SubtitleMenuProps) {
             onKeyDown={(e) => {
               if (e.key === "Enter") void run();
             }}
-            placeholder={metaImdbId ? "Refine search" : "Title"}
-            className="h-9 w-full rounded-lg border border-edge-soft bg-canvas/60 pl-9 pr-3 text-[13.5px] text-ink placeholder:text-ink-subtle focus:border-edge focus:outline-none"
+            placeholder={metaImdbId ? t("Refine search") : t("Title")}
+            className="h-9 w-full rounded-lg border border-edge-soft bg-canvas/60 ps-9 pe-3 text-[13.5px] text-ink placeholder:text-ink-subtle focus:border-edge focus:outline-none"
           />
         </div>
         <button
@@ -122,32 +122,32 @@ export function SearchSection(props: SubtitleMenuProps) {
           disabled={loading || (!metaImdbId && !query.trim())}
           className="flex h-9 items-center gap-1.5 rounded-lg bg-elevated px-4 text-[13px] font-semibold text-ink ring-1 ring-edge transition-colors hover:bg-raised disabled:opacity-40"
         >
-          {loading ? <Loader2 size={13} className="animate-spin" /> : "Search"}
+          {loading ? <Loader2 size={13} className="animate-spin" /> : t("Search")}
         </button>
       </div>
 
       {results && results.length > 0 && (
         <div className="flex items-center gap-1.5 px-4 pb-2.5">
           <FilterChip active={!hideHI} onClick={() => setHideHI((v) => !v)}>
-            Show HI/SDH
+            {t("Show HI/SDH")}
           </FilterChip>
           <FilterChip active={forcedOnly} onClick={() => setForcedOnly((v) => !v)}>
-            Forced only
+            {t("Forced only")}
           </FilterChip>
-          <span className="ml-auto text-[11.5px] tabular-nums text-ink-subtle">
-            {filtered?.length ?? 0} of {results.length}
+          <span className="ms-auto text-[11.5px] tabular-nums text-ink-subtle">
+            {t("{shown} of {total}", { shown: filtered?.length ?? 0, total: results.length })}
           </span>
         </div>
       )}
 
       {loading && results == null && (
-        <p className="px-4 py-3 text-[13px] text-ink-muted">Searching…</p>
+        <p className="px-4 py-3 text-[13px] text-ink-muted">{t("Searching…")}</p>
       )}
       {results !== null && results.length === 0 && (
         <p className="px-4 py-3 text-[13px] text-ink-muted">
           {isVeryNewRelease(props.metaReleaseDate)
-            ? "Movie's too new. Subtitles haven't been published yet."
-            : "No subtitles found."}
+            ? t("Movie's too new. Subtitles haven't been published yet.")
+            : t("No subtitles found.")}
         </p>
       )}
       <div className="min-h-0 flex-1 overflow-y-auto">
@@ -161,49 +161,130 @@ export function SearchSection(props: SubtitleMenuProps) {
               <span className="text-[11px] tabular-nums text-ink-subtle">{items.length}</span>
             </div>
             {items.slice(0, 30).map((r) => (
-              <button
+              <ResultRow
                 key={r.id}
-                onClick={() => onAddSubtitle(r.url, r.lang, r.title)}
-                className="group flex w-full items-start gap-3 px-4 py-2.5 text-left transition-colors hover:bg-canvas/60"
-              >
-                <Download
-                  size={13}
-                  strokeWidth={2.2}
-                  className="mt-1 shrink-0 text-ink-subtle transition-colors group-hover:text-ink"
-                />
-                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <span className="truncate text-[13.5px] text-ink">{r.title || lang}</span>
-                  <span className="flex items-center gap-2 text-[11.5px] text-ink-subtle">
-                    <span className="capitalize">{r.source}</span>
-                    {r.format && (
-                      <>
-                        <span aria-hidden>·</span>
-                        <span className="uppercase">{r.format}</span>
-                      </>
-                    )}
-                    {typeof r.downloads === "number" && r.downloads > 0 && (
-                      <>
-                        <span aria-hidden>·</span>
-                        <span>{compactNumber(r.downloads)} dl</span>
-                      </>
-                    )}
-                    {r.hearingImpaired && (
-                      <span className="rounded bg-amber-400/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-amber-200">
-                        HI/SDH
-                      </span>
-                    )}
-                    {r.forced && (
-                      <span className="rounded bg-sky-400/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-sky-200">
-                        Forced
-                      </span>
-                    )}
-                  </span>
-                </div>
-              </button>
+                result={r}
+                lang={lang}
+                onAdd={() => onAddSubtitle(r.url, r.lang, r.title)}
+              />
             ))}
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function ResultRow({
+  result,
+  lang,
+  onAdd,
+}: {
+  result: SubResult;
+  lang: string;
+  onAdd: () => void;
+}) {
+  const t = useT();
+  const [busy, setBusy] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const timer = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (timer.current !== null) window.clearTimeout(timer.current);
+    },
+    [],
+  );
+
+  const download = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const res = await fetch(result.url);
+      const text = await res.text();
+      const ext = (result.format || "srt").toLowerCase();
+      const base = (result.title || result.lang || "subtitle").replace(/[\\/:*?"<>|]/g, "_");
+      const ok = await downloadText(`${base}.${ext}`, text, [ext], t("Subtitle"));
+      if (ok) {
+        setSaved(true);
+        if (timer.current !== null) window.clearTimeout(timer.current);
+        timer.current = window.setTimeout(() => setSaved(false), 1400);
+      }
+    } catch {
+      /* noop */
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="group flex w-full items-start gap-3 px-4 py-2.5 transition-colors hover:bg-canvas/60">
+      <button
+        onClick={onAdd}
+        className="flex min-w-0 flex-1 items-start gap-3 text-start"
+      >
+        <Plus
+          size={13}
+          strokeWidth={2.4}
+          className="mt-1 shrink-0 text-ink-subtle transition-colors group-hover:text-ink"
+        />
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span className="truncate text-[13.5px] text-ink">{result.title || lang}</span>
+          <span className="flex items-center gap-2 text-[11.5px] text-ink-subtle">
+            <span className="capitalize">{result.source}</span>
+            {result.format && (
+              <>
+                <span aria-hidden>·</span>
+                <span className="uppercase">{result.format}</span>
+              </>
+            )}
+            {typeof result.downloads === "number" && result.downloads > 0 && (
+              <>
+                <span aria-hidden>·</span>
+                <span>{t("{count} dl", { count: compactNumber(result.downloads) })}</span>
+              </>
+            )}
+            {result.hearingImpaired && (
+              <span className="rounded bg-amber-400/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-amber-200">
+                {t("HI/SDH")}
+              </span>
+            )}
+            {result.forced && (
+              <span className="rounded bg-sky-400/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-sky-200">
+                {t("Forced")}
+              </span>
+            )}
+          </span>
+        </div>
+      </button>
+      <span
+        role="button"
+        tabIndex={0}
+        title={saved ? t("Saved to disk") : t("Download to disk")}
+        aria-label={t("Download subtitle to disk")}
+        onClick={(e) => {
+          e.stopPropagation();
+          void download();
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            e.stopPropagation();
+            void download();
+          }
+        }}
+        className={`mt-0.5 inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md transition-colors ${
+          saved ? "text-accent" : "text-ink-subtle hover:bg-elevated hover:text-ink"
+        }`}
+      >
+        {busy ? (
+          <Loader2 size={13} className="animate-spin" />
+        ) : saved ? (
+          <Check size={13} strokeWidth={2.4} />
+        ) : (
+          <Save size={13} strokeWidth={2} />
+        )}
+      </span>
     </div>
   );
 }

@@ -143,7 +143,7 @@ export function ErrorView() {
     >
       <div
         data-tauri-drag-region
-        className="pointer-events-none absolute left-5 top-4 z-10 flex select-none items-center gap-1 text-ink sm:left-7 sm:top-5"
+        className="pointer-events-none absolute start-5 top-4 z-10 flex select-none items-center gap-1 text-ink sm:start-7 sm:top-5"
       >
         <HarborMark className="h-6 w-6 shrink-0 sm:h-7 sm:w-7" />
         <span
@@ -166,10 +166,10 @@ export function ErrorView() {
         alt=""
         aria-hidden
         draggable={false}
-        className="pointer-events-none mx-auto mt-20 h-auto w-[min(92vw,440px)] shrink-0 select-none sm:mt-24 lg:absolute lg:top-1/2 lg:left-[-4vw] lg:mx-0 lg:mt-0 lg:h-auto lg:w-[42vw] lg:-translate-y-1/2 xl:w-[46vw] xl:left-[-3vw] 2xl:w-[48vw] 2xl:left-[-2vw]"
+        className="pointer-events-none mx-auto mt-20 h-auto w-[min(92vw,440px)] shrink-0 select-none sm:mt-24 lg:absolute lg:top-1/2 lg:start-[-4vw] lg:mx-0 lg:mt-0 lg:h-auto lg:w-[42vw] lg:-translate-y-1/2 xl:w-[46vw] xl:start-[-3vw] 2xl:w-[48vw] 2xl:start-[-2vw]"
       />
 
-      <div className="relative z-10 mx-auto flex w-full max-w-[560px] flex-col gap-5 px-6 pb-10 pt-6 sm:gap-6 sm:px-8 lg:ml-auto lg:mr-[8vw] lg:gap-7 lg:py-0">
+      <div className="relative z-10 mx-auto flex w-full max-w-[560px] flex-col gap-5 px-6 pb-10 pt-6 sm:gap-6 sm:px-8 lg:ms-auto lg:me-[8vw] lg:gap-7 lg:py-0">
         <h1 className="font-display text-[80px] font-medium leading-[0.9] tracking-tight text-ink drop-shadow-[0_4px_22px_rgba(0,0,0,0.45)] sm:text-[110px] lg:text-[148px] lg:leading-[0.86]">
           Oops..
         </h1>
@@ -186,7 +186,7 @@ export function ErrorView() {
             onClick={goBack}
             className="inline-flex h-11 items-center gap-2 rounded-full bg-accent px-5 text-[13.5px] font-semibold text-canvas transition-colors hover:bg-accent/90"
           >
-            <ArrowLeftIcon className="h-[16px] w-[16px]" />
+            <ArrowLeftIcon className="dir-icon h-[16px] w-[16px]" />
             Take me back
           </button>
           <button

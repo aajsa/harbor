@@ -15,8 +15,9 @@ import { useView } from "@/lib/view";
 import { useAnilistWatched } from "@/lib/anilist/use-anilist-watched";
 import { EpisodeWatchedMenu, type WatchedMenuTarget } from "@/components/episode-watched-menu";
 import { manualWatchedVersion, subscribeManualWatched } from "@/lib/manual-watched";
+import { useT } from "@/lib/i18n";
 import { AnimeEpisodeStrip } from "./anime-episode-strip";
-import { UpcomingBadge } from "./badges";
+import { FillerBadge, UpcomingBadge } from "./badges";
 import { EpisodeDownloadButton } from "./episode-download-button";
 import { EpisodeLayoutToggle } from "./episode-layout-toggle";
 import { isUpcomingDate } from "./helpers";
@@ -36,6 +37,7 @@ export function AnimeEpisodes({
   scrollRef: React.RefObject<HTMLElement | null>;
   trackId?: string;
 }) {
+  const t = useT();
   const { isConnected: traktConnected } = useTrakt();
   const [traktWatched, setTraktWatched] = useState<Set<string>>(() => new Set());
 
@@ -110,12 +112,14 @@ export function AnimeEpisodes({
     <div data-anime-episodes className="flex flex-col gap-6 scroll-mt-24">
       <div className="flex items-center justify-between gap-6">
         <h3 className="text-[22px] font-medium tracking-tight text-ink">
-          {isOneOff ? "Movie" : "Episodes"}
+          {isOneOff ? t("Movie") : t("Episodes")}
         </h3>
         <div className="flex items-center gap-4">
           {!isOneOff && (
             <p className="text-[13px] text-ink-subtle">
-              {episodes.length} episode{episodes.length === 1 ? "" : "s"}
+              {episodes.length === 1
+                ? t("{n} episode", { n: episodes.length })
+                : t("{n} episodes", { n: episodes.length })}
             </p>
           )}
           {!isOneOff && (
@@ -176,6 +180,7 @@ function MovieEntryCard({
   ep: KitsuEpisode | undefined;
   watched?: boolean;
 }) {
+  const t = useT();
   const { openPicker } = useView();
   const { settings } = useSettings();
   const banner = meta.background || meta.poster;
@@ -200,7 +205,7 @@ function MovieEntryCard({
           { autoPlay: settings.instantPlay },
         )
       }
-      className="group relative block h-[300px] w-full overflow-hidden rounded-2xl border border-edge-soft/50 text-left"
+      className="group relative block h-[300px] w-full overflow-hidden rounded-2xl border border-edge-soft/50 text-start"
     >
       {banner ? (
         <img src={banner} alt="" className="absolute inset-0 h-full w-full object-cover" />
@@ -213,13 +218,13 @@ function MovieEntryCard({
           <Play size={24} fill="currentColor" />
         </div>
       </div>
-      <span className="absolute bottom-5 left-6 text-[15px] font-semibold text-ink drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
-        Play movie
+      <span className="absolute bottom-5 start-6 text-[15px] font-semibold text-ink drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
+        {t("Play movie")}
       </span>
       {watched && (
-        <span className="absolute right-4 top-4 flex items-center gap-1.5 rounded-full bg-emerald-400/22 px-2.5 py-1 text-[12px] font-semibold text-emerald-200 ring-1 ring-emerald-400/40 backdrop-blur-sm">
+        <span className="absolute end-4 top-4 flex items-center gap-1.5 rounded-full bg-emerald-400/22 px-2.5 py-1 text-[12px] font-semibold text-emerald-200 ring-1 ring-emerald-400/40 backdrop-blur-sm">
           <Check size={13} strokeWidth={3} />
-          Watched
+          {t("Watched")}
         </span>
       )}
     </button>
@@ -233,6 +238,7 @@ function AnimeSeasonPicker({
   franchise: FranchiseEntry[];
   currentId: string;
 }) {
+  const t = useT();
   const { openMeta } = useView();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -264,7 +270,7 @@ function AnimeSeasonPicker({
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex h-10 items-center gap-2 rounded-full border border-edge-soft bg-elevated/70 pl-4 pr-3 text-[13.5px] font-medium text-ink transition-colors hover:bg-elevated"
+        className="flex h-10 items-center gap-2 rounded-full border border-edge-soft bg-elevated/70 ps-4 pe-3 text-[13.5px] font-medium text-ink transition-colors hover:bg-elevated"
       >
         <span className="font-mono text-[11.5px] text-ink-subtle">{positionLabel}</span>
         <span className="max-w-[280px] truncate">{current.meta.name}</span>
@@ -275,7 +281,7 @@ function AnimeSeasonPicker({
         />
       </button>
       {open && (
-        <div className="animate-fade-in absolute right-0 top-full z-30 mt-2 w-[360px] max-w-[min(360px,calc(100vw-3rem))] overflow-hidden rounded-2xl border border-edge-soft bg-canvas py-1.5 shadow-2xl">
+        <div className="animate-fade-in absolute end-0 top-full z-30 mt-2 w-[360px] max-w-[min(360px,calc(100vw-3rem))] overflow-hidden rounded-2xl border border-edge-soft bg-canvas py-1.5 shadow-2xl">
           <div className="max-h-[60vh] overflow-y-auto">
             {franchise.map((f, i) => {
               const isActive = i === currentIdx;
@@ -286,7 +292,7 @@ function AnimeSeasonPicker({
                     if (!isActive) openMeta(f.meta);
                     setOpen(false);
                   }}
-                  className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors ${
+                  className={`flex w-full items-start gap-3 px-4 py-3 text-start transition-colors ${
                     isActive ? "bg-ink/10 text-ink" : "text-ink-muted hover:bg-elevated/60 hover:text-ink"
                   }`}
                 >
@@ -297,7 +303,11 @@ function AnimeSeasonPicker({
                       {f.isUpcoming && <UpcomingBadge />}
                     </span>
                     <span className="text-[11.5px] text-ink-subtle">
-                      {f.episodeCount ? `${f.episodeCount} ep${f.episodeCount === 1 ? "" : "s"}` : ""}
+                      {f.episodeCount
+                        ? f.episodeCount === 1
+                          ? t("{n} ep", { n: f.episodeCount })
+                          : t("{n} eps", { n: f.episodeCount })
+                        : ""}
                       {f.episodeCount && f.startDate ? "  ·  " : ""}
                       {f.startDate ? f.startDate.slice(0, 4) : f.isUpcoming ? "TBA" : ""}
                     </span>
@@ -325,6 +335,7 @@ function AnimeEpisodeRow({
   spoiler?: SpoilerMask;
   onContextMenu?: (e: React.MouseEvent, season: number, episode: number, watched: boolean) => void;
 }) {
+  const t = useT();
   const { openPicker } = useView();
   const { settings } = useSettings();
   const watchedAgo = progress.startedAt > 0 ? formatRelativeWatched(progress.startedAt) : "";
@@ -348,7 +359,7 @@ function AnimeEpisodeRow({
     >
       <button
         onClick={() => openPicker(meta, playEpisode, { autoPlay: settings.instantPlay })}
-        className="flex min-w-0 flex-1 gap-6 text-left"
+        className="flex min-w-0 flex-1 gap-6 text-start"
       >
         <div className="relative w-[200px] shrink-0">
           <div className={spoiler?.thumb ? `overflow-hidden rounded-lg ${SPOILER_THUMB_CLASS}` : undefined}>
@@ -364,11 +375,11 @@ function AnimeEpisodeRow({
               <Play size={18} fill="currentColor" />
             </div>
           </div>
-          <span className="absolute left-2 top-2 rounded-md bg-canvas/95 px-1.5 py-0.5 text-[11px] font-semibold text-ink">
+          <span className="absolute start-2 top-2 rounded-md bg-canvas/95 px-1.5 py-0.5 text-[11px] font-semibold text-ink">
             {ep.number}
           </span>
           {progress.watched && (
-            <span className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-400/22 text-emerald-200 ring-1 ring-emerald-400/40 backdrop-blur-sm">
+            <span className="absolute end-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-400/22 text-emerald-200 ring-1 ring-emerald-400/40 backdrop-blur-sm">
               <Check size={12} strokeWidth={3} />
             </span>
           )}
@@ -384,7 +395,7 @@ function AnimeEpisodeRow({
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
           <h4 className="flex items-center gap-2 truncate text-[16px] font-semibold text-ink">
             <span className={`truncate ${spoiler?.title ? SPOILER_TEXT_CLASS : ""}`}>
-              {ep.title || `Episode ${ep.number}`}
+              {ep.title || t("Episode {n}", { n: ep.number })}
             </span>
             {ep.filler && <FillerBadge />}
             {isUpcomingDate(ep.airdate) ? <UpcomingBadge /> : null}
@@ -394,18 +405,18 @@ function AnimeEpisodeRow({
               {[
                 `E${ep.number}`,
                 ep.absoluteNumber && ep.absoluteNumber !== ep.number ? `Abs E${ep.absoluteNumber}` : null,
-                ep.length ? `${ep.length} min` : null,
+                ep.length ? t("{n} min", { n: ep.length }) : null,
                 formatAirDate(ep.airdate) || null,
               ]
                 .filter(Boolean)
                 .join("  ·  ")}
             </span>
             {progress.watched && watchedAgo && (
-              <span className="text-emerald-300/85">· Watched {watchedAgo}</span>
+              <span className="text-emerald-300/85">· {t("Watched {ago}", { ago: watchedAgo })}</span>
             )}
             {!progress.watched && progress.ratio > 0.01 && watchedAgo && (
               <span className="text-accent/85">
-                · {Math.round(progress.ratio * 100)}% watched · {watchedAgo}
+                · {t("{pct}% watched", { pct: Math.round(progress.ratio * 100) })} · {watchedAgo}
               </span>
             )}
           </p>
@@ -425,10 +436,3 @@ function AnimeEpisodeRow({
   );
 }
 
-function FillerBadge() {
-  return (
-    <span className="inline-flex shrink-0 items-center rounded-[5px] border border-edge-soft bg-elevated/40 px-1.5 py-[1px] text-[9px] font-medium uppercase tracking-[0.14em] text-ink-subtle">
-      Filler
-    </span>
-  );
-}

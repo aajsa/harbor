@@ -1,6 +1,7 @@
 import { MOVIE_GENRES, TV_GENRES } from "@/lib/feed/tags";
 import type { TmdbDetail } from "@/lib/providers/tmdb";
 import { useView } from "@/lib/view";
+import { useT } from "@/lib/i18n";
 
 const ANIME_ROW_BY_GENRE: Record<string, string> = {
   Action: "genre-action",
@@ -25,6 +26,7 @@ function focusAnimeRow(key: string) {
 }
 
 export function InfoBlock({ detail, isAnime = false }: { detail: TmdbDetail; isAnime?: boolean }) {
+  const t = useT();
   const { openFilter, setView } = useView();
   const mediaType: "movie" | "tv" = detail.kind === "tv" ? "tv" : "movie";
 
@@ -76,41 +78,41 @@ export function InfoBlock({ detail, isAnime = false }: { detail: TmdbDetail; isA
   );
 
   const rows: Array<Row | null> = [
-    detail.status ? { label: "Status", kind: "text", value: detail.status } : null,
+    detail.status ? { label: t("Status"), kind: "text", value: detail.status } : null,
     detail.kind === "tv" && detail.numberOfSeasons > 0
       ? {
-          label: "Seasons",
+          label: t("Seasons"),
           kind: "text",
-          value: `${detail.numberOfSeasons} · ${detail.numberOfEpisodes} episodes`,
+          value: `${detail.numberOfSeasons} · ${t("{n} episodes", { n: detail.numberOfEpisodes })}`,
         }
       : null,
     detail.kind === "tv" && detail.firstAirDate
-      ? { label: "First aired", kind: "text", value: detail.firstAirDate }
+      ? { label: t("First aired"), kind: "text", value: detail.firstAirDate }
       : null,
     detail.kind === "tv" && detail.lastAirDate
-      ? { label: "Last aired", kind: "text", value: detail.lastAirDate }
+      ? { label: t("Last aired"), kind: "text", value: detail.lastAirDate }
       : null,
-    networkChips.length > 0 ? { label: "Networks", kind: "chips", chips: networkChips } : null,
-    studioChips.length > 0 ? { label: "Studio", kind: "chips", chips: studioChips } : null,
-    countryChips.length > 0 ? { label: "Country", kind: "chips", chips: countryChips } : null,
+    networkChips.length > 0 ? { label: t("Networks"), kind: "chips", chips: networkChips } : null,
+    studioChips.length > 0 ? { label: t("Studio"), kind: "chips", chips: studioChips } : null,
+    countryChips.length > 0 ? { label: t("Country"), kind: "chips", chips: countryChips } : null,
     langChips.length > 0
-      ? { label: "Original language", kind: "chips", chips: langChips }
+      ? { label: t("Original language"), kind: "chips", chips: langChips }
       : null,
     detail.originalTitle && detail.originalTitle !== detail.title
-      ? { label: "Original title", kind: "text", value: detail.originalTitle }
+      ? { label: t("Original title"), kind: "text", value: detail.originalTitle }
       : null,
-    genreChips.length > 0 ? { label: "Genres", kind: "chips", chips: genreChips } : null,
+    genreChips.length > 0 ? { label: t("Genres"), kind: "chips", chips: genreChips } : null,
     fmtMoney(detail.budget) != null
-      ? { label: "Budget", kind: "text", value: fmtMoney(detail.budget)! }
+      ? { label: t("Budget"), kind: "text", value: fmtMoney(detail.budget)! }
       : null,
     fmtMoney(detail.revenue) != null
-      ? { label: "Revenue", kind: "text", value: fmtMoney(detail.revenue)! }
+      ? { label: t("Revenue"), kind: "text", value: fmtMoney(detail.revenue)! }
       : null,
     detail.rating
       ? {
-          label: "Rating",
+          label: t("Rating"),
           kind: "text",
-          value: `${detail.rating} · ${detail.voteCount.toLocaleString()} votes`,
+          value: `${detail.rating} · ${t("{n} votes", { n: detail.voteCount.toLocaleString() })}`,
         }
       : null,
   ];
@@ -120,7 +122,7 @@ export function InfoBlock({ detail, isAnime = false }: { detail: TmdbDetail; isA
 
   return (
     <div className="border-t border-edge-soft pt-12">
-      <h3 className="mb-6 text-[22px] font-medium tracking-tight text-ink">Information</h3>
+      <h3 className="mb-6 text-[22px] font-medium tracking-tight text-ink">{t("Information")}</h3>
       <dl className="grid grid-cols-1 gap-x-12 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
         {filtered.map((row) => (
           <div key={row.label} className="flex flex-col gap-1.5">
@@ -140,7 +142,7 @@ export function InfoBlock({ detail, isAnime = false }: { detail: TmdbDetail; isA
                         {c.label}
                       </button>
                       {i < row.chips.length - 1 && (
-                        <span className="ml-1.5 text-ink-subtle">·</span>
+                        <span className="ms-1.5 text-ink-subtle">·</span>
                       )}
                     </span>
                   ))}

@@ -280,7 +280,7 @@ function ManageStep1({
         </span>
         <p className="text-[13.5px] font-semibold text-ink">Configure on the addon's setup page</p>
       </div>
-      <p className="pl-7 text-[12.5px] leading-relaxed text-ink-muted">
+      <p className="ps-7 text-[12.5px] leading-relaxed text-ink-muted">
         {isWeb() ? (
           <>
             Click below to open <span className="font-semibold text-ink">{name}</span>'s setup page.
@@ -298,12 +298,12 @@ function ManageStep1({
       <button
         type="button"
         onClick={onOpenSetup}
-        className="ml-7 flex h-9 w-fit items-center gap-1.5 rounded-full bg-raised px-3.5 text-[12px] font-semibold text-ink-muted transition-colors hover:bg-elevated hover:text-ink"
+        className="ms-7 flex h-9 w-fit items-center gap-1.5 rounded-full bg-raised px-3.5 text-[12px] font-semibold text-ink-muted transition-colors hover:bg-elevated hover:text-ink"
       >
         <Settings2 size={12} strokeWidth={2.2} />
         Open setup page
       </button>
-      <p className="mt-1 pl-7 text-[11.5px] leading-relaxed text-ink-subtle">
+      <p className="mt-1 ps-7 text-[11.5px] leading-relaxed text-ink-subtle">
         Heads-up: a few addons (like AIOStatus) don't pre-fill from the URL. If the form loads
         blank, paste the existing manifest URL into their "Import from URL" field to restore your
         settings.
@@ -338,7 +338,7 @@ function PasteRow({
           <p className="text-[13.5px] font-semibold text-ink">Or paste the install link manually</p>
         </div>
       )}
-      <div className={managing ? "pl-7" : ""}>
+      <div className={managing ? "ps-7" : ""}>
         <div className="flex items-center gap-2 rounded-xl border border-edge-soft bg-canvas/40 px-3.5 py-2.5 ring-1 ring-transparent focus-within:border-ink-subtle focus-within:ring-edge">
           <input
             ref={inputRef}

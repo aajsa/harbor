@@ -40,7 +40,7 @@ export function LazyCategorySection({
     <section ref={ref} className="min-h-[140px]">
       <h3 className="mb-5 font-display text-[24px] font-medium tracking-tight text-ink">
         {title}{" "}
-        <span className="ml-2 text-[13px] font-medium uppercase tracking-[0.18em] text-ink-subtle">
+        <span className="ms-2 text-[13px] font-medium uppercase tracking-[0.18em] text-ink-subtle">
           {items.length}
         </span>
       </h3>

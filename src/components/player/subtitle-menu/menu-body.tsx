@@ -2,6 +2,7 @@ import { Check, FolderOpen, Languages, Loader2, Search as SearchIcon, SlidersHor
 import { useEffect, useMemo, useState } from "react";
 import { Flag } from "@/components/flag";
 import { markImportedSub } from "@/lib/player/imported-subs";
+import { useT } from "@/lib/i18n";
 import { Tooltip } from "../transport/tooltip";
 import { DelayRow } from "./delay-row";
 import { SearchSection } from "./search-section";
@@ -13,6 +14,7 @@ type SourceFilter = "all" | "embedded" | "external";
 const ALL_LANGS = "__all__";
 
 export function MenuBody(props: SubtitleMenuProps & { onClose: () => void }) {
+  const tr = useT();
   const { tracks, selectedId, onSelect, onClose, delaySec, onDelay, metaReleaseDate, onOpenStyleBar } = props;
   const groups = useMemo(() => groupByLang(tracks), [tracks]);
   const [searchSettled, setSearchSettled] = useState(false);
@@ -26,8 +28,8 @@ export function MenuBody(props: SubtitleMenuProps & { onClose: () => void }) {
   useEffect(() => {
     if (tracks.length > 0) return;
     setSearchSettled(false);
-    const t = setTimeout(() => setSearchSettled(true), 9000);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setSearchSettled(true), 9000);
+    return () => clearTimeout(timer);
   }, [tracks.length]);
 
   useEffect(() => {
@@ -74,10 +76,10 @@ export function MenuBody(props: SubtitleMenuProps & { onClose: () => void }) {
         filters: [{ name: "Subtitles", extensions: ["srt", "ass", "ssa", "vtt", "sub"] }],
       });
       if (typeof path !== "string") return;
-      const name = path.split(/[\\/]/).pop() || "Local subtitle";
+      const name = path.split(/[\\/]/).pop() || tr("Local subtitle");
       const ok = await props.onAddSubtitle(path, undefined, name);
       if (ok === false) {
-        setLocalError("Couldn't load that subtitle file. Try another.");
+        setLocalError(tr("Couldn't load that subtitle file. Try another."));
         return;
       }
       markImportedSub(name);
@@ -86,7 +88,7 @@ export function MenuBody(props: SubtitleMenuProps & { onClose: () => void }) {
       window.setTimeout(() => onClose(), 1700);
     } catch (e) {
       console.warn("[subtitles] local load failed", e);
-      setLocalError("Couldn't load that subtitle file. Try another.");
+      setLocalError(tr("Couldn't load that subtitle file. Try another."));
     }
   };
 
@@ -94,7 +96,7 @@ export function MenuBody(props: SubtitleMenuProps & { onClose: () => void }) {
     <div className="flex h-full flex-col overflow-hidden">
       <header className="flex items-center justify-between border-b border-edge-soft px-4 py-2.5">
         <div className="flex items-center gap-2.5">
-          <span className="text-[13.5px] font-semibold text-ink">Subtitles</span>
+          <span className="text-[13.5px] font-semibold text-ink">{tr("Subtitles")}</span>
           {tracks.length > 0 && (
             <span className="text-[11.5px] tabular-nums text-ink-subtle">
               {tracks.length}
@@ -109,7 +111,7 @@ export function MenuBody(props: SubtitleMenuProps & { onClose: () => void }) {
                 onOpenStyleBar();
                 onClose();
               }}
-              aria-label="Subtitle appearance"
+              aria-label={tr("Subtitle appearance")}
               className="flex h-9 w-9 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-raised hover:text-ink"
             >
               <SlidersHorizontal size={18} strokeWidth={2} />
@@ -117,7 +119,7 @@ export function MenuBody(props: SubtitleMenuProps & { onClose: () => void }) {
           )}
           <button
             onClick={onClose}
-            aria-label="Close"
+            aria-label={tr("Close")}
             className="flex h-9 w-9 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-raised hover:text-ink"
           >
             <X size={16} strokeWidth={2.2} />
@@ -126,7 +128,7 @@ export function MenuBody(props: SubtitleMenuProps & { onClose: () => void }) {
       </header>
 
       <div className="flex min-h-0 flex-1">
-        <aside className="flex w-[128px] shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-edge-soft bg-canvas/30 p-2">
+        <aside className="flex w-[128px] shrink-0 flex-col gap-0.5 overflow-y-auto border-e border-edge-soft bg-canvas/30 p-2">
           <button
             onClick={() => {
               if (offSelected) return;
@@ -134,7 +136,7 @@ export function MenuBody(props: SubtitleMenuProps & { onClose: () => void }) {
               onClose();
             }}
             disabled={offSelected}
-            className={`flex items-center gap-2 rounded-md px-2.5 py-2 text-left text-[12.5px] font-semibold transition-colors ${
+            className={`flex items-center gap-2 rounded-md px-2.5 py-2 text-start text-[12.5px] font-semibold transition-colors ${
               offSelected
                 ? "text-ink-subtle"
                 : "bg-elevated text-ink ring-1 ring-edge hover:bg-raised"
@@ -147,25 +149,25 @@ export function MenuBody(props: SubtitleMenuProps & { onClose: () => void }) {
             >
               {offSelected ? null : <Check size={9} strokeWidth={3} />}
             </span>
-            {offSelected ? "Off" : "On"}
+            {offSelected ? tr("Off") : tr("On")}
           </button>
 
           {groups.length > 0 && (
             <div className="mt-1.5 mb-0.5 px-2.5 text-[10px] font-bold uppercase tracking-[0.16em] text-ink-subtle">
-              Languages
+              {tr("Languages")}
             </div>
           )}
           {groups.length > 1 && (
             <button
               onClick={() => setActiveLang(ALL_LANGS)}
-              className={`flex items-center gap-2 rounded-md px-2.5 py-2 text-left text-[12.5px] font-medium transition-colors ${
+              className={`flex items-center gap-2 rounded-md px-2.5 py-2 text-start text-[12.5px] font-medium transition-colors ${
                 allLangs
                   ? "bg-elevated text-ink ring-1 ring-edge"
                   : "text-ink-muted hover:bg-elevated/60 hover:text-ink"
               }`}
             >
               <Languages size={14} strokeWidth={2} className="shrink-0" />
-              <span className="flex-1 truncate">All languages</span>
+              <span className="flex-1 truncate">{tr("All languages")}</span>
               <span className="text-[10.5px] tabular-nums text-ink-subtle">{tracks.length}</span>
             </button>
           )}
@@ -176,7 +178,7 @@ export function MenuBody(props: SubtitleMenuProps & { onClose: () => void }) {
               <button
                 key={g.langKey}
                 onClick={() => setActiveLang(g.langKey)}
-                className={`group flex items-center gap-2 rounded-md px-2.5 py-2 text-left text-[12.5px] transition-colors ${
+                className={`group flex items-center gap-2 rounded-md px-2.5 py-2 text-start text-[12.5px] transition-colors ${
                   isActive
                     ? "bg-elevated text-ink ring-1 ring-edge"
                     : "text-ink-muted hover:bg-elevated/60 hover:text-ink"
@@ -202,33 +204,33 @@ export function MenuBody(props: SubtitleMenuProps & { onClose: () => void }) {
                 active={sourceFilter === "all"}
                 onClick={() => setSourceFilter("all")}
               >
-                All <Count value={tracks.length} />
+                {tr("All")} <Count value={tracks.length} />
               </Tab>
               <Tab
                 active={sourceFilter === "embedded"}
                 onClick={() => setSourceFilter("embedded")}
                 disabled={totalEmbedded === 0}
               >
-                Embedded <Count value={totalEmbedded} />
+                {tr("Embedded")} <Count value={totalEmbedded} />
               </Tab>
               <Tab
                 active={sourceFilter === "external"}
                 onClick={() => setSourceFilter("external")}
                 disabled={totalExternal === 0}
               >
-                External <Count value={totalExternal} />
+                {tr("External")} <Count value={totalExternal} />
               </Tab>
-              <span className="ml-auto flex items-center gap-1">
+              <span className="ms-auto flex items-center gap-1">
                 <ToggleChip
                   active={!hideHI}
                   onClick={() => setHideHI((v) => !v)}
-                  label="HI"
-                  hint={hideHI ? "Hidden" : "Shown"}
+                  label={tr("HI")}
+                  hint={hideHI ? tr("Hidden") : tr("Shown")}
                 />
                 <ToggleChip
                   active={forcedOnly}
                   onClick={() => setForcedOnly((v) => !v)}
-                  label="Forced"
+                  label={tr("Forced")}
                 />
               </span>
             </div>
@@ -245,7 +247,7 @@ export function MenuBody(props: SubtitleMenuProps & { onClose: () => void }) {
               <EmptyState searchSettled={searchSettled} veryNewMovie={veryNewMovie} />
             ) : visibleVariants.length === 0 ? (
               <p className="px-5 py-6 text-[13.5px] text-ink-muted">
-                No tracks match these filters. Try toggling HI/SDH or Forced.
+                {tr("No tracks match these filters. Try toggling HI/SDH or Forced.")}
               </p>
             ) : (
               <div className="flex flex-col gap-0.5 p-2">
@@ -273,19 +275,19 @@ export function MenuBody(props: SubtitleMenuProps & { onClose: () => void }) {
           <div className="flex shrink-0 items-stretch border-t border-edge-soft">
             <button
               onClick={() => setSearchOpen((v) => !v)}
-              className="flex flex-1 items-center gap-2 px-3 py-2 text-left text-[12px] font-semibold text-ink-muted transition-colors hover:bg-canvas/40 hover:text-ink"
+              className="flex flex-1 items-center gap-2 px-3 py-2 text-start text-[12px] font-semibold text-ink-muted transition-colors hover:bg-canvas/40 hover:text-ink"
             >
               <SearchIcon size={12} strokeWidth={2.2} />
-              {searchOpen ? "Hide search" : "Find more subtitles"}
+              {searchOpen ? tr("Hide search") : tr("Find more subtitles")}
             </button>
             {isTauri && (
-              <Tooltip label="Load a .srt or .ass from your computer" align="end">
+              <Tooltip label={tr("Load a .srt or .ass from your computer")} align="end">
                 <button
                   onClick={() => void loadLocal()}
-                  className="flex h-full shrink-0 items-center gap-2 border-l border-edge-soft px-3 py-2 text-[12px] font-semibold text-ink-muted transition-colors hover:bg-canvas/40 hover:text-ink"
+                  className="flex h-full shrink-0 items-center gap-2 border-s border-edge-soft px-3 py-2 text-[12px] font-semibold text-ink-muted transition-colors hover:bg-canvas/40 hover:text-ink"
                 >
                   <FolderOpen size={12} strokeWidth={2.2} />
-                  Load file
+                  {tr("Load file")}
                 </button>
               </Tooltip>
             )}
@@ -355,6 +357,7 @@ function ToggleChip({
 }
 
 function ImportBanner({ name }: { name: string }) {
+  const tr = useT();
   const [shown, setShown] = useState(false);
   useEffect(() => {
     const id = requestAnimationFrame(() => setShown(true));
@@ -371,33 +374,34 @@ function ImportBanner({ name }: { name: string }) {
       </span>
       <div className="flex min-w-0 flex-col">
         <span className="truncate text-[13px] font-semibold text-ink">{name}</span>
-        <span className="text-[11px] font-medium text-accent">Imported and now playing</span>
+        <span className="text-[11px] font-medium text-accent">{tr("Imported and now playing")}</span>
       </div>
-      <Sparkles size={15} className="ml-auto shrink-0 text-accent" />
+      <Sparkles size={15} className="ms-auto shrink-0 text-accent" />
     </div>
   );
 }
 
 function EmptyState({ searchSettled, veryNewMovie }: { searchSettled: boolean; veryNewMovie: boolean }) {
+  const tr = useT();
   if (!searchSettled) {
     return (
       <div className="flex items-center gap-2.5 px-5 py-6 text-[13.5px] text-ink-muted">
         <Loader2 size={14} className="animate-spin text-ink-subtle" />
-        Looking for subtitles…
+        {tr("Looking for subtitles…")}
       </div>
     );
   }
   if (veryNewMovie) {
     return (
       <div className="flex flex-col gap-1.5 px-5 py-6 text-[13.5px] leading-snug text-ink-muted">
-        <span className="text-[14px] font-semibold text-ink">Movie's too new</span>
-        <span>Subtitles haven't been published yet. Try search below or check back in a few days.</span>
+        <span className="text-[14px] font-semibold text-ink">{tr("Movie's too new")}</span>
+        <span>{tr("Subtitles haven't been published yet. Try search below or check back in a few days.")}</span>
       </div>
     );
   }
   return (
     <p className="px-5 py-6 text-[13.5px] text-ink-muted">
-      No subtitles found yet. Try the search at the bottom.
+      {tr("No subtitles found yet. Try the search at the bottom.")}
     </p>
   );
 }

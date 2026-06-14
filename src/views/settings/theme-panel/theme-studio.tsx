@@ -313,8 +313,8 @@ export function ThemeStudio({ seed, onClose }: { seed?: ThemePreset; onClose: ()
     <div className="pointer-events-none fixed inset-0 z-[210]">
       <div
         style={STABLE_CHROME}
-        className={`pointer-events-auto absolute right-0 top-0 flex h-full w-[440px] max-w-full flex-col border-l border-edge bg-canvas shadow-[-24px_0_60px_-20px_rgba(0,0,0,0.6)] transition-transform duration-300 ${
-          inspectorHidden ? "translate-x-full" : "translate-x-0"
+        className={`pointer-events-auto absolute end-0 top-0 flex h-full w-[440px] max-w-full flex-col border-s border-edge bg-canvas shadow-[-24px_0_60px_-20px_rgba(0,0,0,0.6)] transition-transform duration-300 ${
+          inspectorHidden ? "translate-x-full rtl:-translate-x-full" : "translate-x-0"
         }`}
       >
         <StudioHeader
@@ -356,7 +356,7 @@ export function ThemeStudio({ seed, onClose }: { seed?: ThemePreset; onClose: ()
           type="button"
           onClick={() => setInspectorHidden(false)}
           style={STABLE_CHROME}
-          className="pointer-events-auto fixed bottom-6 right-6 z-[211] flex h-12 items-center gap-2 rounded-full border border-edge bg-elevated px-5 text-[13px] font-semibold text-ink shadow-[0_18px_40px_-16px_rgba(0,0,0,0.7)] transition-transform hover:-translate-y-0.5"
+          className="pointer-events-auto fixed bottom-6 end-6 z-[211] flex h-12 items-center gap-2 rounded-full border border-edge bg-elevated px-5 text-[13px] font-semibold text-ink shadow-[0_18px_40px_-16px_rgba(0,0,0,0.7)] transition-transform hover:-translate-y-0.5"
         >
           <SlidersHorizontal size={15} strokeWidth={2.2} />
           Edit theme

@@ -2,8 +2,10 @@ import { useState } from "react";
 import { animeStreamerInfo } from "@/lib/providers/anime-streamer";
 import type { KitsuStreamer } from "@/lib/providers/kitsu";
 import { openUrl } from "@/lib/window";
+import { useT } from "@/lib/i18n";
 
 export function StreamingLinks({ streamers }: { streamers: KitsuStreamer[] }) {
+  const t = useT();
   const seen = new Set<string>();
   const unique = streamers.filter((s) => {
     const k = s.service.toLowerCase();
@@ -15,7 +17,7 @@ export function StreamingLinks({ streamers }: { streamers: KitsuStreamer[] }) {
   return (
     <div className="flex flex-col gap-3">
       <p className="text-[12px] font-medium uppercase tracking-[0.18em] text-ink-subtle">
-        Watch on
+        {t("Watch on")}
       </p>
       <div className="flex flex-wrap gap-2.5">
         {unique.map((s) => (

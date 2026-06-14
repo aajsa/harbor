@@ -91,7 +91,7 @@ export function SourcePicker({
       <div ref={wrapRef} className="relative">
         <button
           onClick={() => setOpen((v) => !v)}
-          className="flex h-11 items-center gap-2.5 rounded-xl border border-edge-soft/55 bg-elevated px-3.5 pr-3 text-[13.5px] font-medium text-ink transition-colors hover:bg-raised"
+          className="flex h-11 items-center gap-2.5 rounded-xl border border-edge-soft/55 bg-elevated px-3.5 pe-3 text-[13.5px] font-medium text-ink transition-colors hover:bg-raised"
         >
           <span className="flex h-2 w-2 shrink-0 rounded-full bg-danger" />
           <span className="max-w-[200px] truncate">{active?.name ?? "No playlist"}</span>
@@ -107,7 +107,7 @@ export function SourcePicker({
           />
         </button>
         {open && (
-          <div className="absolute left-0 top-[calc(100%+8px)] z-[100] w-[340px] overflow-hidden rounded-2xl border border-edge-soft bg-elevated shadow-[0_18px_50px_-15px_rgba(0,0,0,0.6)]">
+          <div className="absolute start-0 top-[calc(100%+8px)] z-[100] w-[340px] overflow-hidden rounded-2xl border border-edge-soft bg-elevated shadow-[0_18px_50px_-15px_rgba(0,0,0,0.6)]">
             {mode === "list" && (
               <>
                 <div className="max-h-[280px] overflow-y-auto py-1.5">
@@ -157,7 +157,7 @@ export function SourcePicker({
                 <div className="border-t border-edge-soft/55 p-1.5">
                   <button
                     onClick={() => setMode("add")}
-                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-[13px] font-medium text-ink-muted transition-colors hover:bg-raised hover:text-ink"
+                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-start text-[13px] font-medium text-ink-muted transition-colors hover:bg-raised hover:text-ink"
                   >
                     <Plus size={15} strokeWidth={2} />
                     Add another playlist
@@ -251,13 +251,13 @@ function SourceRow({
   return (
     <>
       <div
-        className={`group flex items-center pr-1.5 transition-colors ${
+        className={`group flex items-center pe-1.5 transition-colors ${
           isActive ? "bg-raised text-ink" : "text-ink-muted hover:bg-raised hover:text-ink"
         }`}
       >
         <button
           onClick={onSelect}
-          className="flex flex-1 items-center gap-2.5 px-3.5 py-2.5 text-left text-[13.5px]"
+          className="flex flex-1 items-center gap-2.5 px-3.5 py-2.5 text-start text-[13.5px]"
         >
           <span
             className={`h-2 w-2 shrink-0 rounded-full ${
@@ -444,7 +444,7 @@ function MenuItem({
       disabled={disabled}
       title={hint}
       onClick={onClick}
-      className={`flex w-full items-center gap-2.5 px-3 py-2 text-left text-[12.5px] font-medium transition-colors ${tone} disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-ink-muted`}
+      className={`flex w-full items-center gap-2.5 px-3 py-2 text-start text-[12.5px] font-medium transition-colors ${tone} disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-ink-muted`}
     >
       <span className="flex h-4 w-4 items-center justify-center">{icon}</span>
       {children}

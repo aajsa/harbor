@@ -10,9 +10,11 @@ import {
 } from "@/lib/local-library";
 import { useSettings } from "@/lib/settings";
 import { useView } from "@/lib/view";
+import { useT } from "@/lib/i18n";
 import { FilterBar, Grid, type TypeKey } from "./shared";
 
 export function LocalTab() {
+  const t = useT();
   const items = useLocalLibrary();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,7 +38,7 @@ export function LocalTab() {
         size: number;
       }>;
       if (scanned.length === 0) {
-        setError("No video files found in that folder.");
+        setError(t("No video files found in that folder."));
         setBusy(false);
         return;
       }
@@ -69,7 +71,7 @@ export function LocalTab() {
       setProgress(null);
     } catch (e) {
       console.warn("[library] folder scan failed", e);
-      setError(e instanceof Error ? e.message : "Couldn't scan that folder.");
+      setError(e instanceof Error ? e.message : t("Couldn't scan that folder."));
     } finally {
       setBusy(false);
     }
@@ -121,12 +123,14 @@ export function LocalTab() {
             ) : (
               <FolderPlus size={13} strokeWidth={2.2} />
             )}
-            {busy ? scanLabel(progress) : "Add folder"}
+            {busy ? scanLabel(progress, t) : t("Add folder")}
           </button>
         }
       />
       <span className="text-[12px] text-ink-muted">
-        {visible.length} of {items.length} file{items.length === 1 ? "" : "s"} from your computer
+        {items.length === 1
+          ? t("{shown} of {total} file from your computer", { shown: visible.length, total: items.length })
+          : t("{shown} of {total} files from your computer", { shown: visible.length, total: items.length })}
       </span>
       {error && (
         <p className="rounded-lg bg-danger/15 px-3 py-2 text-[12px] text-danger ring-1 ring-danger/30">
@@ -135,7 +139,7 @@ export function LocalTab() {
       )}
       {visible.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-edge-soft bg-canvas/30 px-6 py-10 text-center text-[13px] text-ink-muted">
-          No matches for these filters.
+          {t("No matches for these filters.")}
         </p>
       ) : (
         <Grid>
@@ -148,8 +152,11 @@ export function LocalTab() {
   );
 }
 
-function scanLabel(progress: { found: number; total: number } | null): string {
-  if (!progress) return "Scanning";
+function scanLabel(
+  progress: { found: number; total: number } | null,
+  t: (key: string, vars?: Record<string, string | number>) => string,
+): string {
+  if (!progress) return t("Scanning");
   return `${progress.found} / ${progress.total}`;
 }
 
@@ -164,15 +171,14 @@ function EmptyOwned({
   error: string | null;
   progress: { found: number; total: number } | null;
 }) {
+  const t = useT();
   return (
     <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-edge-soft bg-canvas/30 px-8 py-16 text-center">
       <HardDrive size={32} strokeWidth={1.5} className="text-ink-subtle" />
       <div className="flex flex-col gap-1.5">
-        <h2 className="text-[18px] font-semibold text-ink">Add files from your computer</h2>
+        <h2 className="text-[18px] font-semibold text-ink">{t("Add files from your computer")}</h2>
         <p className="max-w-md text-[13px] leading-relaxed text-ink-muted">
-          Point Harbor at a folder. We scan it for movies and shows, parse titles from filenames, and
-          enrich them with TMDB so they look the same as everything else here. We just remember the
-          path; nothing is copied or moved.
+          {t("Point Harbor at a folder. We scan it for movies and shows, parse titles from filenames, and enrich them with TMDB so they look the same as everything else here. We just remember the path; nothing is copied or moved.")}
         </p>
       </div>
       <button
@@ -182,7 +188,7 @@ function EmptyOwned({
         className="flex h-11 items-center gap-2 rounded-full bg-ink px-5 text-[13.5px] font-semibold text-canvas transition-colors hover:bg-ink/90 disabled:cursor-wait disabled:opacity-60"
       >
         {busy ? <Loader2 size={15} className="animate-spin" /> : <FolderPlus size={15} strokeWidth={2.2} />}
-        {busy ? scanLabel(progress) : "Choose folder"}
+        {busy ? scanLabel(progress, t) : t("Choose folder")}
       </button>
       {error && (
         <p className="rounded-lg bg-danger/15 px-3 py-2 text-[12px] text-danger ring-1 ring-danger/30">
@@ -194,6 +200,7 @@ function EmptyOwned({
 }
 
 function OwnedCard({ entry }: { entry: LocalEntry }) {
+  const t = useT();
   const [confirm, setConfirm] = useState(false);
   const { openPlayer } = useView();
 
@@ -215,7 +222,7 @@ function OwnedCard({ entry }: { entry: LocalEntry }) {
 
   return (
     <div
-      className="group relative flex flex-col gap-2 text-left"
+      className="group relative flex flex-col gap-2 text-start"
       onMouseLeave={() => setConfirm(false)}
     >
       <div
@@ -240,9 +247,9 @@ function OwnedCard({ entry }: { entry: LocalEntry }) {
         ) : (
           <Poster src={undefined} seed={entry.id} className="h-full w-full" />
         )}
-        <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-md bg-canvas/85 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-ink-muted backdrop-blur-sm">
+        <span className="absolute start-2 top-2 inline-flex items-center gap-1 rounded-md bg-canvas/85 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-ink-muted backdrop-blur-sm">
           <HardDrive size={9} strokeWidth={2.4} />
-          {entry.resolution ?? "local"}
+          {entry.resolution ?? t("local")}
         </span>
         <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-canvas/55 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
           <span className="flex h-12 w-12 items-center justify-center rounded-full bg-ink text-canvas shadow-[0_4px_14px_rgba(0,0,0,0.45)]">
@@ -260,12 +267,12 @@ function OwnedCard({ entry }: { entry: LocalEntry }) {
               setConfirm(true);
             }
           }}
-          className={`absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full text-white shadow-[0_2px_8px_rgba(0,0,0,0.4)] transition-all duration-200 ${
+          className={`absolute end-2 top-2 flex h-7 w-7 items-center justify-center rounded-full text-white shadow-[0_2px_8px_rgba(0,0,0,0.4)] transition-all duration-200 ${
             confirm
               ? "bg-danger"
               : "bg-canvas/70 opacity-0 backdrop-blur-sm hover:bg-canvas/90 group-hover:opacity-100"
           }`}
-          aria-label={confirm ? "Confirm remove" : "Remove from library"}
+          aria-label={confirm ? t("Confirm remove") : t("Remove from library")}
         >
           {confirm ? <RefreshCw size={11} strokeWidth={2.4} /> : <Trash2 size={11} strokeWidth={2.2} />}
         </button>
@@ -273,7 +280,7 @@ function OwnedCard({ entry }: { entry: LocalEntry }) {
       <button
         type="button"
         onClick={onPlay}
-        className="text-left"
+        className="text-start"
       >
         <p className="truncate text-[13px] font-medium text-ink transition-colors hover:text-accent" title={entry.filename}>
           {entry.title}
@@ -281,7 +288,7 @@ function OwnedCard({ entry }: { entry: LocalEntry }) {
         {entry.year != null && (
           <p className="-mt-1.5 truncate text-[11.5px] text-ink-subtle">
             {entry.year}
-            {entry.type === "show" && " · Series"}
+            {entry.type === "show" && t(" · Series")}
           </p>
         )}
       </button>

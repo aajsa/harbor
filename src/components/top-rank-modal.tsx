@@ -97,7 +97,7 @@ export function TopRankModal() {
             </h2>
             <p className="flex items-center gap-1.5 text-[12.5px] text-ink-muted">
               {meta.subtitle} · ranked by current popularity
-              <span className="ml-1 inline-flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-full bg-canvas ring-1 ring-edge-soft">
+              <span className="ms-1 inline-flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-full bg-canvas ring-1 ring-edge-soft">
                 <img src={tmdbLogo} alt="" className="h-3.5 w-3.5 object-contain" />
               </span>
               TMDB
@@ -154,7 +154,7 @@ export function TopRankModal() {
         <button
           onClick={() => scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" })}
           aria-label="Back to top"
-          className={`absolute bottom-5 right-5 z-10 flex h-8 w-8 items-center justify-center rounded-md border border-edge-soft/40 bg-canvas/90 text-ink-muted transition-[transform,opacity,background-color,color] duration-300 hover:bg-canvas hover:text-ink ${
+          className={`absolute bottom-5 end-5 z-10 flex h-8 w-8 items-center justify-center rounded-md border border-edge-soft/40 bg-canvas/90 text-ink-muted transition-[transform,opacity,background-color,color] duration-300 hover:bg-canvas hover:text-ink ${
             showTop ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-2 opacity-0"
           }`}
         >
@@ -193,7 +193,7 @@ function PersonRow({
         ) : (
           <Poster src={undefined} seed={String(person.id)} ratio="portrait" className="absolute inset-0" />
         )}
-        <span className="absolute left-1.5 top-1.5 flex items-center gap-0.5 rounded-md bg-canvas/95 px-1.5 py-0.5 text-[10px] font-bold">
+        <span className="absolute start-1.5 top-1.5 flex items-center gap-0.5 rounded-md bg-canvas/95 px-1.5 py-0.5 text-[10px] font-bold">
           <span className="text-[8.5px] uppercase tracking-[0.18em] text-ink-subtle">#</span>
           <span className="text-accent">{person.rank}</span>
         </span>
@@ -202,7 +202,7 @@ function PersonRow({
       <div className="flex min-w-0 flex-1 flex-col gap-2 overflow-hidden">
         <button
           onClick={() => onOpenPerson(person.id)}
-          className="truncate text-left text-[15px] font-semibold leading-tight text-ink transition-colors hover:text-accent"
+          className="truncate text-start text-[15px] font-semibold leading-tight text-ink transition-colors hover:text-accent"
         >
           {person.name}
         </button>
@@ -241,7 +241,7 @@ function KnownChip({ entry, onClick }: { entry: KnownForEntry; onClick: () => vo
   return (
     <button
       onClick={onClick}
-      className="group/chip inline-flex max-w-[170px] items-center gap-1.5 rounded-full border border-edge-soft bg-elevated/40 py-0.5 pl-0.5 pr-2.5 transition-colors hover:border-edge hover:bg-elevated"
+      className="group/chip inline-flex max-w-[170px] items-center gap-1.5 rounded-full border border-edge-soft bg-elevated/40 py-0.5 ps-0.5 pe-2.5 transition-colors hover:border-edge hover:bg-elevated"
       title={entry.title}
     >
       <span className="h-7 w-5 shrink-0 overflow-hidden rounded-full bg-canvas">

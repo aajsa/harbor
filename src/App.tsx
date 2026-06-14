@@ -60,6 +60,7 @@ import { MediaFavoritesProvider } from "@/lib/media-favorites";
 import { LocalWatchlistProvider } from "@/lib/local-watchlist";
 import { useSettings } from "@/lib/settings";
 import { ViewProvider, useView, type Frame, type MetaFilter, type View } from "@/lib/view";
+import type { MetaType } from "@/lib/cinemeta";
 import { useDiscordPresence } from "@/lib/discord/use-discord-presence";
 import { Home } from "@/views/home";
 import { ParentalProvider } from "@/lib/parental";
@@ -358,8 +359,18 @@ function filterReactKey(f: MetaFilter): string {
   return `filter-${f.kind}-${f.mediaType}-${f.id}`;
 }
 
+function parseDeepLinkEpisode(videoId?: string): { season: number; episode: number } | undefined {
+  if (!videoId) return undefined;
+  const parts = videoId.split(":");
+  if (parts.length < 3) return undefined;
+  const season = Number(parts[parts.length - 2]);
+  const episode = Number(parts[parts.length - 1]);
+  if (!Number.isFinite(season) || !Number.isFinite(episode)) return undefined;
+  return { season, episode };
+}
+
 function Shell() {
-  const { topKind, service, meta, metaLiveContext, metaEpisodeHint, personId, collectionId, filter, grid, awardType, animeAwardSource, picker, player, setView, goBack, stackKinds } = useView();
+  const { topKind, service, meta, metaLiveContext, metaEpisodeHint, personId, collectionId, filter, grid, awardType, animeAwardSource, picker, player, setView, goBack, openMeta, stackKinds } = useView();
   const { settings } = useSettings();
   const preview = useThemePreview();
   const layout = useMemo(
@@ -415,22 +426,27 @@ function Shell() {
 
   useEffect(() => {
     let dispose: (() => void) | null = null;
-    void import("@/lib/deep-link").then(({ startDeepLinkBridge, onDeepLinkInstall }) => {
+    void import("@/lib/deep-link").then(({ startDeepLinkBridge, onDeepLinkInstall, onDeepLinkOpen }) => {
       void startDeepLinkBridge().then((stopBridge) => {
         const stopListener = onDeepLinkInstall(() => {
           if (window.__harborInstallerOpen) return;
           setView("addons");
         });
+        const stopOpen = onDeepLinkOpen(({ type, id, videoId }) => {
+          const hint = parseDeepLinkEpisode(videoId);
+          openMeta({ id, type: type as MetaType, name: "" }, hint ? { episodeHint: hint } : undefined);
+        });
         dispose = () => {
           stopBridge();
           stopListener();
+          stopOpen();
         };
       });
     });
     return () => {
       dispose?.();
     };
-  }, [setView]);
+  }, [setView, openMeta]);
 
   useEffect(() => {
     if (topKind === "anime" && settings.hideContent.anime) setView("home");
@@ -531,7 +547,7 @@ function Shell() {
       {!playerActive && !pickerTop && layout === "minui" && <MinUIDock />}
       {!playerActive && layout === "topdock" && <FloatingBack offsetTop={92} />}
       {!playerActive && layout === "royal" && <FloatingBack offsetTop={92} />}
-      {!playerActive && layout === "rail" && <FloatingBack offsetLeft={220} offsetTop={28} />}
+      {!playerActive && layout === "rail" && <FloatingBack offsetLeft={settings.sidebarCollapsed ? 88 : 220} offsetTop={28} />}
       {!playerActive && layout === "custom" && <FloatingBack offsetLeft={20} offsetTop={20} />}
       <div className={`relative flex min-h-0 min-w-0 flex-1 flex-col ${playerActive ? "invisible" : ""}`}>
         <div className={layer(homeTop)}>

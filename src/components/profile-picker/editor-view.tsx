@@ -533,7 +533,7 @@ function SecurityRow({
     <button
       type="button"
       onClick={onOpen}
-      className="flex items-center justify-between gap-3 rounded-xl border border-edge-soft bg-canvas/40 px-4 py-3.5 text-left transition-colors hover:border-edge hover:bg-canvas/60"
+      className="flex items-center justify-between gap-3 rounded-xl border border-edge-soft bg-canvas/40 px-4 py-3.5 text-start transition-colors hover:border-edge hover:bg-canvas/60"
     >
       <div className="flex items-center gap-3">
         <span
@@ -556,7 +556,7 @@ function SecurityRow({
           </span>
         </div>
       </div>
-      <ChevronLeft size={14} strokeWidth={2.2} className="rotate-180 text-ink-subtle" />
+      <ChevronLeft size={14} strokeWidth={2.2} className="rotate-180 rtl:rotate-0 text-ink-subtle" />
     </button>
   );
 }
@@ -589,7 +589,7 @@ function SecurityView({
           onClick={onBack}
           className="flex h-9 items-center gap-1.5 rounded-lg px-2 text-[12.5px] font-medium text-ink-muted transition-colors hover:bg-elevated/40 hover:text-ink"
         >
-          <ChevronLeft size={14} strokeWidth={2.2} />
+          <ChevronLeft size={14} strokeWidth={2.2} className="dir-icon" />
           Back
         </button>
       </div>
@@ -663,7 +663,7 @@ function SecurityView({
         <button
           type="button"
           onClick={onOpenTabs}
-          className="flex items-center justify-between gap-3 rounded-xl border border-edge-soft bg-canvas/40 p-4 text-left transition-colors hover:border-edge hover:bg-canvas/60"
+          className="flex items-center justify-between gap-3 rounded-xl border border-edge-soft bg-canvas/40 p-4 text-start transition-colors hover:border-edge hover:bg-canvas/60"
         >
           <div className="flex items-center gap-3">
             <span
@@ -684,7 +684,7 @@ function SecurityView({
               </span>
             </div>
           </div>
-          <ChevronLeft size={14} strokeWidth={2.2} className="rotate-180 text-ink-subtle" />
+          <ChevronLeft size={14} strokeWidth={2.2} className="rotate-180 rtl:rotate-0 text-ink-subtle" />
         </button>
       </div>
     </div>
@@ -708,7 +708,7 @@ function ShareOption({
     <button
       type="button"
       onClick={onClick}
-      className={`flex items-start gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors ${
+      className={`flex items-start gap-3 rounded-xl border px-3.5 py-3 text-start transition-colors ${
         active
           ? "border-ink/40 bg-canvas/60"
           : "border-edge-soft hover:border-edge hover:bg-canvas/40"
@@ -773,7 +773,7 @@ function TabsView({
           onClick={onBack}
           className="flex h-9 items-center gap-1.5 rounded-lg px-2 text-[12.5px] font-medium text-ink-muted transition-colors hover:bg-elevated/40 hover:text-ink"
         >
-          <ChevronLeft size={14} strokeWidth={2.2} />
+          <ChevronLeft size={14} strokeWidth={2.2} className="dir-icon" />
           Back
         </button>
       </div>
@@ -788,13 +788,13 @@ function TabsView({
           Locks only activate once a PIN is set.
         </p>
       </div>
-      <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto pr-1">
+      <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto pe-1">
         {LOCKABLE_TABS.map((t) => (
           <button
             key={t.key}
             type="button"
             onClick={() => toggle(t.key)}
-            className={`flex shrink-0 items-center justify-between gap-3 rounded-xl border px-4 py-2.5 text-left transition-colors ${
+            className={`flex shrink-0 items-center justify-between gap-3 rounded-xl border px-4 py-2.5 text-start transition-colors ${
               tabs[t.key]
                 ? "border-ink/40 bg-canvas/60"
                 : "border-edge-soft hover:border-edge hover:bg-canvas/40"

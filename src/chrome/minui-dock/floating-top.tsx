@@ -5,6 +5,7 @@ import { HarborMark } from "@/components/icons/harbor-mark";
 import { RecordingPill } from "@/chrome/recording-pill";
 import { TogetherButton } from "@/chrome/topbar";
 import { useAuth } from "@/lib/auth";
+import { useT } from "@/lib/i18n";
 import { useProfiles } from "@/lib/profiles";
 import { useSearch } from "@/lib/search-context";
 import { useSettings } from "@/lib/settings";
@@ -18,6 +19,7 @@ export function FloatingTop() {
   const { view, setView, chromeHidden, canGoBack, goBack, topKind, exitPlayback } = useView();
   const { settings } = useSettings();
   const { setOpen: setSearchOpen } = useSearch();
+  const t = useT();
 
   const themePreset =
     settings.theme.preset !== "custom" ? getThemeById(settings.theme.preset) : null;
@@ -36,7 +38,7 @@ export function FloatingTop() {
         type="button"
         onClick={() => setView("home")}
         className="harbor-minui-mark flex shrink-0 items-center gap-2 rounded-full px-1.5 py-1 text-ink transition-colors"
-        aria-label="Harbor home"
+        aria-label={t("chrome.harborHome")}
       >
         {customMark ? (
           <img src={customMark} alt="" draggable={false} className="h-8 w-8 object-contain" />
@@ -48,31 +50,31 @@ export function FloatingTop() {
         <button
           type="button"
           onClick={onBack}
-          aria-label="Back"
-          className="pointer-events-auto flex h-10 shrink-0 items-center gap-2 rounded-full border border-edge-soft bg-surface pl-2.5 pr-4 text-[13px] font-semibold text-ink-muted shadow-[0_2px_8px_-4px_rgba(15,15,18,0.16)] transition-all hover:-translate-y-px hover:border-edge hover:text-ink hover:shadow-[0_4px_12px_-4px_rgba(15,15,18,0.22)]"
+          aria-label={t("common.back")}
+          className="pointer-events-auto flex h-10 shrink-0 items-center gap-2 rounded-full border border-edge-soft bg-surface ps-2.5 pe-4 text-[13px] font-semibold text-ink-muted shadow-[0_2px_8px_-4px_rgba(15,15,18,0.16)] transition-all hover:-translate-y-px hover:border-edge hover:text-ink hover:shadow-[0_4px_12px_-4px_rgba(15,15,18,0.22)]"
         >
-          <ArrowLeft size={15} strokeWidth={2.2} />
-          Back
+          <ArrowLeft size={15} strokeWidth={2.2} className="dir-icon" />
+          {t("common.back")}
         </button>
       )}
       <div className="flex flex-1" data-tauri-drag-region />
       <div className="pointer-events-auto flex shrink-0 items-center gap-1.5">
         <RecordingPill />
         {!liveActive && <TogetherButton variant="ghost" popoverPlacement="below-right" />}
-        <PillBtn label="Search" onClick={() => setSearchOpen(true)}>
+        <PillBtn label={t("common.search")} onClick={() => setSearchOpen(true)}>
           <Search size={16} strokeWidth={2.2} />
-          <span className="hidden sm:inline">Search</span>
+          <span className="hidden sm:inline">{t("common.search")}</span>
         </PillBtn>
         <ProfilePill onOpenSettings={() => setView("settings")} settingsActive={view === "settings"} />
         {IS_TAURI && !settings.useNativeTitleBar && (
-          <div className="ml-1 flex items-center gap-1">
-            <WinBtn onClick={minimize} label="Minimize">
+          <div className="ms-1 flex items-center gap-1">
+            <WinBtn onClick={minimize} label={t("chrome.minimize")}>
               <path d="M3 6.5h7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </WinBtn>
-            <WinBtn onClick={toggleMaximize} label="Maximize">
+            <WinBtn onClick={toggleMaximize} label={t("chrome.maximize")}>
               <rect x="3" y="3" width="7" height="7" stroke="currentColor" strokeWidth="1.5" rx="1.5" />
             </WinBtn>
-            <WinBtn onClick={close} label="Close" danger>
+            <WinBtn onClick={close} label={t("common.close")} danger>
               <path d="M3.5 3.5l6 6M9.5 3.5l-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </WinBtn>
           </div>
@@ -140,6 +142,7 @@ function ProfilePill({
   const { user, signOut } = useAuth();
   const { settings } = useSettings();
   const { profiles, activeProfile, openPicker, selectProfile } = useProfiles();
+  const t = useT();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -153,7 +156,7 @@ function ProfilePill({
   }, [open]);
 
   const name =
-    activeProfile?.name ?? user?.fullname ?? user?.email?.split("@")[0] ?? "Profile";
+    activeProfile?.name ?? user?.fullname ?? user?.email?.split("@")[0] ?? t("profile.fallback");
   const color = activeProfile?.color ?? "var(--color-accent)";
   const harborAvatar = settings.harborAvatar;
   const otherProfiles = profiles.filter((p) => p.id !== activeProfile?.id);
@@ -163,7 +166,7 @@ function ProfilePill({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex h-10 items-center gap-2 rounded-full border border-edge-soft bg-surface pl-1.5 pr-3 text-[13px] font-semibold text-ink-muted shadow-[0_2px_8px_-4px_rgba(15,15,18,0.18)] transition-all hover:-translate-y-px hover:border-edge hover:text-ink hover:shadow-[0_4px_12px_-4px_rgba(15,15,18,0.22)]"
+        className="flex h-10 items-center gap-2 rounded-full border border-edge-soft bg-surface ps-1.5 pe-3 text-[13px] font-semibold text-ink-muted shadow-[0_2px_8px_-4px_rgba(15,15,18,0.18)] transition-all hover:-translate-y-px hover:border-edge hover:text-ink hover:shadow-[0_4px_12px_-4px_rgba(15,15,18,0.22)]"
       >
         <span
           className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full ring-2"
@@ -178,7 +181,7 @@ function ProfilePill({
         <span className="hidden max-w-[9rem] truncate sm:inline">{name}</span>
       </button>
       {open && (
-        <div className="absolute right-0 top-[calc(100%+10px)] z-50 w-64 overflow-hidden rounded-2xl border border-edge bg-surface shadow-[0_24px_60px_-20px_rgba(15,15,18,0.35)]">
+        <div className="absolute end-0 top-[calc(100%+10px)] z-50 w-64 overflow-hidden rounded-2xl border border-edge bg-surface shadow-[0_24px_60px_-20px_rgba(15,15,18,0.35)]">
           <div className="border-b border-edge-soft px-4 py-3">
             <div className="text-[13.5px] font-semibold text-ink">{name}</div>
             {user?.email && (
@@ -188,7 +191,7 @@ function ProfilePill({
           {otherProfiles.length > 0 && (
             <div className="flex flex-col gap-0.5 border-b border-edge-soft p-1.5">
               <span className="px-2.5 pb-1 pt-1 text-[10px] font-bold uppercase tracking-[0.16em] text-ink-subtle">
-                Switch profile
+                {t("profile.switch")}
               </span>
               {otherProfiles.map((p) => (
                 <button
@@ -199,7 +202,7 @@ function ProfilePill({
                     if (p.passwordHash) openPicker({ kind: "unlock", profileId: p.id });
                     else selectProfile(p.id);
                   }}
-                  className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-raised"
+                  className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-start transition-colors hover:bg-raised"
                 >
                   <span
                     className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-canvas"
@@ -220,7 +223,7 @@ function ProfilePill({
               }}
               icon={<Users size={14} strokeWidth={2.2} />}
             >
-              Who's watching
+              {t("profile.whoWatching")}
             </MenuRow>
             {activeProfile && (
               <MenuRow
@@ -230,7 +233,7 @@ function ProfilePill({
                 }}
                 icon={<Pencil size={14} strokeWidth={2.2} />}
               >
-                Edit profile
+                {t("Edit profile")}
               </MenuRow>
             )}
             <MenuRow
@@ -241,7 +244,7 @@ function ProfilePill({
               icon={<SettingsIcon size={14} strokeWidth={2.2} />}
               active={settingsActive}
             >
-              Settings
+              {t("nav.settings")}
             </MenuRow>
             {user && (
               <MenuRow
@@ -252,7 +255,7 @@ function ProfilePill({
                 icon={<LogOut size={14} strokeWidth={2.2} />}
                 separator
               >
-                Sign out
+                {t("Sign out")}
               </MenuRow>
             )}
           </div>
@@ -279,7 +282,7 @@ function MenuRow({
     <button
       type="button"
       onClick={onClick}
-      className={`flex items-center gap-2.5 px-4 py-2.5 text-left text-[13.5px] font-medium transition-colors hover:bg-raised ${active ? "text-ink" : "text-ink-muted hover:text-ink"} ${separator ? "border-t border-edge-soft" : ""}`}
+      className={`flex items-center gap-2.5 px-4 py-2.5 text-start text-[13.5px] font-medium transition-colors hover:bg-raised ${active ? "text-ink" : "text-ink-muted hover:text-ink"} ${separator ? "border-t border-edge-soft" : ""}`}
     >
       {icon} {children}
     </button>

@@ -1,7 +1,10 @@
 import { Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { thumbCacheGet, thumbCacheNearest, thumbCacheSet, trickplayGet } from "@/lib/trickplay";
+import { useSkipSegmentsView } from "@/lib/skip-intro/segment-store";
+import { useT } from "@/lib/i18n";
 
+const SEG_LABEL = { intro: "OP", outro: "ED", recap: "Recap" } as const;
 const BUCKET_SECONDS = 2;
 const CARD_WIDTH = 192;
 const CARD_HEIGHT = 108;
@@ -65,6 +68,10 @@ export function ThumbPreview({
     };
   }, [bucket, canFetch]);
 
+  const t = useT();
+  const segments = useSkipSegmentsView();
+  const seg = segments.find((s) => time >= s.startSec && time < s.endSec);
+  const segLabel = seg ? t(SEG_LABEL[seg.kind]) : null;
   const pct = (time / dur) * 100;
   const label = fmtTime(time);
   const nearest = fetchedSrc ? null : thumbCacheNearest(bucket, NEAREST_WINDOW);
@@ -74,9 +81,14 @@ export function ThumbPreview({
   if (!src && !loading) {
     return (
       <div
-        className="pointer-events-none absolute -top-9 -translate-x-1/2 rounded-md border border-white/10 bg-black/90 px-2 py-1 font-mono text-[12px] font-semibold tabular-nums text-white shadow-lg backdrop-blur-md"
+        className="pointer-events-none absolute -top-9 flex -translate-x-1/2 items-center gap-1 rounded-md border border-white/10 bg-black/90 px-2 py-1 font-mono text-[12px] font-semibold tabular-nums text-white shadow-lg backdrop-blur-md"
         style={{ left: `${pct}%` }}
       >
+        {segLabel && (
+          <span className="rounded bg-accent px-1 font-sans text-[10px] font-bold uppercase tracking-wide text-canvas">
+            {segLabel}
+          </span>
+        )}
         {label}
       </div>
     );
@@ -109,7 +121,12 @@ export function ThumbPreview({
           </div>
         )}
       </div>
-      <div className="mt-1 text-center">
+      <div className="mt-1 flex items-center justify-center gap-1">
+        {segLabel && (
+          <span className="rounded bg-accent px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-canvas">
+            {segLabel}
+          </span>
+        )}
         <span className="inline-block rounded-md bg-black/85 px-1.5 py-0.5 font-mono text-[11px] text-white">
           {label}
         </span>

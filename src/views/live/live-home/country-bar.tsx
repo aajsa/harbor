@@ -16,7 +16,7 @@ export function CountryBar({
   if (countries.length < 2) return null;
   const sel = new Set(selected);
   return (
-    <div className="flex flex-col gap-3 pl-[9px]">
+    <div className="flex flex-col gap-3 ps-[9px]">
       <div className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.18em] text-ink-subtle">
         <Globe size={13} strokeWidth={2.2} />
         Browse by country
@@ -57,7 +57,7 @@ function Chip({
   return (
     <button
       onClick={onClick}
-      className={`flex h-10 shrink-0 items-center gap-2.5 rounded-full border pl-2 pr-4 text-[13.5px] font-medium transition-colors ${
+      className={`flex h-10 shrink-0 items-center gap-2.5 rounded-full border ps-2 pe-4 text-[13.5px] font-medium transition-colors ${
         active
           ? "border-transparent bg-ink text-canvas"
           : "border-edge-soft/60 bg-elevated text-ink-muted hover:border-edge hover:text-ink"

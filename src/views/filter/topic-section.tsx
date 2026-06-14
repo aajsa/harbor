@@ -3,6 +3,7 @@ import { PickCard } from "@/components/pick-card";
 import { Row } from "@/components/row";
 import type { Meta } from "@/lib/cinemeta";
 import { type Topic } from "@/lib/feed/genre-topics";
+import { useT } from "@/lib/i18n";
 import { useDedupOnSeenIds } from "@/lib/feed/seen-ids";
 import { tmdbDiscover, tmdbResolveKeywordIds } from "@/lib/providers/tmdb";
 import { useSettings } from "@/lib/settings";
@@ -15,6 +16,7 @@ export function TopicSection({
   topic: Topic;
   mediaType: "movie" | "tv";
 }) {
+  const t = useT();
   const { settings } = useSettings();
   const dedup = useDedupOnSeenIds(`topic:${mediaType}:${topic.id}`);
   const gate = useContext(SpotlightGateContext);
@@ -128,9 +130,9 @@ export function TopicSection({
 
   const title = (
     <span className="flex flex-col">
-      <span className="text-[20px] font-medium tracking-tight text-ink">{topic.title}</span>
+      <span className="text-[20px] font-medium tracking-tight text-ink">{t(topic.title)}</span>
       <span className="text-[12px] font-medium uppercase tracking-[0.18em] text-ink-subtle">
-        {topic.kicker}
+        {t(topic.kicker)}
       </span>
     </span>
   );

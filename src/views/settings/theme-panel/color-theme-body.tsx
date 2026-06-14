@@ -66,7 +66,7 @@ export function ColorThemeBody({
           <button
             key={p.id}
             onClick={() => onSelect(p.id)}
-            className={`group relative flex h-[150px] flex-col justify-end overflow-hidden rounded-2xl border p-4 text-left transition-all ${
+            className={`group relative flex h-[150px] flex-col justify-end overflow-hidden rounded-2xl border p-4 text-start transition-all ${
               active ? "border-ink" : "border-edge-soft hover:border-edge"
             }`}
             style={{ background: p.swatch[0] }}
@@ -78,7 +78,7 @@ export function ColorThemeBody({
               }}
             />
             <div
-              className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full"
+              className="absolute end-3 top-3 flex h-7 w-7 items-center justify-center rounded-full"
               style={{ background: p.swatch[2] }}
             >
               {active && <Check size={14} strokeWidth={3} style={{ color: p.swatch[0] }} />}
@@ -134,7 +134,7 @@ function CustomTile({
   }
   return (
     <div
-      className={`group relative flex h-[150px] flex-col justify-end overflow-hidden rounded-2xl border p-4 text-left transition-all ${
+      className={`group relative flex h-[150px] flex-col justify-end overflow-hidden rounded-2xl border p-4 text-start transition-all ${
         active ? "border-ink" : "border-edge-soft hover:border-edge"
       }`}
       style={{ background: custom.canvas }}
@@ -149,7 +149,7 @@ function CustomTile({
         style={{ background: `linear-gradient(180deg, ${custom.raised}, ${custom.canvas})` }}
       />
       <div
-        className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full"
+        className="absolute end-3 top-3 flex h-7 w-7 items-center justify-center rounded-full"
         style={{ background: custom.ink }}
       >
         {active && <Check size={14} strokeWidth={3} style={{ color: custom.canvas }} />}
@@ -159,7 +159,7 @@ function CustomTile({
           e.stopPropagation();
           onEdit();
         }}
-        className="absolute right-3 bottom-3 z-10 flex h-7 w-7 items-center justify-center rounded-full border transition-colors"
+        className="absolute end-3 bottom-3 z-10 flex h-7 w-7 items-center justify-center rounded-full border transition-colors"
         style={{
           background: custom.elevated,
           borderColor: custom.edge + "8c",

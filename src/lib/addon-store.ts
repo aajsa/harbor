@@ -5,6 +5,7 @@ import { applyOrderToItems } from "./addons-store/reorder";
 
 const STORAGE_KEY = "harbor.installed-addons";
 const SEEDED_KEY = "harbor.addons.seeded.v1";
+const DISABLED_KEY = "harbor.addons.disabled";
 
 const DEFAULT_ADDONS: Array<{ id: string; transportUrl: string }> = [];
 
@@ -148,6 +149,43 @@ export function reorderInstalled(urlSequence: string[]): void {
   saveInstalled(applyOrderToItems(items, urlSequence));
 }
 
+export function loadDisabledAddons(): Set<string> {
+  try {
+    const raw = localStorage.getItem(DISABLED_KEY);
+    if (!raw) return new Set();
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return new Set();
+    return new Set(parsed.filter((u): u is string => typeof u === "string"));
+  } catch {
+    return new Set();
+  }
+}
+
+function saveDisabledAddons(set: Set<string>): void {
+  try {
+    localStorage.setItem(DISABLED_KEY, JSON.stringify([...set]));
+  } catch (e) {
+    console.warn("[addons] couldn't persist disabled addons", e);
+  }
+}
+
+export function isAddonEnabled(transportUrl: string): boolean {
+  return !loadDisabledAddons().has(transportUrl);
+}
+
+export function setAddonEnabled(transportUrl: string, enabled: boolean): void {
+  const set = loadDisabledAddons();
+  if (enabled) set.delete(transportUrl);
+  else set.add(transportUrl);
+  saveDisabledAddons(set);
+}
+
+export function filterEnabled<T extends { transportUrl: string }>(items: T[]): T[] {
+  const disabled = loadDisabledAddons();
+  if (disabled.size === 0) return items;
+  return items.filter((a) => !disabled.has(a.transportUrl));
+}
+
 export function isInstalled(id: string): boolean {
   return loadInstalled().some((a) => a.id === id);
 }
@@ -269,10 +307,19 @@ export async function installFromUrl(
 }
 
 export async function uninstallAddon(id: string, transportUrl?: string): Promise<void> {
+  const removed = transportUrl
+    ? loadInstalled().filter((a) => a.transportUrl === transportUrl)
+    : loadInstalled().filter((a) => a.id === id);
   const next = transportUrl
     ? loadInstalled().filter((a) => a.transportUrl !== transportUrl)
     : loadInstalled().filter((a) => a.id !== id);
   saveInstalled(next);
+  if (removed.length > 0) {
+    const disabled = loadDisabledAddons();
+    let touched = false;
+    for (const a of removed) if (disabled.delete(a.transportUrl)) touched = true;
+    if (touched) saveDisabledAddons(disabled);
+  }
   const authKey = readAuthKey();
   if (!authKey) return;
   const current = await userAddons(authKey).catch(() => [] as Addon[]);

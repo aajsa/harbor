@@ -40,8 +40,12 @@ export function usePipMode(params: {
         kickLayout();
       });
       if (cancelled) {
-        onEntered();
-        onExited();
+        try {
+          onEntered();
+        } catch {}
+        try {
+          onExited();
+        } catch {}
         return;
       }
       unlistenEntered = onEntered;
@@ -49,8 +53,14 @@ export function usePipMode(params: {
     })();
     return () => {
       cancelled = true;
-      unlistenEntered?.();
-      unlistenExited?.();
+      try {
+        unlistenEntered?.();
+      } catch {}
+      try {
+        unlistenExited?.();
+      } catch {}
+      unlistenEntered = null;
+      unlistenExited = null;
     };
   }, [setChromeHidden]);
 

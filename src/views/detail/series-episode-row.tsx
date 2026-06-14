@@ -8,6 +8,7 @@ import type { Episode } from "@/lib/providers/tmdb";
 import { useSettings } from "@/lib/settings";
 import { SPOILER_TEXT_CLASS, SPOILER_THUMB_CLASS, type SpoilerMask } from "@/lib/spoilers";
 import { useView } from "@/lib/view";
+import { useT } from "@/lib/i18n";
 import { NewBadge, UpcomingBadge } from "./badges";
 import { EpisodeDownloadButton } from "./episode-download-button";
 import { isNewEpisode, isUpcomingEpisode } from "./helpers";
@@ -27,6 +28,7 @@ export function EpisodeRow({
   spoiler?: SpoilerMask;
   onContextMenu?: (e: React.MouseEvent, season: number, episode: number, watched: boolean) => void;
 }) {
+  const t = useT();
   const { openPicker } = useView();
   const { settings } = useSettings();
   const tmdbStill = ep.stillPath ? `https://image.tmdb.org/t/p/w300${ep.stillPath}` : undefined;
@@ -63,7 +65,7 @@ export function EpisodeRow({
     >
       <button
         onClick={() => openPicker(meta, playEpisode, { autoPlay: settings.instantPlay })}
-        className="flex min-w-0 flex-1 gap-6 text-left"
+        className="flex min-w-0 flex-1 gap-6 text-start"
       >
         <div className="relative w-[200px] shrink-0 overflow-hidden rounded-lg">
           <div className={spoiler?.thumb ? SPOILER_THUMB_CLASS : undefined}>
@@ -79,11 +81,11 @@ export function EpisodeRow({
               <Play size={18} fill="currentColor" />
             </div>
           </div>
-          <span className="absolute left-2 top-2 rounded-md bg-canvas/95 px-1.5 py-0.5 text-[11px] font-semibold text-ink">
+          <span className="absolute start-2 top-2 rounded-md bg-canvas/95 px-1.5 py-0.5 text-[11px] font-semibold text-ink">
             {ep.episodeNumber}
           </span>
           {progress.watched && (
-            <span className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-400/22 text-emerald-200 ring-1 ring-emerald-400/40 backdrop-blur-sm">
+            <span className="absolute end-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-400/22 text-emerald-200 ring-1 ring-emerald-400/40 backdrop-blur-sm">
               <Check size={12} strokeWidth={3} />
             </span>
           )}
@@ -99,7 +101,7 @@ export function EpisodeRow({
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
           <h4 className="flex items-center gap-2 truncate text-[16px] font-semibold text-ink">
             <span className={`truncate ${spoiler?.title ? SPOILER_TEXT_CLASS : ""}`}>
-              {ep.name || `Episode ${ep.episodeNumber}`}
+              {ep.name || t("Episode {n}", { n: ep.episodeNumber })}
             </span>
             {isUpcomingEpisode(ep) ? <UpcomingBadge /> : isNewEpisode(ep) && <NewBadge />}
           </h4>
@@ -107,7 +109,7 @@ export function EpisodeRow({
             <span>
               {[
                 `S${ep.seasonNumber} E${ep.episodeNumber}`,
-                ep.runtime ? `${ep.runtime} min` : null,
+                ep.runtime ? t("{n} min", { n: ep.runtime }) : null,
                 formatAirDate(ep.airDate) || null,
                 ep.voteAverage && ep.voteAverage > 0 ? `★ ${ep.voteAverage.toFixed(1)}` : null,
               ]
@@ -115,11 +117,11 @@ export function EpisodeRow({
                 .join("  ·  ")}
             </span>
             {progress.watched && watchedAgo && (
-              <span className="text-emerald-300/85">· Watched {watchedAgo}</span>
+              <span className="text-emerald-300/85">· {t("Watched {ago}", { ago: watchedAgo })}</span>
             )}
             {!progress.watched && progress.ratio > 0.01 && watchedAgo && (
               <span className="text-accent/85">
-                · {Math.round(progress.ratio * 100)}% watched · {watchedAgo}
+                · {t("{pct}% watched", { pct: Math.round(progress.ratio * 100) })} · {watchedAgo}
               </span>
             )}
           </p>

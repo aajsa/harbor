@@ -48,6 +48,12 @@ export type ExtraVideo = {
   type: string;
 };
 
+export type GalleryImages = {
+  backdrops: string[];
+  posters: string[];
+  logos: string[];
+};
+
 export type TmdbDetail = {
   kind: "movie" | "tv";
   id: number;
@@ -77,6 +83,7 @@ export type TmdbDetail = {
   trailerYtId: string | null;
   trailerCandidates: string[];
   extraVideos: ExtraVideo[];
+  gallery: GalleryImages;
   cast: CastEntry[];
   crew: CrewEntry[];
   directors: PersonRef[];
@@ -113,6 +120,34 @@ const WRITER_JOBS = new Set([
   "Original Series Creator",
 ]);
 const PRODUCER_JOBS = new Set(["Producer", "Executive Producer"]);
+
+type RawImageEntry = { file_path?: string; vote_average?: number };
+
+function urlsFromImages(
+  entries: RawImageEntry[] | undefined,
+  size: string,
+  max: number,
+): string[] {
+  if (!entries?.length) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const e of [...entries].sort((a, b) => (b.vote_average ?? 0) - (a.vote_average ?? 0))) {
+    if (!e.file_path || seen.has(e.file_path)) continue;
+    seen.add(e.file_path);
+    out.push(`${IMG}/${size}${e.file_path}`);
+    if (out.length >= max) break;
+  }
+  return out;
+}
+
+function buildGallery(images: any, heroLogo: string | undefined): GalleryImages {
+  const logos = urlsFromImages(images?.logos, "w500", 12).filter((u) => u !== heroLogo);
+  return {
+    backdrops: urlsFromImages(images?.backdrops, "w780", 24),
+    posters: urlsFromImages(images?.posters, "w342", 24),
+    logos,
+  };
+}
 
 const uniqByName = (entries: Array<{ id: number; name: string }>): PersonRef[] => {
   const seen = new Set<string>();
@@ -172,6 +207,8 @@ export async function tmdbDetails(key: string, meta: Meta): Promise<TmdbDetail |
     .filter((v) => v.site === "YouTube" && !candidateSet.has(v.key))
     .slice(0, 12)
     .map((v) => ({ ytId: v.key, name: (v as any).name ?? v.type, type: v.type }));
+
+  const gallery = buildGallery(raw.images, logo);
 
   const aggCast: any[] = raw.aggregate_credits?.cast ?? [];
   const flatCast: any[] = raw.credits?.cast ?? [];
@@ -285,6 +322,7 @@ export async function tmdbDetails(key: string, meta: Meta): Promise<TmdbDetail |
     trailerYtId,
     trailerCandidates,
     extraVideos,
+    gallery,
     cast,
     crew,
     directors,

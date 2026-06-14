@@ -248,7 +248,7 @@ function CategoryBlock({ category, tint }: { category: AnimeAwardCategory; tint:
         <h2 className="font-display text-[24px] font-medium tracking-tight text-ink">
           {category.isAOTY && (
             <span
-              className="mr-2 inline-flex items-center rounded-full px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-[0.18em]"
+              className="me-2 inline-flex items-center rounded-full px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-[0.18em]"
               style={{ background: `${tint}22`, color: tint }}
             >
               Grand
@@ -303,12 +303,12 @@ function WinnerRow({ year, title, tint }: { year: number; title: string; tint: s
           type="button"
           onClick={onClick}
           disabled={resolving}
-          className="group flex flex-1 items-center gap-1.5 text-left text-ink transition-colors hover:text-accent disabled:cursor-default disabled:opacity-60"
+          className="group flex flex-1 items-center gap-1.5 text-start text-ink transition-colors hover:text-accent disabled:cursor-default disabled:opacity-60"
         >
           <span className="flex-1">{title}</span>
           <ArrowUpRight
             size={13}
-            className="shrink-0 text-ink-subtle opacity-0 transition-opacity group-hover:opacity-100"
+            className="dir-icon shrink-0 text-ink-subtle opacity-0 transition-opacity group-hover:opacity-100"
             strokeWidth={2.2}
           />
         </button>

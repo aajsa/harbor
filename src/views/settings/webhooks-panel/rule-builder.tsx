@@ -196,8 +196,8 @@ export function RuleBuilder({
                   }`}
                 >
                   <span
-                    className={`absolute top-0.5 block h-4 w-4 rounded-full bg-canvas transition-transform ${
-                      r.enabled ? "translate-x-[18px]" : "translate-x-0.5"
+                    className={`absolute start-0 top-0.5 block h-4 w-4 rounded-full bg-canvas transition-transform ${
+                      r.enabled ? "translate-x-[18px] rtl:-translate-x-[18px]" : "translate-x-0.5 rtl:-translate-x-0.5"
                     }`}
                   />
                 </span>

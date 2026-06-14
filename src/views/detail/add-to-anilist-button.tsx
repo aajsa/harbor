@@ -6,6 +6,7 @@ import { deleteListEntry, fetchListEntry, saveListEntry } from "@/lib/anilist/mu
 import { useAnilist } from "@/lib/anilist/provider";
 import { resolveAnilistMediaId } from "@/lib/anilist/sync";
 import type { MediaListStatus } from "@/lib/anilist/types";
+import { useT } from "@/lib/i18n";
 
 const STATUS_LABELS: Record<MediaListStatus, string> = {
   CURRENT: "Watching",
@@ -26,6 +27,7 @@ const STATUS_ORDER: MediaListStatus[] = [
 ];
 
 export function AddToAnilistButton({ harborId, title }: { harborId: string; title: string }) {
+  const t = useT();
   const { isConnected } = useAnilist();
   const [mediaId, setMediaId] = useState<number | null>(null);
   const [entryId, setEntryId] = useState<number | null>(null);
@@ -101,12 +103,12 @@ export function AddToAnilistButton({ harborId, title }: { harborId: string; titl
         type="button"
         disabled={busy}
         onClick={() => void setTo("PLANNING")}
-        title={`Add ${title} to AniList`}
+        title={t("Add {title} to AniList", { title })}
         className="flex h-12 items-center gap-2.5 rounded-full border border-edge bg-canvas/80 px-6 text-[15px] font-medium text-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-[transform,background-color,border-color] duration-200 hover:border-ink-subtle hover:bg-canvas/95 active:scale-[0.98] disabled:opacity-60"
       >
         <img src={anilistLogo} alt="" className="h-[18px] w-[18px] rounded-[3px] object-contain" />
-        <Plus size={16} strokeWidth={2.2} className="-ml-1" />
-        Add to AniList
+        <Plus size={16} strokeWidth={2.2} className="-ms-1" />
+        {t("Add to AniList")}
       </button>
     );
   }
@@ -121,7 +123,7 @@ export function AddToAnilistButton({ harborId, title }: { harborId: string; titl
         className="flex h-12 items-center gap-2.5 rounded-full border border-ink bg-ink/10 px-6 text-[15px] font-medium text-ink transition-[transform,background-color,border-color] duration-200 hover:bg-ink/20 active:scale-[0.98] disabled:opacity-60"
       >
         <img src={anilistLogo} alt="" className="h-[18px] w-[18px] rounded-[3px] object-contain" />
-        {STATUS_LABELS[status]}
+        {t(STATUS_LABELS[status])}
         <ChevronDown
           size={16}
           className={`text-ink-muted transition-transform ${menuOpen ? "rotate-180" : ""}`}
@@ -134,11 +136,11 @@ export function AddToAnilistButton({ harborId, title }: { harborId: string; titl
               key={s}
               type="button"
               onClick={() => void setTo(s)}
-              className={`flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-[13.5px] transition-colors ${
+              className={`flex w-full items-center justify-between gap-3 px-4 py-2.5 text-start text-[13.5px] transition-colors ${
                 s === status ? "text-ink" : "text-ink-muted hover:bg-elevated/60 hover:text-ink"
               }`}
             >
-              {STATUS_LABELS[s]}
+              {t(STATUS_LABELS[s])}
               {s === status && <Check size={15} className="text-ink" />}
             </button>
           ))}
@@ -146,10 +148,10 @@ export function AddToAnilistButton({ harborId, title }: { harborId: string; titl
           <button
             type="button"
             onClick={() => void remove()}
-            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-[13.5px] text-ink-muted transition-colors hover:bg-danger/15 hover:text-danger"
+            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-start text-[13.5px] text-ink-muted transition-colors hover:bg-danger/15 hover:text-danger"
           >
             <Trash2 size={14} />
-            Remove from list
+            {t("Remove from list")}
           </button>
         </div>
       </AnchoredMenu>

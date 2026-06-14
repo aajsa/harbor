@@ -79,7 +79,7 @@ export function DiscordTutorial() {
       <p className="text-[12px] text-ink-muted">
         Discord posts a message to a channel whenever Harbor pings it. Takes about a minute to set up.
       </p>
-      <ol className="ml-4 list-decimal space-y-1.5 text-[12px] text-ink-muted marker:text-ink-subtle">
+      <ol className="ms-4 list-decimal space-y-1.5 text-[12px] text-ink-muted marker:text-ink-subtle">
         <li>Open the Discord server where you want notifications to land.</li>
         <li>Right-click a text channel, pick <span className="text-ink">Edit Channel</span>.</li>
         <li>Click <span className="text-ink">Integrations</span> on the left, then <span className="text-ink">Webhooks</span>.</li>
@@ -103,7 +103,7 @@ export function TelegramTutorial() {
       <p className="text-[12px] text-ink-muted">
         Telegram sends through a bot you create. You need two things: a <span className="text-ink">bot token</span> and your <span className="text-ink">chat ID</span>. Both go in the boxes above. Harbor builds the URL for you.
       </p>
-      <ol className="ml-4 list-decimal space-y-1.5 text-[12px] text-ink-muted marker:text-ink-subtle">
+      <ol className="ms-4 list-decimal space-y-1.5 text-[12px] text-ink-muted marker:text-ink-subtle">
         <li>Tap <span className="text-ink">Open BotFather</span> below. In Telegram, send him <span className="font-mono text-ink">/newbot</span>. Pick any name. Pick a username ending in <span className="font-mono text-ink">bot</span>.</li>
         <li>BotFather replies with a token like <span className="font-mono text-ink">1234567890:AAExample...</span>. Long string with a colon in it. Copy it. Paste it into the <span className="text-ink">Bot token</span> box above.</li>
         <li>Open the bot BotFather just made (he sends you a link). Send it any message so it's allowed to message you back.</li>

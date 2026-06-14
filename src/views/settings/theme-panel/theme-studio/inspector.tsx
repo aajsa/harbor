@@ -147,7 +147,7 @@ function Group({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex h-[52px] w-full items-center gap-2 px-5 text-left transition-colors hover:bg-white/[0.03]"
+        className="flex h-[52px] w-full items-center gap-2 px-5 text-start transition-colors hover:bg-white/[0.03]"
       >
         <span className="flex-1 text-[13px] font-bold uppercase tracking-[0.16em] text-ink-muted">
           {title}

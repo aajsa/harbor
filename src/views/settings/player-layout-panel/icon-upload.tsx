@@ -193,7 +193,7 @@ function Thumb({
         <ImageIcon size={14} className="text-white/40" strokeWidth={2.1} />
       )}
       {warning && !busy && (
-        <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-amber-300 ring-1 ring-black/40" />
+        <span className="absolute -end-0.5 -top-0.5 h-2 w-2 rounded-full bg-amber-300 ring-1 ring-black/40" />
       )}
     </div>
   );

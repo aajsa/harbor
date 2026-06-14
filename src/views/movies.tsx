@@ -6,6 +6,7 @@ import { Row, ScrollRootContext } from "@/components/row";
 import { TopRankCard } from "@/components/top-rank-card";
 import { TmdbNudge } from "@/components/nudge";
 import { topMovies, type Meta } from "@/lib/cinemeta";
+import { useT } from "@/lib/i18n";
 import { fetchUnderNinety } from "@/lib/feed/sections";
 import { pickMoodSpecs } from "@/lib/feed/moods";
 import { MOVIE_GENRES } from "@/lib/feed/tags";
@@ -36,6 +37,7 @@ type RowSpec = {
 export function Movies({ active = true }: { active?: boolean }) {
   const { settings } = useSettings();
   const { openGrid } = useView();
+  const t = useT();
   const [hero, setHero] = useState<Meta[]>([]);
   const [rows, setRows] = useState<MovieRow[]>([]);
   const rowsRef = useRef<MovieRow[]>([]);
@@ -188,12 +190,12 @@ export function Movies({ active = true }: { active?: boolean }) {
   return (
     <main ref={scrollCb} className="relative h-full overflow-y-auto bg-canvas">
       <ScrollRootContext.Provider value={scrollEl}>
-        <CinemaHero slides={hero} eyebrow="Featured tonight" />
+        <CinemaHero slides={hero} eyebrow={t("Featured tonight")} />
         <div className="relative mx-auto flex max-w-[1700px] flex-col gap-12 px-12 pb-32 pt-12">
           {!settings.tmdbKey && <TmdbNudge />}
           {top10.length >= 10 && (
             <Row
-              title="Top 10 Movies Today"
+              title={t("Top 10 Movies Today")}
               min={216}
               shape="rank"
               scrollKey="movies:top10"
@@ -202,7 +204,7 @@ export function Movies({ active = true }: { active?: boolean }) {
                 return trending?.fetcher
                   ? () =>
                       openGrid({
-                        title: trending.title,
+                        title: t(trending.title),
                         fetcher: trending.fetcher!,
                         initial: trending.metas,
                       })
@@ -217,14 +219,14 @@ export function Movies({ active = true }: { active?: boolean }) {
           {restRows.map((row) => (
             <Row
               key={row.key}
-              title={row.title}
+              title={t(row.title)}
               min={148}
               shape="portrait"
               scrollKey={`movies:${row.key}`}
               onEndReached={row.hasMore ? () => loadMore(row.key) : undefined}
               onViewAll={
                 row.fetcher
-                  ? () => openGrid({ title: row.title, fetcher: row.fetcher!, initial: row.metas })
+                  ? () => openGrid({ title: t(row.title), fetcher: row.fetcher!, initial: row.metas })
                   : undefined
               }
             >

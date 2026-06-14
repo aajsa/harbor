@@ -22,7 +22,7 @@ export function FontPicker({
             key={p.id}
             type="button"
             onClick={() => onPickPair(p.id)}
-            className={`relative flex flex-col gap-1.5 rounded-lg border p-3.5 text-left transition-colors ${
+            className={`relative flex flex-col gap-1.5 rounded-lg border p-3.5 text-start transition-colors ${
               active
                 ? "border-accent/80 bg-accent-soft"
                 : "border-edge-soft bg-canvas/40 hover:border-edge hover:bg-white/[0.04]"

@@ -1,11 +1,13 @@
 import type { WatchProvider } from "@/lib/providers/tmdb";
 import { openUrl } from "@/lib/window";
+import { useT } from "@/lib/i18n";
 
 export function WatchOn({ providers }: { providers: WatchProvider[] }) {
+  const t = useT();
   if (providers.length === 0) return null;
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-[12px] font-medium uppercase tracking-[0.18em] text-ink-subtle">Watch on</p>
+      <p className="text-[12px] font-medium uppercase tracking-[0.18em] text-ink-subtle">{t("Watch on")}</p>
       <div className="flex flex-wrap gap-2.5">
         {providers.map((p) => (
           <button
@@ -13,7 +15,7 @@ export function WatchOn({ providers }: { providers: WatchProvider[] }) {
             type="button"
             onClick={() => p.link && openUrl(p.link)}
             title={p.name}
-            className="group flex h-11 items-center gap-2.5 rounded-xl border border-edge-soft bg-elevated/70 pl-2 pr-3.5 transition-[transform,background-color,border-color] duration-150 hover:border-ink-subtle hover:bg-elevated active:scale-[0.97]"
+            className="group flex h-11 items-center gap-2.5 rounded-xl border border-edge-soft bg-elevated/70 ps-2 pe-3.5 transition-[transform,background-color,border-color] duration-150 hover:border-ink-subtle hover:bg-elevated active:scale-[0.97]"
           >
             <img
               src={p.logo}

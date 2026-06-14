@@ -30,7 +30,7 @@ export function SeverityPicker({
             key={o.id}
             type="button"
             onClick={() => onChange(o.id)}
-            className={`flex flex-col items-start gap-0.5 rounded-xl border px-3 py-2.5 text-left transition-colors ${
+            className={`flex flex-col items-start gap-0.5 rounded-xl border px-3 py-2.5 text-start transition-colors ${
               selected
                 ? TONE[o.id]
                 : "border-edge-soft/60 bg-canvas/30 text-ink-muted hover:border-edge hover:text-ink"

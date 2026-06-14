@@ -96,7 +96,7 @@ export function CommunityAddonsRail({
             onClick={() => openUrl(SITE_URL)}
             className="flex h-9 items-center gap-1.5 rounded-full border border-edge-soft px-3 text-[12px] font-semibold text-ink-muted transition-colors hover:border-edge hover:text-ink"
           >
-            <ArrowUpRight size={12} strokeWidth={2.4} />
+            <ArrowUpRight size={12} strokeWidth={2.4} className="dir-icon" />
             Browse all
           </button>
         </div>
@@ -243,7 +243,7 @@ function CommunityCard({
         }
       >
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-surface via-surface/30 to-transparent" />
-        <div className="absolute right-2.5 top-2.5 flex items-center gap-1 rounded-full bg-canvas/70 px-2 py-0.5 text-[11px] font-bold text-accent ring-1 ring-accent/30 backdrop-blur-sm">
+        <div className="absolute end-2.5 top-2.5 flex items-center gap-1 rounded-full bg-canvas/70 px-2 py-0.5 text-[11px] font-bold text-accent ring-1 ring-accent/30 backdrop-blur-sm">
           <Star size={10} strokeWidth={2.6} fill="currentColor" className="harbor-rating-star" />
           {addon.stars.toLocaleString()}
         </div>
@@ -254,7 +254,7 @@ function CommunityCard({
             draggable={false}
             loading="lazy"
             decoding="async"
-            className="absolute bottom-2.5 left-2.5 h-10 w-10 rounded-lg bg-canvas/80 object-contain p-1 ring-1 ring-edge-soft"
+            className="absolute bottom-2.5 start-2.5 h-10 w-10 rounded-lg bg-canvas/80 object-contain p-1 ring-1 ring-edge-soft"
           />
         )}
       </div>
@@ -266,7 +266,7 @@ function CommunityCard({
               e.stopPropagation();
               openUrl(addonSiteUrl(addon.slug));
             }}
-            className="text-left text-[14px] font-semibold leading-tight text-ink transition-colors hover:text-accent hover:underline hover:underline-offset-4"
+            className="text-start text-[14px] font-semibold leading-tight text-ink transition-colors hover:text-accent hover:underline hover:underline-offset-4"
             title={`Open ${name} on ${SITE_NAME}`}
           >
             {name}

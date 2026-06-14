@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { loadPlaylist, subscribePlaylists } from "@/lib/iptv/store";
+import { getCachedPlaylist, loadPlaylist, subscribePlaylists } from "@/lib/iptv/store";
 import type { IptvPlaylist, IptvPlaylistSource } from "@/lib/iptv/types";
 
 type PlaylistState =
@@ -20,6 +20,7 @@ export function useIptvPlaylist(source: IptvPlaylistSource | null): {
       setState({ kind: "idle" });
       return;
     }
+    const id = source.id;
     let cancelled = false;
     setState({ kind: "loading" });
     loadPlaylist(source, { force: tick > 0 })
@@ -33,7 +34,8 @@ export function useIptvPlaylist(source: IptvPlaylistSource | null): {
       });
     const unsub = subscribePlaylists(() => {
       if (cancelled) return;
-      setTick((n) => n);
+      const cached = getCachedPlaylist(id);
+      if (cached) setState({ kind: "ready", playlist: cached });
     });
     return () => {
       cancelled = true;

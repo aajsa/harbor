@@ -4,6 +4,7 @@ import { deleteListEntry, saveListEntry } from "@/lib/anilist/mutations";
 import { useAnilist } from "@/lib/anilist/provider";
 import type { AnilistMediaEntry, MediaListStatus } from "@/lib/anilist/types";
 import { RAIL_ORDER } from "@/lib/use-anilist-anime-rails";
+import { useT } from "@/lib/i18n";
 import { AnilistEntryCard } from "./anilist-entry-card";
 import { FilterBar, Grid, type TypeKey } from "./shared";
 
@@ -16,6 +17,7 @@ function entryType(e: AnilistMediaEntry): "movie" | "series" {
 }
 
 export function AnilistTab() {
+  const t = useT();
   const { session } = useAnilist();
   const userId = session?.userId;
   const [entries, setEntries] = useState<AnilistMediaEntry[]>([]);
@@ -127,21 +129,21 @@ export function AnilistTab() {
   );
 
   if (status === "loading") {
-    return <p className="text-[13px] text-ink-muted">Loading your AniList…</p>;
+    return <p className="text-[13px] text-ink-muted">{t("Loading your AniList…")}</p>;
   }
   if (status === "error") {
     return (
       <p className="rounded-lg bg-danger/15 px-3 py-2 text-[12px] text-danger ring-1 ring-danger/30">
-        Couldn't reach AniList. Try refreshing.
+        {t("Couldn't reach AniList. Try refreshing.")}
       </p>
     );
   }
   if (entries.length === 0) {
     return (
       <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-edge-soft bg-canvas/30 px-8 py-16 text-center">
-        <h2 className="text-[16px] font-semibold text-ink">Your AniList is empty</h2>
+        <h2 className="text-[16px] font-semibold text-ink">{t("Your AniList is empty")}</h2>
         <p className="max-w-md text-[13px] leading-relaxed text-ink-muted">
-          Add anime to your AniList and they show up here, grouped by status and ready to edit.
+          {t("Add anime to your AniList and they show up here, grouped by status and ready to edit.")}
         </p>
       </div>
     );
@@ -156,7 +158,7 @@ export function AnilistTab() {
         return (
           <div key={section.key} className="flex flex-col gap-4">
             <div className="flex items-baseline gap-3">
-              <h2 className="text-[18px] font-semibold text-ink">{section.title}</h2>
+              <h2 className="text-[18px] font-semibold text-ink">{t(section.title)}</h2>
               <span className="text-[12px] text-ink-muted">{items.length}</span>
             </div>
             <Grid>

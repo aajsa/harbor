@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import type { Meta } from "@/lib/cinemeta";
 import { activeDownloadFor, cancelDownload, useDownloads } from "@/lib/download/downloads-store";
 import { useView } from "@/lib/view";
+import { useT } from "@/lib/i18n";
 import { AnilistMenuItems, SimklMenuItems } from "./overflow-sync-items";
 import { PreviewIcon } from "./preview-icon";
 
@@ -80,6 +81,7 @@ export function HeroActionOverflow({
   simkl?: { harborId: string; type: "movie" | "series" } | null;
   anilist?: { harborId: string } | null;
 }) {
+  const t = useT();
   const { openPicker } = useView();
   useDownloads();
   const btnRef = useRef<HTMLButtonElement | null>(null);
@@ -121,14 +123,14 @@ export function HeroActionOverflow({
       <button
         ref={btnRef}
         type="button"
-        aria-label="More actions"
-        title="More"
+        aria-label={t("More actions")}
+        title={t("More")}
         onMouseDown={(e) => e.stopPropagation()}
         onClick={() => (menu ? setMenu(null) : openMenu())}
         className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-edge bg-canvas/80 text-ink transition-[transform,background-color,border-color] duration-200 hover:border-ink-subtle hover:bg-canvas/95 active:scale-[0.94]"
       >
         <MoreHorizontal size={20} strokeWidth={1.9} />
-        {isFav && <span className="absolute right-2.5 top-2.5 h-1.5 w-1.5 rounded-full bg-accent" />}
+        {isFav && <span className="absolute end-2.5 top-2.5 h-1.5 w-1.5 rounded-full bg-accent" />}
       </button>
       {menu &&
         createPortal(
@@ -148,7 +150,7 @@ export function HeroActionOverflow({
                       <Bookmark size={14} strokeWidth={2} />
                     )
                   }
-                  label={inWatchlist ? "In Watchlist" : "Add to Watchlist"}
+                  label={inWatchlist ? t("In Watchlist") : t("Add to Watchlist")}
                   active={inWatchlist}
                   onClick={() => {
                     onToggleWatchlist?.();
@@ -176,7 +178,7 @@ export function HeroActionOverflow({
                   fill={isFav ? "currentColor" : "none"}
                 />
               }
-              label={isFav ? "Favorited" : "Favorite"}
+              label={isFav ? t("Favorited") : t("Favorite")}
               active={isFav}
               onClick={() => {
                 onToggleFavorite();
@@ -186,7 +188,7 @@ export function HeroActionOverflow({
             {hasTrailer && (
               <Item
                 icon={<PreviewIcon size={14} />}
-                label="Watch trailer"
+                label={t("Watch trailer")}
                 onClick={() => {
                   onTrailer();
                   setMenu(null);
@@ -208,12 +210,12 @@ export function HeroActionOverflow({
                 }
                 label={
                   downloading
-                    ? `Downloading ${pct}%  ·  cancel`
+                    ? t("Downloading {pct}%  ·  cancel", { pct })
                     : done
-                      ? "Saved offline"
+                      ? t("Saved offline")
                       : failed
-                        ? "Retry download"
-                        : "Download for offline"
+                        ? t("Retry download")
+                        : t("Download for offline")
                 }
                 active={done}
                 onClick={() => {
@@ -245,7 +247,7 @@ function Item({
     <button
       role="menuitem"
       onClick={onClick}
-      className={`flex h-9 items-center gap-2.5 rounded-lg px-3 text-left text-[13px] transition-colors hover:bg-raised ${
+      className={`flex h-9 items-center gap-2.5 rounded-lg px-3 text-start text-[13px] transition-colors hover:bg-raised ${
         active ? "text-accent" : "text-ink"
       }`}
     >

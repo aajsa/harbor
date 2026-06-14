@@ -4,6 +4,7 @@ import { ImdbIcon } from "@/components/icons/imdb-icon";
 import { MetaAwardsCorner } from "@/components/meta-awards-corner";
 import { RtBadge } from "@/components/rt-badge";
 import { meta as fetchMeta, narrowMediaType, type Meta } from "@/lib/cinemeta";
+import { useT } from "@/lib/i18n";
 import { omdbPrefetch, useOmdbScores } from "@/lib/providers/omdb";
 import { tmdbImdbId, tmdbLogo, tmdbTrailerList, useTmdbImdbId } from "@/lib/providers/tmdb";
 import { useSettings } from "@/lib/settings";
@@ -27,6 +28,7 @@ export const Hero = memo(function Hero({
 }) {
   const { settings } = useSettings();
   const { openMeta } = useView();
+  const t = useT();
   const inWatchlist = useInWatchlist(meta.id);
   const bg = upsizeTmdb(meta.background || meta.poster);
   const [trailerCandidates, setTrailerCandidates] = useState<string[]>([]);
@@ -176,7 +178,7 @@ export const Hero = memo(function Hero({
           />
         </div>
       )}
-      <div className="absolute inset-0 bg-gradient-to-r from-canvas via-canvas/85 via-50% to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-r from-canvas via-canvas/85 via-50% to-transparent rtl:bg-gradient-to-l" />
       <div className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-canvas via-canvas/70 via-50% to-transparent" />
       <MetaAwardsCorner meta={meta} imdbId={resolvedImdb} />
 
@@ -186,7 +188,7 @@ export const Hero = memo(function Hero({
             <div className="mb-5 inline-flex items-center gap-1.5 self-start rounded-md bg-canvas/85 px-2.5 py-1 text-[12px] font-semibold text-ink">
               <TrendingUp size={12} className="text-accent" />
               <span>
-                #{rank.position} in {rank.label} Today
+                {t("#{position} in {label} Today", { position: rank.position, label: t(rank.label) })}
               </span>
             </div>
           )}
@@ -197,7 +199,7 @@ export const Hero = memo(function Hero({
             </p>
           )}
           <div className="mt-6 flex flex-wrap items-center gap-x-8 gap-y-2 text-[14px]">
-            {meta.releaseInfo && <Stat label="Year" value={meta.releaseInfo} />}
+            {meta.releaseInfo && <Stat label={t("Year")} value={meta.releaseInfo} />}
             {settings.showImdbBadge && meta.imdbRating && (
               <span className="flex items-center gap-2">
                 <ImdbIcon className="h-[18px] w-auto rounded-[4px] shadow-[0_1px_3px_rgba(0,0,0,0.35)]" />
@@ -210,7 +212,7 @@ export const Hero = memo(function Hero({
                 <span className="font-semibold text-ink">{omdb.rtCritics}%</span>
               </span>
             )}
-            {meta.runtime && <Stat label="Runtime" value={meta.runtime} />}
+            {meta.runtime && <Stat label={t("Runtime")} value={meta.runtime} />}
           </div>
           <div
             className="mt-9 flex gap-3"
@@ -225,7 +227,7 @@ export const Hero = memo(function Hero({
               className="flex h-12 items-center gap-2.5 rounded-full bg-ink px-7 text-[15px] font-semibold text-canvas shadow-[0_8px_24px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.65),inset_0_-1px_0_rgba(0,0,0,0.18)] transition-transform duration-200 hover:scale-[1.03] active:scale-[0.98]"
             >
               <Play size={18} fill="currentColor" />
-              Play
+              {t("Play")}
             </button>
             <button
               onClick={(e) => {
@@ -240,7 +242,7 @@ export const Hero = memo(function Hero({
               className="flex h-12 items-center gap-2.5 rounded-full border border-edge bg-canvas/55 px-6 text-[15px] font-medium text-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-colors duration-200 hover:border-ink-subtle hover:bg-canvas/75"
             >
               {inWatchlist ? <Check size={18} strokeWidth={2.4} /> : <Plus size={18} strokeWidth={2} />}
-              {inWatchlist ? "In Watchlist" : "Add to Watchlist"}
+              {inWatchlist ? t("In Watchlist") : t("Add to Watchlist")}
             </button>
           </div>
         </div>
@@ -273,7 +275,7 @@ function HeroTitlePlate({
           decoding="async"
           onLoad={onLoad}
           onError={onError}
-          className="max-h-[120px] w-auto max-w-[460px] object-contain object-left drop-shadow-[0_6px_22px_rgba(0,0,0,0.45)]"
+          className="max-h-[120px] w-auto max-w-[460px] object-contain object-left rtl:object-right drop-shadow-[0_6px_22px_rgba(0,0,0,0.45)]"
           style={{
             opacity: loaded ? 1 : 0,
             transition: "opacity 360ms cubic-bezier(0.32, 0.72, 0.24, 1)",

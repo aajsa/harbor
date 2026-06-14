@@ -142,7 +142,7 @@ function AddonStackPeek({ addons, max }: { addons: Addon[]; max: number }) {
 
 function AddonListTooltip({ addons, onClose }: { addons: Addon[]; onClose: () => void }) {
   return (
-    <div className="absolute left-0 top-[calc(100%+10px)] z-30 flex w-[320px] flex-col overflow-hidden rounded-2xl border border-edge-soft bg-elevated/95 shadow-[0_24px_60px_-15px_rgba(0,0,0,0.65)] backdrop-blur-md animate-in fade-in slide-in-from-top-1 duration-150">
+    <div className="absolute start-0 top-[calc(100%+10px)] z-30 flex w-[320px] flex-col overflow-hidden rounded-2xl border border-edge-soft bg-elevated/95 shadow-[0_24px_60px_-15px_rgba(0,0,0,0.65)] backdrop-blur-md animate-in fade-in slide-in-from-top-1 duration-150">
       <div className="flex items-center justify-between border-b border-edge-soft/70 px-4 py-2.5">
         <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink-subtle">
           All addons ({addons.length})

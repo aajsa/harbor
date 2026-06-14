@@ -24,7 +24,7 @@ export function SubtitleStylePanel() {
   const assModes: Array<{ id: "no" | "scale" | "force"; label: string; sub: string }> = [
     { id: "no", label: "Keep original", sub: "Styled (ASS) subs keep their own fonts, colors, and effects. Truest to the release." },
     { id: "scale", label: "Resize only", sub: "Keep the original look but apply your size and position." },
-    { id: "force", label: "Use my style", sub: "Replace the embedded style with everything set here. Can break karaoke and signs." },
+    { id: "force", label: "Use my style", sub: "Force your font, size, and color onto styled subs. Use this for Arabic or any subs showing boxes. Can affect karaoke and signs." },
   ];
 
   const isDefault =
@@ -70,7 +70,7 @@ export function SubtitleStylePanel() {
                 key={s.id}
                 type="button"
                 onClick={() => update({ subStyle: s.id })}
-                className={`flex flex-col items-start gap-0.5 rounded-xl border px-3.5 py-2.5 text-left transition-colors ${
+                className={`flex flex-col items-start gap-0.5 rounded-xl border px-3.5 py-2.5 text-start transition-colors ${
                   sel ? "border-ink bg-elevated" : "border-edge-soft bg-canvas/40 hover:border-edge"
                 }`}
               >
@@ -92,7 +92,7 @@ export function SubtitleStylePanel() {
                 key={m.id}
                 type="button"
                 onClick={() => update({ subAssOverride: m.id })}
-                className={`flex flex-col items-start gap-0.5 rounded-xl border px-3.5 py-2.5 text-left transition-colors ${
+                className={`flex flex-col items-start gap-0.5 rounded-xl border px-3.5 py-2.5 text-start transition-colors ${
                   sel ? "border-ink bg-elevated" : "border-edge-soft bg-canvas/40 hover:border-edge"
                 }`}
               >
@@ -102,6 +102,9 @@ export function SubtitleStylePanel() {
             );
           })}
         </div>
+        <p className="text-[11.5px] leading-snug text-ink-muted">
+          Seeing empty boxes instead of letters? Choose Arabic under Font and switch to Use my style.
+        </p>
       </div>
 
       {settings.subStyle === "box" && (
@@ -216,7 +219,7 @@ export function SubtitleStylePanel() {
               <button
                 type="button"
                 onClick={() => update({ subFontColor: "#FFFFFF" })}
-                className="ml-auto rounded-md px-2 py-1 text-[11.5px] font-semibold uppercase tracking-[0.14em] text-ink-subtle transition-colors hover:bg-raised hover:text-ink"
+                className="ms-auto rounded-md px-2 py-1 text-[11.5px] font-semibold uppercase tracking-[0.14em] text-ink-subtle transition-colors hover:bg-raised hover:text-ink"
               >
                 Reset
               </button>
@@ -238,7 +241,7 @@ export function SubtitleStylePanel() {
               <button
                 type="button"
                 onClick={() => update({ subBorderColor: "#000000" })}
-                className="ml-auto rounded-md px-2 py-1 text-[11.5px] font-semibold uppercase tracking-[0.14em] text-ink-subtle transition-colors hover:bg-raised hover:text-ink"
+                className="ms-auto rounded-md px-2 py-1 text-[11.5px] font-semibold uppercase tracking-[0.14em] text-ink-subtle transition-colors hover:bg-raised hover:text-ink"
               >
                 Reset
               </button>
@@ -262,7 +265,7 @@ export function SubtitleStylePanel() {
               <button
                 type="button"
                 onClick={() => update({ subBoxColor: "#000000" })}
-                className="ml-auto rounded-md px-2 py-1 text-[11.5px] font-semibold uppercase tracking-[0.14em] text-ink-subtle transition-colors hover:bg-raised hover:text-ink"
+                className="ms-auto rounded-md px-2 py-1 text-[11.5px] font-semibold uppercase tracking-[0.14em] text-ink-subtle transition-colors hover:bg-raised hover:text-ink"
               >
                 Reset
               </button>
@@ -357,11 +360,12 @@ function SubtitlePreview() {
   );
 }
 
-const PRESET_FONTS: Array<{ id: "inter" | "system" | "rounded" | "serif"; label: string }> = [
+const PRESET_FONTS: Array<{ id: "inter" | "system" | "rounded" | "serif" | "arabic"; label: string }> = [
   { id: "inter", label: "Inter" },
   { id: "system", label: "System" },
   { id: "rounded", label: "Rounded" },
   { id: "serif", label: "Serif" },
+  { id: "arabic", label: "Arabic" },
 ];
 
 const FONT_ACCEPT = ".ttf,.otf,.woff,.woff2,font/ttf,font/otf,font/woff,font/woff2,application/x-font-ttf,application/x-font-otf,application/font-woff,application/font-woff2";
@@ -470,7 +474,7 @@ function FontPicker() {
                     setConfirmId(f.id.slice("custom:".length));
                   }}
                   aria-label={`Remove ${f.label}`}
-                  className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-canvas text-ink-muted ring-1 ring-edge transition-colors hover:bg-danger hover:text-white"
+                  className="absolute -end-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-canvas text-ink-muted ring-1 ring-edge transition-colors hover:bg-danger hover:text-white"
                 >
                   <X size={10} strokeWidth={2.6} />
                 </button>

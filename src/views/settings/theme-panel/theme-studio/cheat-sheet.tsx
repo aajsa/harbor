@@ -101,13 +101,13 @@ export function CheatSheet({ onClose }: { onClose: () => void }) {
           <BookOpen size={20} strokeWidth={2} />
           <span className="text-[17px] font-semibold tracking-tight">Cheat sheet</span>
         </div>
-        <span className="ml-2 hidden text-[13px] text-ink-muted md:inline">
+        <span className="ms-2 hidden text-[13px] text-ink-muted md:inline">
           Every variable, selector, hook, and recipe for building custom Harbor themes.
         </span>
         <button
           type="button"
           onClick={onClose}
-          className="ml-auto flex h-11 items-center rounded-lg px-5 text-[14.5px] font-semibold text-canvas transition-opacity hover:opacity-90"
+          className="ms-auto flex h-11 items-center rounded-lg px-5 text-[14.5px] font-semibold text-canvas transition-opacity hover:opacity-90"
           style={{ background: "var(--color-accent)" }}
         >
           Done
@@ -115,7 +115,7 @@ export function CheatSheet({ onClose }: { onClose: () => void }) {
       </header>
 
       <div className="flex flex-1 overflow-hidden">
-        <aside className="hidden w-60 shrink-0 border-r border-edge-soft bg-surface px-2.5 py-4 lg:block">
+        <aside className="hidden w-60 shrink-0 border-e border-edge-soft bg-surface px-2.5 py-4 lg:block">
           <span className="block px-3 pb-2 text-[11px] font-bold uppercase tracking-[0.22em] text-ink-subtle">
             Contents
           </span>
@@ -125,7 +125,7 @@ export function CheatSheet({ onClose }: { onClose: () => void }) {
                 key={s.id}
                 type="button"
                 onClick={() => jump(s.id)}
-                className={`relative rounded-lg px-3 py-2.5 text-left text-[14px] font-medium transition-colors ${
+                className={`relative rounded-lg px-3 py-2.5 text-start text-[14px] font-medium transition-colors ${
                   active === s.id
                     ? "bg-white/[0.06] text-ink"
                     : "text-ink-muted hover:bg-white/[0.03] hover:text-ink"
@@ -184,7 +184,7 @@ export function CheatSheet({ onClose }: { onClose: () => void }) {
                     className="flex items-center justify-between gap-3 rounded-lg border border-edge-soft bg-elevated/15 px-3 py-1.5"
                   >
                     <code className="font-mono text-[11.5px] font-semibold text-ink">.{u.class}</code>
-                    <code className="truncate text-right font-mono text-[11px] text-ink-subtle">{u.mapsTo}</code>
+                    <code className="truncate text-end font-mono text-[11px] text-ink-subtle">{u.mapsTo}</code>
                   </div>
                 ))}
               </div>
@@ -254,7 +254,7 @@ export function CheatSheet({ onClose }: { onClose: () => void }) {
                 {VIEW_NAMES.map((v) => (
                   <span
                     key={v.id}
-                    className="flex items-center gap-2 rounded-full border border-edge-soft bg-elevated/20 py-1 pl-1.5 pr-3"
+                    className="flex items-center gap-2 rounded-full border border-edge-soft bg-elevated/20 py-1 ps-1.5 pe-3"
                   >
                     <code className="rounded-full bg-canvas/70 px-2 py-0.5 font-mono text-[11px] text-ink">
                       {v.id}
@@ -288,7 +288,7 @@ export function CheatSheet({ onClose }: { onClose: () => void }) {
         </div>
       </div>
 
-      <div className="pointer-events-auto fixed bottom-6 right-6 z-[50] flex flex-col items-center gap-1 rounded-xl border border-edge-soft bg-surface/90 p-1.5 backdrop-blur-md">
+      <div className="pointer-events-auto fixed bottom-6 end-6 z-[50] flex flex-col items-center gap-1 rounded-xl border border-edge-soft bg-surface/90 p-1.5 backdrop-blur-md">
         {SECTIONS.map((s) => (
           <HoverTip key={s.id} label={s.label} side="left">
             <button

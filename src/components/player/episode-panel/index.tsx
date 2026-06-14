@@ -11,6 +11,7 @@ import { preflightCheck } from "@/lib/streams/preflight";
 import { resolveStream } from "@/lib/streams/resolve";
 import type { ScoredStream } from "@/lib/streams/types";
 import { useView, type PlayEpisode } from "@/lib/view";
+import { useT } from "@/lib/i18n";
 import { EpisodeRow } from "./episode-row";
 import { SeasonPicker } from "./season-picker";
 import { StreamsView } from "./streams-view";
@@ -37,6 +38,7 @@ export function EpisodePanel({
   watchedFor?: (ep: PlayEpisode) => boolean;
   nextEp?: PlayEpisode | null;
 }) {
+  const t = useT();
   const { settings } = useSettings();
   const { openPicker, replacePlayerSrc } = useView();
   const debrids = useDebridClients();
@@ -130,15 +132,18 @@ export function EpisodePanel({
     >
       {resolvingFor && (
         <div className="pointer-events-auto absolute inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-black/82 backdrop-blur-md animate-in fade-in duration-150">
-          <HarborLoader size="md" caption="Connecting" />
+          <HarborLoader size="md" caption={t("Connecting")} />
           <p className="text-[13px] text-white/75">
-            Loading S{resolvingFor.season} · E{String(resolvingFor.episode).padStart(2, "0")}
-            {resolvingFor.name ? ` · ${resolvingFor.name}` : ""}
+            {t("Loading {label}", {
+              label: `S${resolvingFor.season} · E${String(resolvingFor.episode).padStart(2, "0")}${
+                resolvingFor.name ? ` · ${resolvingFor.name}` : ""
+              }`,
+            })}
           </p>
         </div>
       )}
       <button
-        aria-label="Dismiss episode panel"
+        aria-label={t("Dismiss episode panel")}
         onClick={onClose}
         tabIndex={open ? 0 : -1}
         className={`absolute inset-0 cursor-default bg-black/35 transition-opacity duration-300 ${
@@ -147,7 +152,7 @@ export function EpisodePanel({
       />
       <aside
         role="dialog"
-        aria-label="Up next"
+        aria-label={t("Up next")}
         className={`absolute top-0 flex h-full w-full max-w-[440px] flex-col overflow-hidden bg-surface shadow-[0_30px_80px_-30px_rgba(0,0,0,0.85)] ring-1 ring-edge-soft transition-transform duration-300 ease-out ${
           corner === "top-left" || corner === "bottom-left" ? "left-0" : "right-0"
         } ${
@@ -171,14 +176,14 @@ export function EpisodePanel({
             <header className="flex items-center justify-between gap-3 px-6 pb-4 pt-7">
               <div>
                 <p className="text-[10.5px] font-semibold uppercase tracking-[0.32em] text-ink-subtle">
-                  Up Next
+                  {t("Up Next")}
                 </p>
                 <h2 className="mt-1 font-display text-[22px] font-semibold leading-tight text-ink">
                   {meta.name}
                 </h2>
               </div>
               <button
-                aria-label="Close"
+                aria-label={t("Close")}
                 onClick={onClose}
                 className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-elevated text-ink-muted transition-colors hover:bg-raised hover:text-ink"
               >
@@ -188,9 +193,11 @@ export function EpisodePanel({
             <div className="flex items-center justify-between gap-3 px-6 pb-3">
               {currentEpisode ? (
                 <p className="min-w-0 truncate text-[12.5px] text-ink-subtle">
-                  Now playing: S{currentEpisode.season} · E
-                  {String(currentEpisode.episode).padStart(2, "0")}
-                  {currentEpisode.name ? ` · ${currentEpisode.name}` : ""}
+                  {t("Now playing: {label}", {
+                    label: `S${currentEpisode.season} · E${String(currentEpisode.episode).padStart(2, "0")}${
+                      currentEpisode.name ? ` · ${currentEpisode.name}` : ""
+                    }`,
+                  })}
                 </p>
               ) : (
                 <span />
@@ -207,7 +214,7 @@ export function EpisodePanel({
               )}
               {!loading && episodes.length === 0 && (
                 <p className="px-2 py-10 text-center text-[13.5px] text-ink-muted">
-                  No episodes found for this season.
+                  {t("No episodes found for this season.")}
                 </p>
               )}
               {episodes.length > 0 && (
@@ -244,15 +251,15 @@ export function EpisodePanel({
                   onClick={() => setSeason(nextSeason)}
                   className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-2xl bg-elevated px-4 py-3.5 text-[13.5px] font-semibold text-ink ring-1 ring-edge-soft transition-colors hover:bg-raised"
                 >
-                  Season {nextSeason}
+                  {t("Season {n}", { n: nextSeason })}
                   <ChevronRight size={16} strokeWidth={2.4} />
                 </button>
               )}
             </div>
             <footer className="border-t border-edge-soft/60 px-6 py-4 text-[12px] text-ink-subtle">
               {manualMode
-                ? "Manual mode: clicking Play opens the source picker here."
-                : "Instant Play: clicking Play queues the next stream automatically."}
+                ? t("Manual mode: clicking Play opens the source picker here.")
+                : t("Instant Play: clicking Play queues the next stream automatically.")}
             </footer>
           </>
         )}

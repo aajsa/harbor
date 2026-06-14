@@ -8,6 +8,7 @@ import { useTrakt } from "@/lib/trakt/provider";
 import { traktItemToMeta } from "@/lib/trakt/to-meta";
 import type { TraktItem } from "@/lib/trakt/types";
 import { readLocalEntries, removeFromWatchlist, setWatchlistAggregate, subscribeWatchlist, type LocalEntry } from "@/lib/watchlist";
+import { useT } from "@/lib/i18n";
 import {
   applyFilter,
   countByType,
@@ -21,6 +22,7 @@ import {
 } from "./shared";
 
 export function WatchlistTab() {
+  const tr = useT();
   const { authKey } = useAuth();
   const { settings } = useSettings();
   const { isConnected: traktConnected } = useTrakt();
@@ -134,10 +136,13 @@ export function WatchlistTab() {
 
   const subtitle = (() => {
     const parts: string[] = [];
-    if (traktConnected) parts.push(traktStatus === "loading" ? "Syncing Trakt…" : `${trakt.length} on Trakt`);
-    else parts.push("Connect Trakt in Settings to sync");
-    parts.push(`${localEntries.length} saved here`);
-    if (authKey && rawCount > 0) parts.push(`${rawCount} in your Stremio library`);
+    if (traktConnected)
+      parts.push(
+        traktStatus === "loading" ? tr("Syncing Trakt…") : tr("{n} on Trakt", { n: trakt.length }),
+      );
+    else parts.push(tr("Connect Trakt in Settings to sync"));
+    parts.push(tr("{n} saved here", { n: localEntries.length }));
+    if (authKey && rawCount > 0) parts.push(tr("{n} in your Stremio library", { n: rawCount }));
     return parts.join(" · ");
   })();
 
@@ -160,7 +165,7 @@ export function WatchlistTab() {
         <EmptyWatchlist connected={traktConnected} />
       ) : visible.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-edge-soft bg-canvas/30 px-6 py-10 text-center text-[13px] text-ink-muted">
-          No matches for these filters.
+          {tr("No matches for these filters.")}
         </p>
       ) : flat ? (
         <GroupedGrid
@@ -175,6 +180,7 @@ export function WatchlistTab() {
 }
 
 function ViewModeToggle({ flat, onToggle }: { flat: boolean; onToggle: () => void }) {
+  const t = useT();
   return (
     <div className="flex items-center gap-1 rounded-full bg-elevated/40 p-0.5 ring-1 ring-edge-soft/60">
       <button
@@ -183,7 +189,7 @@ function ViewModeToggle({ flat, onToggle }: { flat: boolean; onToggle: () => voi
           !flat ? "bg-ink text-canvas" : "text-ink-muted hover:bg-raised hover:text-ink"
         }`}
       >
-        Grouped
+        {t("Grouped")}
       </button>
       <button
         onClick={() => !flat && onToggle()}
@@ -191,7 +197,7 @@ function ViewModeToggle({ flat, onToggle }: { flat: boolean; onToggle: () => voi
           flat ? "bg-ink text-canvas" : "text-ink-muted hover:bg-raised hover:text-ink"
         }`}
       >
-        One list
+        {t("One list")}
       </button>
     </div>
   );

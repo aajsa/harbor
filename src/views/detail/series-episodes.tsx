@@ -18,6 +18,7 @@ import { fetchWatchedKeySet } from "@/lib/trakt/history";
 import { useTrakt } from "@/lib/trakt/provider";
 import { loadSimklWatchedMap, simklWatchedForId } from "@/lib/simkl/list-status";
 import { useSimkl } from "@/lib/simkl/provider";
+import { useT } from "@/lib/i18n";
 import { NewBadge } from "./badges";
 import { CinemetaEpisodeRow } from "./cinemeta-episodes";
 import { EpisodeLayoutToggle } from "./episode-layout-toggle";
@@ -44,6 +45,7 @@ export function SeriesEpisodes({
   cinemetaVideos?: NonNullable<Meta["videos"]>;
   stremioWatched?: Set<string>;
 }) {
+  const t = useT();
   const { settings, update } = useSettings();
   const { isConnected: traktConnected } = useTrakt();
   const { isConnected: simklConnected } = useSimkl();
@@ -182,18 +184,18 @@ export function SeriesEpisodes({
   const enrichedEpisodes = useMemo<Episode[]>(() => {
     if (!tvdbForSeason) return episodes;
     return episodes.map((ep): Episode => {
-      const t = tvdbForSeason.get(ep.episodeNumber);
-      if (!t) return ep;
+      const tv = tvdbForSeason.get(ep.episodeNumber);
+      if (!tv) return ep;
       const overview =
-        t.overview && t.overview.trim().length > (ep.overview?.trim().length ?? 0)
-          ? t.overview
+        tv.overview && tv.overview.trim().length > (ep.overview?.trim().length ?? 0)
+          ? tv.overview
           : ep.overview;
       return {
         ...ep,
         overview,
-        runtime: ep.runtime ?? t.runtime ?? null,
-        name: ep.name || t.name || ep.name,
-        airDate: ep.airDate ?? t.aired ?? null,
+        runtime: ep.runtime ?? tv.runtime ?? null,
+        name: ep.name || tv.name || ep.name,
+        airDate: ep.airDate ?? tv.aired ?? null,
       };
     });
   }, [episodes, tvdbForSeason]);
@@ -235,7 +237,7 @@ export function SeriesEpisodes({
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-end justify-between gap-6">
-        <h3 className="text-[22px] font-medium tracking-tight text-ink">Episodes</h3>
+        <h3 className="text-[22px] font-medium tracking-tight text-ink">{t("Episodes")}</h3>
         <div className="flex items-center gap-2.5">
           <EpisodeLayoutToggle
             value={settings.episodeLayout}
@@ -258,7 +260,9 @@ export function SeriesEpisodes({
 
       {activeSeason && (activeSeason.airDate || activeSeason.episodeCount > 0) && (
         <p className="text-[13px] text-ink-subtle">
-          {activeSeason.episodeCount} episode{activeSeason.episodeCount === 1 ? "" : "s"}
+          {activeSeason.episodeCount === 1
+            ? t("{n} episode", { n: activeSeason.episodeCount })
+            : t("{n} episodes", { n: activeSeason.episodeCount })}
           {activeSeason.airDate && ` · ${activeSeason.airDate.slice(0, 4)}`}
         </p>
       )}
@@ -346,6 +350,7 @@ function SeasonPicker({
   onChange: (n: number) => void;
   lastEpisodeAir?: { seasonNumber: number; airDate: string | null };
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const current = seasons.find((s) => s.seasonNumber === active);
@@ -374,23 +379,23 @@ function SeasonPicker({
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="relative flex h-10 items-center gap-2 rounded-full border border-edge-soft bg-canvas/90 pl-4 pr-3 text-[13.5px] font-medium text-ink transition-colors hover:bg-canvas/100"
+        className="relative flex h-10 items-center gap-2 rounded-full border border-edge-soft bg-canvas/90 ps-4 pe-3 text-[13.5px] font-medium text-ink transition-colors hover:bg-canvas/100"
       >
-        <span>{current?.name ?? `Season ${active}`}</span>
+        <span>{current?.name ?? t("Season {n}", { n: active })}</span>
         {current && isNew(current) && <NewBadge />}
         <ChevronDown
           size={15}
           className={`text-ink-muted transition-transform duration-200 ${open ? "rotate-180" : ""}`}
         />
         {hasUnseenNew && (
-          <span className="pointer-events-none absolute -right-0.5 -top-0.5 flex h-2.5 w-2.5">
+          <span className="pointer-events-none absolute -end-0.5 -top-0.5 flex h-2.5 w-2.5">
             <span className="absolute inset-0 animate-ping rounded-full bg-accent/60" />
             <span className="relative h-2.5 w-2.5 rounded-full bg-accent ring-2 ring-canvas" />
           </span>
         )}
       </button>
       {open && (
-        <div className="animate-fade-in absolute right-0 top-full z-30 mt-2 w-64 overflow-hidden rounded-2xl border border-edge-soft bg-canvas py-1.5 shadow-2xl">
+        <div className="animate-fade-in absolute end-0 top-full z-30 mt-2 w-64 overflow-hidden rounded-2xl border border-edge-soft bg-canvas py-1.5 shadow-2xl">
           <div className="max-h-[60vh] overflow-y-auto">
             {seasons.map((s) => {
               const isActive = s.seasonNumber === active;
@@ -401,7 +406,7 @@ function SeasonPicker({
                     onChange(s.seasonNumber);
                     setOpen(false);
                   }}
-                  className={`flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left transition-colors ${
+                  className={`flex w-full items-center justify-between gap-3 px-4 py-2.5 text-start transition-colors ${
                     isActive ? "bg-ink/10 text-ink" : "text-ink-muted hover:bg-elevated/60 hover:text-ink"
                   }`}
                 >
@@ -411,7 +416,9 @@ function SeasonPicker({
                       {isNew(s) && <NewBadge />}
                     </span>
                     <span className="text-[11.5px] text-ink-subtle">
-                      {s.episodeCount} episode{s.episodeCount === 1 ? "" : "s"}
+                      {s.episodeCount === 1
+                        ? t("{n} episode", { n: s.episodeCount })
+                        : t("{n} episodes", { n: s.episodeCount })}
                       {s.airDate && ` · ${s.airDate.slice(0, 4)}`}
                     </span>
                   </div>
@@ -434,6 +441,7 @@ function CinemetaFallback({
   videos: NonNullable<Meta["videos"]> | undefined;
   season: number;
 }) {
+  const t = useT();
   const eps = useMemo(() => {
     if (!videos) return [];
     return videos
@@ -442,7 +450,7 @@ function CinemetaFallback({
       .sort((a, b) => (a.episode ?? 0) - (b.episode ?? 0));
   }, [videos, season]);
   if (eps.length === 0) {
-    return <p className="text-[14px] text-ink-subtle">No episodes available for this season.</p>;
+    return <p className="text-[14px] text-ink-subtle">{t("No episodes available for this season.")}</p>;
   }
   return (
     <div className="flex flex-col gap-1">

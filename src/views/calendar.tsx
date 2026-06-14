@@ -16,6 +16,7 @@ import { useSettings } from "@/lib/settings";
 import { useTrakt } from "@/lib/trakt/provider";
 import { useSimkl } from "@/lib/simkl/provider";
 import { useScrollMemory, useView } from "@/lib/view";
+import { useT } from "@/lib/i18n";
 import { AuthModal } from "@/components/auth-modal";
 import { DayModal } from "./calendar/day-modal";
 import { EmptyState, ErrorState, NoKeyState, NotSignedInState } from "./calendar/empty-states";
@@ -32,6 +33,7 @@ import {
 } from "./calendar/utils";
 
 export function CalendarView() {
+  const t = useT();
   const { settings, update } = useSettings();
   const { authKey } = useAuth();
   const [showAuth, setShowAuth] = useState(false);
@@ -155,17 +157,17 @@ export function CalendarView() {
         <div className="flex items-end justify-between gap-6">
           <div className="flex flex-col gap-1.5">
             <span className="text-[11px] font-bold uppercase tracking-[0.32em] text-ink-subtle">
-              Releases
+              {t("Releases")}
             </span>
             <h1 className="font-display text-[44px] font-medium leading-none tracking-tight text-ink">
-              Calendar
+              {t("Calendar")}
             </h1>
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <button
               onClick={goPrev}
               className="flex h-10 w-10 items-center justify-center rounded-full border border-edge-soft text-ink-muted transition-colors hover:border-edge hover:text-ink"
-              aria-label="Previous month"
+              aria-label={t("Previous month")}
             >
               <ChevronLeft size={16} strokeWidth={2.2} />
             </button>
@@ -173,16 +175,16 @@ export function CalendarView() {
               onClick={goToday}
               className="h-10 rounded-full border border-edge-soft px-4 text-[13px] font-semibold text-ink-muted transition-colors hover:border-edge hover:text-ink"
             >
-              Today
+              {t("Today")}
             </button>
             <div className="flex h-10 min-w-[150px] items-center justify-center gap-2 rounded-full border border-edge-soft px-5 text-[14px] font-semibold text-ink">
               <CalendarIcon size={14} strokeWidth={2} className="text-ink-subtle" />
-              {MONTH_NAMES[month]} {year}
+              {t(MONTH_NAMES[month])} {year}
             </div>
             <button
               onClick={goNext}
               className="flex h-10 w-10 items-center justify-center rounded-full border border-edge-soft text-ink-muted transition-colors hover:border-edge hover:text-ink"
-              aria-label="Next month"
+              aria-label={t("Next month")}
             >
               <ChevronRight size={16} strokeWidth={2.2} />
             </button>
@@ -223,7 +225,7 @@ export function CalendarView() {
                           : "border border-edge-soft text-ink-muted hover:border-edge hover:text-ink"
                       }`}
                     >
-                      {f.label}
+                      {t(f.label)}
                       <span
                         className={`text-[11px] tabular-nums ${
                           active ? "text-canvas/65" : "text-ink-subtle"
@@ -237,7 +239,7 @@ export function CalendarView() {
                 <button
                   onClick={() => authKey && setWatchlistOnly((v) => !v)}
                   disabled={!authKey}
-                  title={!authKey ? "Sign in to filter by your library" : undefined}
+                  title={!authKey ? t("Sign in to filter by your library") : undefined}
                   className={`flex items-center gap-2 rounded-full px-4 py-1.5 text-[13px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
                     watchlistOnly
                       ? "bg-ink text-canvas"
@@ -249,7 +251,7 @@ export function CalendarView() {
                     strokeWidth={2.4}
                     className={watchlistOnly ? "fill-canvas" : ""}
                   />
-                  Watchlist only
+                  {t("Watchlist only")}
                 </button>
               </div>
             </>

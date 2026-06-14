@@ -95,8 +95,8 @@ export function AddonDocumentation({ slug }: { slug: string }) {
                   {p.children}
                 </button>
               ),
-              ul: (p) => <ul className="mb-3 ml-5 list-disc">{p.children}</ul>,
-              ol: (p) => <ol className="mb-3 ml-5 list-decimal">{p.children}</ol>,
+              ul: (p) => <ul className="mb-3 ms-5 list-disc">{p.children}</ul>,
+              ol: (p) => <ol className="mb-3 ms-5 list-decimal">{p.children}</ol>,
               li: (p) => <li className="mb-1">{p.children}</li>,
               code: (p) => {
                 const isInline = !String(p.className ?? "").includes("language-");
@@ -114,7 +114,7 @@ export function AddonDocumentation({ slug }: { slug: string }) {
                 </pre>
               ),
               blockquote: (p) => (
-                <blockquote className="my-3 border-l-2 border-accent/60 pl-3 italic text-ink-subtle">
+                <blockquote className="my-3 border-s-2 border-accent/60 ps-3 italic text-ink-subtle">
                   {p.children}
                 </blockquote>
               ),
@@ -155,7 +155,7 @@ export function AddonDocumentation({ slug }: { slug: string }) {
               tbody: (p) => <tbody>{p.children}</tbody>,
               tr: (p) => <tr className="border-b border-edge-soft/40 last:border-b-0">{p.children}</tr>,
               th: (p) => (
-                <th className="px-3 py-2 text-left text-[12px] font-semibold uppercase tracking-wider text-ink">
+                <th className="px-3 py-2 text-start text-[12px] font-semibold uppercase tracking-wider text-ink">
                   {p.children}
                 </th>
               ),

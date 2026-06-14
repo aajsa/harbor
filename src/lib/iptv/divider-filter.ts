@@ -19,11 +19,8 @@ export function isDividerChannel(name: string): boolean {
 }
 
 function countSymbols(s: string): number {
-  let n = 0;
-  for (const c of s) {
-    if (!/[A-Za-z0-9]/.test(c) && c !== " ") n += 1;
-  }
-  return n;
+  const matches = s.match(/[^\p{L}\p{M}\p{N}\s]/gu);
+  return matches ? matches.length : 0;
 }
 
 export function filterChannelsForDisplay<T extends { name: string }>(channels: T[]): T[] {

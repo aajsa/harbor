@@ -81,7 +81,7 @@ export function MagnetCard({ raw, onClose }: { raw: string; onClose: () => void 
             key={f.idx}
             type="button"
             onClick={() => startPlay(f.idx, f.name)}
-            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-canvas/60"
+            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-start transition-colors hover:bg-canvas/60"
           >
             <Play size={18} className="shrink-0 text-ink-muted" />
             <span className="min-w-0 flex-1 truncate text-[14px] text-ink">{f.name}</span>

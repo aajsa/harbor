@@ -2,6 +2,7 @@ import { Minus, Plus, Volume2, VolumeX } from "lucide-react";
 import { useRef, useState } from "react";
 import type { PlayerCapabilities, PlayerSnapshot } from "@/lib/player/bridge";
 import type { VolumeStyle } from "@/lib/player-chrome";
+import { useT } from "@/lib/i18n";
 import { Tooltip } from "./tooltip";
 import {
   fractionFromValue,
@@ -24,6 +25,7 @@ export function StremioVolume({
   capabilities: PlayerCapabilities;
   style?: VolumeStyle;
 }) {
+  const tr = useT();
   const [hover, setHover] = useState(false);
   const [pinned, setPinned] = useState(false);
   const [barNear, setBarNear] = useState(false);
@@ -76,11 +78,11 @@ export function StremioVolume({
 
   if (style === "icon-only") {
     return (
-      <Tooltip label={muted ? "Unmute" : "Mute"}>
+      <Tooltip label={muted ? tr("Unmute") : tr("Mute")}>
         <button
           type="button"
           onClick={onMute}
-          aria-label={muted ? "Unmute" : "Mute"}
+          aria-label={muted ? tr("Unmute") : tr("Mute")}
           onWheel={onWheel}
           className="pointer-events-auto flex h-16 w-16 items-center justify-center rounded-xl text-white/90 transition-colors duration-150 hover:bg-white/[0.05]"
         >
@@ -97,11 +99,11 @@ export function StremioVolume({
     };
     return (
       <div className="pointer-events-auto flex items-center gap-1" onWheel={onWheel}>
-        <Tooltip label={muted ? "Unmute" : "Mute"}>
+        <Tooltip label={muted ? tr("Unmute") : tr("Mute")}>
           <button
             type="button"
             onClick={onMute}
-            aria-label={muted ? "Unmute" : "Mute"}
+            aria-label={muted ? tr("Unmute") : tr("Mute")}
             className="flex h-12 w-12 items-center justify-center rounded-xl text-white/90 transition-colors hover:bg-white/[0.05]"
           >
             {muted ? <VolumeX size={26} strokeWidth={1.9} /> : <Volume2 size={26} strokeWidth={1.9} />}
@@ -110,7 +112,7 @@ export function StremioVolume({
         <button
           type="button"
           onClick={() => step(-0.05)}
-          aria-label="Volume down"
+          aria-label={tr("Volume down")}
           className="flex h-10 w-10 items-center justify-center rounded-xl text-white/85 transition-colors hover:bg-white/[0.05]"
         >
           <Minus size={18} strokeWidth={2.3} />
@@ -121,7 +123,7 @@ export function StremioVolume({
         <button
           type="button"
           onClick={() => step(0.05)}
-          aria-label="Volume up"
+          aria-label={tr("Volume up")}
           className="flex h-10 w-10 items-center justify-center rounded-xl text-white/85 transition-colors hover:bg-white/[0.05]"
         >
           <Plus size={18} strokeWidth={2.3} />
@@ -144,17 +146,17 @@ export function StremioVolume({
         <button
           type="button"
           onClick={onMute}
-          aria-label={muted ? "Unmute" : "Mute"}
+          aria-label={muted ? tr("Unmute") : tr("Mute")}
           className="pointer-events-auto flex h-16 w-16 items-center justify-center rounded-xl text-white/90 transition-colors duration-150 hover:bg-white/[0.05]"
         >
           {muted ? <VolumeX size={28} strokeWidth={1.9} /> : <Volume2 size={28} strokeWidth={1.9} />}
         </button>
       ) : (
-        <Tooltip label={muted ? "Unmute" : "Mute"}>
+        <Tooltip label={muted ? tr("Unmute") : tr("Mute")}>
           <button
             type="button"
             onClick={onMute}
-            aria-label={muted ? "Unmute" : "Mute"}
+            aria-label={muted ? tr("Unmute") : tr("Mute")}
             className="pointer-events-auto flex h-16 w-16 items-center justify-center rounded-xl text-white/90 transition-colors duration-150 hover:bg-white/[0.05]"
           >
             {muted ? <VolumeX size={28} strokeWidth={1.9} /> : <Volume2 size={28} strokeWidth={1.9} />}

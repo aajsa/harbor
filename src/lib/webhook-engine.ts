@@ -172,20 +172,20 @@ async function fetchLiveTvEvents(
     const cached = getCachedPlaylist(pl.id);
     if (!cached) continue;
     if (!pl.epgUrl) continue;
-    let programs;
+    let parsed;
     try {
-      programs = await fetchAndParseXmltv(pl.epgUrl);
+      parsed = await fetchAndParseXmltv(pl.epgUrl);
     } catch {
       continue;
     }
-    const byChannel = indexProgramsByChannel(programs);
+    const byChannel = indexProgramsByChannel(parsed.programs);
     const tvgIdCounts = computeTvgIdCounts(cached.channels);
     for (const channel of cached.channels) {
       if (favIds && favIds.size > 0 && !favIds.has(channel.id)) continue;
       if (channelIds && channelIds.length > 0 && !channelIds.includes(channel.id)) continue;
       const chanPrograms = epgProgramsForChannel(
         channel,
-        { byChannel, fetchedAt: now },
+        { byChannel, channelMeta: parsed.channelMeta, fetchedAt: now },
         tvgIdCounts,
       );
       if (!chanPrograms) continue;

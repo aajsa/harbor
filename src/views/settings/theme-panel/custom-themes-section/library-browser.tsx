@@ -52,9 +52,9 @@ export function LibraryBrowser({
           <button
             type="button"
             onClick={onClose}
-            className="flex h-11 items-center gap-2 rounded-full border border-edge-soft bg-canvas/60 px-4 text-[13px] font-semibold text-ink-muted transition-all hover:-translate-x-0.5 hover:border-edge hover:text-ink"
+            className="flex h-11 items-center gap-2 rounded-full border border-edge-soft bg-canvas/60 px-4 text-[13px] font-semibold text-ink-muted transition-all hover:-translate-x-0.5 rtl:hover:translate-x-0.5 hover:border-edge hover:text-ink"
           >
-            <ArrowLeft size={15} strokeWidth={2.2} />
+            <ArrowLeft size={15} strokeWidth={2.2} className="dir-icon" />
             Back to settings
           </button>
           <div className="flex flex-col">
@@ -229,7 +229,7 @@ function BrowserCard({
         }
       >
         {active && (
-          <span className="absolute right-3 top-3 flex h-7 items-center gap-1.5 rounded-full bg-accent px-2.5 text-[10.5px] font-bold uppercase tracking-[0.18em] text-canvas shadow-[0_4px_12px_-4px_rgba(0,0,0,0.4)]">
+          <span className="absolute end-3 top-3 flex h-7 items-center gap-1.5 rounded-full bg-accent px-2.5 text-[10.5px] font-bold uppercase tracking-[0.18em] text-canvas shadow-[0_4px_12px_-4px_rgba(0,0,0,0.4)]">
             <Check size={11} strokeWidth={3} /> Active
           </span>
         )}

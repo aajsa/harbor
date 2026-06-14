@@ -16,6 +16,7 @@ export type Meta = {
   background?: string;
   logo?: string;
   description?: string;
+  originalLanguage?: string;
   releaseInfo?: string;
   releaseDate?: string;
   inTheaters?: boolean;

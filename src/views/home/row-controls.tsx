@@ -1,5 +1,6 @@
 import { ArrowDown, ArrowUp, Check, Eye, EyeOff, ListOrdered, Pencil, Sparkles, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useT } from "@/lib/i18n";
 
 export function RowControls({
   name,
@@ -36,6 +37,7 @@ export function RowControls({
   canHero?: boolean;
   onToggleHero?: () => void;
 }) {
+  const t = useT();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(name);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -58,7 +60,7 @@ export function RowControls({
       <button
         onClick={onMoveUp}
         disabled={!canMoveUp}
-        title="Move up"
+        title={t("Move up")}
         className="flex h-7 w-7 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-raised hover:text-ink disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-ink-muted"
       >
         <ArrowUp size={14} strokeWidth={2.2} />
@@ -66,14 +68,14 @@ export function RowControls({
       <button
         onClick={onMoveDown}
         disabled={!canMoveDown}
-        title="Move down"
+        title={t("Move down")}
         className="flex h-7 w-7 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-raised hover:text-ink disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-ink-muted"
       >
         <ArrowDown size={14} strokeWidth={2.2} />
       </button>
       <button
         onClick={onToggleHidden}
-        title={hidden ? "Show on home" : "Hide from home"}
+        title={hidden ? t("Show on home") : t("Hide from home")}
         className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors ${
           hidden ? "bg-danger/15 text-danger hover:bg-danger/25" : "text-ink-muted hover:bg-raised hover:text-ink"
         }`}
@@ -86,10 +88,10 @@ export function RowControls({
           disabled={!canNumerals && !numeralsActive}
           title={
             numeralsActive
-              ? "Show as a normal row"
+              ? t("Show as a normal row")
               : canNumerals
-                ? "Show as a Top 10 with big numerals"
-                : "Needs at least 10 titles for the Top 10 look"
+                ? t("Show as a Top 10 with big numerals")
+                : t("Needs at least 10 titles for the Top 10 look")
           }
           className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors disabled:opacity-30 disabled:hover:bg-transparent ${
             numeralsActive
@@ -106,10 +108,10 @@ export function RowControls({
           disabled={!canHero && !heroActive}
           title={
             heroActive
-              ? "Stop feeding the hero carousel (back to automatic)"
+              ? t("Stop feeding the hero carousel (back to automatic)")
               : canHero
-                ? "Feature this catalog in the hero carousel"
-                : "Needs artwork-rich titles to feed the hero"
+                ? t("Feature this catalog in the hero carousel")
+                : t("Needs artwork-rich titles to feed the hero")
           }
           className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors disabled:opacity-30 disabled:hover:bg-transparent ${
             heroActive
@@ -135,14 +137,14 @@ export function RowControls({
           />
           <button
             onClick={commit}
-            title="Save"
+            title={t("Save")}
             className="flex h-7 w-7 items-center justify-center rounded-lg text-accent transition-colors hover:bg-raised"
           >
             <Check size={14} strokeWidth={2.4} />
           </button>
           <button
             onClick={() => setEditing(false)}
-            title="Cancel"
+            title={t("Cancel")}
             className="flex h-7 w-7 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-raised hover:text-ink"
           >
             <X size={14} strokeWidth={2.2} />
@@ -154,15 +156,15 @@ export function RowControls({
           {isRenamed && (
             <button
               onClick={onResetName}
-              title="Reset to original name"
+              title={t("Reset to original name")}
               className="rounded-md bg-accent/15 px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-accent transition-colors hover:bg-accent/25"
             >
-              Renamed
+              {t("Renamed")}
             </button>
           )}
           <button
             onClick={() => setEditing(true)}
-            title="Rename row"
+            title={t("Rename row")}
             className="flex h-7 w-7 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-raised hover:text-ink"
           >
             <Pencil size={13} strokeWidth={2.2} />

@@ -10,7 +10,7 @@ export function NetworkTiles({
 }) {
   if (channels.length === 0) return null;
   return (
-    <div className="flex gap-2.5 overflow-x-auto pb-1 pl-[9px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div className="flex gap-2.5 overflow-x-auto pb-1 ps-[9px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {channels.map((ch) => (
         <Tile key={ch.id} channel={ch} onPlay={onPlay} />
       ))}

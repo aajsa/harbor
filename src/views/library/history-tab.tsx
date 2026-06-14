@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/auth";
 import { library, libraryMetaType, removeStremioLibraryItem, type LibraryItem } from "@/lib/stremio";
 import { fetchWatchedHistory, type HistoryItem } from "@/lib/trakt/history";
 import { useTrakt } from "@/lib/trakt/provider";
+import { useT } from "@/lib/i18n";
 import {
   applyFilter,
   countByType,
@@ -16,6 +17,7 @@ import {
 } from "./shared";
 
 export function HistoryTab() {
+  const t = useT();
   const { authKey } = useAuth();
   const { isConnected: traktConnected } = useTrakt();
   const [stremio, setStremio] = useState<LibraryItem[]>([]);
@@ -87,9 +89,9 @@ export function HistoryTab() {
     return (
       <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-edge-soft bg-canvas/30 px-8 py-16 text-center">
         <Clock size={28} strokeWidth={1.6} className="text-ink-subtle" />
-        <h2 className="text-[16px] font-semibold text-ink">No history yet</h2>
+        <h2 className="text-[16px] font-semibold text-ink">{t("No history yet")}</h2>
         <p className="max-w-md text-[13px] leading-relaxed text-ink-muted">
-          Sign in to Stremio or connect Trakt to see what you've been watching here.
+          {t("Sign in to Stremio or connect Trakt to see what you've been watching here.")}
         </p>
       </div>
     );
@@ -102,21 +104,23 @@ export function HistoryTab() {
       )}
       <div className="flex items-center justify-between">
         <span className="text-[12px] text-ink-muted">
-          {merged.length} item{merged.length === 1 ? "" : "s"}
-          {traktConnected && traktStatus === "loading" ? " · Syncing Trakt…" : ""}
+          {merged.length === 1
+            ? t("{n} item", { n: merged.length })
+            : t("{n} items", { n: merged.length })}
+          {traktConnected && traktStatus === "loading" ? t(" · Syncing Trakt…") : ""}
         </span>
       </div>
       {merged.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-edge-soft bg-canvas/30 px-8 py-16 text-center">
           <Clock size={28} strokeWidth={1.6} className="text-ink-subtle" />
-          <h2 className="text-[16px] font-semibold text-ink">Nothing watched yet</h2>
+          <h2 className="text-[16px] font-semibold text-ink">{t("Nothing watched yet")}</h2>
           <p className="max-w-md text-[13px] leading-relaxed text-ink-muted">
-            Press play on something. It'll show up here once you start watching.
+            {t("Press play on something. It'll show up here once you start watching.")}
           </p>
         </div>
       ) : visible.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-edge-soft bg-canvas/30 px-6 py-10 text-center text-[13px] text-ink-muted">
-          No matches for these filters.
+          {t("No matches for these filters.")}
         </p>
       ) : (
         <GroupedGrid groups={groupByDate(visible)} onRemove={handleRemove} />

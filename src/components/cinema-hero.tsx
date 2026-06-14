@@ -336,7 +336,7 @@ function CinemaSlide({
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-canvas via-canvas/70 via-30% to-transparent" />
       <MetaAwardsCorner meta={meta} imdbId={resolvedImdb} />
-      <div className="absolute inset-y-0 left-0 w-3/5 bg-gradient-to-r from-canvas/95 via-canvas/55 to-transparent" />
+      <div className="absolute inset-y-0 start-0 w-3/5 bg-gradient-to-r from-canvas/95 via-canvas/55 to-transparent rtl:bg-gradient-to-l" />
 
       <div className="relative flex h-full items-end pb-28 pl-20 pr-20">
         <div className="flex max-w-[640px] flex-col gap-5">
@@ -389,7 +389,7 @@ function CinemaSlide({
             >
               <Info size={16} strokeWidth={2} />
               More info
-              <ChevronRight size={15} strokeWidth={2} className="opacity-65" />
+              <ChevronRight size={15} strokeWidth={2} className="dir-icon opacity-65" />
             </button>
           </div>
         </div>
@@ -422,7 +422,7 @@ function CinemaTitlePlate({
           decoding="async"
           onLoad={onLoad}
           onError={onError}
-          className="max-h-[140px] w-auto max-w-[520px] object-contain object-left drop-shadow-[0_8px_28px_rgba(0,0,0,0.55)]"
+          className="max-h-[140px] w-auto max-w-[520px] object-contain object-left rtl:object-right drop-shadow-[0_8px_28px_rgba(0,0,0,0.55)]"
           style={{
             opacity: loaded ? 1 : 0,
             transition: "opacity 360ms cubic-bezier(0.32, 0.72, 0.24, 1)",

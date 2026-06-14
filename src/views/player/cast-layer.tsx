@@ -10,11 +10,13 @@ export function CastLayer({
   cast,
   src,
   durationSec,
+  hasActiveSub,
   onPickAnother,
 }: {
   cast: PlayerCastController;
   src: PlayerSrc;
   durationSec: number;
+  hasActiveSub: boolean;
   onPickAnother: () => void;
 }) {
   return (
@@ -24,6 +26,9 @@ export function CastLayer({
         anchor={cast.castMenuAnchor}
         onClose={cast.closeCastMenu}
         onPick={cast.onPickDevice}
+        hasActiveSub={hasActiveSub}
+        burnSubsOnTv={cast.burnSubsOnTv}
+        setBurnSubsOnTv={cast.setBurnSubsOnTv}
       />
       {cast.pendingCastDevice && !cast.castDevice && (
         <CastingOverlay

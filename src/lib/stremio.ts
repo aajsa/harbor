@@ -1,6 +1,9 @@
 import { safeFetch as fetch } from "@/lib/safe-fetch";
+import { readResumeEntry } from "@/lib/resume";
 
 const API = "https://api.strem.io/api";
+
+const CW_FINISHED_RATIO = 0.9;
 
 export type User = {
   _id: string;
@@ -57,6 +60,34 @@ export function episodeFromVideoId(
     return null;
   }
   return { season, episode };
+}
+
+function resumeForItem(i: LibraryItem): { ms: number; t: number } | null {
+  const se = episodeFromVideoId(i.state?.video_id);
+  const season = i.state?.season ?? se?.season;
+  const episode = i.state?.episode ?? se?.episode;
+  return readResumeEntry(i._id, season, episode);
+}
+
+export function cwSortKey(i: LibraryItem): number {
+  const fromState = Date.parse(i.state?.lastWatched ?? i._mtime ?? "");
+  if (Number.isFinite(fromState)) return fromState;
+  return resumeForItem(i)?.t ?? 0;
+}
+
+export function isCwMember(i: LibraryItem): boolean {
+  if (i.removed && !i.temp) return false;
+  if (!i.state) {
+    const local = resumeForItem(i)?.ms ?? 0;
+    return local > 0;
+  }
+  if (i.state.timeOffset > 0) return true;
+  if ((i.state.flaggedWatched ?? 0) > 0) return false;
+  const local = resumeForItem(i)?.ms ?? 0;
+  if (local <= 0) return false;
+  const duration = i.state.duration ?? 0;
+  if (duration > 0 && local / duration >= CW_FINISHED_RATIO) return false;
+  return true;
 }
 
 async function call<T>(path: string, body: object): Promise<T> {

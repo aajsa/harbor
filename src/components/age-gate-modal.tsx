@@ -328,7 +328,7 @@ export function AgeGateModal({
           src={piratePeek}
           alt=""
           aria-hidden
-          className="pointer-events-none absolute right-[44px] top-0 z-10 h-[150px] w-auto translate-x-1/2 select-none drop-shadow-[0_16px_28px_rgba(0,0,0,0.55)] animate-pirate-peek"
+          className="pointer-events-none absolute end-[44px] top-0 z-10 h-[150px] w-auto translate-x-1/2 rtl:-translate-x-1/2 select-none drop-shadow-[0_16px_28px_rgba(0,0,0,0.55)] animate-pirate-peek"
           draggable={false}
         />
       <div className="flex max-h-[90vh] w-full flex-col overflow-hidden rounded-3xl border border-edge bg-canvas shadow-[0_30px_80px_-20px_rgba(0,0,0,0.7)]">
@@ -354,7 +354,7 @@ export function AgeGateModal({
                   </span>
                   <p className="text-[14.5px] font-medium leading-relaxed text-ink">{q.q}</p>
                 </div>
-                <div className="ml-9 flex flex-col gap-1.5">
+                <div className="ms-9 flex flex-col gap-1.5">
                   {q.options.map((opt, oi) => {
                     const picked = picks[qi] === oi;
                     const wasWrong = submitted && picked && oi !== q.correct;
@@ -369,7 +369,7 @@ export function AgeGateModal({
                             return n;
                           });
                         }}
-                        className={`flex items-center gap-3 rounded-xl border px-4 py-2.5 text-left text-[13.5px] transition-colors ${
+                        className={`flex items-center gap-3 rounded-xl border px-4 py-2.5 text-start text-[13.5px] transition-colors ${
                           wasWrong
                             ? "border-rose-400/50 bg-rose-400/10 text-rose-100"
                             : picked

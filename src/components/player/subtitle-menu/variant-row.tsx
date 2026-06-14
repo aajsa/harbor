@@ -2,6 +2,7 @@ import { Check, Sparkles } from "lucide-react";
 import type { TrackInfo } from "@/lib/player/bridge";
 import { languageName } from "@/lib/subtitles/language";
 import { useImportedSubs } from "@/lib/player/imported-subs";
+import { useT } from "@/lib/i18n";
 
 export function VariantRow({
   track,
@@ -12,22 +13,24 @@ export function VariantRow({
   selected: boolean;
   onPick: () => void;
 }) {
+  const tr = useT();
   const imported = useImportedSubs();
   const isImported = !!track.title && imported.has(track.title);
   const tags: { label: string; tone: "warn" | "info" | "default" }[] = [];
-  if (track.forced) tags.push({ label: "Forced", tone: "info" });
-  if (track.hearingImpaired) tags.push({ label: "HI/SDH", tone: "warn" });
-  if (track.default) tags.push({ label: "Default", tone: "default" });
-  const sourceLabel = isImported ? "Imported" : track.external ? "External" : "Embedded";
+  if (track.forced) tags.push({ label: tr("Forced"), tone: "info" });
+  if (track.hearingImpaired) tags.push({ label: tr("HI/SDH"), tone: "warn" });
+  if (track.default) tags.push({ label: tr("Default"), tone: "default" });
+  const sourceLabel = isImported ? tr("Imported") : track.external ? tr("External") : tr("Embedded");
   const codec = track.codec?.toUpperCase();
   const release = pickReleaseHint(track);
-  const titleText = track.title?.trim() || (track.external ? "External subtitle" : "Embedded track");
-  const langName = track.lang ? languageName(track.lang) : "Unknown";
+  const titleText =
+    track.title?.trim() || (track.external ? tr("External subtitle") : tr("Embedded track"));
+  const langName = track.lang ? languageName(track.lang) : tr("Unknown");
 
   return (
     <button
       onClick={onPick}
-      className={`flex items-start gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors ${
+      className={`flex items-start gap-2.5 rounded-lg px-2.5 py-2 text-start transition-colors ${
         selected
           ? "bg-elevated ring-1 ring-edge"
           : isImported
@@ -49,7 +52,7 @@ export function VariantRow({
           {isImported && (
             <span className="flex shrink-0 items-center gap-1 rounded-full bg-accent/15 px-1.5 py-px text-[9px] font-bold uppercase tracking-[0.12em] text-accent ring-1 ring-accent/30">
               <Sparkles size={9} strokeWidth={2.6} />
-              Yours
+              {tr("Yours")}
             </span>
           )}
         </div>

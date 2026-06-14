@@ -2,6 +2,7 @@ import { StatsOverlay } from "@/components/player/stats-overlay";
 import { SubStyleBar } from "@/components/player/sub-style-bar";
 import { SubtitleOverlay } from "@/components/player/subtitle-overlay";
 import type { PlayerSnapshot } from "@/lib/player/bridge";
+import { useT } from "@/lib/i18n";
 
 export function StageOverlays({
   snap,
@@ -24,6 +25,7 @@ export function StageOverlays({
   videoFillPill: string | null;
   subDropToast: string | null;
 }) {
+  const t = useT();
   return (
     <>
       {(!pipMode || subShowInPip) && !subAssNative && (
@@ -33,7 +35,7 @@ export function StageOverlays({
       {holdSpeedActive && !pipMode && (
         <div className="pointer-events-none absolute left-1/2 top-8 z-30 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-canvas/85 px-3.5 py-1.5 text-[13px] font-semibold text-ink backdrop-blur-md">
           {snap.rate}x
-          <span className="font-normal text-ink-muted">speed</span>
+          <span className="font-normal text-ink-muted">{t("speed")}</span>
         </div>
       )}
       {videoFillPill && !holdSpeedActive && !pipMode && (

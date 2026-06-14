@@ -1,5 +1,6 @@
 import { CircleStop, FolderOpen } from "lucide-react";
 import type { DvrSession } from "@/lib/dvr/types";
+import { useT } from "@/lib/i18n";
 import { Footer } from "./shared";
 import { formatBytes, formatRemaining } from "./utils";
 
@@ -12,6 +13,7 @@ export function ActiveView({
   onStop: () => void;
   onReveal: () => void;
 }) {
+  const t = useT();
   const ratio = session.plannedDurationSec > 0
     ? Math.min(1, session.elapsedSec / session.plannedDurationSec)
     : 0;
@@ -24,7 +26,7 @@ export function ActiveView({
           <span className={`h-2.5 w-2.5 rounded-full ${isDone ? "bg-emerald-400" : "bg-danger animate-pulse"}`} />
           <div className="flex flex-1 flex-col">
             <span className="text-[10.5px] font-semibold uppercase tracking-[0.22em] text-ink-subtle">
-              {isDone ? "Recording finished" : "Recording now"}
+              {isDone ? t("Recording finished") : t("Recording now")}
             </span>
             <span className="truncate text-[14.5px] font-semibold text-ink">
               {session.programTitle ?? session.channelName}
@@ -45,8 +47,8 @@ export function ActiveView({
           </div>
         )}
         <div className="flex flex-col gap-1 text-[12.5px] text-ink-muted">
-          <Row label="Size" value={formatBytes(session.bytesWritten)} />
-          <Row label="File" value={session.outputPath} mono />
+          <Row label={t("Size")} value={formatBytes(session.bytesWritten)} />
+          <Row label={t("File")} value={session.outputPath} mono />
         </div>
       </div>
       <Footer>
@@ -55,7 +57,7 @@ export function ActiveView({
           className="flex h-10 items-center gap-2 rounded-lg bg-raised px-3.5 text-[13px] font-semibold text-ink transition-colors hover:bg-raised/70"
         >
           <FolderOpen size={15} strokeWidth={2} />
-          Show in folder
+          {t("Show in folder")}
         </button>
         {!isDone && (
           <button
@@ -63,7 +65,7 @@ export function ActiveView({
             className="flex h-10 items-center gap-2 rounded-lg bg-danger px-4 text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90"
           >
             <CircleStop size={15} strokeWidth={2} />
-            Stop recording
+            {t("Stop recording")}
           </button>
         )}
       </Footer>

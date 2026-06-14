@@ -5,10 +5,10 @@ export function Stepper({ onPrev, onNext }: { onPrev: () => void; onNext: () => 
   return (
     <div className="flex items-center gap-2">
       <HoldStepButton onStep={onPrev} ariaLabel="Previous featured">
-        <ChevronLeft size={20} />
+        <ChevronLeft size={20} className="dir-icon" />
       </HoldStepButton>
       <HoldStepButton onStep={onNext} ariaLabel="Next featured">
-        <ChevronRight size={20} />
+        <ChevronRight size={20} className="dir-icon" />
       </HoldStepButton>
     </div>
   );

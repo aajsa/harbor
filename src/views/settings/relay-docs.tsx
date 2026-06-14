@@ -251,7 +251,7 @@ function DocsP({ children }: { children: React.ReactNode }) {
 
 function DocsList({ children }: { children: React.ReactNode }) {
   return (
-    <ul className="ml-5 flex list-disc flex-col gap-1.5 text-[13.5px] leading-relaxed text-ink-muted marker:text-ink-subtle">
+    <ul className="ms-5 flex list-disc flex-col gap-1.5 text-[13.5px] leading-relaxed text-ink-muted marker:text-ink-subtle">
       {children}
     </ul>
   );
@@ -259,7 +259,7 @@ function DocsList({ children }: { children: React.ReactNode }) {
 
 function DocsOl({ children }: { children: React.ReactNode }) {
   return (
-    <ol className="ml-5 flex list-decimal flex-col gap-2.5 text-[13.5px] leading-relaxed text-ink-muted marker:font-semibold marker:text-ink-subtle">
+    <ol className="ms-5 flex list-decimal flex-col gap-2.5 text-[13.5px] leading-relaxed text-ink-muted marker:font-semibold marker:text-ink-subtle">
       {children}
     </ol>
   );
@@ -296,7 +296,7 @@ function DocsTable({
 }) {
   return (
     <div className="overflow-hidden rounded-xl border border-edge-soft">
-      <table className="w-full text-left text-[12.5px] text-ink-muted">
+      <table className="w-full text-start text-[12.5px] text-ink-muted">
         <thead className="bg-canvas/60 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-ink-subtle">
           <tr>
             <th className="px-3 py-2.5">Symptom</th>

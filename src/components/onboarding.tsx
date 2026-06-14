@@ -51,7 +51,7 @@ export function OnboardingModal() {
           <button
             onClick={finish}
             aria-label="Skip setup"
-            className="absolute right-5 top-5 z-10 flex h-9 w-9 items-center justify-center rounded-full text-ink-subtle transition-colors hover:bg-raised hover:text-ink"
+            className="absolute end-5 top-5 z-10 flex h-9 w-9 items-center justify-center rounded-full text-ink-subtle transition-colors hover:bg-raised hover:text-ink"
           >
             <X size={17} />
           </button>
@@ -102,7 +102,7 @@ export function OnboardingModal() {
                     className="flex h-11 items-center gap-2 rounded-full bg-ink px-6 text-[14px] font-semibold text-canvas transition-transform hover:scale-[1.03] active:scale-[0.97]"
                   >
                     {step === "welcome" ? "Get Started" : "Continue"}
-                    <ArrowRight size={15} strokeWidth={2.4} />
+                    <ArrowRight size={15} strokeWidth={2.4} className="dir-icon" />
                   </button>
                 ) : (
                   <button
@@ -110,7 +110,7 @@ export function OnboardingModal() {
                     className="flex h-11 items-center gap-2 rounded-full bg-ink px-6 text-[14px] font-semibold text-canvas transition-transform hover:scale-[1.03] active:scale-[0.97]"
                   >
                     Enter Harbor
-                    <ArrowRight size={15} strokeWidth={2.4} />
+                    <ArrowRight size={15} strokeWidth={2.4} className="dir-icon" />
                   </button>
                 )}
               </div>

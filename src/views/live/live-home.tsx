@@ -80,7 +80,7 @@ export function LiveHome({
   return (
     <div className="flex flex-col gap-8 pb-12">
       <div className="flex flex-col gap-5">
-        <div className="flex items-baseline gap-2.5 pl-[9px]">
+        <div className="flex items-baseline gap-2.5 ps-[9px]">
           <h1 className="font-display text-[30px] font-medium leading-none tracking-tight text-ink">
             Your TV
           </h1>
@@ -184,11 +184,11 @@ function RailRow({
       className="group/see inline-flex items-center gap-2 text-ink transition-colors hover:text-ink-muted"
     >
       {rail.flagCode && <RailFlag code={rail.flagCode} />}
-      {rail.title}
+      <span dir="auto">{rail.title}</span>
       <ChevronRight
         size={18}
         strokeWidth={2.4}
-        className="text-ink-subtle transition-transform duration-200 group-hover/see:translate-x-0.5"
+        className="dir-icon text-ink-subtle transition-transform duration-200 group-hover/see:translate-x-0.5 rtl:group-hover/see:-translate-x-0.5"
       />
     </button>
   ) : (

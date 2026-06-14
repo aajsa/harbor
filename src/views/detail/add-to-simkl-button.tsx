@@ -17,12 +17,17 @@ import {
   type WatchlistStatus,
 } from "@/lib/simkl/list-status";
 import type { SimklTarget } from "@/lib/simkl/types";
+import { useT } from "@/lib/i18n";
 
-function errMsg(e: unknown): string {
+type Translator = (key: string, vars?: Record<string, string | number>) => string;
+
+function errMsg(t: Translator, e: unknown): string {
   if (e instanceof SimklApiError) {
-    return e.status === 401 ? "Simkl sign-in expired, reconnect it" : `Simkl error (HTTP ${e.status})`;
+    return e.status === 401
+      ? t("Simkl sign-in expired, reconnect it")
+      : t("Simkl error (HTTP {status})", { status: e.status });
   }
-  return "Couldn't reach Simkl";
+  return t("Couldn't reach Simkl");
 }
 
 export function AddToSimklButton({
@@ -34,6 +39,7 @@ export function AddToSimklButton({
   title: string;
   type: "movie" | "series";
 }) {
+  const t = useT();
   const { isConnected } = useSimkl();
   const [target, setTarget] = useState<SimklTarget | null>(null);
   const [status, setStatus] = useState<WatchlistStatus | null>(null);
@@ -51,25 +57,25 @@ export function AddToSimklButton({
     let cancelled = false;
     setReady(false);
     void (async () => {
-      let t: SimklTarget | null = null;
+      let tgt: SimklTarget | null = null;
       const resolution = stremioIdToSimklTarget(harborId);
       if (resolution.ok) {
-        t = resolution.target;
+        tgt = resolution.target;
       } else if (harborId.startsWith("kitsu:")) {
         const n = Number(harborId.split(":")[1]);
         const mal = Number.isFinite(n) ? await kitsuToMal(n).catch(() => null) : null;
-        if (mal != null) t = { kind: "show", ids: { mal } };
+        if (mal != null) tgt = { kind: "show", ids: { mal } };
       }
       if (cancelled) return;
-      if (!t) {
+      if (!tgt) {
         setTarget(null);
         return;
       }
-      if (type === "series" && t.kind === "movie") t = { kind: "show", ids: t.ids };
-      if (type === "movie" && t.kind === "show") t = { kind: "movie", ids: t.ids };
-      setTarget(t);
+      if (type === "series" && tgt.kind === "movie") tgt = { kind: "show", ids: tgt.ids };
+      if (type === "movie" && tgt.kind === "show") tgt = { kind: "movie", ids: tgt.ids };
+      setTarget(tgt);
       const malKey =
-        t.kind !== "episode" && t.ids.mal != null ? `mal:${t.ids.mal}` : null;
+        tgt.kind !== "episode" && tgt.ids.mal != null ? `mal:${tgt.ids.mal}` : null;
       try {
         const map = await loadSimklStatusMap();
         if (cancelled) return;
@@ -104,7 +110,7 @@ export function AddToSimklButton({
       setStatus(saved);
     } catch (e) {
       setStatus(prev);
-      flash(errMsg(e));
+      flash(errMsg(t, e));
     } finally {
       setBusy(false);
     }
@@ -120,7 +126,7 @@ export function AddToSimklButton({
       await clearSimklStatus(target);
     } catch (e) {
       setStatus(prev);
-      flash(errMsg(e));
+      flash(errMsg(t, e));
     } finally {
       setBusy(false);
     }
@@ -133,12 +139,12 @@ export function AddToSimklButton({
           type="button"
           disabled={busy}
           onClick={() => void setTo("plantowatch")}
-          title={`Add ${title} to Simkl`}
+          title={t("Add {title} to Simkl", { title })}
           className="flex h-12 items-center gap-2.5 rounded-full border border-edge bg-canvas/80 px-6 text-[15px] font-medium text-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-[transform,background-color,border-color] duration-200 hover:border-ink-subtle hover:bg-canvas/95 active:scale-[0.98] disabled:opacity-60"
         >
           <img src={simklLogo} alt="" className="h-[18px] w-[18px] rounded-[4px] object-contain" />
-          <Plus size={16} strokeWidth={2.2} className="-ml-1" />
-          Add to Simkl
+          <Plus size={16} strokeWidth={2.2} className="-ms-1" />
+          {t("Add to Simkl")}
         </button>
       ) : (
         <>
@@ -150,7 +156,7 @@ export function AddToSimklButton({
             className="flex h-12 items-center gap-2.5 rounded-full border border-ink bg-ink/10 px-6 text-[15px] font-medium text-ink transition-[transform,background-color,border-color] duration-200 hover:bg-ink/20 active:scale-[0.98] disabled:opacity-60"
           >
             <img src={simklLogo} alt="" className="h-[18px] w-[18px] rounded-[4px] object-contain" />
-            {SIMKL_STATUS_LABELS[status]}
+            {t(SIMKL_STATUS_LABELS[status])}
             <ChevronDown
               size={16}
               className={`text-ink-muted transition-transform ${menuOpen ? "rotate-180" : ""}`}
@@ -168,11 +174,11 @@ export function AddToSimklButton({
                   key={s}
                   type="button"
                   onClick={() => void setTo(s)}
-                  className={`flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-[13.5px] transition-colors ${
+                  className={`flex w-full items-center justify-between gap-3 px-4 py-2.5 text-start text-[13.5px] transition-colors ${
                     s === status ? "text-ink" : "text-ink-muted hover:bg-elevated/60 hover:text-ink"
                   }`}
                 >
-                  {SIMKL_STATUS_LABELS[s]}
+                  {t(SIMKL_STATUS_LABELS[s])}
                   {s === status && <Check size={15} className="text-ink" />}
                 </button>
               ))}
@@ -180,17 +186,17 @@ export function AddToSimklButton({
               <button
                 type="button"
                 onClick={() => void remove()}
-                className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-[13.5px] text-ink-muted transition-colors hover:bg-danger/15 hover:text-danger"
+                className="flex w-full items-center gap-2.5 px-4 py-2.5 text-start text-[13.5px] text-ink-muted transition-colors hover:bg-danger/15 hover:text-danger"
               >
                 <Trash2 size={14} />
-                Remove from list
+                {t("Remove from list")}
               </button>
             </div>
           </AnchoredMenu>
         </>
       )}
       {error && (
-        <div className="absolute left-0 top-full z-40 mt-1.5 whitespace-nowrap rounded-lg bg-danger px-2.5 py-1 text-[11.5px] font-semibold text-white shadow-[0_8px_24px_rgba(0,0,0,0.5)]">
+        <div className="absolute start-0 top-full z-40 mt-1.5 whitespace-nowrap rounded-lg bg-danger px-2.5 py-1 text-[11.5px] font-semibold text-white shadow-[0_8px_24px_rgba(0,0,0,0.5)]">
           {error}
         </div>
       )}

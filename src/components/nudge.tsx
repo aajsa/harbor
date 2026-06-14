@@ -32,7 +32,7 @@ export function TmdbNudge({ suppress }: { suppress?: boolean } = {}) {
         className="flex h-9 items-center gap-1.5 rounded-full bg-ink px-4 text-[13px] font-semibold text-canvas transition-transform hover:scale-[1.03] active:scale-[0.97]"
       >
         Set up
-        <ArrowRight size={13} strokeWidth={2.6} />
+        <ArrowRight size={13} strokeWidth={2.6} className="dir-icon" />
       </button>
       <button
         onClick={() => dismiss(KEY)}

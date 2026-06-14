@@ -1,27 +1,32 @@
 import type { Meta } from "../../cinemeta";
 import { MOVIE_GENRES, TV_GENRES } from "../../feed/tags";
+import { loadStoredSettings } from "../../settings/load";
 import { IMG } from "./tmdb-client";
 
 export type RawMovie = {
   id: number;
   title: string;
+  original_title?: string;
   overview?: string;
   poster_path?: string | null;
   backdrop_path?: string | null;
   release_date?: string;
   vote_average?: number;
   genre_ids?: number[];
+  original_language?: string;
 };
 
 export type RawSeries = {
   id: number;
   name: string;
+  original_name?: string;
   overview?: string;
   poster_path?: string | null;
   backdrop_path?: string | null;
   first_air_date?: string;
   vote_average?: number;
   genre_ids?: number[];
+  original_language?: string;
 };
 
 export type Page<T> = { results?: T[] };
@@ -49,28 +54,36 @@ function genresFromIds(ids: number[] | undefined, kind: "movie" | "tv"): string[
   return names.length > 0 ? names : undefined;
 }
 
-export const movieMeta = (m: RawMovie): Meta => ({
-  id: `tmdb:movie:${m.id}`,
-  type: "movie",
-  name: m.title,
-  poster: poster(m.poster_path),
-  background: back(m.backdrop_path),
-  description: m.overview,
-  releaseInfo: year(m.release_date),
-  releaseDate: m.release_date,
-  imdbRating: rating(m.vote_average),
-  genres: genresFromIds(m.genre_ids, "movie"),
-});
+export const movieMeta = (m: RawMovie): Meta => {
+  const translate = loadStoredSettings().translateTitles;
+  return {
+    id: `tmdb:movie:${m.id}`,
+    type: "movie",
+    name: translate ? m.title : m.original_title || m.title,
+    poster: poster(m.poster_path),
+    background: back(m.backdrop_path),
+    description: m.overview,
+    originalLanguage: m.original_language,
+    releaseInfo: year(m.release_date),
+    releaseDate: m.release_date,
+    imdbRating: rating(m.vote_average),
+    genres: genresFromIds(m.genre_ids, "movie"),
+  };
+};
 
-export const seriesMeta = (s: RawSeries): Meta => ({
-  id: `tmdb:tv:${s.id}`,
-  type: "series",
-  name: s.name,
-  poster: poster(s.poster_path),
-  background: back(s.backdrop_path),
-  description: s.overview,
-  releaseInfo: year(s.first_air_date),
-  releaseDate: s.first_air_date,
-  imdbRating: rating(s.vote_average),
-  genres: genresFromIds(s.genre_ids, "tv"),
-});
+export const seriesMeta = (s: RawSeries): Meta => {
+  const translate = loadStoredSettings().translateTitles;
+  return {
+    id: `tmdb:tv:${s.id}`,
+    type: "series",
+    name: translate ? s.name : s.original_name || s.name,
+    poster: poster(s.poster_path),
+    background: back(s.backdrop_path),
+    description: s.overview,
+    originalLanguage: s.original_language,
+    releaseInfo: year(s.first_air_date),
+    releaseDate: s.first_air_date,
+    imdbRating: rating(s.vote_average),
+    genres: genresFromIds(s.genre_ids, "tv"),
+  };
+};

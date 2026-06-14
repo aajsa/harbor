@@ -7,6 +7,7 @@ import type { Episode } from "@/lib/providers/tmdb";
 import { useSettings } from "@/lib/settings";
 import { SPOILER_TEXT_CLASS, SPOILER_THUMB_CLASS, type SpoilerMask } from "@/lib/spoilers";
 import { useView } from "@/lib/view";
+import { useT } from "@/lib/i18n";
 
 type Progress = { ratio: number; watched: boolean; startedAt: number };
 
@@ -57,6 +58,7 @@ function EpisodeStripCard({
   spoiler?: SpoilerMask;
   onContextMenu?: (e: React.MouseEvent, season: number, episode: number, watched: boolean) => void;
 }) {
+  const t = useT();
   const { openPicker } = useView();
   const { settings } = useSettings();
   const tmdbStill = ep.stillPath ? `https://image.tmdb.org/t/p/w300${ep.stillPath}` : undefined;
@@ -87,7 +89,7 @@ function EpisodeStripCard({
           { autoPlay: settings.instantPlay },
         )
       }
-      className="group flex w-[244px] shrink-0 flex-col gap-2.5 text-left"
+      className="group flex w-[244px] shrink-0 flex-col gap-2.5 text-start"
     >
       <div className="relative aspect-video overflow-hidden rounded-xl">
         <div className={spoiler?.thumb ? SPOILER_THUMB_CLASS : undefined}>
@@ -104,11 +106,11 @@ function EpisodeStripCard({
             <Play size={16} fill="currentColor" />
           </div>
         </div>
-        <span className="absolute left-2 top-2 rounded-md bg-canvas/95 px-1.5 py-0.5 text-[11px] font-semibold text-ink">
+        <span className="absolute start-2 top-2 rounded-md bg-canvas/95 px-1.5 py-0.5 text-[11px] font-semibold text-ink">
           {ep.episodeNumber}
         </span>
         {progress.watched && (
-          <span className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-400/22 text-emerald-200 ring-1 ring-emerald-400/40 backdrop-blur-sm">
+          <span className="absolute end-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-400/22 text-emerald-200 ring-1 ring-emerald-400/40 backdrop-blur-sm">
             <Check size={12} strokeWidth={3} />
           </span>
         )}
@@ -120,11 +122,11 @@ function EpisodeStripCard({
       </div>
       <div className="flex flex-col gap-0.5 px-0.5">
         <span className={`truncate text-[13.5px] font-semibold text-ink ${spoiler?.title ? SPOILER_TEXT_CLASS : ""}`}>
-          {ep.name || `Episode ${ep.episodeNumber}`}
+          {ep.name || t("Episode {n}", { n: ep.episodeNumber })}
         </span>
         <span className="text-[11.5px] text-ink-subtle">
           S{ep.seasonNumber} E{ep.episodeNumber}
-          {ep.runtime ? ` · ${ep.runtime} min` : ""}
+          {ep.runtime ? ` · ${t("{n} min", { n: ep.runtime })}` : ""}
         </span>
       </div>
     </button>

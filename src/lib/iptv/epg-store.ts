@@ -1,5 +1,5 @@
 import { fetchAndParseXmltv, indexProgramsByChannel } from "./xmltv";
-import type { EpgIndex } from "./types";
+import type { EpgChannelMeta, EpgIndex } from "./types";
 
 const TTL_MS = 60 * 60 * 1000;
 
@@ -7,8 +7,14 @@ const cache = new Map<string, EpgIndex>();
 const inflight = new Map<string, Promise<EpgIndex>>();
 const listeners = new Set<() => void>();
 
+let notifyScheduled = false;
 function notify() {
-  listeners.forEach((l) => l());
+  if (notifyScheduled) return;
+  notifyScheduled = true;
+  queueMicrotask(() => {
+    notifyScheduled = false;
+    listeners.forEach((l) => l());
+  });
 }
 
 export function subscribeEpg(fn: () => void): () => void {
@@ -23,8 +29,13 @@ export function getCachedEpg(playlistId: string): EpgIndex | null {
 }
 
 export function clearEpg(playlistId?: string) {
-  if (playlistId) cache.delete(playlistId);
-  else cache.clear();
+  if (playlistId) {
+    cache.delete(playlistId);
+    inflight.delete(playlistId);
+  } else {
+    cache.clear();
+    inflight.clear();
+  }
   notify();
 }
 
@@ -42,22 +53,26 @@ export async function loadEpg(params: {
   if (pending && !force) return pending;
   const onProgress = (programs: EpgProgramArr) => {
     if (programs.length === 0) return;
+    if (inflight.get(playlistId) !== promise) return;
     cache.set(playlistId, {
       byChannel: indexProgramsByChannel(programs),
+      channelMeta: cache.get(playlistId)?.channelMeta,
       fetchedAt: Date.now(),
     });
     notify();
   };
-  const promise = doFetchWithFallback(urls, onProgress).then((idx) => {
-    cache.set(playlistId, idx);
-    notify();
+  const promise: Promise<EpgIndex> = doFetchWithFallback(urls, onProgress).then((idx) => {
+    if (inflight.get(playlistId) === promise) {
+      cache.set(playlistId, idx);
+      notify();
+    }
     return idx;
   });
   inflight.set(playlistId, promise);
   try {
     return await promise;
   } finally {
-    inflight.delete(playlistId);
+    if (inflight.get(playlistId) === promise) inflight.delete(playlistId);
   }
 }
 
@@ -69,9 +84,11 @@ async function doFetchWithFallback(
 ): Promise<EpgIndex> {
   if (urls.length === 0) throw new Error("No EPG URL available for this playlist");
   let lastErr: unknown = null;
+  let lastMeta: Map<string, EpgChannelMeta> | undefined;
   for (const url of urls) {
     try {
-      const programs = await fetchAndParseXmltv(url, onProgress);
+      const { programs, channelMeta } = await fetchAndParseXmltv(url, onProgress);
+      if (channelMeta.size > 0) lastMeta = channelMeta;
       if (programs.length === 0) {
         lastErr = new Error("EPG endpoint returned no programs");
         console.warn(`[epg] empty result from ${url}`);
@@ -79,12 +96,16 @@ async function doFetchWithFallback(
       }
       return {
         byChannel: indexProgramsByChannel(programs),
+        channelMeta,
         fetchedAt: Date.now(),
       };
     } catch (e) {
       lastErr = e;
       console.warn(`[epg] fetch failed for ${url}:`, e);
     }
+  }
+  if (lastMeta && lastMeta.size > 0) {
+    return { byChannel: new Map(), channelMeta: lastMeta, fetchedAt: Date.now() };
   }
   throw lastErr instanceof Error ? lastErr : new Error(String(lastErr));
 }

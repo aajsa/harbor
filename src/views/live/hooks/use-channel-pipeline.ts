@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { sortChannelsByGroupRelevance, sortGroupsByRelevance } from "@/lib/iptv/group-relevance";
+import { arabicAwareMatch } from "@/lib/iptv/rtl";
 import { FAVORITES_GROUP_KEY, useFavorites } from "@/lib/iptv/favorites";
 import {
   filterChannelsByRegion,
@@ -135,7 +136,7 @@ export function useChannelPipeline(params: {
     if (!inFavorites) return standardVisible;
     const q = query.trim().toLowerCase();
     if (!q) return favoriteChannels;
-    return favoriteChannels.filter((ch) => `${ch.name} ${ch.group ?? ""}`.toLowerCase().includes(q));
+    return favoriteChannels.filter((ch) => arabicAwareMatch(`${ch.name} ${ch.group ?? ""}`, q));
   }, [inFavorites, standardVisible, favoriteChannels, query]);
 
   const groupLogos = useMemo(() => {

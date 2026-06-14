@@ -25,7 +25,7 @@ export function TorrentioHeroArt() {
   const tiles = posters.slice(0, POSTER_SLOTS);
 
   return (
-    <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[62%] md:block">
+    <div className="pointer-events-none absolute inset-y-0 end-0 hidden w-[62%] md:block">
       {tiles.length > 0 && (
         <div
           className="absolute -inset-y-6 inset-x-0 grid auto-rows-fr grid-cols-6 gap-1.5 opacity-35"
@@ -60,18 +60,17 @@ export function TorrentioHeroArt() {
             "linear-gradient(to right, var(--color-surface) 0%, color-mix(in oklab, var(--color-surface) 75%, transparent) 45%, color-mix(in oklab, var(--color-surface) 35%, transparent) 100%)",
         }}
       />
-      <div className="absolute inset-0 flex items-center justify-end pr-[8%]">
+      <div className="absolute inset-0 flex items-center justify-end pe-[8%]">
         <div className="relative">
           <div
             className="absolute -inset-16 rounded-full opacity-70"
             style={{
               background:
-                "radial-gradient(closest-side, color-mix(in oklab, var(--color-accent) 45%, transparent), transparent 70%)",
-              filter: "blur(10px)",
+                "radial-gradient(closest-side, color-mix(in oklab, var(--color-accent) 40%, transparent), transparent 72%)",
             }}
           />
           <div
-            className="relative flex h-[164px] w-[164px] items-center justify-center rounded-[36px] bg-canvas/95 ring-1 backdrop-blur-sm"
+            className="relative flex h-[164px] w-[164px] items-center justify-center rounded-[36px] bg-canvas/95 ring-1"
             style={{
               boxShadow:
                 "0 36px 80px -20px rgba(0,0,0,0.95), 0 0 0 1px color-mix(in oklab, var(--color-accent) 35%, transparent)",

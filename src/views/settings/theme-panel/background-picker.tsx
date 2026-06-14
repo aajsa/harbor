@@ -120,7 +120,7 @@ export function BackgroundPicker({
             Remove
           </button>
         )}
-        <p className="ml-auto text-[11.5px] text-ink-subtle">
+        <p className="ms-auto text-[11.5px] text-ink-subtle">
           JPEG / PNG / WebP. Big files auto-compress to fit.
         </p>
       </div>

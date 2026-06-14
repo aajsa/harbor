@@ -21,7 +21,7 @@ export function FontGrid({
           <button
             key={p.id}
             onClick={() => onPickPair(p.id)}
-            className={`flex flex-col gap-3 rounded-2xl border p-5 text-left transition-colors ${
+            className={`flex flex-col gap-3 rounded-2xl border p-5 text-start transition-colors ${
               active ? "border-ink bg-elevated/40" : "border-edge-soft bg-elevated/15 hover:border-edge"
             }`}
           >

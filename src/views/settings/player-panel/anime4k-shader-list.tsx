@@ -99,7 +99,7 @@ export function Anime4kShaderList() {
                   key={m.id}
                   type="button"
                   onClick={() => pickMode(m.id)}
-                  className={`flex items-start gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors ${
+                  className={`flex items-start gap-3 rounded-xl border px-3.5 py-3 text-start transition-colors ${
                     selected
                       ? "border-ink bg-elevated"
                       : "border-edge-soft bg-canvas/50 hover:border-edge hover:bg-canvas/70"

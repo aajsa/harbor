@@ -1,7 +1,9 @@
 import type { Meta } from "@/lib/cinemeta";
+import type { Settings } from "@/lib/settings";
 import { recentlyPlayed, watchTitleKey } from "@/lib/playback-history";
 import { tmdbDiscover, tmdbTrending } from "@/lib/providers/tmdb";
 import { fetchAwardWinners } from "./award-winners";
+import { localizeFloor } from "./locale";
 import { getDownvotedIds, getUpvotedIds } from "./preferences";
 import { rankMetasByAffinity } from "./rank";
 import type { ExpandedRow } from "./daily-rows-types";
@@ -82,10 +84,14 @@ export async function fetchRowWithFallback(
   tmdbKey: string,
   row: ExpandedRow,
   page: number,
+  settings?: Settings,
 ): Promise<Meta[]> {
   if (!tmdbKey) return [];
   const tmdbPage = (row.pageBase ?? 1) + (page - 1);
-  const primary = applyExclusions(await runRow(tmdbKey, row, row.floorPrimary, tmdbPage));
+  const primaryFloor = settings
+    ? localizeFloor(row.floorPrimary, settings, row.mediaType)
+    : row.floorPrimary;
+  const primary = applyExclusions(await runRow(tmdbKey, row, primaryFloor, tmdbPage));
   if (row.endpoint === "awards") return primary;
   if (primary.length >= MIN_ROW || row.endpoint === "trending") {
     return rankMetasByAffinity(primary);

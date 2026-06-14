@@ -57,7 +57,7 @@ export function TogetherSummonToast() {
           {initial}
         </span>
 
-        <div className="flex min-w-0 flex-col gap-0.5 pr-2">
+        <div className="flex min-w-0 flex-col gap-0.5 pe-2">
           <span className="text-[10.5px] font-semibold uppercase tracking-[0.18em] text-accent">
             {name} wants you here
           </span>

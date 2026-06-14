@@ -1,6 +1,6 @@
 import { safeFetch as fetch } from "@/lib/safe-fetch";
 import type { Meta } from "./cinemeta";
-import { fetchManifestAt, loadInstalled } from "./addon-store";
+import { fetchManifestAt, filterEnabled, loadInstalled } from "./addon-store";
 
 const STREMIO_API = "https://api.strem.io/api";
 const MAX_ROWS = 24;
@@ -242,9 +242,10 @@ export function withDebridKeys(addons: Addon[], keys: DebridKeySet): Addon[] {
 }
 
 export async function gatherCatalogAddons(authKey: string | null): Promise<Addon[]> {
-  const stremio = authKey ? await userAddons(authKey).catch(() => [] as Addon[]) : [];
+  const stremioRaw = authKey ? await userAddons(authKey).catch(() => [] as Addon[]) : [];
+  const stremio = filterEnabled(stremioRaw);
   const seen = new Set(stremio.map((a) => a.transportUrl));
-  const localOnly = loadInstalled().filter((l) => !seen.has(l.transportUrl));
+  const localOnly = filterEnabled(loadInstalled()).filter((l) => !seen.has(l.transportUrl));
   const localFull = await Promise.all(
     localOnly.map(async (l): Promise<Addon | null> => {
       if (l.manifest?.catalogs?.length) return { manifest: l.manifest, transportUrl: l.transportUrl };

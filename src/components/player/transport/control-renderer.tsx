@@ -4,6 +4,7 @@ import type { PlayerCapabilities, PlayerSnapshot } from "@/lib/player/bridge";
 import type { Meta } from "@/lib/cinemeta";
 import { getCustomIcon, type ControlVariant, type CustomIconMap, type PlayerControlId, type TimeFormat, type VolumeStyle } from "@/lib/player-chrome";
 import type { DownloadStatus } from "@/views/player/hooks/use-video-download";
+import { t as translate } from "@/lib/i18n";
 import { renderCustomIconControl } from "./custom-icon-renderer";
 
 function getControlState(id: PlayerControlId, ctx: ControlContext): string | undefined {
@@ -42,6 +43,7 @@ import { EpisodeNavBtn } from "./episode-nav-btn";
 import { TimeStart, TimeEnd } from "./time-display";
 
 export type ControlContext = {
+  t?: (key: string, vars?: Record<string, string | number>) => string;
   snap: PlayerSnapshot;
   capabilities: PlayerCapabilities;
   fullscreen: boolean;
@@ -108,6 +110,7 @@ export type ControlContext = {
 };
 
 export function renderControl(id: PlayerControlId, ctx: ControlContext): ReactNode {
+  const t = ctx.t ?? translate;
   const state = getControlState(id, ctx);
   const iconUrl = getCustomIcon(ctx.customIcons, id, state);
   if (iconUrl) {
@@ -118,13 +121,13 @@ export function renderControl(id: PlayerControlId, ctx: ControlContext): ReactNo
     case "back": {
       if (!ctx.onBack) return null;
       return (
-        <Tooltip label="Back" side="bottom">
+        <Tooltip label={t("Back")} side="bottom">
           <button
             onClick={ctx.onBack}
-            aria-label="Back"
+            aria-label={t("Back")}
             className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur-md transition-colors hover:bg-black/80"
           >
-            <ChevronLeft size={26} strokeWidth={2.2} />
+            <ChevronLeft size={26} strokeWidth={2.2} className="dir-icon" />
           </button>
         </Tooltip>
       );
@@ -136,8 +139,8 @@ export function renderControl(id: PlayerControlId, ctx: ControlContext): ReactNo
           <button
             type="button"
             onClick={ctx.onTitleClick}
-            className="pointer-events-auto group inline-flex items-center gap-2 rounded-lg px-2 py-0.5 text-right transition-colors hover:bg-white/10"
-            aria-label="Title info"
+            className="pointer-events-auto group inline-flex items-center gap-2 rounded-lg px-2 py-0.5 text-end transition-colors hover:bg-white/10"
+            aria-label={t("Title info")}
           >
             <div className="flex flex-col items-end gap-0.5">
               <h1 className="text-[19px] font-semibold leading-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
@@ -158,7 +161,7 @@ export function renderControl(id: PlayerControlId, ctx: ControlContext): ReactNo
         );
       }
       return (
-        <div className="pointer-events-none flex flex-col items-end gap-0.5 text-right">
+        <div className="pointer-events-none flex flex-col items-end gap-0.5 text-end">
           <h1 className="text-[19px] font-semibold leading-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
             {ctx.title}
           </h1>
@@ -205,7 +208,7 @@ export function renderControl(id: PlayerControlId, ctx: ControlContext): ReactNo
     }
     case "dvr": {
       if (ctx.tight || !ctx.isLiveChannel || !ctx.onOpenDvr) return null;
-      return <DvrButton channelName={ctx.meta?.name ?? "Live"} onClick={ctx.onOpenDvr} />;
+      return <DvrButton channelName={ctx.meta?.name ?? t("Live")} onClick={ctx.onOpenDvr} />;
     }
     case "download": {
       if (ctx.mid || ctx.isLiveChannel) return null;
@@ -229,7 +232,7 @@ export function renderControl(id: PlayerControlId, ctx: ControlContext): ReactNo
       return (
         <EpisodeNavBtn
           direction="prev"
-          label="Previous Episode"
+          label={t("Previous Episode")}
           onClick={ctx.onPrevEp}
           disabled={!ctx.hasPrevEp}
           iconOnly={iconOnly}
@@ -242,13 +245,13 @@ export function renderControl(id: PlayerControlId, ctx: ControlContext): ReactNo
     }
     case "play-pause": {
       return (
-        <Tooltip label={ctx.playing ? "Pause" : "Play"}>
+        <Tooltip label={ctx.playing ? t("Pause") : t("Play")}>
           <button
             onClick={ctx.onPlayPause}
             className={`flex items-center justify-center rounded-full bg-white/12 text-white backdrop-blur-md transition-[background-color,transform] hover:bg-white/22 active:scale-95 ${
               ctx.tight ? "h-12 w-12" : ctx.compact ? "h-14 w-14" : "h-16 w-16"
             }`}
-            aria-label={ctx.playing ? "Pause" : "Play"}
+            aria-label={ctx.playing ? t("Pause") : t("Play")}
           >
             {ctx.playing ? (
               <PauseCircle size={ctx.tight ? 28 : ctx.compact ? 32 : 36} strokeWidth={1.5} />
@@ -270,7 +273,7 @@ export function renderControl(id: PlayerControlId, ctx: ControlContext): ReactNo
       return (
         <EpisodeNavBtn
           direction="next"
-          label="Next Episode"
+          label={t("Next Episode")}
           onClick={ctx.onNextEp}
           disabled={!ctx.hasNextEp}
           iconOnly={iconOnly}
@@ -282,8 +285,8 @@ export function renderControl(id: PlayerControlId, ctx: ControlContext): ReactNo
       return (
         <BigButton
           onClick={ctx.onPickAnother}
-          ariaLabel={ctx.isLiveChannel ? "TV Guide" : "Switch stream"}
-          tooltip={ctx.isLiveChannel ? "TV Guide" : "Switch stream"}
+          ariaLabel={ctx.isLiveChannel ? t("TV Guide") : t("Switch stream")}
+          tooltip={ctx.isLiveChannel ? t("TV Guide") : t("Switch stream")}
         >
           {ctx.isLiveChannel ? (
             <Tv size={22} strokeWidth={1.9} />
@@ -354,7 +357,7 @@ export function renderControl(id: PlayerControlId, ctx: ControlContext): ReactNo
     case "pip": {
       if (!ctx.capabilities.pictureInPicture) return null;
       return (
-        <BigButton onClick={ctx.onPiP} ariaLabel="Picture in Picture" tooltip="Picture in Picture">
+        <BigButton onClick={ctx.onPiP} ariaLabel={t("Picture in Picture")} tooltip={t("Picture in Picture")}>
           <PictureInPicture2 size={22} strokeWidth={1.9} />
         </BigButton>
       );
@@ -367,8 +370,8 @@ export function renderControl(id: PlayerControlId, ctx: ControlContext): ReactNo
       return (
         <BigButton
           onClick={ctx.onFullscreen}
-          ariaLabel="Fullscreen"
-          tooltip={ctx.fullscreen ? "Exit fullscreen" : "Fullscreen"}
+          ariaLabel={t("Fullscreen")}
+          tooltip={ctx.fullscreen ? t("Exit fullscreen") : t("Fullscreen")}
         >
           {ctx.fullscreen ? (
             <Minimize size={22} strokeWidth={1.9} />

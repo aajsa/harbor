@@ -1,6 +1,7 @@
 import { ArrowDown, ArrowUp, ChevronsUp, GripVertical } from "lucide-react";
 import type { HTMLAttributes, ReactNode } from "react";
 import { AddonLogo } from "@/components/addon-logo";
+import { HoverTooltip } from "@/components/hover-tooltip";
 import type { DragList } from "./use-drag-list";
 
 export type OrganizeEntry = {
@@ -138,15 +139,21 @@ function OrganizeRow({
         <span className="truncate text-[12px] text-ink-subtle">{entry.host}</span>
       </div>
       <div className="flex shrink-0 items-center gap-0.5">
-        <button onClick={onTop} disabled={!canUp} title="Move to top" className={BTN}>
-          <ChevronsUp size={17} strokeWidth={2.2} />
-        </button>
-        <button onClick={onUp} disabled={!canUp} title="Move up" className={BTN}>
-          <ArrowUp size={17} strokeWidth={2.2} />
-        </button>
-        <button onClick={onDown} disabled={!canDown} title="Move down" className={BTN}>
-          <ArrowDown size={17} strokeWidth={2.2} />
-        </button>
+        <HoverTooltip label="Move to top" side="top" align="center" delayMs={200}>
+          <button onClick={onTop} disabled={!canUp} aria-label="Move to top" className={BTN}>
+            <ChevronsUp size={17} strokeWidth={2.2} />
+          </button>
+        </HoverTooltip>
+        <HoverTooltip label="Move up" side="top" align="center" delayMs={200}>
+          <button onClick={onUp} disabled={!canUp} aria-label="Move up" className={BTN}>
+            <ArrowUp size={17} strokeWidth={2.2} />
+          </button>
+        </HoverTooltip>
+        <HoverTooltip label="Move down" side="top" align="center" delayMs={200}>
+          <button onClick={onDown} disabled={!canDown} aria-label="Move down" className={BTN}>
+            <ArrowDown size={17} strokeWidth={2.2} />
+          </button>
+        </HoverTooltip>
       </div>
     </div>
   );

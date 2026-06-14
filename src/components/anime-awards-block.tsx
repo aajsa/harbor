@@ -54,7 +54,7 @@ function SourceGroup({ source, wins }: { source: AwardSourceId; wins: AwardWin[]
           <button
             type="button"
             onClick={() => openAnimeAward(source)}
-            className="group flex items-center gap-1.5 text-left text-[18px] font-medium tracking-tight text-ink transition-colors hover:text-accent"
+            className="group flex items-center gap-1.5 text-start text-[18px] font-medium tracking-tight text-ink transition-colors hover:text-accent"
           >
             {meta.name}
             <ArrowUpRight

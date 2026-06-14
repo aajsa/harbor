@@ -21,6 +21,7 @@ type FavoritesContextValue = {
   toggle: (channel: IptvChannel) => void;
   has: (channelId: string) => boolean;
   hydrate: (channels: IptvChannel[]) => void;
+  removeForSource: (sourceId: string) => void;
   count: number;
 };
 
@@ -122,12 +123,27 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const removeForSource = useCallback((sourceId: string) => {
+    if (!sourceId) return;
+    setItems((prev) => {
+      let changed = false;
+      const next = new Map(prev);
+      for (const [id, fav] of prev) {
+        if (fav.sourceId === sourceId || id.startsWith(`${sourceId}::`)) {
+          next.delete(id);
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, []);
+
   const ids = useMemo(() => new Set(items.keys()), [items]);
   const has = useCallback((id: string) => items.has(id), [items]);
 
   const value = useMemo<FavoritesContextValue>(
-    () => ({ ids, items, toggle, has, hydrate, count: items.size }),
-    [ids, items, toggle, has, hydrate],
+    () => ({ ids, items, toggle, has, hydrate, removeForSource, count: items.size }),
+    [ids, items, toggle, has, hydrate, removeForSource],
   );
 
   return <FavoritesContext.Provider value={value}>{children}</FavoritesContext.Provider>;

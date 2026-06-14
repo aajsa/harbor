@@ -3,25 +3,27 @@ import { LazyMount } from "@/components/lazy-mount";
 import { PickCard } from "@/components/pick-card";
 import { Row } from "@/components/row";
 import { TopRankCard } from "@/components/top-rank-card";
+import { useT } from "@/lib/i18n";
 import type { HomeRowCustomization } from "@/lib/home-customization";
 import { useView } from "@/lib/view";
 import type { HomeRow } from "./home-types";
 import { RowControls } from "./row-controls";
 
 function RowTitle({ row }: { row: HomeRow }) {
+  const t = useT();
   const { openGrid } = useView();
-  if (!row.fetcher) return <>{row.name}</>;
+  if (!row.fetcher) return <>{t(row.name)}</>;
   return (
     <button
       onClick={() =>
-        openGrid({ title: row.name, fetcher: row.fetcher!, initial: row.metas })
+        openGrid({ title: t(row.name), fetcher: row.fetcher!, initial: row.metas })
       }
       className="group/see inline-flex items-center gap-1.5 text-ink transition-colors hover:text-ink-muted"
     >
-      {row.name}
+      {t(row.name)}
       <span className="inline-flex items-center gap-0.5 text-[12px] font-medium text-ink-subtle opacity-0 transition-opacity duration-200 group-hover/see:opacity-100">
-        See all
-        <ChevronRight size={14} strokeWidth={2.4} />
+        {t("See all")}
+        <ChevronRight size={14} strokeWidth={2.4} className="dir-icon" />
       </span>
     </button>
   );
@@ -51,6 +53,7 @@ export function CustomizableRows({
   onLoadMore: (key: string) => void;
 }) {
   const { openGrid } = useView();
+  const t = useT();
   return (
     <>
       {rows.map((row, rowIndex) => {
@@ -59,7 +62,7 @@ export function CustomizableRows({
         const idx = orderKeys.indexOf(row.key);
         const eager = rowIndex < 2;
         const viewAll = row.fetcher
-          ? () => openGrid({ title: row.name, fetcher: row.fetcher!, initial: row.metas })
+          ? () => openGrid({ title: t(row.name), fetcher: row.fetcher!, initial: row.metas })
           : undefined;
         const ranked =
           (customization.numerals ?? []).includes(row.key) && row.metas.length >= 10;

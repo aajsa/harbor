@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import traktLogo from "@/assets/trakt.svg";
 import simklLogo from "@/assets/simkl.png";
 import type { Settings } from "@/lib/settings";
+import { useT } from "@/lib/i18n";
 
 type Source = Settings["calendarSource"];
 
@@ -77,6 +78,7 @@ export function SourceSwitcher({
   traktConnected: boolean;
   simklConnected: boolean;
 }) {
+  const t = useT();
   const visible = OPTIONS.filter(
     (o) =>
       (o.id !== "trakt" || traktConnected) &&
@@ -91,7 +93,7 @@ export function SourceSwitcher({
           <button
             key={opt.id}
             onClick={() => onChange(opt.id)}
-            title={opt.hint}
+            title={t(opt.hint)}
             className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold transition-colors ${
               active
                 ? "bg-ink text-canvas"
@@ -99,7 +101,7 @@ export function SourceSwitcher({
             }`}
           >
             {opt.icon()}
-            {opt.label}
+            {t(opt.label)}
           </button>
         );
       })}

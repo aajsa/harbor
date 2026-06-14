@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchInstalledAddons } from "@/lib/addon-store";
+import { fetchInstalledAddons, fetchManifestAt, filterEnabled } from "@/lib/addon-store";
 import {
   torboxAddonFor,
   userAddons,
@@ -10,6 +10,26 @@ import { applyOrderToItems, loadDisplayOrder } from "@/lib/addons-store/reorder"
 import type { useSettings } from "@/lib/settings";
 
 type Settings = ReturnType<typeof useSettings>["settings"];
+
+function hasAnyResources(a: Addon): boolean {
+  return (a.manifest.resources ?? []).length > 0;
+}
+
+function declaresStream(a: Addon): boolean {
+  return (a.manifest.resources ?? []).some((r) =>
+    typeof r === "string" ? r === "stream" : r.name === "stream",
+  );
+}
+
+async function resolveManifests(addons: Addon[]): Promise<Addon[]> {
+  return Promise.all(
+    addons.map(async (a) => {
+      if (hasAnyResources(a)) return a;
+      const manifest = await fetchManifestAt(a.transportUrl).catch(() => null);
+      return manifest ? { ...a, manifest } : a;
+    }),
+  );
+}
 
 export function useAddons(authKey: string | null, settings: Settings): {
   addons: Addon[] | null;
@@ -28,25 +48,33 @@ export function useAddons(authKey: string | null, settings: Settings): {
     };
     const torbox = torboxAddonFor(settings.tbKey);
     (async () => {
-      const stremioAddons = authKey ? await userAddons(authKey).catch(() => []) : [];
-      const installed = await fetchInstalledAddons().catch(() => []);
+      const stremioAddons = filterEnabled(authKey ? await userAddons(authKey).catch(() => []) : []);
+      const installed = filterEnabled(await fetchInstalledAddons().catch(() => []));
       if (cancelled) return;
       const merged: Addon[] = [];
-      const seen = new Set<string>();
+      const idxByUrl = new Map<string, number>();
       for (const a of [...stremioAddons, ...installed]) {
-        if (seen.has(a.transportUrl)) continue;
-        seen.add(a.transportUrl);
-        merged.push(a);
+        const existingIdx = idxByUrl.get(a.transportUrl);
+        if (existingIdx === undefined) {
+          idxByUrl.set(a.transportUrl, merged.length);
+          merged.push(a);
+          continue;
+        }
+        if (!hasAnyResources(merged[existingIdx]) && hasAnyResources(a)) {
+          merged[existingIdx] = a;
+        }
       }
-      const savedOrder = loadDisplayOrder();
-      const ordered = savedOrder.length > 0 ? applyOrderToItems(merged, savedOrder) : merged;
+      const resolved = await resolveManifests(merged);
+      if (cancelled) return;
       merged.length = 0;
-      merged.push(...ordered);
-      const userStreamCount = merged.filter((a) =>
-        (a.manifest.resources ?? []).some((r) =>
-          typeof r === "string" ? r === "stream" : r.name === "stream",
-        ),
-      ).length;
+      merged.push(...resolved);
+      const savedOrder = loadDisplayOrder();
+      if (savedOrder.length > 0) {
+        const ordered = applyOrderToItems(merged, savedOrder);
+        merged.length = 0;
+        merged.push(...ordered);
+      }
+      const userStreamCount = merged.filter(declaresStream).length;
       setUserHasStreamAddons(userStreamCount > 0);
       const list = withDebridKeys(merged, debridKeys);
       const existingTorboxIdx = list.findIndex(
@@ -55,7 +83,7 @@ export function useAddons(authKey: string | null, settings: Settings): {
           a.transportUrl?.includes("stremio.torbox.app"),
       );
       console.info(
-        `[picker] tbKey=${settings.tbKey ? `set(${settings.tbKey.slice(0, 8)}…)` : "EMPTY"} stremioAddons=${stremioAddons.length} installed=${installed.length} hasTorbox=${existingTorboxIdx >= 0} torboxAutoAddable=${!!torbox}`,
+        `[picker] authKey=${authKey ? "yes" : "no"} tbKey=${settings.tbKey ? `set(${settings.tbKey.slice(0, 8)}…)` : "EMPTY"} stremioAddons=${stremioAddons.length} installed=${installed.length} merged=${merged.length} userStreamCount=${userStreamCount} hasTorbox=${existingTorboxIdx >= 0} torboxAutoAddable=${!!torbox}`,
       );
       if (torbox) {
         if (existingTorboxIdx >= 0) {

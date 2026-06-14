@@ -5,7 +5,8 @@ import { langScore, pickBestTrack } from "@/lib/subtitles/language";
 import { searchSubtitles } from "@/lib/subtitles/search";
 import { readPlayerPrefs, type PerShowPrefs } from "@/lib/player-prefs";
 import { tmdbImdbId } from "@/lib/providers/tmdb";
-import { userAddons, type Addon } from "@/lib/addons";
+import type { Addon } from "@/lib/addons";
+import { gatherSubtitleAddons } from "@/lib/subtitles/addon-source";
 import type { PlayerSrc } from "@/lib/view";
 import type { Settings } from "@/lib/settings";
 
@@ -63,12 +64,8 @@ export function useTrackAutoload(params: {
 
   const userAddonsRef = useRef<Addon[] | null>(null);
   useEffect(() => {
-    if (!authKey) {
-      userAddonsRef.current = [];
-      return;
-    }
     let cancelled = false;
-    userAddons(authKey)
+    gatherSubtitleAddons(authKey)
       .then((a) => {
         if (!cancelled) userAddonsRef.current = a;
       })
@@ -284,8 +281,9 @@ function isForcedTrack(t: { title?: string; label?: string }): boolean {
 
 function subsOffFor(prefs: PerShowPrefs | null, s: Settings): boolean {
   if (prefs?.subsOff != null) return prefs.subsOff;
+  if (s.subtitlesOffByDefault) return true;
   if (prefs?.subLang) return false;
-  return s.subtitlesOffByDefault;
+  return false;
 }
 
 function resolveLangPreference(

@@ -1,6 +1,7 @@
 import { Boxes, ChevronDown, Gauge } from "lucide-react";
 import { AddonLogo } from "@/components/addon-logo";
 import { FormatBadge, type BadgeKind } from "@/components/format-badge";
+import { useT } from "@/lib/i18n";
 import { QUALITY_BADGE, QUALITY_LABEL, type QualityKey } from "./quality";
 
 export function AddonFilterMenu({
@@ -22,6 +23,7 @@ export function AddonFilterMenu({
   totalCount: number;
   activeAddonName: string;
 }) {
+  const t = useT();
   return (
     <div className="relative">
       <button
@@ -43,20 +45,20 @@ export function AddonFilterMenu({
         />
       </button>
       {open && (
-        <div className="absolute right-0 top-full z-20 mt-1.5 max-h-72 w-64 overflow-y-auto rounded-md border border-edge bg-elevated p-1.5 shadow-[0_18px_44px_-14px_rgba(0,0,0,0.7)]">
+        <div className="absolute end-0 top-full z-20 mt-1.5 max-h-72 w-64 overflow-y-auto rounded-md border border-edge bg-elevated p-1.5 shadow-[0_18px_44px_-14px_rgba(0,0,0,0.7)]">
           <button
             onClick={() => {
               setAddonFilter("all");
               setOpen(() => false);
             }}
-            className={`flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-[12.5px] transition-colors hover:bg-raised ${
+            className={`flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-start text-[12.5px] transition-colors hover:bg-raised ${
               addonFilter === "all" ? "text-ink font-semibold" : "text-ink-muted"
             }`}
           >
             <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-raised text-ink-subtle">
               <Boxes size={14} strokeWidth={2.2} />
             </span>
-            <span className="flex-1 truncate">All addons</span>
+            <span className="flex-1 truncate">{t("All addons")}</span>
             <span className="text-[11px] tabular-nums text-ink-subtle">{totalCount}</span>
           </button>
           {addonOptions.map((opt) => (
@@ -66,7 +68,7 @@ export function AddonFilterMenu({
                 setAddonFilter(opt.id);
                 setOpen(() => false);
               }}
-              className={`flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-[12.5px] transition-colors hover:bg-raised ${
+              className={`flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-start text-[12.5px] transition-colors hover:bg-raised ${
                 addonFilter === opt.id ? "text-ink font-semibold" : "text-ink-muted"
               }`}
             >
@@ -103,6 +105,7 @@ export function QualityFilterMenu({
   qualityOptions: Array<{ id: Exclude<QualityKey, "all">; name: string; count: number; badge: BadgeKind }>;
   totalCount: number;
 }) {
+  const t = useT();
   return (
     <div className="relative">
       <button
@@ -122,7 +125,7 @@ export function QualityFilterMenu({
         )}
         <span className="max-w-[120px] truncate">
           {qualityFilter === "all"
-            ? "Any quality"
+            ? t("Any quality")
             : QUALITY_LABEL[qualityFilter as Exclude<QualityKey, "all">]}
         </span>
         <ChevronDown
@@ -132,20 +135,20 @@ export function QualityFilterMenu({
         />
       </button>
       {open && (
-        <div className="absolute right-0 top-full z-20 mt-1.5 w-56 overflow-y-auto rounded-md border border-edge bg-elevated p-1.5 shadow-[0_18px_44px_-14px_rgba(0,0,0,0.7)]">
+        <div className="absolute end-0 top-full z-20 mt-1.5 w-56 overflow-y-auto rounded-md border border-edge bg-elevated p-1.5 shadow-[0_18px_44px_-14px_rgba(0,0,0,0.7)]">
           <button
             onClick={() => {
               setQualityFilter("all");
               setOpen(() => false);
             }}
-            className={`flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-[12.5px] transition-colors hover:bg-raised ${
+            className={`flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-start text-[12.5px] transition-colors hover:bg-raised ${
               qualityFilter === "all" ? "text-ink font-semibold" : "text-ink-muted"
             }`}
           >
             <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-raised text-ink-subtle">
               <Gauge size={14} strokeWidth={2.2} />
             </span>
-            <span className="flex-1 truncate">Any quality</span>
+            <span className="flex-1 truncate">{t("Any quality")}</span>
             <span className="text-[11px] tabular-nums text-ink-subtle">{totalCount}</span>
           </button>
           {qualityOptions.map((opt) => (
@@ -155,7 +158,7 @@ export function QualityFilterMenu({
                 setQualityFilter(opt.id);
                 setOpen(() => false);
               }}
-              className={`flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-[12.5px] transition-colors hover:bg-raised ${
+              className={`flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-start text-[12.5px] transition-colors hover:bg-raised ${
                 qualityFilter === opt.id ? "text-ink font-semibold" : "text-ink-muted"
               }`}
             >

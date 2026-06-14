@@ -1,3 +1,4 @@
+import { useT } from "@/lib/i18n";
 import { WEEKDAY_NAMES } from "./utils";
 
 const CHIPS_PER_CELL = [
@@ -10,6 +11,7 @@ const CHIPS_PER_CELL = [
 ];
 
 export function CalendarSkeleton() {
+  const t = useT();
   return (
     <div className="flex flex-col gap-2">
       <div className="grid grid-cols-7 gap-2">
@@ -18,7 +20,7 @@ export function CalendarSkeleton() {
             key={d}
             className="px-2 text-[11px] font-bold uppercase tracking-[0.16em] text-ink-subtle"
           >
-            {d}
+            {t(d)}
           </div>
         ))}
       </div>

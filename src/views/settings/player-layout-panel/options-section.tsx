@@ -68,7 +68,7 @@ function OptionCard<T extends string>({
               key={opt.id}
               type="button"
               onClick={() => onChange(opt.id)}
-              className={`flex items-start gap-3 rounded-xl border px-3.5 py-2.5 text-left transition-colors ${
+              className={`flex items-start gap-3 rounded-xl border px-3.5 py-2.5 text-start transition-colors ${
                 selected
                   ? "border-ink bg-elevated"
                   : "border-edge-soft bg-canvas/40 hover:border-edge"

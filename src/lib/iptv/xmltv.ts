@@ -1,4 +1,4 @@
-import type { EpgProgram } from "./types";
+import type { EpgChannelMeta, EpgProgram, XmltvParseResult } from "./types";
 
 const MAX_BYTES = 200 * 1024 * 1024;
 const CONNECT_TIMEOUT_MS = 30_000;
@@ -21,7 +21,13 @@ async function iptvFetch(url: string, signal: AbortSignal): Promise<Response> {
     } catch (e) {
       if (!/scope|not allowed/i.test(String(e))) throw e;
       const { safeFetch } = await import("@/lib/safe-fetch");
-      return safeFetch(url, { signal });
+      return safeFetch(url, {
+        signal,
+        headers: {
+          "User-Agent": "VLC/3.0.20 LibVLC/3.0.20",
+          Accept: "application/xml, text/xml, application/octet-stream, */*",
+        },
+      });
     }
   }
   return fetch(url, { cache: "no-store", signal });
@@ -30,7 +36,7 @@ async function iptvFetch(url: string, signal: AbortSignal): Promise<Response> {
 export async function fetchAndParseXmltv(
   url: string,
   onProgress?: (programs: EpgProgram[]) => void,
-): Promise<EpgProgram[]> {
+): Promise<XmltvParseResult> {
   const ac = new AbortController();
   let stallTimer: ReturnType<typeof setTimeout> | null = null;
   const armStall = () => {
@@ -54,7 +60,7 @@ export async function fetchAndParseXmltv(
       const text = await res.text();
       console.info(`[epg] non-stream body head: ${text.slice(0, 200).replace(/\s+/g, " ")}`);
       const out = parseXmltv(text);
-      console.info(`[epg] parsed ${out.length} programs (non-stream) from ${url}`);
+      console.info(`[epg] parsed ${out.programs.length} programs (non-stream) from ${url}`);
       return out;
     }
     let received = 0;
@@ -98,6 +104,7 @@ export async function fetchAndParseXmltv(
     let headLogged = false;
     const startedAt = Date.now();
     const out: EpgProgram[] = [];
+    const channelMeta = new Map<string, EpgChannelMeta>();
     if (passthrough && !first.done && first.value) {
       buffer += decoder.decode(first.value, { stream: true });
     }
@@ -116,7 +123,7 @@ export async function fetchAndParseXmltv(
         console.info(`[epg] body head: ${buffer.slice(0, 200).replace(/\s+/g, " ")}`);
       }
       const prevLen = out.length;
-      buffer = drainProgrammes(buffer, out);
+      buffer = drainBlocks(buffer, out, channelMeta);
       const now = Date.now();
       if (now - lastLog > 3000) {
         const mb = (received / 1024 / 1024).toFixed(1);
@@ -127,34 +134,62 @@ export async function fetchAndParseXmltv(
       }
     }
     buffer += decoder.decode();
-    drainProgrammes(buffer, out);
+    drainBlocks(buffer, out, channelMeta);
     const totalSec = ((Date.now() - startedAt) / 1000).toFixed(1);
-    console.info(`[epg] parsed ${out.length} programs, ${(received / 1024 / 1024).toFixed(1)}MB in ${totalSec}s from ${url}`);
-    return out;
+    console.info(`[epg] parsed ${out.length} programs, ${channelMeta.size} channel defs, ${(received / 1024 / 1024).toFixed(1)}MB in ${totalSec}s from ${url}`);
+    return { programs: out, channelMeta };
   } finally {
     if (stallTimer) clearTimeout(stallTimer);
   }
 }
 
-export function parseXmltv(text: string): EpgProgram[] {
-  const out: EpgProgram[] = [];
-  drainProgrammes(text, out);
-  return out;
+export function parseXmltv(text: string): XmltvParseResult {
+  const programs: EpgProgram[] = [];
+  const channelMeta = new Map<string, EpgChannelMeta>();
+  drainBlocks(text, programs, channelMeta);
+  return { programs, channelMeta };
 }
 
-function drainProgrammes(buffer: string, out: EpgProgram[]): string {
+function drainBlocks(
+  buffer: string,
+  out: EpgProgram[],
+  channelMeta: Map<string, EpgChannelMeta>,
+): string {
   while (true) {
-    const startIdx = buffer.indexOf("<programme");
-    if (startIdx < 0) return "";
-    const closeOpen = buffer.indexOf(">", startIdx);
-    if (closeOpen < 0) return buffer.slice(startIdx);
+    const chIdx = buffer.indexOf("<channel ");
+    const prIdx = buffer.indexOf("<programme");
+    if (chIdx < 0 && prIdx < 0) return trimLeftover(buffer);
+    const channelFirst = chIdx >= 0 && (prIdx < 0 || chIdx < prIdx);
+    if (channelFirst) {
+      const close = buffer.indexOf("</channel>", chIdx);
+      if (close < 0) return buffer.slice(chIdx);
+      const block = buffer.slice(chIdx, close + "</channel>".length);
+      parseChannel(block, channelMeta);
+      buffer = buffer.slice(close + "</channel>".length);
+      continue;
+    }
+    const closeOpen = buffer.indexOf(">", prIdx);
+    if (closeOpen < 0) return buffer.slice(prIdx);
     const endIdx = buffer.indexOf("</programme>", closeOpen);
-    if (endIdx < 0) return buffer.slice(startIdx);
-    const block = buffer.slice(startIdx, endIdx + "</programme>".length);
+    if (endIdx < 0) return buffer.slice(prIdx);
+    const block = buffer.slice(prIdx, endIdx + "</programme>".length);
     const prog = parseProgramme(block);
     if (prog) out.push(prog);
     buffer = buffer.slice(endIdx + "</programme>".length);
   }
+}
+
+function trimLeftover(buffer: string): string {
+  return buffer.length > 64 ? buffer.slice(-64) : buffer;
+}
+
+function parseChannel(block: string, channelMeta: Map<string, EpgChannelMeta>): void {
+  const id = attr(block, "id");
+  if (!id) return;
+  const displayName = childText(block, "display-name");
+  const icon = childAttr(block, "icon", "src");
+  if (channelMeta.has(id) && !displayName && !icon) return;
+  channelMeta.set(id, { displayName, icon });
 }
 
 function parseProgramme(block: string): EpgProgram | null {

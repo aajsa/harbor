@@ -3,6 +3,7 @@ import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { awardSourceMeta, findTopAward, parseAwardYear, type AwardWin } from "@/lib/anime-awards";
 import { meta as fetchMeta, narrowMediaType, type Meta } from "@/lib/cinemeta";
 import { useContextMenu } from "@/lib/context-menu";
+import { useT } from "@/lib/i18n";
 import {
   hoverPreviewBlur,
   hoverPreviewEnter,
@@ -36,6 +37,7 @@ export const PickCard = memo(function PickCard({
   const { openMeta } = useView();
   const { open: openContextMenu } = useContextMenu();
   const { settings } = useSettings();
+  const t = useT();
   const isAnimeCardId = /^(kitsu|mal|anilist|anidb):/.test(meta.id);
   const inCinema = isInCinema(meta);
   const rerun = (inCinema || flagRerun) && isRerun(meta);
@@ -123,7 +125,7 @@ export const PickCard = memo(function PickCard({
       onContextMenu={(e) => openContextMenu(e, { kind: "meta", meta })}
       onFocus={(e) => hoverPreviewFocus(meta, e.currentTarget)}
       onBlur={(e) => hoverPreviewBlur(e.currentTarget)}
-      className="group flex w-full min-w-0 flex-col gap-2.5 text-left"
+      className="group flex w-full min-w-0 flex-col gap-2.5 text-start"
     >
       <div
         data-preview-anchor
@@ -140,7 +142,7 @@ export const PickCard = memo(function PickCard({
         />
         {rerun && <RerunBadge year={meta.releaseInfo} />}
         {showCinema && <CinemaBadge />}
-        {newBadge && <Badge label={newBadge.label} tone={newBadge.tone} />}
+        {newBadge && <Badge label={t(newBadge.label)} tone={newBadge.tone} />}
         <AnimeAwardBadge
           name={awardLookupName ?? meta.name}
           fallbackName={meta.name}
@@ -149,11 +151,11 @@ export const PickCard = memo(function PickCard({
         />
         {inWatchlist && (
           <span
-            className={`pointer-events-none absolute right-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-canvas/85 text-ink ring-1 ring-edge-soft/70 backdrop-blur-sm ${
+            className={`pointer-events-none absolute end-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-canvas/85 text-ink ring-1 ring-edge-soft/70 backdrop-blur-sm ${
               settings.badgePlacement === "top" ? "bottom-1.5" : "top-1.5"
             }`}
-            title="In your watchlist"
-            aria-label="In watchlist"
+            title={t("In your watchlist")}
+            aria-label={t("In watchlist")}
           >
             <Bookmark size={11} strokeWidth={2.6} fill="currentColor" />
           </span>
@@ -196,10 +198,11 @@ function ScoreStack({
   source?: "imdb" | "mal";
   placement?: "top" | "bottom";
 }) {
+  const t = useT();
   if (!rating && rt == null && audience == null) return null;
   return (
     <div
-      className={`absolute right-1.5 flex items-center gap-1 rounded-md bg-canvas/95 px-1.5 py-0.5 text-[10px] font-semibold text-ink ${
+      className={`absolute end-1.5 flex items-center gap-1 rounded-md bg-canvas/95 px-1.5 py-0.5 text-[10px] font-semibold text-ink ${
         placement === "top" ? "top-1.5" : "bottom-1.5"
       }`}
     >
@@ -222,7 +225,7 @@ function ScoreStack({
       )}
       {(rating || rt != null) && audience != null && <span className="opacity-30">·</span>}
       {audience != null && (
-        <span className="flex items-center gap-0.5" title="Rotten Tomatoes audience score">
+        <span className="flex items-center gap-0.5" title={t("Rotten Tomatoes audience score")}>
           <Popcorn size={12} strokeWidth={2.4} className={audience >= 60 ? "text-accent" : "text-ink-muted"} />
           <span>{Math.round(audience)}%</span>
         </span>
@@ -240,7 +243,7 @@ function Badge({ label, tone = "default" }: { label: string; tone?: BadgeTone })
       : "border border-edge-soft bg-canvas/95 text-ink";
   return (
     <span
-      className={`absolute left-2 top-2 rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] ${styles}`}
+      className={`absolute start-2 top-2 rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] ${styles}`}
     >
       {label}
     </span>
@@ -340,14 +343,15 @@ function AnimeAwardBadge({
   year?: number;
   stacked: boolean;
 }) {
+  const t = useT();
   const win = findTopAward(name, year) ?? (fallbackName ? findTopAward(fallbackName, year) : null);
   if (!win) return null;
   const src = awardSourceMeta(win.source);
   const short = shortCategory(win);
-  const label = stacked ? `${win.year}` : `${win.year} ${short}`;
+  const label = stacked ? `${win.year}` : `${win.year} ${t(short)}`;
   return (
     <span
-      className={`pointer-events-none absolute left-2 inline-flex max-w-[calc(100%-1rem)] items-center gap-1 rounded-md bg-canvas/85 px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-[0.14em] text-ink backdrop-blur-md ring-1 ring-edge-soft/60 ${
+      className={`pointer-events-none absolute start-2 inline-flex max-w-[calc(100%-1rem)] items-center gap-1 rounded-md bg-canvas/85 px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-[0.14em] text-ink backdrop-blur-md ring-1 ring-edge-soft/60 ${
         stacked ? "top-[28px]" : "top-2"
       }`}
       title={`${src.name} · ${win.categoryName} (${win.year})`}
@@ -372,19 +376,21 @@ function shortCategory(win: AwardWin): string {
 }
 
 function CinemaBadge() {
+  const t = useT();
   return (
-    <span className="harbor-cinema-badge absolute left-2 top-2 flex items-center gap-1 rounded-md bg-canvas/95 px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-[0.14em]">
+    <span className="harbor-cinema-badge absolute start-2 top-2 flex items-center gap-1 rounded-md bg-canvas/95 px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-[0.14em]">
       <ClapperMini size={10} />
-      <span>In Cinema</span>
+      <span>{t("In Cinema")}</span>
     </span>
   );
 }
 
 function RerunBadge({ year }: { year?: string }) {
+  const t = useT();
   return (
-    <span className="absolute left-2 top-2 flex items-center gap-1 rounded-md border border-edge-soft bg-canvas/95 px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-[0.14em] text-ink-muted">
+    <span className="absolute start-2 top-2 flex items-center gap-1 rounded-md border border-edge-soft bg-canvas/95 px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-[0.14em] text-ink-muted">
       <RefreshCcw size={9} strokeWidth={2.4} />
-      <span>Rerun{year ? ` · ${year}` : ""}</span>
+      <span>{t("Rerun")}{year ? ` · ${year}` : ""}</span>
     </span>
   );
 }

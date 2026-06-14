@@ -32,7 +32,7 @@ function FilmCard({ credit, showRole }: { credit: PersonCredit; showRole: boolea
     <button
       onClick={() => openMeta(meta)}
       onContextMenu={(e) => openContextMenu(e, { kind: "meta", meta })}
-      className="group flex w-full min-w-0 flex-col gap-2.5 text-left"
+      className="group flex w-full min-w-0 flex-col gap-2.5 text-start"
     >
       <Poster
         src={credit.poster}

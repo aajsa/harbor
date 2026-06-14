@@ -207,7 +207,7 @@ export function OrganizeAddonsPage({
     <div className="fixed inset-0 z-[140] flex flex-col bg-canvas animate-in fade-in duration-150">
       <header
         data-tauri-drag-region
-        className="shrink-0 border-b border-edge-soft bg-canvas/85 backdrop-blur-xl"
+        className="relative z-50 shrink-0 border-b border-edge-soft bg-canvas/85 backdrop-blur-xl"
       >
         <div className="mx-auto flex w-full max-w-[1160px] items-center gap-4 px-6 py-5 sm:px-10">
           <button
@@ -217,7 +217,7 @@ export function OrganizeAddonsPage({
             aria-label="Back to addons"
             title="Back to addons"
           >
-            <ArrowLeft size={18} strokeWidth={2.2} />
+            <ArrowLeft size={18} strokeWidth={2.2} className="dir-icon" />
           </button>
           <div className="flex min-w-0 flex-1 flex-col">
             <h1 className="truncate font-display text-[26px] font-medium tracking-tight text-ink sm:text-[30px]">
@@ -252,7 +252,7 @@ export function OrganizeAddonsPage({
                 />
               </button>
               {backupsOpen && (
-                <div className="absolute right-0 top-[calc(100%+12px)] z-20 max-h-[64vh] w-[min(92vw,420px)] overflow-y-auto rounded-2xl border border-edge bg-elevated shadow-[0_28px_72px_-20px_rgba(0,0,0,0.7)] animate-popover-in">
+                <div className="absolute end-0 top-[calc(100%+12px)] z-20 max-h-[64vh] w-[min(92vw,420px)] overflow-y-auto rounded-2xl border border-edge bg-elevated shadow-[0_28px_72px_-20px_rgba(0,0,0,0.7)] animate-popover-in">
                   <BackupsPanel
                     refreshKey={backupsKey}
                     busy={saving}
@@ -262,6 +262,33 @@ export function OrganizeAddonsPage({
                   />
                 </div>
               )}
+            </div>
+          )}
+          {phase.kind !== "loadError" && (
+            <div className="flex shrink-0 items-center gap-2.5">
+              <button
+                onClick={onClose}
+                disabled={saving}
+                className="flex h-11 items-center rounded-full bg-elevated px-5 text-[13.5px] font-semibold text-ink-muted ring-1 ring-edge-soft transition-colors hover:bg-raised hover:text-ink disabled:opacity-40"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => void handleSave()}
+                disabled={!dirty || phase.kind !== "ready"}
+                className={`flex h-11 items-center gap-2 rounded-full bg-ink px-6 text-[14px] font-semibold text-canvas transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40 ${
+                  dirty && !saving ? "ring-2 ring-accent/50" : ""
+                }`}
+              >
+                {stepLabel ? (
+                  <>
+                    <Loader2 size={15} className="animate-spin" />
+                    {stepLabel}
+                  </>
+                ) : (
+                  "Save order"
+                )}
+              </button>
             </div>
           )}
         </div>
@@ -403,41 +430,8 @@ export function OrganizeAddonsPage({
             </div>
           )}
         </div>
-        <div className="h-28" />
+        <div className="h-10" />
       </div>
-
-      <footer className="shrink-0 border-t border-edge-soft bg-canvas/90 backdrop-blur-xl">
-        <div className="mx-auto flex w-full max-w-[1160px] items-center justify-between gap-4 px-6 py-4 sm:px-10">
-          <p className="hidden text-[13px] text-ink-subtle sm:block">
-            {dirty ? "You've changed the order. Save it or cancel." : "Everything is in its saved order."}
-          </p>
-          <div className="flex w-full items-center justify-end gap-3 sm:w-auto">
-            <button
-              onClick={onClose}
-              disabled={saving}
-              className="flex h-12 items-center rounded-full bg-elevated px-6 text-[14.5px] font-semibold text-ink-muted ring-1 ring-edge-soft transition-colors hover:bg-raised hover:text-ink disabled:opacity-40"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={() => void handleSave()}
-              disabled={!dirty || phase.kind !== "ready"}
-              className={`flex h-12 items-center gap-2 rounded-full bg-ink px-8 text-[15px] font-semibold text-canvas transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40 ${
-                dirty && !saving ? "ring-2 ring-accent/50" : ""
-              }`}
-            >
-              {stepLabel ? (
-                <>
-                  <Loader2 size={15} className="animate-spin" />
-                  {stepLabel}
-                </>
-              ) : (
-                "Save order"
-              )}
-            </button>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

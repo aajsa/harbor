@@ -258,7 +258,7 @@ export function EmptyState({ onClose, onOpenGuide }: { onClose: () => void; onOp
             }}
             className="flex h-9 items-center gap-1.5 rounded-full border border-edge-soft px-3 text-[12.5px] font-medium text-ink-muted transition-colors hover:border-edge hover:text-ink"
           >
-            <ArrowLeft size={13} strokeWidth={2.4} />
+            <ArrowLeft size={13} strokeWidth={2.4} className="dir-icon" />
             Back
           </button>
           <span className="text-[10.5px] font-bold uppercase tracking-[0.22em] text-ink-subtle">
@@ -318,7 +318,7 @@ export function EmptyState({ onClose, onOpenGuide }: { onClose: () => void; onOp
                     onClose();
                     openMeta(m);
                   }}
-                  className="block min-w-0 text-left"
+                  className="block min-w-0 text-start"
                 >
                   <PickCard meta={m} />
                 </button>
@@ -350,9 +350,9 @@ export function EmptyState({ onClose, onOpenGuide }: { onClose: () => void; onOp
             {recent.map((q) => (
               <span
                 key={q}
-                className="group inline-flex items-center gap-1 rounded-full border border-edge-soft bg-elevated/60 pl-3.5 pr-1.5 text-[13.5px] text-ink-muted transition-colors hover:border-edge hover:text-ink"
+                className="group inline-flex items-center gap-1 rounded-full border border-edge-soft bg-elevated/60 ps-3.5 pe-1.5 text-[13.5px] text-ink-muted transition-colors hover:border-edge hover:text-ink"
               >
-                <button onClick={() => setQuery(q)} className="h-10 py-2 pr-1">
+                <button onClick={() => setQuery(q)} className="h-10 py-2 pe-1">
                   {q}
                 </button>
                 <button
@@ -361,7 +361,7 @@ export function EmptyState({ onClose, onOpenGuide }: { onClose: () => void; onOp
                     removeRecent(q);
                   }}
                   aria-label={`Remove ${q}`}
-                  className="ml-0.5 flex h-7 w-7 items-center justify-center rounded-full text-ink-subtle transition-colors hover:bg-canvas/60 hover:text-ink"
+                  className="ms-0.5 flex h-7 w-7 items-center justify-center rounded-full text-ink-subtle transition-colors hover:bg-canvas/60 hover:text-ink"
                 >
                   <X size={12} strokeWidth={2.4} />
                 </button>

@@ -7,6 +7,7 @@ export type LogoEntry = { file_path: string; iso_639_1: string | null; vote_aver
 export type RawImages = {
   backdrops?: Array<{ file_path: string; vote_average?: number }>;
   logos?: LogoEntry[];
+  posters?: Array<{ file_path: string; vote_average?: number; iso_639_1?: string | null }>;
 };
 
 const MOVIE_ASSETS_MAX = 400;

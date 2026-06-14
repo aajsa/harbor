@@ -10,9 +10,12 @@ export type DurationChoice = {
   programTitle: string | null;
 };
 
+type Translate = (key: string, vars?: Record<string, string | number>) => string;
+
 export function buildChoices(
   current: EpgProgram | null,
   next: EpgProgram | null,
+  t: Translate,
 ): DurationChoice[] {
   const now = Date.now();
   const out: DurationChoice[] = [];
@@ -21,8 +24,8 @@ export function buildChoices(
     out.push({
       kind: "current",
       durationSec: sec,
-      label: `This show: ${current.title}`,
-      caption: `Until ${formatClock(current.endMs)} · ${formatMinutes(sec)}`,
+      label: t("This show: {title}", { title: current.title }),
+      caption: t("Until {time} · {dur}", { time: formatClock(current.endMs), dur: formatMinutes(sec) }),
       programTitle: current.title,
     });
   }
@@ -31,8 +34,8 @@ export function buildChoices(
     out.push({
       kind: "current-next",
       durationSec: sec,
-      label: `This and next: + ${next.title}`,
-      caption: `Until ${formatClock(next.endMs)} · ${formatMinutes(sec)}`,
+      label: t("This and next: + {title}", { title: next.title }),
+      caption: t("Until {time} · {dur}", { time: formatClock(next.endMs), dur: formatMinutes(sec) }),
       programTitle: `${current.title} + ${next.title}`,
     });
   }
@@ -43,8 +46,8 @@ export function buildChoices(
       out.push({
         kind: "next",
         durationSec: sec + Math.max(0, Math.round((next.startMs - now) / 1000)),
-        label: `Just the next show: ${next.title}`,
-        caption: `${formatClock(next.startMs)} to ${formatClock(next.endMs)} · ${formatMinutes(sec)}`,
+        label: t("Just the next show: {title}", { title: next.title }),
+        caption: t("{start} to {end} · {dur}", { start: formatClock(next.startMs), end: formatClock(next.endMs), dur: formatMinutes(sec) }),
         programTitle: next.title,
       });
     }
@@ -52,8 +55,8 @@ export function buildChoices(
   out.push({
     kind: "custom",
     durationSec: 3600,
-    label: "Custom length",
-    caption: "Set how many minutes to record",
+    label: t("Custom length"),
+    caption: t("Set how many minutes to record"),
     programTitle: null,
   });
   return out;
@@ -103,10 +106,10 @@ export function formatBytes(b: number): string {
   return `${(b / 1024 / 1024 / 1024).toFixed(2)} GB`;
 }
 
-export function prettifyError(raw: string): string {
+export function prettifyError(raw: string, t: Translate): string {
   const s = raw.replace(/^Error:\s*/i, "");
   if (s.includes("mpv binary not found")) {
-    return "mpv is required for recording. Install mpv and restart Harbor.";
+    return t("mpv is required for recording. Install mpv and restart Harbor.");
   }
   return s;
 }

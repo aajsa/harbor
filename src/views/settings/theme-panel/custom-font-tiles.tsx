@@ -51,7 +51,7 @@ export function CustomFontTiles({
             <button
               type="button"
               onClick={() => onSelect(f.id)}
-              className="flex flex-1 flex-col gap-1.5 pr-8 text-left"
+              className="flex flex-1 flex-col gap-1.5 pe-8 text-start"
             >
               <span
                 className={`${previewSize} font-medium leading-none tracking-tight text-ink`}
@@ -74,7 +74,7 @@ export function CustomFontTiles({
                 {f.name}
               </span>
             </button>
-            <div className="absolute right-3 top-3 flex items-center">
+            <div className="absolute end-3 top-3 flex items-center">
               {active && (
                 <span
                   className={`flex h-5 w-5 items-center justify-center rounded-full ${checkCls} text-canvas group-hover/font:hidden`}

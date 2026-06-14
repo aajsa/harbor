@@ -1,4 +1,5 @@
 import type { CalendarItem } from "@/lib/calendar";
+import { useT } from "@/lib/i18n";
 import { CalendarChip } from "./calendar-chip";
 import type { Cell } from "./types";
 import { WEEKDAY_NAMES } from "./utils";
@@ -16,6 +17,7 @@ export function MonthGrid({
   onOpenItem: (item: CalendarItem) => void;
   onOpenDay: (iso: string) => void;
 }) {
+  const t = useT();
   return (
     <div className="flex flex-col gap-2">
       <div className="grid grid-cols-7 gap-2">
@@ -24,7 +26,7 @@ export function MonthGrid({
             key={d}
             className="px-2 text-[11px] font-bold uppercase tracking-[0.16em] text-ink-subtle"
           >
-            {d}
+            {t(d)}
           </div>
         ))}
       </div>
@@ -64,9 +66,9 @@ export function MonthGrid({
                 {events.length > 3 && (
                   <button
                     onClick={() => onOpenDay(cell.iso)}
-                    className="self-start rounded px-1 text-left text-[11px] text-ink-subtle transition-colors hover:text-ink"
+                    className="self-start rounded px-1 text-start text-[11px] text-ink-subtle transition-colors hover:text-ink"
                   >
-                    +{events.length - 3} more
+                    {t("+{n} more", { n: events.length - 3 })}
                   </button>
                 )}
               </div>

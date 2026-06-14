@@ -176,7 +176,7 @@ export function CustomThemesSection() {
           <button
             type="button"
             onClick={() => setError(null)}
-            className="ml-auto rounded px-2 text-[11px] font-semibold uppercase tracking-wider opacity-70 hover:opacity-100"
+            className="ms-auto rounded px-2 text-[11px] font-semibold uppercase tracking-wider opacity-70 hover:opacity-100"
           >
             Dismiss
           </button>

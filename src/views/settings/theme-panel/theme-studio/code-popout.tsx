@@ -72,7 +72,7 @@ export function CodePopout({
         <button
           type="button"
           onClick={requestClose}
-          className="ml-auto flex h-10 items-center rounded-lg px-5 text-[14.5px] font-semibold transition-opacity hover:opacity-90"
+          className="ms-auto flex h-10 items-center rounded-lg px-5 text-[14.5px] font-semibold transition-opacity hover:opacity-90"
           style={{ background: IDE.accent, color: IDE.overlay }}
         >
           Done
@@ -119,7 +119,7 @@ export function CodePopout({
               })}
             </div>
 
-            <div className="ml-auto flex items-center gap-1.5 pr-3">
+            <div className="ms-auto flex items-center gap-1.5 pe-3">
               <button
                 type="button"
                 onClick={() => setCheatOpen(true)}

@@ -2,6 +2,7 @@ import { Lock, LogIn, LogOut, Pencil, Plus, Users } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { AuthModal } from "@/components/auth-modal";
 import { CatAvatar } from "@/components/icons/cat-avatar";
+import { useT } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { useProfiles, type Profile } from "@/lib/profiles";
 import { useSettings } from "@/lib/settings";
@@ -10,10 +11,11 @@ import { openUrl } from "@/lib/window";
 
 const STREMIO_REGISTER_URL = "https://www.stremio.com/register";
 
-export function ProfileChip() {
+export function ProfileChip({ collapsed = false }: { collapsed?: boolean } = {}) {
   const { user, signOut } = useAuth();
   const { settings } = useSettings();
   const { profiles, activeProfile, openPicker, selectProfile } = useProfiles();
+  const t = useT();
   const [menuOpen, setMenuOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -33,13 +35,15 @@ export function ProfileChip() {
     <div ref={ref} className="relative">
       <button
         onClick={() => setMenuOpen((o) => !o)}
-        aria-label={activeProfile?.name ?? user?.email ?? "Profile"}
-        className="flex w-full items-center justify-center gap-3.5 rounded-xl py-2.5 text-left transition-colors hover:bg-elevated/60 lg:justify-start lg:px-3"
+        aria-label={activeProfile?.name ?? user?.email ?? t("profile.fallback")}
+        className={`flex w-full items-center justify-center gap-3.5 rounded-xl py-2.5 text-start transition-colors hover:bg-elevated/60 ${
+          collapsed ? "" : "lg:justify-start lg:px-3"
+        }`}
       >
         <ProfileAvatar profile={activeProfile} user={user} fallbackAvatar={settings.harborAvatar} />
-        <div className="hidden min-w-0 flex-1 lg:block">
+        <div className={`hidden min-w-0 flex-1 ${collapsed ? "" : "lg:block"}`}>
           <div className="truncate text-[14.5px] font-medium tracking-tight text-ink">
-            {activeProfile?.name ?? user?.fullname ?? user?.email?.split("@")[0] ?? "Profile"}
+            {activeProfile?.name ?? user?.fullname ?? user?.email?.split("@")[0] ?? t("profile.fallback")}
           </div>
           <div className="truncate text-[12px] text-ink-subtle">
             <SubtitleText active={activeProfile} profiles={profiles} user={user} />
@@ -52,7 +56,7 @@ export function ProfileChip() {
           {otherProfiles.length > 0 && (
             <div className="flex flex-col gap-0.5 border-b border-edge-soft p-1.5">
               <span className="px-2.5 pb-1 pt-1 text-[10.5px] font-bold uppercase tracking-[0.16em] text-ink-subtle">
-                Switch profile
+                {t("profile.switch")}
               </span>
               {otherProfiles.map((p) => (
                 <button
@@ -65,12 +69,12 @@ export function ProfileChip() {
                       selectProfile(p.id);
                     }
                   }}
-                  className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-raised"
+                  className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-start transition-colors hover:bg-raised"
                 >
                   <span className="relative inline-flex shrink-0">
                     <ProfileAvatar profile={p} user={null} fallbackAvatar={null} compact />
                     {p.passwordHash && (
-                      <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-canvas text-ink shadow-sm ring-1 ring-edge">
+                      <span className="absolute -bottom-0.5 -end-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-canvas text-ink shadow-sm ring-1 ring-edge">
                         <Lock size={8} strokeWidth={2.6} />
                       </span>
                     )}
@@ -82,7 +86,7 @@ export function ProfileChip() {
                         className="text-[9px] font-bold uppercase tracking-[0.18em]"
                         style={{ color: p.color }}
                       >
-                        Primary
+                        {t("profile.primary")}
                       </span>
                     )}
                   </div>
@@ -96,10 +100,10 @@ export function ProfileChip() {
                 openPicker({ kind: "list" });
                 setMenuOpen(false);
               }}
-              className="flex items-center gap-2.5 px-4 py-3 text-left text-[13.5px] text-ink-muted transition-colors hover:bg-raised hover:text-ink"
+              className="flex items-center gap-2.5 px-4 py-3 text-start text-[13.5px] text-ink-muted transition-colors hover:bg-raised hover:text-ink"
             >
               <Users size={14} strokeWidth={2.2} />
-              Who's watching
+              {t("profile.whoWatching")}
             </button>
             {activeProfile && (
               <button
@@ -107,10 +111,10 @@ export function ProfileChip() {
                   openPicker({ kind: "edit", profileId: activeProfile.id });
                   setMenuOpen(false);
                 }}
-                className="flex items-center gap-2.5 px-4 py-3 text-left text-[13.5px] text-ink-muted transition-colors hover:bg-raised hover:text-ink"
+                className="flex items-center gap-2.5 px-4 py-3 text-start text-[13.5px] text-ink-muted transition-colors hover:bg-raised hover:text-ink"
               >
                 <Pencil size={14} strokeWidth={2.2} />
-                Edit this profile
+                {t("profile.editThis")}
               </button>
             )}
             {activeProfile?.isPrimary && (
@@ -119,10 +123,10 @@ export function ProfileChip() {
                   openPicker({ kind: "create" });
                   setMenuOpen(false);
                 }}
-                className="flex items-center gap-2.5 px-4 py-3 text-left text-[13.5px] text-ink-muted transition-colors hover:bg-raised hover:text-ink"
+                className="flex items-center gap-2.5 px-4 py-3 text-start text-[13.5px] text-ink-muted transition-colors hover:bg-raised hover:text-ink"
               >
                 <Plus size={14} strokeWidth={2.2} />
-                New profile
+                {t("profile.new")}
               </button>
             )}
             {user ? (
@@ -131,10 +135,10 @@ export function ProfileChip() {
                   signOut();
                   setMenuOpen(false);
                 }}
-                className="flex items-center gap-2.5 border-t border-edge-soft px-4 py-3 text-left text-[13.5px] text-ink-muted transition-colors hover:bg-raised hover:text-ink"
+                className="flex items-center gap-2.5 border-t border-edge-soft px-4 py-3 text-start text-[13.5px] text-ink-muted transition-colors hover:bg-raised hover:text-ink"
               >
                 <LogOut size={14} strokeWidth={2.2} />
-                Sign out of Stremio
+                {t("profile.signOut")}
               </button>
             ) : (
               <button
@@ -142,10 +146,10 @@ export function ProfileChip() {
                   setAuthOpen(true);
                   setMenuOpen(false);
                 }}
-                className="flex items-center gap-2.5 border-t border-edge-soft px-4 py-3 text-left text-[13.5px] text-ink-muted transition-colors hover:bg-raised hover:text-ink"
+                className="flex items-center gap-2.5 border-t border-edge-soft px-4 py-3 text-start text-[13.5px] text-ink-muted transition-colors hover:bg-raised hover:text-ink"
               >
                 <LogIn size={14} strokeWidth={2.2} />
-                Sign in to Stremio
+                {t("profile.signIn")}
               </button>
             )}
           </div>
@@ -194,16 +198,17 @@ function SubtitleText({
   profiles: Profile[];
   user: User | null;
 }) {
+  const t = useT();
   if (active?.shareStremioWith) {
     const src = profiles.find((p) => p.id === active.shareStremioWith);
-    if (src) return <>Sharing {src.name}'s Stremio</>;
+    if (src) return <>{t("Sharing {name}'s Stremio", { name: src.name })}</>;
   }
   if (user) {
-    return <>Signed in to Stremio</>;
+    return <>{t("profile.signedIn")}</>;
   }
   return (
     <>
-      Sign in to{" "}
+      {t("Sign in to")}{" "}
       <span
         role="link"
         tabIndex={0}

@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { Building2, Calendar, ChevronDown, Clock, Globe, Languages, Tag, Tv } from "lucide-react";
+import { useT } from "@/lib/i18n";
 import { MOVIE_GENRES } from "@/lib/feed/tags";
 import { useView, type MetaFilter } from "@/lib/view";
 import { runtimeRange } from "./rails-config";
 
 export function Header({ filter }: { filter: MetaFilter }) {
-  const { kicker, title, subtitle, Icon } = describe(filter);
+  const t = useT();
+  const { kicker, title, subtitle, Icon } = describe(filter, t);
   return (
     <div className="relative px-12 pb-10 pt-28">
       <div className="flex items-center gap-2.5">
@@ -30,6 +32,7 @@ export function Header({ filter }: { filter: MetaFilter }) {
 }
 
 function MediaTypeToggle({ filter }: { filter: MetaFilter }) {
+  const t = useT();
   const { openFilter } = useView();
   const set = (mediaType: "movie" | "tv") => {
     if (mediaType === filter.mediaType) return;
@@ -48,7 +51,7 @@ function MediaTypeToggle({ filter }: { filter: MetaFilter }) {
               : "text-ink-muted hover:bg-raised hover:text-ink"
           }`}
         >
-          {m === "tv" ? "Shows" : "Movies"}
+          {m === "tv" ? t("Shows") : t("Movies")}
         </button>
       ))}
     </div>
@@ -62,6 +65,7 @@ function GenreSwitcher({
   activeName: string;
   mediaType: "movie" | "tv";
 }) {
+  const t = useT();
   const { openFilter } = useView();
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -79,10 +83,10 @@ function GenreSwitcher({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="group inline-flex items-center gap-3 text-left transition-colors"
+        className="group inline-flex items-center gap-3 text-start transition-colors"
       >
         <span className="font-display text-[64px] font-medium leading-[0.95] tracking-tight text-ink">
-          {activeName}
+          {t(activeName)}
         </span>
         <span
           className={`flex h-10 w-10 items-center justify-center rounded-full border border-edge-soft text-ink-muted transition-[transform,background-color,color] ${
@@ -93,7 +97,7 @@ function GenreSwitcher({
         </span>
       </button>
       {open && (
-        <div className="absolute left-0 top-[calc(100%+12px)] z-30 grid max-h-[420px] w-[440px] grid-cols-2 gap-1 overflow-y-auto rounded-2xl border border-edge bg-surface/98 p-1.5 shadow-[0_24px_60px_-15px_rgba(0,0,0,0.55)] backdrop-blur-xl">
+        <div className="absolute start-0 top-[calc(100%+12px)] z-30 grid max-h-[420px] w-[440px] grid-cols-2 gap-1 overflow-y-auto rounded-2xl border border-edge bg-surface/98 p-1.5 shadow-[0_24px_60px_-15px_rgba(0,0,0,0.55)] backdrop-blur-xl">
           {names.map((name) => {
             const isActive = name === activeName;
             return (
@@ -104,13 +108,13 @@ function GenreSwitcher({
                   setOpen(false);
                   openFilter({ kind: "genre", mediaType, name, id: MOVIE_GENRES[name] });
                 }}
-                className={`rounded-xl px-3.5 py-2.5 text-left text-[14px] font-medium transition-colors ${
+                className={`rounded-xl px-3.5 py-2.5 text-start text-[14px] font-medium transition-colors ${
                   isActive
                     ? "bg-accent/15 text-accent"
                     : "text-ink-muted hover:bg-elevated hover:text-ink"
                 }`}
               >
-                {name}
+                {t(name)}
               </button>
             );
           })}
@@ -120,66 +124,88 @@ function GenreSwitcher({
   );
 }
 
-function describe(f: MetaFilter): {
+function describe(
+  f: MetaFilter,
+  t: (key: string, vars?: Record<string, string | number>) => string,
+): {
   kicker: string;
   title: string;
   subtitle: string;
   Icon: typeof Tag;
 } {
-  const mediaWord = f.mediaType === "movie" ? "Movies" : "Shows";
+  const mediaWord = f.mediaType === "movie" ? t("Movies") : t("Shows");
   if (f.kind === "year") {
     return {
-      kicker: f.mediaType === "movie" ? "Movies" : "TV Shows",
+      kicker: f.mediaType === "movie" ? t("Movies") : t("TV Shows"),
       title: `${f.value}`,
-      subtitle: `Everything from ${f.value}, sorted across trending, top rated, and hidden gems.`,
+      subtitle: t("Everything from {year}, sorted across trending, top rated, and hidden gems.", {
+        year: f.value,
+      }),
       Icon: Calendar,
     };
   }
   if (f.kind === "runtime") {
     const range = runtimeRange(f.value);
     return {
-      kicker: "Runtime",
-      title: `Around ${f.value} min`,
-      subtitle: `${mediaWord} between ${range.lo}-${range.hi} minutes. Pick a length, not a wall of options.`,
+      kicker: t("Runtime"),
+      title: t("Around {min} min", { min: f.value }),
+      subtitle: t(
+        "{media} between {lo}-{hi} minutes. Pick a length, not a wall of options.",
+        { media: mediaWord, lo: range.lo, hi: range.hi },
+      ),
       Icon: Clock,
     };
   }
   if (f.kind === "studio") {
     return {
-      kicker: "Studio",
+      kicker: t("Studio"),
       title: f.name,
-      subtitle: `${mediaWord} produced by ${f.name}, ranked from biggest hits to overlooked gems.`,
+      subtitle: t("{media} produced by {name}, ranked from biggest hits to overlooked gems.", {
+        media: mediaWord,
+        name: f.name,
+      }),
       Icon: Building2,
     };
   }
   if (f.kind === "country") {
     return {
-      kicker: "Country",
+      kicker: t("Country"),
       title: f.name,
-      subtitle: `${mediaWord} from ${f.name}: popular, acclaimed, and hidden alike.`,
+      subtitle: t("{media} from {name}: popular, acclaimed, and hidden alike.", {
+        media: mediaWord,
+        name: f.name,
+      }),
       Icon: Globe,
     };
   }
   if (f.kind === "language") {
     return {
-      kicker: "Language",
+      kicker: t("Language"),
       title: f.name,
-      subtitle: `Everything originally in ${f.name}: movies and series across every genre, era, and hidden gems.`,
+      subtitle: t(
+        "Everything originally in {name}: movies and series across every genre, era, and hidden gems.",
+        { name: f.name },
+      ),
       Icon: Languages,
     };
   }
   if (f.kind === "network") {
     return {
-      kicker: "Network",
+      kicker: t("Network"),
       title: f.name,
-      subtitle: `Series from ${f.name}: current hits, classics, and the deep cuts.`,
+      subtitle: t("Series from {name}: current hits, classics, and the deep cuts.", {
+        name: f.name,
+      }),
       Icon: Tv,
     };
   }
   return {
-    kicker: f.mediaType === "movie" ? "Genre" : "TV Genre",
+    kicker: f.mediaType === "movie" ? t("Genre") : t("TV Genre"),
     title: f.name,
-    subtitle: `The best ${f.name.toLowerCase()} ${mediaWord.toLowerCase()}, layered by mood. Browse trending, dive into a director's run, sort by decade, find quiet gems.`,
+    subtitle: t(
+      "The best {genre} {media}, layered by mood. Browse trending, dive into a director's run, sort by decade, find quiet gems.",
+      { genre: f.name.toLowerCase(), media: mediaWord.toLowerCase() },
+    ),
     Icon: Tag,
   };
 }

@@ -114,6 +114,7 @@ export function createMpvBridge(mpvOptions?: MpvOptions): PlayerBridge {
             ? (t["demux-channel-count"] as number)
             : undefined;
           const external = t.external === true;
+          const externalFilename = t["external-filename"] as string | undefined;
           const forced = t.forced === true;
           const isDefault = t.default === true;
           const hearingImpaired = t["hearing-impaired"] === true;
@@ -138,6 +139,7 @@ export function createMpvBridge(mpvOptions?: MpvOptions): PlayerBridge {
             channelCount,
             title,
             external,
+            externalFilename,
             forced,
             default: isDefault,
             hearingImpaired,
@@ -401,6 +403,12 @@ export function createMpvBridge(mpvOptions?: MpvOptions): PlayerBridge {
     setPanscan(value) {
       const v = Math.max(0, Math.min(1, value));
       invoke("mpv_set_property", { name: "panscan", value: v }).catch(() => {});
+    },
+    setVideoZoom(log2) {
+      invoke("mpv_set_property", { name: "video-zoom", value: log2 }).catch(() => {});
+    },
+    setAspectOverride(ratio) {
+      invoke("mpv_set_property", { name: "video-aspect-override", value: ratio }).catch(() => {});
     },
     async addSubtitle(url, lang, title, select): Promise<boolean> {
       let mpvUrl = url;

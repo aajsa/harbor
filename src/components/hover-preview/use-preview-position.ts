@@ -10,6 +10,8 @@ import {
 
 export type PanelPlacement = { left: number; top: number; originX: number; originY: number };
 
+const NAV_CLEAR_PX = 64;
+
 export function panelWidthFor(posterScale: number): number {
   if (posterScale < POSTER_SCALE_DEFAULT_MIN) return PANEL_W_COMPACT;
   if (posterScale < POSTER_SCALE_LARGE_MIN) return PANEL_W_DEFAULT;
@@ -28,8 +30,9 @@ export function placePanel(
 ): PanelPlacement {
   const cx = rect.left + rect.width / 2;
   const cy = rect.top + rect.height / 2;
+  const edgeInset = Math.max(GUTTER_PX, NAV_CLEAR_PX);
   const left = Math.round(
-    Math.max(GUTTER_PX, Math.min(cx - panelW / 2, window.innerWidth - panelW - GUTTER_PX)),
+    Math.max(edgeInset, Math.min(cx - panelW / 2, window.innerWidth - panelW - edgeInset)),
   );
   const maxTop = window.innerHeight - panelH - GUTTER_PX;
   const top = Math.round(
