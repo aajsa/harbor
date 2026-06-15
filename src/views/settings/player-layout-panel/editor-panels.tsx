@@ -1,4 +1,3 @@
-import { useT } from "@/lib/i18n";
 import { Crown } from "lucide-react";
 import {
   PANEL_META,
@@ -114,7 +113,6 @@ function episodeTabStyle(corner: PanelCorner): React.CSSProperties {
 const AVATAR_COLORS = ["#f97316", "#22d3ee", "#a78bfa"];
 
 function AvatarDockBody() {
-  const t = useT();
   return (
     <div className="pointer-events-none flex flex-col items-end gap-1.5 rounded-2xl border border-white/12 bg-black/35 p-2 backdrop-blur-xl shadow-[0_18px_50px_-22px_rgba(0,0,0,0.65)]">
       {AVATAR_COLORS.map((c, i) => (
@@ -126,7 +124,7 @@ function AvatarDockBody() {
           {["A", "J", "Y"][i]}
           {i === 0 && (
             <span
-              aria-label={t("Host")}
+              aria-label="Host"
               className="pointer-events-none absolute -top-2 -right-1 z-10 inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-300 text-black shadow-[0_2px_6px_rgba(0,0,0,0.45)] ring-2 ring-black/35"
             >
               <Crown size={11} strokeWidth={2.4} fill="currentColor" />

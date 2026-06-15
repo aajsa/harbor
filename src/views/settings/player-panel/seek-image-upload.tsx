@@ -1,4 +1,3 @@
-import { useT } from "@/lib/i18n";
 import { AlertTriangle, Image as ImageIcon, Loader2, Upload, X } from "lucide-react";
 import { useRef, useState } from "react";
 
@@ -27,7 +26,6 @@ export function SeekImageUpload({
   targetDim?: number;
   targetQuality?: number;
 }) {
-  const t = useT();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -109,7 +107,7 @@ export function SeekImageUpload({
           }}
           disabled={!value}
           className="flex h-9 w-9 items-center justify-center rounded-full bg-raised text-ink-muted transition-all duration-200 hover:bg-danger hover:text-white disabled:pointer-events-none disabled:scale-90 disabled:opacity-0"
-          aria-label={t("Remove image")}
+          aria-label="Remove image"
         >
           <X size={13} strokeWidth={2.2} />
         </button>

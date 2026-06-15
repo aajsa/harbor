@@ -1,6 +1,8 @@
 import { useSettings } from "@/lib/settings";
+import { useT } from "@/lib/i18n";
 
 export function PlayModePanel() {
+  const t = useT();
   const { settings, update } = useSettings();
 
   const choices: Array<{
@@ -11,14 +13,14 @@ export function PlayModePanel() {
   }> = [
     {
       id: "instant",
-      label: "Instant",
-      sub: "Hitting Play jumps straight into playback with the best stream Harbor finds.",
+      label: t("Instant"),
+      sub: t("Hitting Play jumps straight into playback with the best stream Harbor finds."),
       recommended: true,
     },
     {
       id: "manual",
-      label: "Manual picker",
-      sub: "Hitting Play opens the source list so you can choose quality, debrid, and audio yourself.",
+      label: t("Manual picker"),
+      sub: t("Hitting Play opens the source list so you can choose quality, debrid, and audio yourself."),
     },
   ];
 
@@ -49,7 +51,7 @@ export function PlayModePanel() {
                 <span className="text-[15px] font-semibold text-ink">{c.label}</span>
                 {c.recommended && (
                   <span className="rounded-md bg-accent/15 px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wider text-accent">
-                    Recommended
+                    {t("Recommended")}
                   </span>
                 )}
               </div>

@@ -1,4 +1,3 @@
-import { useT } from "@/lib/i18n";
 import { RotateCcw } from "lucide-react";
 import { useRef, useState } from "react";
 import seekPreviewBg from "@/assets/preview/seek-preview.png";
@@ -8,9 +7,10 @@ import { ColorPopoverTrigger } from "../color-picker";
 import { SubField } from "./internals";
 import { ToggleRow } from "../shared";
 import { SeekImageUpload, openSeekImageDialog } from "./seek-image-upload";
+import { useT } from "@/lib/i18n";
 
 const STYLES: Array<{ id: "flat" | "glass" | "pinstripe" | "rainbow"; label: string; sub: string }> = [
-  { id: "flat", label: "Flat", sub: "Solid fill, no texture. Cleanest baseline." },
+  { id: "flat", label: "Flat_Style", sub: "Solid fill, no texture. Cleanest baseline." },
   { id: "glass", label: "Glass", sub: "Subtle Apple-like sheen on the filled portion." },
   { id: "pinstripe", label: "Pinstripe", sub: "Diagonal stripes across the fill, retro vibe." },
   { id: "rainbow", label: "Rainbow", sub: "Six horizontal stripes. Pairs with nyan cat dot." },
@@ -63,14 +63,14 @@ export function SeekBarPanel() {
               key={s.id}
               selected={currentStyle === s.id}
               onClick={() => update({ seekBarStyle: s.id })}
-              label={s.label}
-              sub={s.sub}
+              label={t(s.label)}
+              sub={t(s.sub)}
             />
           ))}
         </div>
         {currentStyle === "image" && (
           <p className="mt-1 text-[11px] text-ink-subtle">
-            Image bar active. Pick a style above to switch back, or clear the image below.
+            {t("Image bar active. Pick a style above to switch back, or clear the image below.")}
           </p>
         )}
       </SubField>
@@ -106,14 +106,14 @@ export function SeekBarPanel() {
                     ? "linear-gradient(135deg, transparent 47%, var(--color-ink-subtle) 47% 53%, transparent 53%)"
                     : undefined,
                 }}
-                aria-label={isDefault ? "Default (gold accent)" : c}
+                aria-label={isDefault ? t("Default (gold accent)") : c}
               />
             );
           })}
           <ColorPopoverTrigger
             value={accent || "#f0c674"}
             onChange={(hex) => update({ seekBarColor: hex })}
-            label={accent ? accent.toUpperCase() : "Custom"}
+            label={accent ? accent.toUpperCase() : t("Custom")}
             highlighted={!!accent && !PRESET_COLORS.includes(accent)}
           />
           {accent && (
@@ -123,7 +123,7 @@ export function SeekBarPanel() {
               className="flex h-8 items-center gap-1 rounded-full bg-raised px-3 text-[11.5px] font-semibold text-ink-muted transition-colors hover:bg-elevated hover:text-ink"
             >
               <RotateCcw size={11} strokeWidth={2.4} />
-              Default
+              {t("Default")}
             </button>
           )}
         </div>
@@ -139,8 +139,8 @@ export function SeekBarPanel() {
               seekBarStyle: settings.seekBarStyle === "image" ? "flat" : settings.seekBarStyle,
             })
           }
-          emptyTitle="Upload a pattern to tile across the bar"
-          hint="Tiles horizontally; the bar's height crops it vertically. Animated GIFs up to 2 MB play."
+          emptyTitle={t("Upload a pattern to tile across the bar")}
+          hint={t("Tiles horizontally; the bar's height crops it vertically. Animated GIFs up to 2 MB play.")}
           targetDim={256}
           targetQuality={0.88}
         />
@@ -160,14 +160,14 @@ export function SeekBarPanel() {
                 }
                 update({ seekDotShape: s.id });
               }}
-              label={s.label}
-              sub={s.sub}
+              label={t(s.label)}
+              sub={t(s.sub)}
             />
           ))}
         </div>
       </SubField>
 
-      <SubField label={currentShape === "image" ? "Image size" : "Dot size"} value={`${dotVal}px`}>
+      <SubField label={currentShape === "image" ? t("Image size") : t("Dot size")} value={`${dotVal}px`}>
         <input
           type="range"
           min={8}
@@ -190,8 +190,8 @@ export function SeekBarPanel() {
               seekDotShape: settings.seekDotShape === "image" ? "circle" : settings.seekDotShape,
             })
           }
-          emptyTitle="Upload nyan cat, a sticker, anything"
-          hint="PNG, JPEG, WebP, or SVG (auto-shrunk if huge). Animated GIFs up to 2 MB play live."
+          emptyTitle={t("Upload nyan cat, a sticker, anything")}
+          hint={t("PNG, JPEG, WebP, or SVG (auto-shrunk if huge). Animated GIFs up to 2 MB play live.")}
         />
       </SubField>
     </div>

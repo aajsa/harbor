@@ -1,4 +1,3 @@
-import { useT } from "@/lib/i18n";
 import { Plus, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import godfatherStill from "@/assets/godfather-offer.svg";
@@ -6,6 +5,7 @@ import { useSettings } from "@/lib/settings";
 import { ColorPopoverTrigger } from "../color-picker";
 import { ToggleRow } from "../shared";
 import { Label, SubField, previewFamily } from "./internals";
+import { useT } from "@/lib/i18n";
 
 export function SubtitleStylePanel() {
   const t = useT();
@@ -63,7 +63,7 @@ export function SubtitleStylePanel() {
       <SubtitlePreview />
 
       <div className="flex flex-col gap-2.5">
-        <Label>Background</Label>
+        <Label>{t("Background")}</Label>
         <div className="grid grid-cols-3 gap-2">
           {styles.map((s) => {
             const sel = settings.subStyle === s.id;
@@ -76,8 +76,8 @@ export function SubtitleStylePanel() {
                   sel ? "border-ink bg-elevated" : "border-edge-soft bg-canvas/40 hover:border-edge"
                 }`}
               >
-                <span className="text-[13px] font-semibold text-ink">{s.label}</span>
-                <span className="text-[11.5px] leading-snug text-ink-muted">{s.sub}</span>
+                <span className="text-[13px] font-semibold text-ink">{t(s.label)}</span>
+                <span className="text-[11.5px] leading-snug text-ink-muted">{t(s.sub)}</span>
               </button>
             );
           })}
@@ -85,7 +85,7 @@ export function SubtitleStylePanel() {
       </div>
 
       <div className="flex flex-col gap-2.5">
-        <Label>Styled (ASS) subtitles</Label>
+        <Label>{t("Styled (ASS) subtitles")}</Label>
         <div className="grid grid-cols-3 gap-2">
           {assModes.map((m) => {
             const sel = settings.subAssOverride === m.id;
@@ -98,14 +98,14 @@ export function SubtitleStylePanel() {
                   sel ? "border-ink bg-elevated" : "border-edge-soft bg-canvas/40 hover:border-edge"
                 }`}
               >
-                <span className="text-[13px] font-semibold text-ink">{m.label}</span>
-                <span className="text-[11.5px] leading-snug text-ink-muted">{m.sub}</span>
+                <span className="text-[13px] font-semibold text-ink">{t(m.label)}</span>
+                <span className="text-[11.5px] leading-snug text-ink-muted">{t(m.sub)}</span>
               </button>
             );
           })}
         </div>
         <p className="text-[11.5px] leading-snug text-ink-muted">
-          Seeing empty boxes instead of letters? Choose Arabic under Font and switch to Use my style.
+          {t("Seeing empty boxes instead of letters? Choose Arabic under Font and switch to Use my style.")}
         </p>
       </div>
 
@@ -137,7 +137,7 @@ export function SubtitleStylePanel() {
         </SubField>
       )}
 
-      <FontPicker />
+      <FontPicker t={t} />
 
       <ToggleRow
         label={t("Show subtitles in Picture-in-Picture")}
@@ -186,7 +186,7 @@ export function SubtitleStylePanel() {
       </SubField>
 
       <div className="flex flex-col gap-2.5">
-        <Label>Alignment</Label>
+        <Label>{t("Alignment")}</Label>
         <div className="grid grid-cols-3 gap-2">
           {aligns.map((a) => {
             const sel = settings.subAlignX === a.id;
@@ -199,7 +199,7 @@ export function SubtitleStylePanel() {
                   sel ? "border-ink bg-elevated text-ink" : "border-edge-soft bg-canvas/40 text-ink-muted hover:border-edge hover:text-ink"
                 }`}
               >
-                {a.label}
+                {t(a.label)}
               </button>
             );
           })}
@@ -208,7 +208,7 @@ export function SubtitleStylePanel() {
 
       <div className="grid grid-cols-2 gap-x-6 gap-y-2.5">
         <div className="flex flex-col gap-2.5">
-          <Label>Text color</Label>
+          <Label>{t("Text color")}</Label>
           <div className="flex items-center gap-3">
             <ColorPopoverTrigger
               value={settings.subFontColor}
@@ -230,7 +230,7 @@ export function SubtitleStylePanel() {
         </div>
 
         <div className="flex flex-col gap-2.5">
-          <Label>Outline color</Label>
+          <Label>{t("Outline color")}</Label>
           <div className="flex items-center gap-3">
             <ColorPopoverTrigger
               value={settings.subBorderColor}
@@ -254,7 +254,7 @@ export function SubtitleStylePanel() {
 
       {settings.subStyle === "box" && (
         <div className="flex flex-col gap-2.5">
-          <Label>Box color</Label>
+          <Label>{t("Box color")}</Label>
           <div className="flex items-center gap-3">
             <ColorPopoverTrigger
               value={settings.subBoxColor || "#000000"}
@@ -283,7 +283,7 @@ export function SubtitleStylePanel() {
           disabled={isDefault}
           className="flex h-9 items-center gap-2 rounded-full border border-edge-soft bg-canvas/40 px-4 text-[12.5px] font-semibold text-ink-muted transition-colors hover:border-edge hover:text-ink disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-edge-soft disabled:hover:text-ink-muted"
         >
-          Reset to defaults
+          {t("Reset to defaults")}
         </button>
       </div>
     </div>
@@ -373,7 +373,7 @@ const PRESET_FONTS: Array<{ id: "inter" | "system" | "rounded" | "serif" | "arab
 const FONT_ACCEPT = ".ttf,.otf,.woff,.woff2,font/ttf,font/otf,font/woff,font/woff2,application/x-font-ttf,application/x-font-otf,application/font-woff,application/font-woff2";
 const MAX_FONT_BYTES = 4 * 1024 * 1024;
 
-function FontPicker() {
+function FontPicker({ t }: { t: (key: string, data?: Record<string, any>) => string }) {
   const { settings, update } = useSettings();
   const fileRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
@@ -444,10 +444,10 @@ function FontPicker() {
   return (
     <div className="flex flex-col gap-2.5">
       <div className="flex items-center justify-between">
-        <Label>Font</Label>
+        <Label>{t("Font")}</Label>
         {customFonts.length > 0 && (
           <span className="text-[10.5px] uppercase tracking-[0.16em] text-ink-subtle">
-            {customFonts.length} custom
+            {t("{n} custom", { n: customFonts.length })}
           </span>
         )}
       </div>
@@ -490,7 +490,7 @@ function FontPicker() {
           className="flex h-11 items-center justify-center gap-1.5 rounded-xl border border-dashed border-edge bg-canvas/30 text-[12.5px] font-semibold text-ink-muted transition-colors hover:border-ink hover:bg-elevated hover:text-ink"
         >
           <Plus size={13} strokeWidth={2.4} />
-          Upload font
+          {t("Upload font")}
         </button>
       </div>
       <input
@@ -511,6 +511,7 @@ function FontPicker() {
       )}
       {confirmFont && (
         <ConfirmDeleteFont
+          t={t}
           name={confirmFont.name}
           onCancel={() => setConfirmId(null)}
           onConfirm={() => remove(confirmFont.id)}
@@ -521,10 +522,12 @@ function FontPicker() {
 }
 
 function ConfirmDeleteFont({
+  t,
   name,
   onCancel,
   onConfirm,
 }: {
+  t: (key: string, data?: Record<string, any>) => string;
   name: string;
   onCancel: () => void;
   onConfirm: () => void;
@@ -548,10 +551,9 @@ function ConfirmDeleteFont({
       }}
     >
       <div className="w-[min(92vw,360px)] rounded-2xl border border-edge bg-elevated p-5 shadow-[0_28px_72px_-20px_rgba(0,0,0,0.85)] animate-in zoom-in-95 fade-in duration-150">
-        <p className="text-[15px] font-semibold text-ink">Delete this font?</p>
+        <p className="text-[15px] font-semibold text-ink">{t("Delete this font?")}</p>
         <p className="mt-1.5 text-[13px] leading-relaxed text-ink-muted">
-          <span className="font-semibold text-ink">{name}</span> will be removed from Harbor. Anything you've
-          set to use it will fall back to Inter.
+          {t("{name} will be removed from Harbor. Anything you've set to use it will fall back to Inter.", { name })}
         </p>
         <div className="mt-4 flex justify-end gap-2">
           <button
@@ -566,7 +568,7 @@ function ConfirmDeleteFont({
             onClick={onConfirm}
             className="rounded-full bg-danger px-4 py-2 text-[12.5px] font-semibold text-white transition-colors hover:bg-danger/90"
           >
-            Delete
+            {t("Delete")}
           </button>
         </div>
       </div>

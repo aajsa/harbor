@@ -1,4 +1,3 @@
-import { useT } from "@/lib/i18n";
 import { Globe, Library, Star } from "lucide-react";
 import { useRef, useState } from "react";
 import traktLogo from "@/assets/trakt.svg";
@@ -13,6 +12,7 @@ import {
   type FieldStatus,
 } from "./webhooks-panel/webhook-field";
 import { TelegramComposedField } from "./webhooks-panel/telegram-field";
+import { useT } from "@/lib/i18n";
 
 const idleStatus: FieldStatus = { state: "idle", message: null };
 
@@ -95,7 +95,11 @@ export function WebhooksPanel() {
     inFlightRef.current[kind] = true;
     setStatus({ state: "busy", message: t("Sending…") });
     const testPayload: WebhookPayload = {
-      text: `Harbor test message (${kind === "discord" ? "Discord" : "Telegram"}). If you can read this, your webhook is wired up.`,
+      text: t(
+        kind === "discord"
+          ? "Harbor test message (Discord). If you can read this, your webhook is wired up."
+          : "Harbor test message (Telegram). If you can read this, your webhook is wired up."
+      ),
       items: [],
     };
     try {
@@ -219,7 +223,7 @@ function SourceToggle({
         <div className="flex min-w-0 flex-col gap-0.5">
           <span className="text-[13.5px] font-semibold text-ink">{t(source.label)}</span>
           <span className={`text-[12px] ${blocker ? "text-amber-200/85" : "text-ink-subtle"}`}>
-            {blocker ? t(blocker) : t(source.description)}
+            {t(blocker ?? source.description)}
           </span>
         </div>
       </div>
@@ -248,6 +252,7 @@ function ChipToggle({
   on: boolean;
   onToggle: (v: boolean) => void;
 }) {
+  const t = useT();
   return (
     <button
       onClick={() => onToggle(!on)}
@@ -255,7 +260,7 @@ function ChipToggle({
         on ? "bg-ink text-canvas" : "border border-edge-soft text-ink-muted hover:border-edge hover:text-ink"
       }`}
     >
-      {label}
+      {t(label)}
     </button>
   );
 }

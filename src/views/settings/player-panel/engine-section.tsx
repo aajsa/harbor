@@ -1,10 +1,10 @@
-import { useT } from "@/lib/i18n";
 import { isWindowsDesktop } from "@/lib/platform";
 import { useSettings } from "@/lib/settings";
 import { ToggleRow } from "../shared";
 import { Anime4kShaderList } from "./anime4k-shader-list";
 import { BandwidthInput } from "./bandwidth-section";
 import { DesktopOnlyBlock, isTauri } from "./internals";
+import { useT } from "@/lib/i18n";
 
 export function PlayerEnginePanel() {
   const t = useT();
@@ -19,19 +19,19 @@ export function PlayerEnginePanel() {
   }> = [
     {
       id: "auto",
-      label: "Auto",
-      sub: "mpv on the desktop app, HTML5 in the browser. The right engine without thinking about it.",
+      label: t("Auto"),
+      sub: t("mpv on the desktop app, HTML5 in the browser. The right engine without thinking about it."),
       recommended: true,
     },
     {
       id: "html5",
-      label: "HTML5",
-      sub: "Native webview playback. Smooth and integrated, but limited codec coverage.",
+      label: t("HTML5"),
+      sub: t("Native webview playback. Smooth and integrated, but limited codec coverage."),
     },
     {
       id: "mpv",
-      label: "mpv",
-      sub: "Bundled with Harbor. Plays anything you throw at it.",
+      label: t("mpv"),
+      sub: t("Bundled with Harbor. Plays anything you throw at it."),
     },
   ];
 
@@ -64,7 +64,7 @@ export function PlayerEnginePanel() {
                       <span className="text-[15px] font-semibold text-ink">{c.label}</span>
                       {c.recommended && (
                         <span className="rounded-md bg-accent/15 px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wider text-accent">
-                          Recommended
+                          {t("Recommended")}
                         </span>
                       )}
                     </div>
@@ -109,14 +109,14 @@ export function PlayerEnginePanel() {
             sub={t("When you have no debrid set up, or a torrent isn't cached, stream it straight from the bundled engine on localhost:11470. This connects to peers over your own connection, the same way Stremio's built-in streaming does.")}
             value={settings.directTorrentStream}
             onChange={(v) => update({ directTorrentStream: v })}
-            lockReason={strictRemote ? "Disabled while strict remote streaming is on" : undefined}
+            lockReason={strictRemote ? t("Disabled while strict remote streaming is on") : undefined}
           />
           <ToggleRow
             label={t("Use Harbor's built-in engine (beta)")}
             sub={t("Stream torrents through Harbor's own Rust peer-to-peer engine instead of the bundled Stremio Server. Falls back automatically if it can't connect. Status and a self-test live in the Local engine card below.")}
             value={settings.localEngine}
             onChange={(v) => update({ localEngine: v })}
-            lockReason={strictRemote ? "Disabled while strict remote streaming is on" : undefined}
+            lockReason={strictRemote ? t("Disabled while strict remote streaming is on") : undefined}
           />
           <ToggleRow
             label={t("Always re-encode when casting (recommended)")}

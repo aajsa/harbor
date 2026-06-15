@@ -2,22 +2,23 @@ import { Plus, Trash2, X, Zap } from "lucide-react";
 import { useState } from "react";
 import { MOVIE_GENRES } from "@/lib/feed/tags";
 import type { Settings, WebhookTrigger } from "@/lib/settings";
+import { useT } from "@/lib/i18n";
 
 type Rule = Settings["webhookRules"][number];
 type TrackedPerson = Settings["customCalendar"]["trackedPeople"][number];
 
-const EVENT_LABELS: Record<WebhookTrigger["event"], string> = {
-  newMovie: "A new movie comes out",
-  newSeries: "A new series comes out",
-  newAnime: "A new anime comes out",
-  fromTrackedPerson: "Someone I track has a new release",
-  fromGenre: "A specific genre releases",
-  fromProvider: "A streamer releases something",
-  fromCountry: "A country releases something",
-  fromTraktAnticipated: "Trakt anticipated picks up something",
-  fromTraktWatchlist: "My Trakt watchlist updates",
-  liveTvEvent: "A Live TV program is about to start",
-};
+const EVENT_LABELS: (t: ReturnType<typeof useT>) => Record<WebhookTrigger["event"], string> = (t) => ({
+  newMovie: t("A new movie comes out"),
+  newSeries: t("A new series comes out"),
+  newAnime: t("A new anime comes out"),
+  fromTrackedPerson: t("Someone I track has a new release"),
+  fromGenre: t("A specific genre releases"),
+  fromProvider: t("A streamer releases something"),
+  fromCountry: t("A country releases something"),
+  fromTraktAnticipated: t("Trakt anticipated picks up something"),
+  fromTraktWatchlist: t("My Trakt watchlist updates"),
+  liveTvEvent: t("A Live TV program is about to start"),
+});
 
 const EVENT_ORDER: WebhookTrigger["event"][] = [
   "newMovie",
@@ -72,38 +73,38 @@ function defaultTrigger(event: WebhookTrigger["event"]): WebhookTrigger {
   }
 }
 
-function describeTrigger(t: WebhookTrigger, trackedPeople: TrackedPerson[]): string {
+function describeTrigger(t: WebhookTrigger, trackedPeople: TrackedPerson[], trans: ReturnType<typeof useT>): string {
   switch (t.event) {
-    case "newMovie": return "Any new movie";
-    case "newSeries": return "Any new series";
-    case "newAnime": return "Any new anime";
+    case "newMovie": return trans("Any new movie");
+    case "newSeries": return trans("Any new series");
+    case "newAnime": return trans("Any new anime");
     case "fromTrackedPerson": {
       const ids = t.personIds ?? [];
-      if (ids.length === 0) return `Any of your ${trackedPeople.length} tracked people`;
+      if (ids.length === 0) return trans("Any of your {n} tracked people").replace("{n}", String(trackedPeople.length));
       const names = ids
         .map((id) => trackedPeople.find((p) => p.id === id)?.name)
         .filter(Boolean) as string[];
-      return names.join(", ") || "Tracked people";
+      return names.join(", ") || trans("Tracked people");
     }
     case "fromGenre":
       return t.genreIds.length === 0
-        ? "Any genre"
-        : `${t.mediaType === "movie" ? "Movies" : "Series"}: ${t.genreIds
+        ? trans("Any genre")
+        : `${t.mediaType === "movie" ? trans("Movies") : trans("Series")}: ${t.genreIds
             .map((id) => Object.entries(MOVIE_GENRES).find(([, gid]) => gid === id)?.[0])
             .filter(Boolean)
             .join(", ")}`;
     case "fromProvider":
       return t.providerIds.length === 0
-        ? "Any streamer"
+        ? trans("Any streamer")
         : t.providerIds.map((id) => PROVIDERS.find((p) => p.id === id)?.name).filter(Boolean).join(", ");
     case "fromCountry":
       return t.countryCodes.length === 0
-        ? "Any country"
+        ? trans("Any country")
         : t.countryCodes.map((c) => COUNTRIES.find((x) => x.code === c)?.name ?? c).join(", ");
-    case "fromTraktAnticipated": return "Trakt anticipated";
-    case "fromTraktWatchlist": return "Your Trakt watchlist";
+    case "fromTraktAnticipated": return trans("Trakt anticipated");
+    case "fromTraktWatchlist": return trans("Your Trakt watchlist");
     case "liveTvEvent":
-      return `Live TV · ${t.favoritesOnly ? "favorites" : "all channels"} · ${t.leadMinutes ?? 15} min lead`;
+      return `${trans("Live TV")} · ${t.favoritesOnly ? trans("favorites") : trans("all channels")} · ${trans("{n} min lead").replace("{n}", String(t.leadMinutes ?? 15))}`;
   }
 }
 
@@ -124,6 +125,7 @@ export function RuleBuilder({
   canDiscord: boolean;
   canTelegram: boolean;
 }) {
+  const t = useT();
   const [editing, setEditing] = useState<Rule | null>(null);
 
   const upsert = (rule: Rule) => {
@@ -150,10 +152,10 @@ export function RuleBuilder({
         <div className="flex flex-col gap-1">
           <span className="flex items-center gap-1.5 text-[11.5px] font-bold uppercase tracking-[0.16em] text-ink-subtle">
             <Zap size={11} strokeWidth={2.3} />
-            Automations
+            {t("Automations")}
           </span>
           <p className="text-[12.5px] text-ink-muted">
-            Each rule fires independently. Define what triggers a ping and where it goes.
+            {t("Each rule fires independently. Define what triggers a ping and where it goes.")}
           </p>
         </div>
         <button
@@ -163,17 +165,17 @@ export function RuleBuilder({
           className="flex h-9 items-center gap-1.5 rounded-full bg-ink px-3.5 text-[12.5px] font-semibold text-canvas transition-opacity hover:opacity-90 disabled:opacity-40"
         >
           <Plus size={13} strokeWidth={2.4} />
-          New rule
+          {t("New rule")}
         </button>
       </div>
       {!canDiscord && !canTelegram && (
         <div className="rounded-lg border border-amber-200/30 bg-amber-200/5 px-3 py-2 text-[11.5px] text-amber-200/85">
-          Add a Discord or Telegram URL above before creating rules.
+          {t("Add a Discord or Telegram URL above before creating rules.")}
         </div>
       )}
       {rules.length === 0 ? (
         <div className="rounded-lg border border-dashed border-edge-soft/60 bg-canvas/20 px-3 py-6 text-center text-[12.5px] text-ink-subtle">
-          No automations yet. Hit New rule to wire one up.
+          {t("No automations yet. Hit New rule to wire one up.")}
         </div>
       ) : (
         <ul className="flex flex-col gap-2">
@@ -204,13 +206,13 @@ export function RuleBuilder({
               </button>
               <div className="flex min-w-0 flex-1 flex-col">
                 <span className="truncate text-[13px] font-semibold text-ink">
-                  {r.name || EVENT_LABELS[r.trigger.event]}
+                  {r.name || EVENT_LABELS(t)[r.trigger.event]}
                 </span>
                 <span className="truncate text-[11.5px] text-ink-subtle">
-                  {describeTrigger(r.trigger, trackedPeople)} →{" "}
+                  {describeTrigger(r.trigger, trackedPeople, t)} →{" "}
                   {[r.channels.discord && "Discord", r.channels.telegram && "Telegram"]
                     .filter(Boolean)
-                    .join(" + ") || "no channel"}
+                    .join(" + ") || t("no channel")}
                 </span>
               </div>
               <button
@@ -218,7 +220,7 @@ export function RuleBuilder({
                 onClick={() => setEditing(r)}
                 className="rounded-full px-2.5 py-1 text-[11.5px] font-medium text-ink-muted hover:bg-canvas/60 hover:text-ink"
               >
-                Edit
+                {t("Edit")}
               </button>
               <button
                 type="button"
@@ -262,6 +264,7 @@ function RuleEditor({
   onSave: (rule: Rule) => void;
   onCancel: () => void;
 }) {
+  const t = useT();
   const [draft, setDraft] = useState<Rule>(rule);
 
   const setEvent = (event: WebhookTrigger["event"]) => {
@@ -273,7 +276,7 @@ function RuleEditor({
       <div className="flex max-h-[88vh] w-full max-w-[560px] flex-col gap-5 overflow-y-auto rounded-2xl border border-edge-soft bg-elevated p-6 shadow-[0_28px_80px_-20px_rgba(0,0,0,0.7)]">
         <div className="flex items-start justify-between">
           <h2 className="text-[18px] font-semibold text-ink">
-            {rule.name ? "Edit rule" : "New rule"}
+            {rule.name ? t("Edit rule") : t("New rule")}
           </h2>
           <button
             type="button"
@@ -285,18 +288,18 @@ function RuleEditor({
           </button>
         </div>
 
-        <Field label="Name">
+        <Field label={t("Name")}>
           <input
             type="text"
             value={draft.name}
             onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-            placeholder={EVENT_LABELS[draft.trigger.event]}
+            placeholder={EVENT_LABELS(t)[draft.trigger.event]}
             maxLength={80}
             className="h-11 w-full rounded-xl border border-edge bg-canvas px-3.5 text-[13px] text-ink placeholder:text-ink-subtle outline-none focus:border-ink"
           />
         </Field>
 
-        <Field label="WHEN">
+        <Field label={t("WHEN")}>
           <select
             value={draft.trigger.event}
             onChange={(e) => setEvent(e.target.value as WebhookTrigger["event"])}
@@ -304,7 +307,7 @@ function RuleEditor({
           >
             {EVENT_ORDER.map((ev) => (
               <option key={ev} value={ev}>
-                {EVENT_LABELS[ev]}
+                {EVENT_LABELS(t)[ev]}
               </option>
             ))}
           </select>
@@ -313,18 +316,18 @@ function RuleEditor({
         {draft.trigger.event === "fromGenre" && (
           <TriggerSubFields>
             <SubSelect
-              label="Media type"
+              label={t("Media type")}
               value={draft.trigger.mediaType}
               options={[
-                { value: "movie", label: "Movies" },
-                { value: "tv", label: "Series" },
+                { value: "movie", label: t("Movies") },
+                { value: "tv", label: t("Series") },
               ]}
               onChange={(v) =>
                 setDraft({ ...draft, trigger: { ...(draft.trigger as Extract<WebhookTrigger, { event: "fromGenre" }>), mediaType: v as "movie" | "tv" } })
               }
             />
             <SubChips
-              label="Genres"
+              label={t("Genres")}
               items={Object.entries(MOVIE_GENRES).map(([name, id]) => ({
                 key: String(id),
                 label: name,
@@ -344,7 +347,7 @@ function RuleEditor({
         {draft.trigger.event === "fromProvider" && (
           <TriggerSubFields>
             <SubChips
-              label="Streamers"
+              label={t("Streamers")}
               items={PROVIDERS.map((p) => ({
                 key: String(p.id),
                 label: p.name,
@@ -364,7 +367,7 @@ function RuleEditor({
         {draft.trigger.event === "fromCountry" && (
           <TriggerSubFields>
             <SubChips
-              label="Countries"
+              label={t("Countries")}
               items={COUNTRIES.map((c) => ({
                 key: c.code,
                 label: c.name,
@@ -393,11 +396,11 @@ function RuleEditor({
                 }}
                 className="h-4 w-4 accent-ink"
               />
-              <span className="text-[12.5px] text-ink">Only my favorited channels</span>
+              <span className="text-[12.5px] text-ink">{t("Only my favorited channels")}</span>
             </label>
             <label className="flex items-center gap-3">
               <span className="w-[140px] shrink-0 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-subtle">
-                Heads up
+                {t("Heads up")}
               </span>
               <select
                 value={String(
@@ -417,21 +420,21 @@ function RuleEditor({
               </select>
             </label>
             <p className="text-[11.5px] text-ink-subtle">
-              Harbor scans your IPTV playlists' EPG every 30 min for programs about to start.
+              {t("Harbor scans your IPTV playlists' EPG every 30 min for programs about to start.")}
             </p>
           </TriggerSubFields>
         )}
 
         {draft.trigger.event === "fromTrackedPerson" && trackedPeople.length === 0 && (
           <div className="rounded-lg border border-amber-200/30 bg-amber-200/5 px-3 py-2 text-[12px] text-amber-200/85">
-            Add people in the Custom calendar manager first, then come back here.
+            {t("Add people in the Custom calendar manager first, then come back here.")}
           </div>
         )}
 
         {draft.trigger.event === "fromTrackedPerson" && trackedPeople.length > 0 && (
           <TriggerSubFields>
             <SubChips
-              label="People (empty = all tracked)"
+              label={t("People (empty = all tracked)")}
               items={trackedPeople.map((p) => ({
                 key: String(p.id),
                 label: p.name,
@@ -449,7 +452,7 @@ function RuleEditor({
           </TriggerSubFields>
         )}
 
-        <Field label="THEN notify on">
+        <Field label={t("THEN notify on")}>
           <div className="flex gap-2">
             <ChannelToggle
               label="Discord"
@@ -472,7 +475,7 @@ function RuleEditor({
             onClick={onCancel}
             className="h-10 rounded-xl px-4 text-[13px] font-medium text-ink-muted hover:text-ink"
           >
-            Cancel
+            {t("Cancel")}
           </button>
           <button
             type="button"
@@ -480,7 +483,7 @@ function RuleEditor({
             disabled={!draft.channels.discord && !draft.channels.telegram}
             className="h-10 rounded-xl bg-ink px-5 text-[13px] font-semibold text-canvas transition-opacity hover:opacity-90 disabled:opacity-40"
           >
-            Save rule
+            {t("Save rule")}
           </button>
         </div>
       </div>
