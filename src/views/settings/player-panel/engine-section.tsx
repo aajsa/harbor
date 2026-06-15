@@ -1,3 +1,4 @@
+import { useT } from "@/lib/i18n";
 import { isWindowsDesktop } from "@/lib/platform";
 import { useSettings } from "@/lib/settings";
 import { ToggleRow } from "../shared";
@@ -6,6 +7,7 @@ import { BandwidthInput } from "./bandwidth-section";
 import { DesktopOnlyBlock, isTauri } from "./internals";
 
 export function PlayerEnginePanel() {
+  const t = useT();
   const { settings, update } = useSettings();
   const strictRemote = !!settings.remoteStreamServerUrl && settings.remoteStreamServerStrict;
 
@@ -77,54 +79,54 @@ export function PlayerEnginePanel() {
       <DesktopOnlyBlock>
         <div className="flex flex-col gap-2">
           <ToggleRow
-            label="Embed mpv inside Harbor window"
-            sub="Renders mpv inline so playback lives in Harbor itself. Disable to open it in a separate window instead."
+            label={t("Embed mpv inside Harbor window")}
+            sub={t("Renders mpv inline so playback lives in Harbor itself. Disable to open it in a separate window instead.")}
             value={settings.playerMpvEmbed}
             onChange={(v) => update({ playerMpvEmbed: v })}
           />
           <ToggleRow
-            label="HDR-to-SDR tonemapping"
-            sub="Maps HDR sources to SDR using bt.2446a. Recommended on SDR displays."
+            label={t("HDR-to-SDR tonemapping")}
+            sub={t("Maps HDR sources to SDR using bt.2446a. Recommended on SDR displays.")}
             value={settings.playerHdrToSdr}
             onChange={(v) => update({ playerHdrToSdr: v })}
           />
           {isWindowsDesktop() && (
             <ToggleRow
-              label="Line-free video mode"
-              sub="Forces a compatibility present mode that removes a thin bright line some monitors show at the screen edge. Side effects: 4K playback can drop to a slideshow and HDR content looks dimmer (this mode bypasses the HDR display path). Leave OFF unless you see that line. Restart playback to apply."
+              label={t("Line-free video mode")}
+              sub={t("Forces a compatibility present mode that removes a thin bright line some monitors show at the screen edge. Side effects: 4K playback can drop to a slideshow and HDR content looks dimmer (this mode bypasses the HDR display path). Leave OFF unless you see that line. Restart playback to apply.")}
               value={settings.playerD3d11Flip}
               onChange={(v) => update({ playerD3d11Flip: v })}
             />
           )}
           <ToggleRow
-            label="Motion smoothing"
-            sub="Interpolates frames for smoother panning, best on anime. Needs a display refresh rate above the video's frame rate, and can stutter on weak GPUs. mpv only."
+            label={t("Motion smoothing")}
+            sub={t("Interpolates frames for smoother panning, best on anime. Needs a display refresh rate above the video's frame rate, and can stutter on weak GPUs. mpv only.")}
             value={settings.playerMotionInterp}
             onChange={(v) => update({ playerMotionInterp: v })}
           />
           <ToggleRow
-            label="Direct torrent streaming"
-            sub="When you have no debrid set up, or a torrent isn't cached, stream it straight from the bundled engine on localhost:11470. This connects to peers over your own connection, the same way Stremio's built-in streaming does."
+            label={t("Direct torrent streaming")}
+            sub={t("When you have no debrid set up, or a torrent isn't cached, stream it straight from the bundled engine on localhost:11470. This connects to peers over your own connection, the same way Stremio's built-in streaming does.")}
             value={settings.directTorrentStream}
             onChange={(v) => update({ directTorrentStream: v })}
             lockReason={strictRemote ? "Disabled while strict remote streaming is on" : undefined}
           />
           <ToggleRow
-            label="Use Harbor's built-in engine (beta)"
-            sub="Stream torrents through Harbor's own Rust peer-to-peer engine instead of the bundled Stremio Server. Falls back automatically if it can't connect. Status and a self-test live in the Local engine card below."
+            label={t("Use Harbor's built-in engine (beta)")}
+            sub={t("Stream torrents through Harbor's own Rust peer-to-peer engine instead of the bundled Stremio Server. Falls back automatically if it can't connect. Status and a self-test live in the Local engine card below.")}
             value={settings.localEngine}
             onChange={(v) => update({ localEngine: v })}
             lockReason={strictRemote ? "Disabled while strict remote streaming is on" : undefined}
           />
           <ToggleRow
-            label="Always re-encode when casting (recommended)"
-            sub="On by default. Pipes every cast through ffmpeg as H.264 + AAC + MPEG-TS so Samsung, LG, Sony, and other DLNA TVs accept the stream regardless of source codec. Turn off only if you have a beefy receiver that handles raw HEVC/DTS and want max quality. Requires ffmpeg in PATH."
+            label={t("Always re-encode when casting (recommended)")}
+            sub={t("On by default. Pipes every cast through ffmpeg as H.264 + AAC + MPEG-TS so Samsung, LG, Sony, and other DLNA TVs accept the stream regardless of source codec. Turn off only if you have a beefy receiver that handles raw HEVC/DTS and want max quality. Requires ffmpeg in PATH.")}
             value={settings.castAlwaysTranscode}
             onChange={(v) => update({ castAlwaysTranscode: v })}
           />
           <ToggleRow
-            label="Anime4K upscaling"
-            sub="Sharper lines and cleaner gradients on anime, in real time. One-tap setup below."
+            label={t("Anime4K upscaling")}
+            sub={t("Sharper lines and cleaner gradients on anime, in real time. One-tap setup below.")}
             value={settings.playerAnime4k}
             onChange={(v) => update({ playerAnime4k: v })}
           />

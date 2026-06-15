@@ -1,7 +1,9 @@
+import { useT } from "@/lib/i18n";
 import { PLAYER_SHELLS } from "@/lib/player-shells/registry";
 import { useSettings } from "@/lib/settings";
 
 export function ShellSection() {
+  const t = useT();
   const { settings, update } = useSettings();
   return (
     <div className="flex flex-col gap-2.5">

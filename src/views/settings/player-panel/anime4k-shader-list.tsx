@@ -1,3 +1,4 @@
+import { useT } from "@/lib/i18n";
 import { Check, Download, Loader2, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { anime4kDir, downloadAnime4k } from "@/lib/anime4k";
@@ -10,6 +11,7 @@ import {
 import { useSettings } from "@/lib/settings";
 
 export function Anime4kShaderList() {
+  const t = useT();
   const { settings, update } = useSettings();
   const folder = settings.playerAnime4kFolder;
   const mode = (settings.playerAnime4kMode as Anime4kMode) || "A";
@@ -88,8 +90,8 @@ export function Anime4kShaderList() {
       ) : (
         <>
           <div className="flex items-center gap-1 self-start rounded-full bg-elevated/50 p-1 ring-1 ring-edge-soft/60">
-            <TierBtn active={tier === "hq"} onClick={() => pickTier("hq")} label="Quality" />
-            <TierBtn active={tier === "fast"} onClick={() => pickTier("fast")} label="Performance" />
+            <TierBtn active={tier === "hq"} onClick={() => pickTier("hq")} label={t("Quality")} />
+            <TierBtn active={tier === "fast"} onClick={() => pickTier("fast")} label={t("Performance")} />
           </div>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {ANIME4K_MODES.map((m) => {

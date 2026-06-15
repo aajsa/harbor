@@ -1,3 +1,4 @@
+import { useT } from "@/lib/i18n";
 import { Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import cloudflareLogo from "@/assets/cloudflare.webp";
@@ -106,6 +107,7 @@ function SpeedResultBadge({ value }: { value: string }) {
 }
 
 export function SpeedTestButton() {
+  const t = useT();
   if (!isTauri) {
     return (
       <span className="flex h-8 shrink-0 items-center rounded-full border border-edge-soft px-3 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-ink-subtle">

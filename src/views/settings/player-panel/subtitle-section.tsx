@@ -1,3 +1,4 @@
+import { useT } from "@/lib/i18n";
 import { Plus, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import godfatherStill from "@/assets/godfather-offer.svg";
@@ -7,6 +8,7 @@ import { ToggleRow } from "../shared";
 import { Label, SubField, previewFamily } from "./internals";
 
 export function SubtitleStylePanel() {
+  const t = useT();
   const { settings, update } = useSettings();
 
   const styles: Array<{ id: "shadow" | "outline" | "box"; label: string; sub: string }> = [
@@ -108,7 +110,7 @@ export function SubtitleStylePanel() {
       </div>
 
       {settings.subStyle === "box" && (
-        <SubField label="Background opacity" value={`${Math.round(settings.subBoxOpacity * 100)}%`}>
+        <SubField label={t("Background opacity")} value={`${Math.round(settings.subBoxOpacity * 100)}%`}>
           <input
             type="range"
             min={0.2}
@@ -122,7 +124,7 @@ export function SubtitleStylePanel() {
       )}
 
       {settings.subStyle === "outline" && (
-        <SubField label="Outline thickness" value={`${settings.subBorderSize}px`}>
+        <SubField label={t("Outline thickness")} value={`${settings.subBorderSize}px`}>
           <input
             type="range"
             min={1}
@@ -138,13 +140,13 @@ export function SubtitleStylePanel() {
       <FontPicker />
 
       <ToggleRow
-        label="Show subtitles in Picture-in-Picture"
-        sub="Hide subtitles when the player shrinks into the floating PiP window."
+        label={t("Show subtitles in Picture-in-Picture")}
+        sub={t("Hide subtitles when the player shrinks into the floating PiP window.")}
         value={settings.subShowInPip}
         onChange={(v) => update({ subShowInPip: v })}
       />
 
-      <SubField label="Size" value={`${settings.subFontSize}px`}>
+      <SubField label={t("Size")} value={`${settings.subFontSize}px`}>
         <input
           type="range"
           min={16}
@@ -156,7 +158,7 @@ export function SubtitleStylePanel() {
         />
       </SubField>
 
-      <SubField label="Opacity" value={`${Math.round((settings.subOpacity ?? 1) * 100)}%`}>
+      <SubField label={t("Opacity")} value={`${Math.round((settings.subOpacity ?? 1) * 100)}%`}>
         <input
           type="range"
           min={0.2}
@@ -171,7 +173,7 @@ export function SubtitleStylePanel() {
         />
       </SubField>
 
-      <SubField label="Distance from bottom" value={`${settings.subMarginY}%`}>
+      <SubField label={t("Distance from bottom")} value={`${settings.subMarginY}%`}>
         <input
           type="range"
           min={0}

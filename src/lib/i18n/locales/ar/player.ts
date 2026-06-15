@@ -97,24 +97,6 @@ const player: Record<string, string> = {
     "لا يوجد صوت: صيغة صوت هذا البث (غالبًا Dolby أو DTS) غير مدعومة في محرك HTML5.",
   "This file is flagged as not web-playable. Try the mpv backend in Settings or pick another stream.":
     "هذا الملف موسوم بأنه غير قابل للتشغيل عبر الويب. جرّب محرك mpv في الإعدادات أو اختر بثًا آخر.",
-
-  "Casting comes with the mpv backend": "البثّ متاح مع محرك mpv",
-  "Cast to TV or speaker": "البثّ إلى التلفاز أو السمّاعة",
-  "Burn in subtitles": "دمج الترجمة في الصورة",
-  "Subtitles are baked into the picture so they always show. Re-encodes the video.":
-    "تُدمج الترجمة داخل الصورة لتظهر دائمًا. يُعاد ترميز الفيديو.",
-  "Subtitles may not appear on the TV.": "قد لا تظهر الترجمة على التلفاز.",
-  "Scanning your network…": "جارٍ فحص شبكتك…",
-  "No Chromecast, DLNA, or Roku devices found. Make sure your TV is on, woken up, and on the same Wi-Fi.":
-    "لم يُعثر على أجهزة Chromecast أو DLNA أو Roku. تأكّد من أن التلفاز قيد التشغيل ونشط وعلى الشبكة اللاسلكية نفسها.",
-  "Scan again": "إعادة الفحص",
-  "Rescan": "إعادة الفحص",
-  "DLNA TV": "تلفاز DLNA",
-
-  "About this title": "عن هذا العنوان",
-  "Add a TMDB key in Settings to see the cast for every title.":
-    "أضف مفتاح TMDB في الإعدادات لرؤية طاقم العمل لكل عنوان.",
-  "Cast information isn't available for this title.": "معلومات طاقم العمل غير متوفّرة لهذا العنوان.",
 };
 
 export default player;

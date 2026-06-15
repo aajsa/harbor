@@ -1,8 +1,10 @@
+import { useT } from "@/lib/i18n";
 import type { ReactNode } from "react";
 
 export const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
 export function DesktopOnlyBlock({ children }: { children: ReactNode }) {
+  const t = useT();
   if (isTauri) return <>{children}</>;
   return (
     <div className="relative">
@@ -17,6 +19,7 @@ export function DesktopOnlyBlock({ children }: { children: ReactNode }) {
 }
 
 export function Label({ children }: { children: React.ReactNode }) {
+  const t = useT();
   return (
     <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-subtle">
       {children}
@@ -33,6 +36,7 @@ export function SubField({
   value?: string;
   children: React.ReactNode;
 }) {
+  const t = useT();
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">

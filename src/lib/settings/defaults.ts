@@ -199,6 +199,6 @@ export const DEFAULT: Settings = {
   cropMode: "fit",
   customLists: [],
   pauseListStatusOnPause: false,
-  translateTitles: true,
+  translateTitles: false,
   translateDescriptions: true,
 };

@@ -1,3 +1,4 @@
+import { useT } from "@/lib/i18n";
 import { Film, Maximize, Minimize, Save, Tv, Users, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -81,6 +82,7 @@ export function EditorOverlay({
   onImportProfile,
   onResetToDefaults,
 }: Props) {
+  const t = useT();
   const chromeRef = useRef<HTMLDivElement>(null);
   const [chromeW, setChromeW] = useState(0);
   const [winSize, setWinSize] = useState(() => ({
@@ -263,7 +265,7 @@ export function EditorOverlay({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close editor"
+            aria-label={t("Close editor")}
             className="flex h-11 items-center gap-2 rounded-full border border-white/15 bg-white/8 ps-3 pe-5 text-[13px] font-medium text-white/85 transition-colors hover:bg-white/15 hover:text-white"
           >
             <X size={15} strokeWidth={2.4} />

@@ -1,3 +1,4 @@
+import { useT } from "@/lib/i18n";
 import { Check, Loader2, Play, RotateCw, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSettings } from "@/lib/settings";
@@ -26,6 +27,7 @@ function engineState(status: EngineStatus | null): EngineState {
 }
 
 export function LocalEngineSection() {
+  const t = useT();
   const { settings } = useSettings();
   const strictRemote = !!settings.remoteStreamServerUrl && settings.remoteStreamServerStrict;
   const [status, setStatus] = useState<EngineStatus | null>(null);

@@ -1,3 +1,4 @@
+import { useT } from "@/lib/i18n";
 import type { PlayerChromeConfig, TimeFormat, VolumeStyle } from "@/lib/player-chrome";
 
 const TIME_OPTIONS: Array<{ id: TimeFormat; label: string; sub: string }> = [
@@ -19,18 +20,19 @@ type Props = {
 };
 
 export function OptionsSection({ config, onTimeFormat, onVolumeStyle }: Props) {
+  const t = useT();
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
       <OptionCard
-        title="Time format"
-        sub="What the clock labels show on the seek bar."
+        title={t("Time format")}
+        sub={t("What the clock labels show on the seek bar.")}
         value={config.options.timeFormat}
         options={TIME_OPTIONS}
         onChange={onTimeFormat}
       />
       <OptionCard
-        title="Volume control"
-        sub="How the volume widget behaves on click and hover."
+        title={t("Volume control")}
+        sub={t("How the volume widget behaves on click and hover.")}
         value={config.options.volumeStyle}
         options={VOLUME_OPTIONS}
         onChange={onVolumeStyle}

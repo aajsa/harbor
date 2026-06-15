@@ -1,3 +1,4 @@
+import { useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
 import { SpeedTestButton } from "./speed-test";
 
@@ -12,6 +13,7 @@ const BANDWIDTH_PRESETS: Array<{ value: number; label: string }> = [
 ];
 
 export function BandwidthInput() {
+  const t = useT();
   const { settings, update } = useSettings();
   const cap = settings.bandwidthMbps;
   const summary =

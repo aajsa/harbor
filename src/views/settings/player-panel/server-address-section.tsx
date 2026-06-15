@@ -1,3 +1,4 @@
+import { useT } from "@/lib/i18n";
 import { Check, Copy, ExternalLink, Loader2, Play, RotateCw, Square } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
@@ -104,6 +105,7 @@ function ControlButton({
 }
 
 export function ServerAddressSection() {
+  const t = useT();
   const { settings, update } = useSettings();
   const [lanIp, setLanIp] = useState<string | null>(null);
   const [engine, setEngine] = useState<EngineState>("checking");
@@ -184,21 +186,21 @@ export function ServerAddressSection() {
         </span>
       </div>
 
-      <AddressRow label="On this computer" url={BUNDLED_SERVER_URL} openable={running} />
-      {lanIp && <AddressRow label="From other devices on your Wi-Fi" url={`http://${lanIp}:11470`} />}
+      <AddressRow label={t("On this computer")} url={BUNDLED_SERVER_URL} openable={running} />
+      {lanIp && <AddressRow label={t("From other devices on your Wi-Fi")} url={`http://${lanIp}:11470`} />}
 
       <div className="flex items-center gap-2">
         {running ? (
           <>
             <ControlButton
               icon={<Square size={13} strokeWidth={2} />}
-              label="Stop"
+              label={t("Stop")}
               busy={acting}
               onClick={() => void stop()}
             />
             <ControlButton
               icon={<RotateCw size={13} strokeWidth={2} />}
-              label="Restart"
+              label={t("Restart")}
               busy={acting}
               onClick={() => void start()}
             />
@@ -206,7 +208,7 @@ export function ServerAddressSection() {
         ) : (
           <ControlButton
             icon={<Play size={13} strokeWidth={2} />}
-            label="Start server"
+            label={t("Start server")}
             busy={acting || engine === "checking"}
             onClick={() => void start()}
           />
@@ -216,15 +218,15 @@ export function ServerAddressSection() {
       <div className="h-px bg-edge-soft" />
 
       <ToggleRow
-        label="Harbor in your browser"
-        sub="Serves this exact install of Harbor as a web app on your network. Open it on a phone, laptop, or TV browser, sign in there, and it streams through this computer."
+        label={t("Harbor in your browser")}
+        sub={t("Serves this exact install of Harbor as a web app on your network. Open it on a phone, laptop, or TV browser, sign in there, and it streams through this computer.")}
         value={settings.serveWebUi}
         onChange={(v) => update({ serveWebUi: v })}
       />
       {settings.serveWebUi && (
         <>
-          <AddressRow label="On this computer" url={`http://127.0.0.1:${WEB_PORT}`} openable />
-          {lanIp && <AddressRow label="From any browser on your Wi-Fi" url={`http://${lanIp}:${WEB_PORT}`} />}
+          <AddressRow label={t("On this computer")} url={`http://127.0.0.1:${WEB_PORT}`} openable />
+          {lanIp && <AddressRow label={t("From any browser on your Wi-Fi")} url={`http://${lanIp}:${WEB_PORT}`} />}
           {webError && (
             <span className="text-[12px] text-danger">
               Couldn't start on port {WEB_PORT}. Another app may be using it; toggle off and on to retry.

@@ -1,3 +1,4 @@
+import { useT } from "@/lib/i18n";
 import { RotateCcw } from "lucide-react";
 import { useRef, useState } from "react";
 import seekPreviewBg from "@/assets/preview/seek-preview.png";
@@ -36,6 +37,7 @@ const PRESET_COLORS = [
 ];
 
 export function SeekBarPanel() {
+  const t = useT();
   const { settings, update } = useSettings();
 
   const heightVal = settings.seekBarHeight ?? 6;
@@ -47,14 +49,14 @@ export function SeekBarPanel() {
   return (
     <div className="flex flex-col gap-7">
       <ToggleRow
-        label="Show thumbnail preview on hover"
-        sub="Generates a frame on the fly as you scrub the seek bar. Works on debrid streams and local files."
+        label={t("Show thumbnail preview on hover")}
+        sub={t("Generates a frame on the fly as you scrub the seek bar. Works on debrid streams and local files.")}
         value={settings.seekPreviewEnabled}
         onChange={(v) => update({ seekPreviewEnabled: v })}
       />
       <Preview settings={settings} />
 
-      <SubField label="Bar style">
+      <SubField label={t("Bar style")}>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {STYLES.map((s) => (
             <PickTile
@@ -73,7 +75,7 @@ export function SeekBarPanel() {
         )}
       </SubField>
 
-      <SubField label="Bar height" value={`${heightVal}px`}>
+      <SubField label={t("Bar height")} value={`${heightVal}px`}>
         <input
           type="range"
           min={3}
@@ -85,7 +87,7 @@ export function SeekBarPanel() {
         />
       </SubField>
 
-      <SubField label="Bar color">
+      <SubField label={t("Bar color")}>
         <div className="flex flex-wrap items-center gap-2">
           {PRESET_COLORS.map((c) => {
             const isSel = (accent || "") === c;
@@ -127,7 +129,7 @@ export function SeekBarPanel() {
         </div>
       </SubField>
 
-      <SubField label="Bar image">
+      <SubField label={t("Bar image")}>
         <SeekImageUpload
           value={settings.seekBarImage}
           onSelect={(url) => update({ seekBarImage: url, seekBarStyle: "image" })}
@@ -144,7 +146,7 @@ export function SeekBarPanel() {
         />
       </SubField>
 
-      <SubField label="Seek dot shape">
+      <SubField label={t("Seek dot shape")}>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {SHAPES.map((s) => (
             <PickTile
@@ -178,7 +180,7 @@ export function SeekBarPanel() {
         />
       </SubField>
 
-      <SubField label="Dot image">
+      <SubField label={t("Dot image")}>
         <SeekImageUpload
           value={settings.seekDotImage}
           onSelect={(url) => update({ seekDotImage: url, seekDotShape: "image" })}

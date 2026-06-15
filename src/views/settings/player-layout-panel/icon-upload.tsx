@@ -1,3 +1,4 @@
+import { useT } from "@/lib/i18n";
 import { Image as ImageIcon, Layers, RotateCcw, Upload } from "lucide-react";
 import { useRef, useState, type ChangeEvent } from "react";
 
@@ -155,7 +156,7 @@ function MultiStateUpload({
         <button
           type="button"
           onClick={() => onApplyToAll(active.url!)}
-          title="Use this icon for all states"
+          title={t("Use this icon for all states")}
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white/85 transition-colors hover:bg-white/15 hover:text-white"
         >
           <Layers size={13} strokeWidth={2.3} />
@@ -217,8 +218,8 @@ function PickButton({ onPick, busy }: { onPick: (file: File | undefined) => void
         type="button"
         disabled={busy}
         onClick={() => ref.current?.click()}
-        title="Upload icon"
-        aria-label="Upload icon"
+        title={t("Upload icon")}
+        aria-label={t("Upload icon")}
         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white/85 transition-colors hover:bg-white/15 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
       >
         <Upload size={14} strokeWidth={2.3} />
@@ -232,8 +233,8 @@ function ResetButton({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      title="Reset to default"
-      aria-label="Reset icon"
+      title={t("Reset to default")}
+      aria-label={t("Reset icon")}
       className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white/85 transition-colors hover:bg-white/15 hover:text-white"
     >
       <RotateCcw size={13} strokeWidth={2.3} />

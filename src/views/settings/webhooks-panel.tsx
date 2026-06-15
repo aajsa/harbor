@@ -1,3 +1,4 @@
+import { useT } from "@/lib/i18n";
 import { Globe, Library, Star } from "lucide-react";
 import { useRef, useState } from "react";
 import traktLogo from "@/assets/trakt.svg";
@@ -64,6 +65,7 @@ const SOURCES: SourceMeta[] = [
 ];
 
 export function WebhooksPanel() {
+  const t = useT();
   const { settings, update } = useSettings();
   const { authKey } = useAuth();
   const { isConnected: traktConnected } = useTrakt();
@@ -91,7 +93,7 @@ export function WebhooksPanel() {
     const setStatus = kind === "discord" ? setDiscordStatus : setTelegramStatus;
     if (!url) return;
     inFlightRef.current[kind] = true;
-    setStatus({ state: "busy", message: "Sending…" });
+    setStatus({ state: "busy", message: t("Sending…") });
     const testPayload: WebhookPayload = {
       text: `Harbor test message (${kind === "discord" ? "Discord" : "Telegram"}). If you can read this, your webhook is wired up.`,
       items: [],
@@ -100,7 +102,7 @@ export function WebhooksPanel() {
       const res = await fireWebhook(kind, url, testPayload);
       setStatus({
         state: res.ok ? "ok" : "error",
-        message: res.ok ? "Sent. Check your channel." : res.error ?? "Failed",
+        message: res.ok ? t("Sent. Check your channel.") : res.error ?? t("Failed"),
       });
     } finally {
       inFlightRef.current[kind] = false;
@@ -111,7 +113,7 @@ export function WebhooksPanel() {
   return (
     <div className="flex flex-col gap-5">
       <WebhookField
-        label="Discord webhook URL"
+        label={t("Discord webhook URL")}
         placeholder="https://discord.com/api/webhooks/…"
         value={settings.webhooks.discordUrl}
         onChange={(v) => setUrl("discordUrl", v)}
@@ -129,10 +131,10 @@ export function WebhooksPanel() {
       <div className="flex flex-col gap-3 rounded-xl border border-edge-soft bg-canvas/40 p-5">
         <div className="flex flex-col gap-1">
           <span className="text-[11.5px] font-bold uppercase tracking-[0.16em] text-ink-subtle">
-            Sources
+            {t("Sources")}
           </span>
           <p className="text-[12.5px] text-ink-muted">
-            Pick which calendars feed your webhook. Items are deduped across sources before sending.
+            {t("Pick which calendars feed your webhook. Items are deduped across sources before sending.")}
           </p>
         </div>
         <div className="flex flex-col gap-2">
@@ -155,16 +157,16 @@ export function WebhooksPanel() {
       <div className="flex flex-col gap-3 rounded-xl border border-edge-soft bg-canvas/40 p-5">
         <div className="flex flex-col gap-1">
           <span className="text-[11.5px] font-bold uppercase tracking-[0.16em] text-ink-subtle">
-            Types
+            {t("Types")}
           </span>
           <p className="text-[12.5px] text-ink-muted">
-            Filter by media type after the sources merge. Leave them all on to send everything.
+            {t("Filter by media type after the sources merge. Leave them all on to send everything.")}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <ChipToggle label="Movies" on={settings.webhooks.notifyMovies} onToggle={(v) => setNotify("notifyMovies", v)} />
-          <ChipToggle label="TV" on={settings.webhooks.notifyTv} onToggle={(v) => setNotify("notifyTv", v)} />
-          <ChipToggle label="Anime" on={settings.webhooks.notifyAnime} onToggle={(v) => setNotify("notifyAnime", v)} />
+          <ChipToggle label={t("Movies")} on={settings.webhooks.notifyMovies} onToggle={(v) => setNotify("notifyMovies", v)} />
+          <ChipToggle label={t("TV")} on={settings.webhooks.notifyTv} onToggle={(v) => setNotify("notifyTv", v)} />
+          <ChipToggle label={t("Anime")} on={settings.webhooks.notifyAnime} onToggle={(v) => setNotify("notifyAnime", v)} />
         </div>
       </div>
 
@@ -214,9 +216,9 @@ function SourceToggle({
           {source.icon()}
         </span>
         <div className="flex min-w-0 flex-col gap-0.5">
-          <span className="text-[13.5px] font-semibold text-ink">{source.label}</span>
+          <span className="text-[13.5px] font-semibold text-ink">{t(source.label)}</span>
           <span className={`text-[12px] ${blocker ? "text-amber-200/85" : "text-ink-subtle"}`}>
-            {blocker ?? source.description}
+            {blocker ? t(blocker) : t(source.description)}
           </span>
         </div>
       </div>

@@ -1,3 +1,4 @@
+import { useT } from "@/lib/i18n";
 import { AlertTriangle, ChevronDown, Eraser } from "lucide-react";
 import { useState } from "react";
 import { useSettings, type Settings } from "@/lib/settings";
@@ -39,6 +40,7 @@ const FIELDS: Array<{
 ];
 
 export function CustomCodeCard() {
+  const t = useT();
   const [open, setOpen] = useState(false);
   return (
     <div
@@ -71,6 +73,7 @@ export function CustomCodeCard() {
 }
 
 export function CustomCodePanel() {
+  const t = useT();
   const { settings, update } = useSettings();
 
   return (

@@ -70,7 +70,7 @@ export function LanguagePanel() {
       <select
         value={settings.tmdbLanguage}
         onChange={(e) => update({ tmdbLanguage: e.target.value })}
-        className="h-11 w-full max-w-[340px] rounded-xl border border-edge-soft bg-canvas/40 px-3.5 text-[13.5px] text-ink outline-none transition-colors focus:border-edge"
+        className="h-11 w-full max-w-[340px] mb-4 rounded-xl border border-edge-soft bg-canvas/40 px-3.5 text-[13.5px] text-ink outline-none transition-colors focus:border-edge"
       >
         <option value="">{t("English (default)")}</option>
         <option value="es-ES">Español (España)</option>
@@ -91,6 +91,18 @@ export function LanguagePanel() {
         <option value="nl-NL">Nederlands</option>
         <option value="uk-UA">Українська</option>
       </select>
+      <ToggleRow
+        label={t("Translate series and movie posters to Arabic if available on TMDB")}
+        sub={t("If enabled, posters will display the Arabic title. Disable this to keep the original English poster.")}
+        value={settings.translateTitles}
+        onChange={(v) => update({ translateTitles: v })}
+      />
+      <ToggleRow
+        label={t("Translate descriptions and synopsis to Arabic")}
+        sub={t("Enable this to fetch Arabic descriptions for series and movies when available on TMDB.")}
+        value={settings.translateDescriptions}
+        onChange={(v) => update({ translateDescriptions: v })}
+      />
     </Section>
 
     <Section

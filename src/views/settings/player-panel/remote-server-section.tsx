@@ -1,3 +1,4 @@
+import { useT } from "@/lib/i18n";
 import { Check, Loader2, Wifi, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSettings } from "@/lib/settings";
@@ -34,6 +35,7 @@ async function probeServer(url: string): Promise<TestResult> {
 }
 
 export function RemoteServerSection() {
+  const t = useT();
   const { settings, update } = useSettings();
   const saved = settings.remoteStreamServerUrl;
   const [draft, setDraft] = useState(saved);
@@ -119,8 +121,8 @@ export function RemoteServerSection() {
       {saved && (
         <>
           <ToggleRow
-            label="Use exclusively (never fall back to local)"
-            sub="If the server is unreachable, playback fails instead of streaming locally. Use this when your VPN runs on the server machine and torrent traffic must never leave this one."
+            label={t("Use exclusively (never fall back to local)")}
+            sub={t("If the server is unreachable, playback fails instead of streaming locally. Use this when your VPN runs on the server machine and torrent traffic must never leave this one.")}
             value={settings.remoteStreamServerStrict}
             onChange={(v) => update({ remoteStreamServerStrict: v })}
           />

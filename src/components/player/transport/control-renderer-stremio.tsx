@@ -134,7 +134,7 @@ export function RenderedStremioControl({
       return (
         <Tooltip label={tr("Back")} side="bottom">
           <StremioBtn onClick={ctx.onBack} ariaLabel={tr("Back")}>
-            <ChevronLeft size={30} strokeWidth={2} className="dir-icon" />
+            <ChevronLeft size={30} strokeWidth={2} />
           </StremioBtn>
         </Tooltip>
       );

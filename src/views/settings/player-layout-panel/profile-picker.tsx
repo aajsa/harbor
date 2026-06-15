@@ -1,3 +1,4 @@
+import { useT } from "@/lib/i18n";
 import {
   Check,
   ChevronDown,
@@ -39,6 +40,7 @@ export function ProfilePicker({
   onImport,
   onResetToDefaults,
 }: Props) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [dialog, setDialog] = useState<Dialog | null>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -181,16 +183,16 @@ export function ProfilePicker({
           <div className="my-1 h-px bg-white/8" />
 
           <div className="px-1.5 py-1">
-            <MenuItem icon={<Plus size={14} strokeWidth={2.3} />} label="Save as new profile..." onClick={askSaveAsNew} />
+            <MenuItem icon={<Plus size={14} strokeWidth={2.3} />} label={t("Save as new profile...")} onClick={askSaveAsNew} />
             <MenuItem
               icon={<Pencil size={13} strokeWidth={2.3} />}
-              label="Rename current"
+              label={t("Rename current")}
               disabled={!active}
               onClick={askRename}
             />
             <MenuItem
               icon={<Trash2 size={13} strokeWidth={2.3} />}
-              label="Delete current"
+              label={t("Delete current")}
               disabled={!active}
               danger
               onClick={askDelete}
@@ -202,7 +204,7 @@ export function ProfilePicker({
           <div className="px-1.5 pb-2 pt-1">
             <MenuItem
               icon={<Download size={13} strokeWidth={2.3} />}
-              label="Export as file"
+              label={t("Export as file")}
               disabled={!active}
               onClick={() => {
                 onExport();
@@ -211,7 +213,7 @@ export function ProfilePicker({
             />
             <MenuItem
               icon={<Upload size={13} strokeWidth={2.3} />}
-              label="Import from file..."
+              label={t("Import from file...")}
               onClick={() => {
                 fileRef.current?.click();
                 setOpen(false);
@@ -219,7 +221,7 @@ export function ProfilePicker({
             />
             <MenuItem
               icon={<RotateCcw size={13} strokeWidth={2.3} />}
-              label="Reset to defaults"
+              label={t("Reset to defaults")}
               onClick={askReset}
             />
           </div>

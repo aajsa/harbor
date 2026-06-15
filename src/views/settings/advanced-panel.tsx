@@ -224,7 +224,7 @@ function BetaChannelRow() {
         <FlaskConical size={15} strokeWidth={2.2} />
       </span>
       <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <span className="text-[14px] font-medium text-ink">Get beta updates</span>
+        <span className="text-[14px] font-medium text-ink">{t("Get beta updates")}</span>
         <p className="text-[12.5px] leading-relaxed text-ink-subtle">
           Receive early builds with the newest fixes before they reach the stable release. Betas can
           be rough around the edges; switch this off to return to stable at the next update.
@@ -399,37 +399,37 @@ function DiscordPresenceRow() {
       {on && (
         <div className="flex flex-col gap-1.5 ps-4">
           <DiscordSubToggle
-            label="Hide the title"
+            label={t("Hide the title")}
             hint="Show 'Watching something' with no show name or poster."
             on={settings.discordHideTitle}
             onToggle={() => update({ discordHideTitle: !settings.discordHideTitle })}
           />
           <DiscordSubToggle
-            label="Show while paused"
+            label={t("Show while paused")}
             hint="Keep the presence visible when playback is paused."
             on={settings.discordShowWhenPaused}
             onToggle={() => update({ discordShowWhenPaused: !settings.discordShowWhenPaused })}
           />
           <DiscordSubToggle
-            label="Show while browsing"
+            label={t("Show while browsing")}
             hint="Display 'Browsing Harbor' when nothing is playing."
             on={settings.discordShowWhenBrowsing}
             onToggle={() => update({ discordShowWhenBrowsing: !settings.discordShowWhenBrowsing })}
           />
           <DiscordSubToggle
-            label="Show poster"
+            label={t("Show poster")}
             hint="Reveal the show or movie artwork. Off keeps the title but hides the poster."
             on={settings.discordShowPoster}
             onToggle={() => update({ discordShowPoster: !settings.discordShowPoster })}
           />
           <DiscordSubToggle
-            label="Show elapsed time"
+            label={t("Show elapsed time")}
             hint="Display the live progress bar showing how far into the title you are."
             on={settings.discordShowTimestamp}
             onToggle={() => update({ discordShowTimestamp: !settings.discordShowTimestamp })}
           />
           <DiscordSubToggle
-            label="Watch party join button"
+            label={t("Watch party join button")}
             hint="Add a Join button with your room link while you're in a watch party."
             on={settings.discordShowPartyJoin}
             onToggle={() => update({ discordShowPartyJoin: !settings.discordShowPartyJoin })}
@@ -493,8 +493,8 @@ function OmdbBudgetRow() {
   if (!settings.omdbKey) {
     return (
       <ActionRow
-        label="OMDB daily budget"
-        sub="Save an OMDB key in Library & metadata to enable rating fetches."
+        label={t("OMDB daily budget")}
+        sub={t("Save an OMDB key in Library & metadata to enable rating fetches.")}
         disabled
       />
     );
@@ -506,7 +506,7 @@ function OmdbBudgetRow() {
 
   return (
     <ActionRow
-      label="OMDB daily budget"
+      label={t("OMDB daily budget")}
       sub={sub}
       cta={confirmed ? "Reset" : "Reset counter"}
       icon={confirmed ? <Check size={14} strokeWidth={2.6} /> : <RotateCw size={14} />}
@@ -531,8 +531,8 @@ function OnboardingRow() {
   return (
     <div className="flex flex-col gap-2.5">
       <ActionRow
-        label="Replay walkthrough"
-        sub="Re-runs the welcome flow and clears every dismissed tip."
+        label={t("Replay walkthrough")}
+        sub={t("Re-runs the welcome flow and clears every dismissed tip.")}
         cta={phase === "walkthrough" ? "Done" : "Replay"}
         icon={phase === "walkthrough" ? <Check size={14} strokeWidth={2.6} /> : <RotateCw size={14} />}
         tone={phase === "walkthrough" ? "success" : "neutral"}
@@ -542,8 +542,8 @@ function OnboardingRow() {
         }}
       />
       <ActionRow
-        label="Restore dismissed hints"
-        sub="Brings back the small in-app tips you've dismissed without redoing the welcome flow."
+        label={t("Restore dismissed hints")}
+        sub={t("Brings back the small in-app tips you've dismissed without redoing the welcome flow.")}
         cta={phase === "hints" ? "Restored" : "Restore"}
         icon={phase === "hints" ? <Check size={14} strokeWidth={2.6} /> : <RotateCw size={14} />}
         tone={phase === "hints" ? "success" : "neutral"}
@@ -559,9 +559,9 @@ function OnboardingRow() {
 function AboutRow() {
   return (
     <div className="flex flex-col gap-2 rounded-xl border border-edge-soft bg-canvas/40 px-4 py-3.5 text-[13px] text-ink-muted">
-      <InfoLine label="Version" value={__APP_VERSION__} />
-      <InfoLine label="Build" value={isTauri ? "Desktop (Tauri 2 / WebView2)" : "Web"} />
-      <InfoLine label="Bug reports" value="bugs@harbor.site" />
+      <InfoLine label={t("Version")} value={__APP_VERSION__} />
+      <InfoLine label={t("Build")} value={isTauri ? "Desktop (Tauri 2 / WebView2)" : "Web"} />
+      <InfoLine label={t("Bug reports")} value="bugs@harbor.site" />
     </div>
   );
 }
@@ -649,8 +649,8 @@ function LibraryRepairRow() {
   if (!authKey) {
     return (
       <ActionRow
-        label="Repair library"
-        sub="Sign in to Stremio first. The repair scans only the active profile's library."
+        label={t("Repair library")}
+        sub={t("Sign in to Stremio first. The repair scans only the active profile's library.")}
       />
     );
   }
@@ -678,7 +678,7 @@ function LibraryRepairRow() {
 
   return (
     <ActionRow
-      label="Repair library"
+      label={t("Repair library")}
       sub={statusLine}
       cta={busy ? "Working…" : result ? "Run again" : "Repair now"}
       icon={busy ? <Loader2 size={13} strokeWidth={2.4} className="animate-spin" /> : <Wrench size={13} strokeWidth={2.4} />}

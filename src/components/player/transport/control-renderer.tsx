@@ -127,7 +127,7 @@ export function renderControl(id: PlayerControlId, ctx: ControlContext): ReactNo
             aria-label={t("Back")}
             className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur-md transition-colors hover:bg-black/80"
           >
-            <ChevronLeft size={26} strokeWidth={2.2} className="dir-icon" />
+            <ChevronLeft size={26} strokeWidth={2.2} />
           </button>
         </Tooltip>
       );
