@@ -1196,6 +1196,10 @@ const settings: Record<string, string> = {
   "Check relay": "فحص المرحّل",
   "Relay test passed": "نجح اختبار المرحّل",
   "Scans your Stremio library and rewrites any item whose shape doesn't match Stremio's exact schema. Safe to run anytime; only items that need fixing get touched.": "يفحص مكتبة Stremio ويعيد كتابة أي عنصر لا يطابق المخطط الدقيق. آمن التشغيل في أي وقت.",
+  "Translate series and movie posters to Arabic if available on TMDB": "ترجمة أغلفة المسلسلات والأفلام إلى العربية إذا كانت متاحة على TMDB",
+  "If enabled, posters will display the Arabic title. Disable this to keep the original English poster.": "إذا كان مفعلاً، ستعرض الأغلفة العنوان بالعربية. عطّله للإبقاء على الغلاف الإنجليزي الأصلي.",
+  "Translate descriptions and synopsis to Arabic": "ترجمة الأوصاف والملخصات إلى العربية",
+  "Enable this to fetch Arabic descriptions for series and movies when available on TMDB.": "فعّل هذا لجلب الأوصاف بالعربية للمسلسلات والأفلام عند توفرها على TMDB.",
 };
 
 export default settings;

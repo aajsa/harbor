@@ -232,6 +232,7 @@ const addons: Record<string, string> = {
     "لا توجد نسخ احتياطية بعد. اضغط الزرّ أعلاه لحفظ أول نسخة.",
   "{names} +{n} more": "{names} +{n} أخرى",
   Restore: "استعادة",
+  "Discover": "اكتشف",
 };
 
 export default addons;

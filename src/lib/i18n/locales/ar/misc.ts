@@ -648,6 +648,7 @@ const misc: Record<string, string> = {
   "Syncing to Stremio": "المزامنة مع Stremio",
   "Done": "تم",
   "We need to check your age before you sail ahead. Three quick questions a working adult would know in their sleep. Get them all right and the adult shelf opens.": "نحتاج للتحقق من عمرك قبل الإبحار. ثلاثة أسئلة سريعة يعرفها أي شخص بالغ يعمل حتى في نومه. أجب عنها جميعًا بشكل صحيح وسيفتح قسم المحتوى الراشد.",
+  "Top 10": "أفضل 10",
 };
 
 export default misc;
