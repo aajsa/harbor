@@ -11,7 +11,6 @@ const MAX_STORED_BYTES = 1.5 * 1024 * 1024;
 type Result = { url: string } | { error: string };
 
 export function SeekImageUpload({
-  const t = useT();
   value,
   onSelect,
   onClear,
@@ -28,6 +27,7 @@ export function SeekImageUpload({
   targetDim?: number;
   targetQuality?: number;
 }) {
+  const t = useT();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);

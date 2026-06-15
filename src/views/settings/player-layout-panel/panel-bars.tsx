@@ -1,4 +1,3 @@
-import { useT } from "@/lib/i18n";
 import { Pencil, RotateCcw, Save, Undo2 } from "lucide-react";
 import type { ThemeId } from "@/lib/player-chrome";
 

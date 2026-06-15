@@ -1,8 +1,6 @@
-import { useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
 
 export function PlayModePanel() {
-  const t = useT();
   const { settings, update } = useSettings();
 
   const choices: Array<{

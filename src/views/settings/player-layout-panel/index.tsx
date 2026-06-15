@@ -1,4 +1,3 @@
-import { useT } from "@/lib/i18n";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { alertDialog, confirmDialog } from "@/lib/dialog";
 import {
@@ -52,7 +51,6 @@ function themeIdFromSettings(settings: ReturnType<typeof useSettings>["settings"
 }
 
 export function PlayerLayoutPanel() {
-  const t = useT();
   const { settings } = useSettings();
   const appTheme = themeIdFromSettings(settings);
   const [theme, setTheme] = useState<ThemeId>(appTheme);

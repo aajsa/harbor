@@ -1,4 +1,3 @@
-import { useT } from "@/lib/i18n";
 import { downloadDir } from "@tauri-apps/api/path";
 import { open } from "@tauri-apps/plugin-dialog";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
@@ -7,7 +6,6 @@ import { useEffect, useState } from "react";
 import { useSettings } from "@/lib/settings";
 
 export function DownloadsSection() {
-  const t = useT();
   const { settings, update } = useSettings();
   const [systemDefault, setSystemDefault] = useState<string>("");
 

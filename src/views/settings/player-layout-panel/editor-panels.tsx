@@ -1,6 +1,5 @@
 import { useT } from "@/lib/i18n";
 import { Crown } from "lucide-react";
-import { t } from "@/lib/i18n";
 import {
   PANEL_META,
   PANELS,
@@ -18,7 +17,6 @@ type Props = {
 };
 
 export function EditorPanels({ config, selectedPanelId, onSelect, mode }: Props) {
-  const t = useT();
   return (
     <>
       {PANELS.map((id) => {

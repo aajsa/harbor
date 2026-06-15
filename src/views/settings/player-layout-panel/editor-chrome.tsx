@@ -1,4 +1,3 @@
-import { useT } from "@/lib/i18n";
 import { SeekBarVisual } from "@/components/player/transport/seek-bar-visual";
 import {
   type PlayerChromeConfig,
@@ -54,7 +53,6 @@ export function FauxBackdrop({
   height: number;
   sizeLabel: string;
 }) {
-  const t = useT();
   return (
     <div className="absolute inset-0">
       <div
@@ -98,7 +96,6 @@ export function DefaultLayout({
   isLive,
   compact,
 }: LayoutProps & { compact: boolean }) {
-  const t = useT();
   return (
     <>
       <div className="flex items-center gap-3">
@@ -134,7 +131,6 @@ export function DefaultLayout({
 }
 
 export function StremioLayout({ config, selectedId, onSelect, renderOne, isLive }: LayoutProps) {
-  const t = useT();
   return (
     <>
       <div className="flex h-6 items-center">

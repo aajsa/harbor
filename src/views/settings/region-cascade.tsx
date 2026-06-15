@@ -92,7 +92,6 @@ export function RegionField() {
 }
 
 function LocaleConfirm({
-  const t = useT();
   label,
   rtl,
   onConfirm,
