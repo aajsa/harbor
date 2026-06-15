@@ -201,4 +201,5 @@ export const DEFAULT: Settings = {
   pauseListStatusOnPause: false,
   translateTitles: false,
   translateDescriptions: true,
+  translatePosters: false,
 };

@@ -246,4 +246,5 @@ export type Settings = {
   pauseListStatusOnPause: boolean;
   translateTitles: boolean;
   translateDescriptions: boolean;
+  translatePosters: boolean;
 };
