@@ -136,6 +136,7 @@ export function AnilistPanel() {
 }
 
 function sessionAge(t: (key: string, vars?: Record<string, string | number>) => string, createdAt?: number): string {
+  const t = useT();
   if (!createdAt) return "";
   const days = Math.floor((Date.now() - createdAt) / 86400000);
   if (days < 1) return t("today");

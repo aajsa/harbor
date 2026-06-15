@@ -116,6 +116,7 @@ function episodeTabStyle(corner: PanelCorner): React.CSSProperties {
 const AVATAR_COLORS = ["#f97316", "#22d3ee", "#a78bfa"];
 
 function AvatarDockBody() {
+  const t = useT();
   return (
     <div className="pointer-events-none flex flex-col items-end gap-1.5 rounded-2xl border border-white/12 bg-black/35 p-2 backdrop-blur-xl shadow-[0_18px_50px_-22px_rgba(0,0,0,0.65)]">
       {AVATAR_COLORS.map((c, i) => (

@@ -1,10 +1,11 @@
+import { useT } from "@/lib/i18n";
 import { ChevronLeft, Info, Maximize, Minimize, PauseCircle, PictureInPicture2, PlayCircle, Replace, Tv } from "lucide-react";
 import type { ReactNode } from "react";
 import type { PlayerCapabilities, PlayerSnapshot } from "@/lib/player/bridge";
 import type { Meta } from "@/lib/cinemeta";
 import { getCustomIcon, type ControlVariant, type CustomIconMap, type PlayerControlId, type TimeFormat, type VolumeStyle } from "@/lib/player-chrome";
 import type { DownloadStatus } from "@/views/player/hooks/use-video-download";
-import { t as translate } from "@/lib/i18n";
+import { t as translate } { useT } from "@/lib/i18n";
 import { renderCustomIconControl } from "./custom-icon-renderer";
 
 function getControlState(id: PlayerControlId, ctx: ControlContext): string | undefined {
@@ -110,6 +111,7 @@ export type ControlContext = {
 };
 
 export function renderControl(id: PlayerControlId, ctx: ControlContext): ReactNode {
+  const t = useT();
   const t = ctx.t ?? translate;
   const state = getControlState(id, ctx);
   const iconUrl = getCustomIcon(ctx.customIcons, id, state);

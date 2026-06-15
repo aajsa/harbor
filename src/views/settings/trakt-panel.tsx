@@ -184,6 +184,7 @@ export function TraktPanel() {
 }
 
 function sessionAge(t: (key: string, vars?: Record<string, string | number>) => string, createdAt?: number): string {
+  const t = useT();
   if (!createdAt) return "";
   const days = Math.floor((Date.now() / 1000 - createdAt) / 86400);
   if (days < 1) return t("today");

@@ -126,6 +126,7 @@ function MultiStateUpload({
   onReset: (state?: string) => void;
   onApplyToAll?: (dataUrl: string) => void;
 }) {
+  const t = useT();
   const [activeState, setActiveState] = useState(states[0]?.id);
   const active = states.find((s) => s.id === activeState) ?? states[0];
   if (!active) return null;
@@ -201,6 +202,7 @@ function Thumb({
 }
 
 function PickButton({ onPick, busy }: { onPick: (file: File | undefined) => void; busy: boolean }) {
+  const t = useT();
   const ref = useRef<HTMLInputElement>(null);
   return (
     <>
@@ -229,6 +231,7 @@ function PickButton({ onPick, busy }: { onPick: (file: File | undefined) => void
 }
 
 function ResetButton({ onClick }: { onClick: () => void }) {
+  const t = useT();
   return (
     <button
       type="button"

@@ -192,6 +192,7 @@ function SourceToggle({
   blocker: string | null;
   onChange: (v: boolean) => void;
 }) {
+  const t = useT();
   const disabled = blocker !== null;
   const effective = on && !disabled;
   return (

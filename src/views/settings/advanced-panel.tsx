@@ -212,6 +212,7 @@ function WebBuildBanner() {
 }
 
 function BetaChannelRow() {
+  const t = useT();
   const { settings, update } = useSettings();
   const on = settings.betaUpdates;
   return (
@@ -362,6 +363,7 @@ function UpdatesRow() {
 }
 
 function DiscordPresenceRow() {
+  const t = useT();
   const { settings, update } = useSettings();
   const on = settings.discordRichPresence;
   return (
@@ -480,6 +482,7 @@ function DiscordSubToggle({
 }
 
 function OmdbBudgetRow() {
+  const t = useT();
   const { settings } = useSettings();
   const [budget, setBudget] = useState<OmdbBudget>(() => readOmdbBudget());
   const [confirmed, setConfirmed] = useState(false);
@@ -520,6 +523,7 @@ function OmdbBudgetRow() {
 }
 
 function OnboardingRow() {
+  const t = useT();
   const { resetOnboarding, resetNudges } = useOnboarding();
   const [phase, setPhase] = useState<"idle" | "walkthrough" | "hints">("idle");
   useEffect(() => {
@@ -557,6 +561,7 @@ function OnboardingRow() {
 }
 
 function AboutRow() {
+  const t = useT();
   return (
     <div className="flex flex-col gap-2 rounded-xl border border-edge-soft bg-canvas/40 px-4 py-3.5 text-[13px] text-ink-muted">
       <InfoLine label={t("Version")} value={__APP_VERSION__} />
@@ -624,6 +629,7 @@ function ActionRow({
 }
 
 function LibraryRepairRow() {
+  const t = useT();
   const { authKey } = useAuth();
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<RepairProgress | null>(null);
