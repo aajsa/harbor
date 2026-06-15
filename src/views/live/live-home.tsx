@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { Row } from "@/components/row";
+import { useT } from "@/lib/i18n";
 import { computeTvgIdCounts } from "@/lib/iptv/epg-resolver";
 import type { EpgIndex, IptvChannel } from "@/lib/iptv/types";
 import { isHydratableChannel } from "@/lib/iptv/channel-hydration";
@@ -38,6 +39,7 @@ export function LiveHome({
   onPlay: (ch: IptvChannel) => void;
   onOpenCategory: (group: string) => void;
 }) {
+  const t = useT();
   const { spotlight, guide, rails, categoryRails, countries } = useLiveHome({
     channels,
     epg,
@@ -82,9 +84,9 @@ export function LiveHome({
       <div className="flex flex-col gap-5">
         <div className="flex items-baseline gap-2.5 ps-[9px]">
           <h1 className="font-display text-[30px] font-medium leading-none tracking-tight text-ink">
-            Your TV
+            {t("Your TV")}
           </h1>
-          <span className="text-[16px] text-ink-subtle">at {fmtClock(nowMs)}</span>
+          <span className="text-[16px] text-ink-subtle">{t("at {time}", { time: fmtClock(nowMs) })}</span>
         </div>
         {spotlight.length > 0 && (
           <div className="flex gap-5">
@@ -103,7 +105,7 @@ export function LiveHome({
         />
       )}
       {guide.length > 0 && (
-        <Row title="On now" shape="landscape" min={300} scrollKey={`live-home:${sourceId}:guide`}>
+        <Row title={t("On now")} shape="landscape" min={300} scrollKey={`live-home:${sourceId}:guide`}>
           {guide.map((it) => (
             <GuideCard key={it.channel.id} item={it} onPlay={onPlay} />
           ))}

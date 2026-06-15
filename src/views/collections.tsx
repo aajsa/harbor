@@ -165,7 +165,7 @@ export function CollectionsView() {
               <Search
                 size={16}
                 strokeWidth={2}
-                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-subtle"
+                className="pointer-events-none absolute start-4 top-1/2 -translate-y-1/2 text-ink-subtle"
               />
               <input
                 type="text"
@@ -173,14 +173,14 @@ export function CollectionsView() {
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={t("Search every collection on TMDB...")}
                 spellCheck={false}
-                className="h-11 w-full rounded-full border border-edge bg-elevated/50 pl-11 pr-10 text-[14px] text-ink placeholder:text-ink-subtle transition-colors focus:border-ink-subtle focus:outline-none"
+                className="h-11 w-full rounded-full border border-edge bg-elevated/50 ps-11 pe-10 text-[14px] text-ink placeholder:text-ink-subtle transition-colors focus:border-ink-subtle focus:outline-none"
               />
               {query && (
                 <button
                   type="button"
                   onClick={() => setQuery("")}
                   aria-label={t("Clear search")}
-                  className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-ink-subtle transition-colors hover:bg-raised hover:text-ink"
+                  className="absolute end-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-ink-subtle transition-colors hover:bg-raised hover:text-ink"
                 >
                   <X size={14} strokeWidth={2.2} />
                 </button>

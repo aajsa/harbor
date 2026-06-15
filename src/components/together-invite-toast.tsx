@@ -1,5 +1,6 @@
 import { ArrowRight, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useT } from "@/lib/i18n";
 import { useTogether } from "@/lib/together/provider";
 import { useView } from "@/lib/view";
 import type { Meta } from "@/lib/cinemeta";
@@ -10,6 +11,7 @@ const TICK_MS = 60;
 export function TogetherInviteToast() {
   const { incomingInvite, dismissInvite } = useTogether();
   const { openPicker } = useView();
+  const t = useT();
   const handledRef = useRef<number | null>(null);
   const [progress, setProgress] = useState(0);
 
@@ -57,7 +59,7 @@ export function TogetherInviteToast() {
   const { name, invite } = incomingInvite;
   const guestPick = invite.guestPick === true;
   const subtitle = invite.episode
-    ? `S${invite.episode.season} · E${String(invite.episode.episode).padStart(2, "0")}`
+    ? `S${invite.episode.imdbSeason ?? invite.episode.season} · E${String(invite.episode.imdbEpisode ?? invite.episode.episode).padStart(2, "0")}`
     : null;
 
   const onJoin = () => {
@@ -77,7 +79,7 @@ export function TogetherInviteToast() {
 
   return (
     <div className="pointer-events-none fixed inset-x-0 top-6 z-[120] flex justify-center px-6">
-      <div className="harbor-together-pill pointer-events-auto relative flex items-center gap-3 overflow-hidden rounded-full border border-edge bg-surface/98 py-2 pl-2 pr-2 shadow-[0_24px_60px_-15px_rgba(0,0,0,0.75)] animate-popover-in">
+      <div className="harbor-together-pill pointer-events-auto relative flex items-center gap-3 overflow-hidden rounded-full border border-edge bg-surface/98 px-2 py-2 shadow-[0_24px_60px_-15px_rgba(0,0,0,0.75)] animate-popover-in">
         <div className="relative h-11 w-16 shrink-0 overflow-hidden rounded-full bg-canvas/60 ring-1 ring-edge-soft/60">
           {invite.backgroundUrl || invite.posterUrl ? (
             <img
@@ -93,7 +95,7 @@ export function TogetherInviteToast() {
 
         <div className="flex min-w-0 flex-col gap-0.5 pe-1">
           <span className="text-[10.5px] font-semibold uppercase tracking-[0.18em] text-accent">
-            {guestPick ? "Pick your source" : `${name} started watching`}
+            {guestPick ? t("Pick your source") : t("{name} started watching", { name })}
           </span>
           <span className="flex items-center gap-2 truncate text-[13.5px] font-semibold text-ink">
             <span className="max-w-[280px] truncate">{invite.mediaTitle}</span>
@@ -107,12 +109,12 @@ export function TogetherInviteToast() {
           onClick={onJoin}
           className="inline-flex h-9 items-center gap-1.5 rounded-full bg-ink px-4 text-[12.5px] font-semibold text-canvas transition-transform hover:scale-[1.04]"
         >
-          {guestPick ? "Choose" : "Join"} <ArrowRight size={13} strokeWidth={2.4} />
+          {guestPick ? t("Choose") : t("Join")} <ArrowRight size={13} strokeWidth={2.4} className="dir-icon" />
         </button>
 
         <button
           onClick={dismissInvite}
-          aria-label="Dismiss"
+          aria-label={t("Dismiss")}
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-elevated hover:text-ink"
         >
           <X size={15} strokeWidth={2.2} />
@@ -120,7 +122,7 @@ export function TogetherInviteToast() {
 
         <div
           aria-hidden
-          className="absolute inset-x-2 bottom-1 h-[2px] origin-left rounded-full bg-accent/70 transition-transform"
+          className="absolute inset-x-2 bottom-1 h-[2px] origin-left rtl:origin-right rounded-full bg-accent/70 transition-transform"
           style={{ transform: `scaleX(${progress})` }}
         />
       </div>

@@ -6,16 +6,30 @@ export type ToastInfo = {
   addon?: { id: string; name: string; logo?: string | null };
 };
 
-export const CATEGORY_LABELS: Record<string, string> = {
-  metadata: "Catalogs & metadata",
-  streams: "Streams",
-  subtitles: "Subtitles",
-  anime: "Anime",
-  sports: "Sports",
-  "live-tv": "Live TV",
-  tools: "Tools",
-  adult: "Adult",
-};
+import { t } from "@/lib/i18n";
+
+export function categoryLabel(key: string): string | undefined {
+  switch (key) {
+    case "metadata":
+      return t("Catalogs & metadata");
+    case "streams":
+      return t("Streams");
+    case "subtitles":
+      return t("Subtitles");
+    case "anime":
+      return t("Anime");
+    case "sports":
+      return t("Sports");
+    case "live-tv":
+      return t("Live TV");
+    case "tools":
+      return t("Tools");
+    case "adult":
+      return t("Adult");
+    default:
+      return undefined;
+  }
+}
 
 let pendingAddonsTab: Tab | null = null;
 

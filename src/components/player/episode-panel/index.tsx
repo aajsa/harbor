@@ -135,7 +135,7 @@ export function EpisodePanel({
           <HarborLoader size="md" caption={t("Connecting")} />
           <p className="text-[13px] text-white/75">
             {t("Loading {label}", {
-              label: `S${resolvingFor.season} · E${String(resolvingFor.episode).padStart(2, "0")}${
+              label: `S${resolvingFor.imdbSeason ?? resolvingFor.season} · E${String(resolvingFor.imdbEpisode ?? resolvingFor.episode).padStart(2, "0")}${
                 resolvingFor.name ? ` · ${resolvingFor.name}` : ""
               }`,
             })}
@@ -194,7 +194,7 @@ export function EpisodePanel({
               {currentEpisode ? (
                 <p className="min-w-0 truncate text-[12.5px] text-ink-subtle">
                   {t("Now playing: {label}", {
-                    label: `S${currentEpisode.season} · E${String(currentEpisode.episode).padStart(2, "0")}${
+                    label: `S${currentEpisode.imdbSeason ?? currentEpisode.season} · E${String(currentEpisode.imdbEpisode ?? currentEpisode.episode).padStart(2, "0")}${
                       currentEpisode.name ? ` · ${currentEpisode.name}` : ""
                     }`,
                   })}

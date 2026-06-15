@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useSettings } from "@/lib/settings";
+import { useT } from "@/lib/i18n";
 import { settingsAnchor, type SectionId } from "./shared";
 
 type IconProps = { size?: number; strokeWidth?: number };
@@ -428,6 +429,7 @@ export function SettingsNav({
   onChange: (id: SectionId, anchor?: string) => void;
 }) {
   const { settings } = useSettings();
+  const t = useT();
   const [query, setQuery] = useState("");
   const trimmed = query.trim().toLowerCase();
   const sectionLabel = useMemo(() => {
@@ -534,7 +536,7 @@ export function SettingsNav({
         >
           <Icon size={20} strokeWidth={1.6} />
         </span>
-        <span className="flex-1 truncate text-[14.5px] font-medium">{label}</span>
+        <span className="flex-1 truncate text-[14.5px] font-medium">{t(label)}</span>
         {(chip || debridChipLocal) && (
           <span className="flex shrink-0 gap-1">
             {debridChipLocal && (
@@ -572,7 +574,7 @@ export function SettingsNav({
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search settings"
+            placeholder={t("Search settings")}
             className="min-w-0 flex-1 bg-transparent text-[13px] text-ink outline-none placeholder:text-ink-subtle"
             onKeyDown={(e) => {
               if (e.key === "Enter") {
@@ -594,7 +596,7 @@ export function SettingsNav({
               type="button"
               onClick={() => setQuery("")}
               className="shrink-0 text-ink-subtle transition-colors hover:text-ink"
-              aria-label="Clear"
+              aria-label={t("Clear")}
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
                 <path d="M6 6l12 12M18 6 6 18" />
@@ -608,13 +610,13 @@ export function SettingsNav({
           <div className="flex flex-col gap-1">
             {matches.length === 0 && (!optionMatches || optionMatches.length === 0) && (
               <div className="px-3.5 pb-1.5 pt-1 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-ink-subtle/80">
-                No matches
+                {t("No matches")}
               </div>
             )}
             {matches.length > 0 && (
               <>
                 <div className="px-3.5 pb-1.5 pt-1 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-ink-subtle/80">
-                  {matches.length} tab{matches.length === 1 ? "" : "s"}
+                  {matches.length === 1 ? t("{n} tab", { n: matches.length }) : t("{n} tabs", { n: matches.length })}
                 </div>
                 {matches.map(renderItem)}
               </>
@@ -622,7 +624,7 @@ export function SettingsNav({
             {optionMatches && optionMatches.length > 0 && (
               <>
                 <div className="px-3.5 pb-1.5 pt-3 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-ink-subtle/80">
-                  {optionMatches.length} option{optionMatches.length === 1 ? "" : "s"}
+                  {optionMatches.length === 1 ? t("{n} option", { n: optionMatches.length }) : t("{n} options", { n: optionMatches.length })}
                 </div>
                 {optionMatches.map((o) => (
                   <button
@@ -640,9 +642,9 @@ export function SettingsNav({
                       </svg>
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[13.5px] font-medium text-ink">{o.label}</span>
+                      <span className="block truncate text-[13.5px] font-medium text-ink">{t(o.label)}</span>
                       <span className="block truncate text-[11px] text-ink-subtle">
-                        {sectionLabel.get(o.section) ?? o.section}
+                        {t(sectionLabel.get(o.section) ?? o.section)}
                       </span>
                     </span>
                   </button>
@@ -655,7 +657,7 @@ export function SettingsNav({
           <div key={gi} className="flex flex-col gap-1">
             {group.heading && (
               <div className="px-3.5 pb-1.5 pt-1 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-ink-subtle/80">
-                {group.heading}
+                {t(group.heading)}
               </div>
             )}
             {group.items.map(({ id, label, Icon }) => {
@@ -681,7 +683,7 @@ export function SettingsNav({
                   >
                     <Icon size={20} strokeWidth={1.6} />
                   </span>
-                  <span className="flex-1 truncate text-[14.5px] font-medium">{label}</span>
+                  <span className="flex-1 truncate text-[14.5px] font-medium">{t(label)}</span>
                   {(chip || debridChip) && (
                     <span className="flex shrink-0 gap-1">
                       {debridChip && (

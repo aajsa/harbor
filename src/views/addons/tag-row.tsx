@@ -1,17 +1,19 @@
 import type { ResolvedAddon } from "@/lib/addons-store/store";
+import { useT } from "@/lib/i18n";
 
 export function TagRow({ resolved }: { resolved: ResolvedAddon }) {
+  const t = useT();
   const tags = resolved.curated?.tags ?? [];
   const chips: { label: string; tone: "neutral" | "warn" | "good" }[] = [];
-  for (const t of tags) {
-    if (t === "official") chips.push({ label: "Official", tone: "good" });
-    if (t === "free") chips.push({ label: "Free", tone: "neutral" });
-    if (t === "premium") chips.push({ label: "Paid", tone: "warn" });
-    if (t === "debrid-required") chips.push({ label: "Debrid required", tone: "warn" });
-    if (t === "configurable") chips.push({ label: "Configurable", tone: "neutral" });
-    if (t === "usenet") chips.push({ label: "Usenet", tone: "neutral" });
+  for (const tag of tags) {
+    if (tag === "official") chips.push({ label: t("Official"), tone: "good" });
+    if (tag === "free") chips.push({ label: t("Free"), tone: "neutral" });
+    if (tag === "premium") chips.push({ label: t("Paid"), tone: "warn" });
+    if (tag === "debrid-required") chips.push({ label: t("Debrid required"), tone: "warn" });
+    if (tag === "configurable") chips.push({ label: t("Configurable"), tone: "neutral" });
+    if (tag === "usenet") chips.push({ label: t("Usenet"), tone: "neutral" });
   }
-  if (resolved.manifest?.behaviorHints?.adult) chips.push({ label: "Adult", tone: "warn" });
+  if (resolved.manifest?.behaviorHints?.adult) chips.push({ label: t("Adult"), tone: "warn" });
   if (chips.length === 0) return null;
   return (
     <div className="mt-1 flex flex-wrap gap-1.5">

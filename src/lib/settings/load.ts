@@ -104,10 +104,6 @@ export function loadStoredSettings(): Settings {
       if (parsed.subMarginY === 22) parsed.subMarginY = DEFAULT.subMarginY;
       parsed._subStyleV2 = true;
     }
-    if (!parsed._subAssRespectV2) {
-      if (parsed.subAssOverride === "force") parsed.subAssOverride = "no";
-      parsed._subAssRespectV2 = true;
-    }
     delete parsed.scrapers;
     delete parsed.scrapersAcknowledged;
     delete parsed._scrapersV2;

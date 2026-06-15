@@ -85,7 +85,7 @@ export function StreamsView({
   }, [result, addons, isCached]);
 
   const totalStreams = result?.picker.all.length ?? 0;
-  const epLabel = `S${episode.season} · E${String(episode.episode).padStart(2, "0")}`;
+  const epLabel = `S${episode.imdbSeason ?? episode.season} · E${String(episode.imdbEpisode ?? episode.episode).padStart(2, "0")}`;
 
   return (
     <>

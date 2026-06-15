@@ -1,0 +1,23 @@
+const awards: Record<string, string> = {
+  "No data shipped for this award yet. Re-run": "لم تُشحن بيانات لهذه الجائزة بعد. أعد تشغيل",
+  "to refresh the bundled dataset.": "لتحديث مجموعة البيانات المُرفقة.",
+  "No data shipped for this award yet.": "لم تُشحن بيانات لهذه الجائزة بعد.",
+  "No winners match these filters.": "لا فائزين يطابقون هذه المرشّحات.",
+  "Clear filters": "مسح المرشّحات",
+  "Search by recipient or title…": "ابحث حسب المُكرَّم أو العنوان…",
+  "All years": "كل السنوات",
+  "Founded {year}": "تأسّست {year}",
+  "{n} years": "{n} سنة",
+  "{n} year": "سنة واحدة",
+
+  "Anime award": "جائزة أنمي",
+  "recorded winners": "فائزون مسجّلون",
+  category: "فئة",
+  categories: "فئات",
+  "Search winners or categories…": "ابحث عن الفائزين أو الفئات…",
+  Grand: "كبرى",
+  "{n} winner": "فائز واحد",
+  "{n} winners": "{n} فائزين",
+};
+
+export default awards;

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useT } from "@/lib/i18n";
 import { liveCount, type LeagueDef, type SportsGame } from "@/lib/sports/espn";
 import { SportsCard } from "./sports-card";
 
@@ -15,6 +16,7 @@ export function SportsMarquee({
   onLeague: (key: string) => void;
   onSelect: (g: SportsGame) => void;
 }) {
+  const t = useT();
   const trackRef = useRef<HTMLDivElement>(null);
   const pausedRef = useRef(false);
   const live = liveCount(games);
@@ -35,16 +37,16 @@ export function SportsMarquee({
   return (
     <div className="flex flex-col gap-2.5 ps-[9px]">
       <div className="flex items-center gap-2.5 text-[12px] font-semibold uppercase tracking-[0.18em] text-ink-subtle">
-        Live &amp; Upcoming
+        {t("Live & Upcoming")}
         {live > 0 && (
           <span className="flex h-[18px] items-center gap-1 rounded bg-danger px-1.5 text-[10px] font-bold tracking-[0.06em] text-white">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
-            {live} LIVE
+            {t("{n} LIVE", { n: live })}
           </span>
         )}
       </div>
       <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <LeagueChip active={selected === "all"} onClick={() => onLeague("all")} label="All" />
+        <LeagueChip active={selected === "all"} onClick={() => onLeague("all")} label={t("All")} />
         {leagues.map((l) => (
           <LeagueChip
             key={l.key}
@@ -72,7 +74,7 @@ export function SportsMarquee({
         </div>
       ) : (
         <div className="flex h-[60px] items-center rounded-xl border border-edge-soft/45 bg-elevated/40 px-5 text-[13px] text-ink-subtle">
-          No live or upcoming games right now.
+          {t("No live or upcoming games right now.")}
         </div>
       )}
     </div>

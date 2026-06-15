@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link2, Search, Unlink, X } from "lucide-react";
+import { useT } from "@/lib/i18n";
 import { getEpgOverride, setEpgOverride } from "@/lib/iptv/epg-map";
 import type { EpgIndex, IptvChannel } from "@/lib/iptv/types";
 
@@ -12,6 +13,7 @@ export function EpgMatchModal({
   epg: EpgIndex;
   onClose: () => void;
 }) {
+  const t = useT();
   const [query, setQuery] = useState(channel.name);
   const current = getEpgOverride(channel.id);
 
@@ -51,7 +53,7 @@ export function EpgMatchModal({
       >
         <div className="flex items-center gap-3 border-b border-edge-soft/55 px-5 py-4">
           <div className="flex min-w-0 flex-1 flex-col">
-            <span className="text-[15px] font-semibold text-ink">Match EPG channel</span>
+            <span className="text-[15px] font-semibold text-ink">{t("Match EPG channel")}</span>
             <span className="truncate text-[12px] text-ink-muted">{channel.name}</span>
           </div>
           {current && (
@@ -60,12 +62,12 @@ export function EpgMatchModal({
               className="flex h-9 items-center gap-1.5 rounded-lg border border-edge-soft/60 px-3 text-[12.5px] font-medium text-ink-muted transition-colors hover:text-ink"
             >
               <Unlink size={13} strokeWidth={2} />
-              Clear match
+              {t("Clear match")}
             </button>
           )}
           <button
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t("Close")}
             className="flex h-9 w-9 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-elevated hover:text-ink"
           >
             <X size={16} strokeWidth={2.2} />
@@ -77,7 +79,7 @@ export function EpgMatchModal({
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={`Search ${entries.length.toLocaleString()} EPG channels`}
+            placeholder={t("Search {n} EPG channels", { n: entries.length.toLocaleString() })}
             autoFocus
             className="flex-1 bg-transparent text-[13.5px] text-ink placeholder:text-ink-subtle focus:outline-none"
           />
@@ -100,14 +102,14 @@ export function EpgMatchModal({
               </span>
               {current === e.id && (
                 <span className="text-[11px] font-semibold uppercase tracking-wide text-accent">
-                  Matched
+                  {t("Matched")}
                 </span>
               )}
             </button>
           ))}
           {visible.length === 0 && (
             <div className="px-5 py-8 text-center text-[12.5px] text-ink-subtle">
-              No EPG channels match. This playlist's EPG source may be empty.
+              {t("No EPG channels match. This playlist's EPG source may be empty.")}
             </div>
           )}
         </div>

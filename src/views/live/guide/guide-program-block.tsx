@@ -1,6 +1,7 @@
 import { RotateCcw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useT } from "@/lib/i18n";
 import { formatTimeLabel, PX_PER_MS } from "./guide-utils";
 import type { EpgProgram } from "@/lib/iptv/types";
 
@@ -24,6 +25,7 @@ export function GuideProgramBlock({
   onClick: () => void;
   replayable?: boolean;
 }) {
+  const t = useT();
   const ref = useRef<HTMLButtonElement>(null);
   const [hovering, setHovering] = useState(false);
   const [pos, setPos] = useState<{ left: number; top: number; below: boolean } | null>(null);
@@ -129,19 +131,19 @@ export function GuideProgramBlock({
               <span>{formatTimeLabel(program.startMs)}</span>
               <span>{formatTimeLabel(program.endMs)}</span>
               {isLive && (
-                <span className="ml-auto rounded-full bg-danger/80 px-1.5 py-px text-[8.5px] font-semibold uppercase tracking-[0.16em] text-canvas">
-                  Live
+                <span className="ms-auto rounded-full bg-danger/80 px-1.5 py-px text-[8.5px] font-semibold uppercase tracking-[0.16em] text-canvas">
+                  {t("Live")}
                 </span>
               )}
               {canReplay ? (
-                <span className="ml-auto flex items-center gap-1 rounded-full bg-accent/20 px-1.5 py-px text-[8.5px] font-semibold uppercase tracking-[0.16em] text-accent">
+                <span className="ms-auto flex items-center gap-1 rounded-full bg-accent/20 px-1.5 py-px text-[8.5px] font-semibold uppercase tracking-[0.16em] text-accent">
                   <RotateCcw size={9} strokeWidth={2.6} />
-                  Replay
+                  {t("Replay")}
                 </span>
               ) : (
                 isPast && !isLive && (
-                  <span className="ml-auto rounded-full bg-canvas/55 px-1.5 py-px text-[8.5px] font-semibold uppercase tracking-[0.16em] text-ink-subtle">
-                    Ended
+                  <span className="ms-auto rounded-full bg-canvas/55 px-1.5 py-px text-[8.5px] font-semibold uppercase tracking-[0.16em] text-ink-subtle">
+                    {t("Ended")}
                   </span>
                 )
               )}
@@ -178,6 +180,7 @@ function ProgramTooltip({
   onMouseEnter: () => void;
   onMouseLeave: () => void;
 }) {
+  const t = useT();
   const startTime = formatTimeLabel(program.startMs);
   const endTime = formatTimeLabel(program.endMs);
   const durationMin = Math.round((program.endMs - program.startMs) / 60_000);
@@ -198,12 +201,12 @@ function ProgramTooltip({
           {isLive && (
             <span className="flex h-4 items-center gap-1 rounded-full bg-danger px-1.5 text-[9px] font-semibold uppercase tracking-[0.18em] text-canvas">
               <span className="h-1 w-1 rounded-full bg-canvas" />
-              Live
+              {t("Live")}
             </span>
           )}
           {isPast && !isLive && (
             <span className="flex h-4 items-center rounded-full bg-canvas/55 px-1.5 text-[9px] font-semibold uppercase tracking-[0.18em] text-ink-subtle">
-              Ended
+              {t("Ended")}
             </span>
           )}
         </div>

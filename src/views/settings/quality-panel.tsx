@@ -12,46 +12,48 @@ import {
   SubtitleStylePanel,
 } from "./player-panel";
 import { Section, ToggleRow } from "./shared";
+import { useT } from "@/lib/i18n";
 
 export function QualityPanel() {
+  const t = useT();
   const { settings, update } = useSettings();
   return (
     <>
       <Section
-        title="Play button behavior"
-        subtitle="Choose what happens when you hit Play on a title. Manual gives you full control over quality and source."
+        title={t("Play button behavior")}
+        subtitle={t("Choose what happens when you hit Play on a title. Manual gives you full control over quality and source.")}
       >
         <PlayModePanel />
       </Section>
 
       <Section
-        title="Player engine"
-        subtitle="HTML5 plays everything WebView2 supports. mpv handles TrueHD, DTS-HD, AV1, weird containers, and HDR. Auto picks based on the source."
+        title={t("Player engine")}
+        subtitle={t("HTML5 plays everything WebView2 supports. mpv handles TrueHD, DTS-HD, AV1, weird containers, and HDR. Auto picks based on the source.")}
       >
         <PlayerEnginePanel />
       </Section>
 
       <Section
-        title="Seek bar"
-        subtitle="Style the timeline at the bottom of the player. Swap the dot for a sticker, change the bar height, recolor it. Settings live-preview right here."
+        title={t("Seek bar")}
+        subtitle={t("Style the timeline at the bottom of the player. Swap the dot for a sticker, change the bar height, recolor it. Settings live-preview right here.")}
       >
         <SeekBarPanel />
       </Section>
 
       <Section
-        title="Subtitle style"
-        subtitle="How subtitles look during playback. Live preview below."
+        title={t("Subtitle style")}
+        subtitle={t("How subtitles look during playback. Live preview below.")}
       >
         <SubtitleStylePanel />
       </Section>
 
       <Section
-        title="Stream format chips"
-        subtitle="The little 4K · HDR · codec · audio chips that ride along each stream in the play picker."
+        title={t("Stream format chips")}
+        subtitle={t("The little 4K · HDR · codec · audio chips that ride along each stream in the play picker.")}
       >
         <ToggleRow
-          label="Show format chips on stream rows"
-          sub="The picker tags each stream with resolution, HDR flavor, codec, and audio format. Off hides them all."
+          label={t("Show format chips on stream rows")}
+          sub={t("The picker tags each stream with resolution, HDR flavor, codec, and audio format. Off hides them all.")}
           value={settings.showQualityBadge}
           onChange={(v) => update({ showQualityBadge: v })}
         />
@@ -59,8 +61,8 @@ export function QualityPanel() {
       </Section>
 
       <Section
-        title="Poster size"
-        subtitle="Scale every poster and card across Home, Discover, and your library. Bump it up on a 4K or large display where the defaults feel small, or shrink it for a denser grid."
+        title={t("Poster size")}
+        subtitle={t("Scale every poster and card across Home, Discover, and your library. Bump it up on a 4K or large display where the defaults feel small, or shrink it for a denser grid.")}
       >
         <Segmented
           value={posterSizeKey(settings.posterScale)}
@@ -72,11 +74,11 @@ export function QualityPanel() {
       </Section>
 
       <Section
-        title="Accessibility"
-        subtitle="Make everything bigger and easier to read: sidebar, menus, popups, every page. The whole interface scales live as you drag, so you can see the change right here. Great on 4K and ultrawide monitors, or whenever the text feels small."
+        title={t("Accessibility")}
+        subtitle={t("Make everything bigger and easier to read: sidebar, menus, popups, every page. The whole interface scales live as you drag, so you can see the change right here. Great on 4K and ultrawide monitors, or whenever the text feels small.")}
       >
         <div className="flex items-center gap-4 px-1 py-1.5">
-          <span className="w-32 shrink-0 text-[13.5px] font-medium text-ink">Interface scale</span>
+          <span className="w-32 shrink-0 text-[13.5px] font-medium text-ink">{t("Interface scale")}</span>
           <input
             type="range"
             min={0.8}
@@ -94,15 +96,15 @@ export function QualityPanel() {
               onClick={() => update({ uiScale: 1 })}
               className="shrink-0 text-[12.5px] font-medium text-ink-subtle transition-colors hover:text-ink"
             >
-              Reset
+              {t("Reset")}
             </button>
           )}
         </div>
       </Section>
 
       <Section
-        title="Trailer quality"
-        subtitle="How sharp the trailer is when you hit the preview button. Auto picks from your connection speed. 1080p and Best merge separate video and audio with the bundled ffmpeg, so they take a beat longer to start."
+        title={t("Trailer quality")}
+        subtitle={t("How sharp the trailer is when you hit the preview button. Auto picks from your connection speed. 1080p and Best merge separate video and audio with the bundled ffmpeg, so they take a beat longer to start.")}
       >
         <Segmented
           value={settings.trailerQuality}
@@ -118,12 +120,12 @@ export function QualityPanel() {
       </Section>
 
       <Section
-        title="Audio"
-        subtitle="Shape the sound without touching your system EQ. Applies on the mpv engine; the HTML5 engine plays audio untouched."
+        title={t("Audio")}
+        subtitle={t("Shape the sound without touching your system EQ. Applies on the mpv engine; the HTML5 engine plays audio untouched.")}
       >
         <ToggleRow
-          label="Normalize loudness"
-          sub="Evens out quiet dialogue and loud action scenes with a dynamic normalizer."
+          label={t("Normalize loudness")}
+          sub={t("Evens out quiet dialogue and loud action scenes with a dynamic normalizer.")}
           value={settings.audioNormalize}
           onChange={(v) => update({ audioNormalize: v })}
         />
@@ -140,27 +142,26 @@ export function QualityPanel() {
             onChange={(v) => update({ audioProfile: v })}
           />
           <p className="mt-2.5 text-[12.5px] leading-relaxed text-ink-subtle">
-            Night mode gently compresses loud moments for late-night watching. Profiles take
-            effect when the next track loads and stack with the normalizer.
+            {t("Night mode gently compresses loud moments for late-night watching. Profiles take effect when the next track loads and stack with the normalizer.")}
           </p>
         </div>
       </Section>
 
       <Section
-        title="Skip intros"
-        subtitle="Harbor finds intro and credits timing from AniSkip, TheIntroDB, and the file's own chapters, then shows a Skip button at the right moment."
+        title={t("Skip intros")}
+        subtitle={t("Harbor finds intro and credits timing from AniSkip, TheIntroDB, and the file's own chapters, then shows a Skip button at the right moment.")}
       >
         <ToggleRow
-          label="Auto-skip intros"
-          sub="Jump past openings automatically the moment one starts. The Skip button still shows either way, and seeking back into an intro replays it without skipping again."
+          label={t("Auto-skip intros")}
+          sub={t("Jump past openings automatically the moment one starts. The Skip button still shows either way, and seeking back into an intro replays it without skipping again.")}
           value={settings.autoSkipIntro}
           onChange={(v) => update({ autoSkipIntro: v })}
         />
       </Section>
 
       <Section
-        title="Next episode prompt"
-        subtitle="When the Up Next pill appears before an episode ends. Auto scales to the episode length, so short episodes stop prompting so early. Off hides it."
+        title={t("Next episode prompt")}
+        subtitle={t("When the Up Next pill appears before an episode ends. Auto scales to the episode length, so short episodes stop prompting so early. Off hides it.")}
       >
         <Segmented
           value={nextEpLeadKey(settings.nextEpisodeLeadSec)}
@@ -172,8 +173,8 @@ export function QualityPanel() {
       </Section>
 
       <Section
-        title="Downloads"
-        subtitle="Where Harbor saves videos when you hit Download in the player. Pick any folder, including one on a different drive."
+        title={t("Downloads")}
+        subtitle={t("Where Harbor saves videos when you hit Download in the player. Pick any folder, including one on a different drive.")}
       >
         <DownloadsSection />
       </Section>
@@ -227,6 +228,7 @@ function Segmented<T extends string>({
   options: ReadonlyArray<{ value: T; label: string }>;
   onChange: (v: T) => void;
 }) {
+  const t = useT();
   return (
     <div className="flex w-fit flex-wrap gap-1 rounded-full bg-elevated/40 p-1 ring-1 ring-edge-soft/60">
       {options.map((o) => (
@@ -240,7 +242,7 @@ function Segmented<T extends string>({
               : "text-ink-muted hover:bg-raised hover:text-ink"
           }`}
         >
-          {o.label}
+          {t(o.label)}
         </button>
       ))}
     </div>

@@ -1,5 +1,6 @@
 import { Cast } from "lucide-react";
 import type { PlayerCapabilities } from "@/lib/player/bridge";
+import { useT } from "@/lib/i18n";
 import { BigButton } from "./big-button";
 
 export function CastButton({
@@ -9,15 +10,16 @@ export function CastButton({
   onClick: () => void;
   capabilities: PlayerCapabilities;
 }) {
+  const t = useT();
   const supported = capabilities.airplay || capabilities.chromecast;
   return (
     <BigButton
       onClick={onClick}
-      ariaLabel="Cast"
+      ariaLabel={t("Cast")}
       tooltip={
         supported
-          ? "Cast to a device"
-          : "Casting comes with the mpv backend"
+          ? t("Cast to a device")
+          : t("Casting comes with the mpv backend")
       }
       disabled={!supported}
     >

@@ -20,6 +20,7 @@ import { BackToTop } from "@/components/back-to-top";
 import { resetOmdbBudget } from "@/lib/providers/omdb";
 import { useSettings } from "@/lib/settings";
 import { useView } from "@/lib/view";
+import { useT } from "@/lib/i18n";
 
 const IS_WEB = typeof window !== "undefined" && !("__TAURI_INTERNALS__" in window);
 
@@ -91,6 +92,7 @@ const SECTION_META: Record<SectionId, { label: string; sub: string }> = {
 type SavedKey = LibraryKey | DebridKey;
 
 export function Settings() {
+  const t = useT();
   const { settings, update } = useSettings();
   const [tmdbDraft, setTmdbDraft] = useState(settings.tmdbKey);
   const [omdbDraft, setOmdbDraft] = useState(settings.omdbKey);
@@ -179,9 +181,9 @@ export function Settings() {
           {!(active === "relay" && relayMode !== "panel") && (
             <header className="flex flex-col gap-2">
               <h1 className="font-display text-[44px] font-medium leading-[1.05] tracking-tight text-ink">
-                {SECTION_META[active].label}
+                {t(SECTION_META[active].label)}
               </h1>
-              <p className="text-[15px] text-ink-muted">{SECTION_META[active].sub}</p>
+              <p className="text-[15px] text-ink-muted">{t(SECTION_META[active].sub)}</p>
             </header>
           )}
 

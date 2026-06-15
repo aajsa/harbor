@@ -159,7 +159,7 @@ export function TogetherDeployModal({ onClose, inline = false }: { onClose: () =
               className="flex h-11 items-center justify-center gap-2 rounded-xl bg-ink text-[14px] font-medium text-canvas transition-transform hover:scale-[1.01]"
             >
               I have my token
-              <ArrowRight size={15} strokeWidth={2} />
+              <ArrowRight size={15} strokeWidth={2} className="dir-icon" />
             </button>
           </div>
         )}

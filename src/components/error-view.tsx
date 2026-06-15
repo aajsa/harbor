@@ -301,7 +301,7 @@ function TechnicalDetail({ content }: { content: string }) {
               onClick={onCopy}
               aria-label={copied ? "Copied" : "Copy to clipboard"}
               title={copied ? "Copied" : "Copy"}
-              className={`absolute right-2.5 top-2.5 inline-flex h-8 w-8 items-center justify-center rounded-full transition-[background-color,color,transform] active:scale-95 ${
+              className={`absolute end-2.5 top-2.5 inline-flex h-8 w-8 items-center justify-center rounded-full transition-[background-color,color,transform] active:scale-95 ${
                 copied
                   ? "bg-accent/20 text-accent"
                   : "text-ink-subtle hover:bg-elevated/70 hover:text-ink"
@@ -320,7 +320,7 @@ function TechnicalDetail({ content }: { content: string }) {
                 />
               </span>
             </button>
-            <pre className="max-h-[300px] overflow-auto whitespace-pre-wrap break-words p-5 pr-14 font-mono text-[13.5px] leading-[1.6] text-ink">
+            <pre className="max-h-[300px] overflow-auto whitespace-pre-wrap break-words p-5 pe-14 font-mono text-[13.5px] leading-[1.6] text-ink">
               {content}
             </pre>
           </div>

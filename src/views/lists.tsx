@@ -5,6 +5,7 @@ import { HarborLoader } from "@/components/harbor-loader";
 import { PickCard } from "@/components/pick-card";
 import { ListResolveError, sourceLabel, type ListSource } from "@/lib/lists/types";
 import { useScrollMemory, useView } from "@/lib/view";
+import { useT } from "@/lib/i18n";
 import { ListsEmptyState } from "./lists/empty-state";
 import { ListPicker } from "./lists/list-picker";
 import { useCustomLists } from "./lists/use-custom-lists";
@@ -13,6 +14,7 @@ import { useListItems } from "./lists/use-list-items";
 const RENDER_CAP = 500;
 
 export default function ListsView({ active }: { active: boolean }) {
+  const t = useT();
   const { openSettings } = useView();
   const { lists, activeId, selectId, addList, editList, removeList } = useCustomLists();
 
@@ -39,14 +41,14 @@ export default function ListsView({ active }: { active: boolean }) {
         <button
           onClick={refresh}
           disabled={loading || !activeList}
-          title="Refresh list"
+          title={t("Refresh list")}
           className="flex h-11 w-11 items-center justify-center rounded-xl border border-edge-soft/55 bg-elevated text-ink-muted transition-colors hover:bg-raised hover:text-ink disabled:opacity-40"
         >
           <RefreshCw size={15} strokeWidth={2} className={loading ? "animate-spin" : ""} />
         </button>
         {count != null && (
-          <span className="ml-auto rounded-full bg-canvas/70 px-2 py-0.5 text-[11px] font-semibold tabular-nums text-ink-muted">
-            {count.toLocaleString()} titles
+          <span className="ms-auto rounded-full bg-canvas/70 px-2 py-0.5 text-[11px] font-semibold tabular-nums text-ink-muted">
+            {t("{n} titles", { n: count.toLocaleString() })}
           </span>
         )}
       </header>
@@ -56,15 +58,15 @@ export default function ListsView({ active }: { active: boolean }) {
       ) : (
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 pt-6 pb-16">
           {!activeList ? (
-            <Notice text="Pick a list to view it." />
+            <Notice text={t("Pick a list to view it.")} />
           ) : error ? (
-            <Notice text={errorText(error)} onRetry={refresh} onSettings={hasKeyError(error) ? () => openSettings() : undefined} />
+            <Notice text={errorText(error, t)} onRetry={refresh} onSettings={hasKeyError(error) ? () => openSettings() : undefined} />
           ) : loading && items.length === 0 ? (
             <div className="flex justify-center py-16">
               <HarborLoader size="sm" />
             </div>
           ) : items.length === 0 ? (
-            <Notice text="This list is empty, or its items couldn't be matched." />
+            <Notice text={t("This list is empty, or its items couldn't be matched.")} />
           ) : (
             <>
               <div className="mb-7 flex items-baseline gap-3">
@@ -72,12 +74,12 @@ export default function ListsView({ active }: { active: boolean }) {
                   {activeList.name}
                 </h1>
                 <span className="text-[13px] text-ink-subtle">
-                  {items.length.toLocaleString()} titles · {sourceLabel(activeList.source)}
+                  {t("{n} titles", { n: items.length.toLocaleString() })} · {sourceLabel(activeList.source)}
                 </span>
               </div>
               {items.length > RENDER_CAP && (
                 <p className="mb-4 text-[12.5px] text-ink-subtle">
-                  Showing {RENDER_CAP.toLocaleString()} of {items.length.toLocaleString()}.
+                  {t("Showing {shown} of {total}.", { shown: RENDER_CAP.toLocaleString(), total: items.length.toLocaleString() })}
                 </p>
               )}
               <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-x-4 gap-y-8">
@@ -102,14 +104,14 @@ function hasKeyError(error: ListResolveError): boolean {
   return error.reason === "missing-key";
 }
 
-function errorText(error: ListResolveError): string {
+function errorText(error: ListResolveError, t: (key: string, vars?: Record<string, string | number>) => string): string {
   switch (error.reason) {
     case "missing-key":
-      return `This list needs your ${keyLabel(error.source)} API key. Add it in Settings, then refresh.`;
+      return t("This list needs your {key} API key. Add it in Settings, then refresh.", { key: keyLabel(error.source) });
     case "not-found":
-      return "That list is private or doesn't exist. Public lists only.";
+      return t("That list is private or doesn't exist. Public lists only.");
     default:
-      return "Couldn't load this list. Check the URL and try again.";
+      return t("Couldn't load this list. Check the URL and try again.");
   }
 }
 
@@ -122,6 +124,7 @@ function Notice({
   onRetry?: () => void;
   onSettings?: () => void;
 }) {
+  const t = useT();
   return (
     <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-edge px-6 py-16 text-center">
       <p className="max-w-[520px] text-[14.5px] leading-relaxed text-ink-muted">{text}</p>
@@ -131,7 +134,7 @@ function Notice({
             onClick={onSettings}
             className="h-9 rounded-lg px-4 text-[13px] font-medium text-ink-muted transition-colors hover:text-ink"
           >
-            Open Settings
+            {t("Open Settings")}
           </button>
         )}
         {onRetry && (
@@ -139,7 +142,7 @@ function Notice({
             onClick={onRetry}
             className="h-9 rounded-lg bg-elevated px-4 text-[13px] font-semibold text-ink transition-colors hover:bg-raised"
           >
-            Retry
+            {t("Retry")}
           </button>
         )}
       </div>

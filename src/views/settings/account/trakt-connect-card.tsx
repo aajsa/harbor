@@ -9,6 +9,7 @@ import {
   type DeviceCode,
 } from "@/lib/trakt";
 import { openUrl } from "@/lib/window";
+import { useT } from "@/lib/i18n";
 import { DocsCode } from "../relay-docs";
 import { ExtLink } from "../shared";
 
@@ -28,6 +29,7 @@ function TraktBadge() {
 }
 
 export function TraktConnectCard() {
+  const t = useT();
   const { settings, update } = useSettings();
   const connected = !!settings.traktAccessToken;
   const hasCreds = !!settings.traktClientId && !!settings.traktClientSecret;
@@ -137,9 +139,9 @@ export function TraktConnectCard() {
         <div className="flex items-start gap-4">
           <TraktBadge />
           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-            <span className="text-[14.5px] font-medium text-ink">Authorize Harbor on Trakt</span>
+            <span className="text-[14.5px] font-medium text-ink">{t("Authorize Harbor on Trakt")}</span>
             <span className="text-[12.5px] leading-snug text-ink-muted">
-              We opened {code?.verification_url} in your browser. Enter the code below.
+              {t("We opened {url} in your browser. Enter the code below.", { url: code?.verification_url ?? "" })}
             </span>
           </div>
         </div>
@@ -152,7 +154,7 @@ export function TraktConnectCard() {
             className="flex h-9 items-center gap-1.5 rounded-lg border border-edge-soft px-3 text-[12px] font-medium text-ink-muted transition-colors hover:border-edge hover:text-ink"
           >
             {copied ? <Check size={13} /> : <Copy size={13} />}
-            {copied ? "Copied" : "Copy"}
+            {copied ? t("Copied") : t("Copy")}
           </button>
         </div>
         <div className="flex items-center justify-between gap-2">
@@ -160,20 +162,20 @@ export function TraktConnectCard() {
             onClick={cancel}
             className="flex h-10 items-center rounded-xl border border-edge-soft px-4 text-[12.5px] font-medium text-ink-muted transition-colors hover:border-edge hover:text-ink"
           >
-            Cancel
+            {t("Cancel")}
           </button>
           {phase === "awaiting" ? (
             <button
               onClick={() => setPhase("polling")}
               className="flex h-10 items-center gap-1.5 rounded-xl bg-ink px-4 text-[13px] font-semibold text-canvas transition-transform hover:scale-[1.02]"
             >
-              I authorized it
-              <ArrowRight size={13} strokeWidth={2.2} />
+              {t("I authorized it")}
+              <ArrowRight size={13} strokeWidth={2.2} className="dir-icon" />
             </button>
           ) : (
             <span className="flex h-10 items-center gap-2 px-3 text-[12.5px] text-ink-muted">
               <Loader2 size={13} className="animate-spin" />
-              Waiting for Trakt…
+              {t("Waiting for Trakt…")}
             </span>
           )}
         </div>
@@ -187,12 +189,12 @@ export function TraktConnectCard() {
         <TraktBadge />
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="text-[14.5px] font-medium text-ink">
-            {connected ? `Connected as @${settings.traktUsername ?? "user"}` : "Connect Trakt"}
+            {connected ? t("Connected as @{user}", { user: settings.traktUsername ?? "user" }) : t("Connect Trakt")}
           </span>
           <span className="text-[12.5px] leading-snug text-ink-muted">
             {connected
-              ? "Plays + ratings sync from Harbor to Trakt.tv."
-              : "Mirror plays + ratings to Trakt.tv. Uses Trakt's device flow: enter a short code in your browser."}
+              ? t("Plays + ratings sync from Harbor to Trakt.tv.")
+              : t("Mirror plays + ratings to Trakt.tv. Uses Trakt's device flow: enter a short code in your browser.")}
           </span>
         </div>
         {connected ? (
@@ -200,7 +202,7 @@ export function TraktConnectCard() {
             onClick={disconnect}
             className="flex h-10 shrink-0 items-center rounded-xl border border-edge-soft px-4 text-[12.5px] font-medium text-ink-subtle transition-colors hover:border-danger/40 hover:text-danger"
           >
-            Disconnect
+            {t("Disconnect")}
           </button>
         ) : hasCreds ? (
           <button
@@ -209,7 +211,7 @@ export function TraktConnectCard() {
             className="flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-ink px-4 text-[13px] font-semibold text-canvas transition-transform hover:scale-[1.02] disabled:opacity-60"
           >
             {phase === "starting" ? <Loader2 size={13} className="animate-spin" /> : null}
-            {phase === "starting" ? "Starting…" : "Connect"}
+            {phase === "starting" ? t("Starting…") : t("Connect")}
             {phase !== "starting" && <ExternalLink size={13} strokeWidth={2.2} />}
           </button>
         ) : (
@@ -217,7 +219,7 @@ export function TraktConnectCard() {
             onClick={() => setPhase(phase === "configuring" ? "idle" : "configuring")}
             className="flex h-10 shrink-0 items-center gap-1.5 rounded-xl border border-edge-soft px-4 text-[12.5px] font-medium text-ink-muted transition-colors hover:border-edge hover:text-ink"
           >
-            {phase === "configuring" ? "Hide" : "Set up"}
+            {phase === "configuring" ? t("Hide") : t("Set up")}
           </button>
         )}
       </div>
@@ -241,14 +243,14 @@ export function TraktConnectCard() {
               type="text"
               value={clientIdDraft}
               onChange={(e) => setClientIdDraft(e.target.value)}
-              placeholder="Client ID"
+              placeholder={t("Client ID")}
               className="h-11 rounded-xl border border-edge bg-canvas px-3.5 font-mono text-[13px] text-ink outline-none focus:border-ink"
             />
             <input
               type="password"
               value={clientSecretDraft}
               onChange={(e) => setClientSecretDraft(e.target.value)}
-              placeholder="Client secret"
+              placeholder={t("Client secret")}
               className="h-11 rounded-xl border border-edge bg-canvas px-3.5 font-mono text-[13px] text-ink outline-none focus:border-ink"
             />
             <button
@@ -262,7 +264,7 @@ export function TraktConnectCard() {
               disabled={!clientIdDraft.trim() || !clientSecretDraft.trim()}
               className="flex h-10 items-center justify-center rounded-xl bg-ink text-[13px] font-semibold text-canvas transition-transform hover:scale-[1.01] disabled:opacity-50 disabled:hover:scale-100"
             >
-              Save credentials
+              {t("Save credentials")}
             </button>
           </div>
         </div>

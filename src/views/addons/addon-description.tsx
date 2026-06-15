@@ -1,7 +1,9 @@
 import { ChevronDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useT } from "@/lib/i18n";
 
 export function AddonDescription({ text }: { text: string }) {
+  const t = useT();
   const [expanded, setExpanded] = useState(false);
   const [showToggle, setShowToggle] = useState(false);
   const ref = useRef<HTMLParagraphElement>(null);
@@ -40,7 +42,7 @@ export function AddonDescription({ text }: { text: string }) {
           onClick={() => setExpanded((e) => !e)}
           className="mt-2 inline-flex items-center gap-1 text-[11.5px] font-bold uppercase tracking-[0.18em] text-accent transition-opacity hover:opacity-80"
         >
-          {expanded ? "Show less" : "View more"}
+          {expanded ? t("Show less") : t("View more")}
           <ChevronDown
             size={12}
             strokeWidth={2.6}

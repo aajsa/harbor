@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { Meta } from "@/lib/cinemeta";
 import { fetchGenreSample } from "@/lib/feed";
 import { MOVIE_GENRES } from "@/lib/feed/tags";
+import { useT } from "@/lib/i18n";
 import { rpdbPoster } from "@/lib/providers/rpdb";
 import { useSettings } from "@/lib/settings";
 import { useView } from "@/lib/view";
@@ -51,8 +52,9 @@ const TILES: string[] = [
 ];
 
 export function GenreTiles() {
+  const t = useT();
   return (
-    <Row title="Browse by Genre" min={210} shape="tile" alwaysActive>
+    <Row title={t("Browse by Genre")} min={210} shape="tile" alwaysActive>
       {TILES.map((g) => (
         <GenreTile key={g} genre={g} />
       ))}

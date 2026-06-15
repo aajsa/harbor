@@ -3,6 +3,7 @@ import type { PlayerBridge } from "@/lib/player/bridge";
 import { readResumeMs, saveResumeMs } from "@/lib/resume";
 import { episodeFromVideoId, libraryGetOne } from "@/lib/stremio";
 import type { PlayerSrc } from "@/lib/view";
+import { videoIdFor, cloudWriteId } from "./use-stremio-sync";
 
 const RESUME_PROMPT_MIN_SEC = 30;
 
@@ -47,14 +48,19 @@ export function useBridgeLoad(params: {
     const bridge = bridgeRef.current;
     if (!bridge) return;
     const playUrl = transcodedUrl ?? src.url;
-    if (lastLoadedUrlRef.current === playUrl) return;
-    lastLoadedUrlRef.current = playUrl;
+    const loadKey = `${playUrl}|s${season ?? ""}e${episode ?? ""}`;
+    if (lastLoadedUrlRef.current === loadKey) return;
+    lastLoadedUrlRef.current = loadKey;
     const isFirstLoad = firstLoadRef.current;
     firstLoadRef.current = false;
     const isAutoRetry = (src.attempt ?? 0) > 0;
     const isLive = src.meta.id?.startsWith("iptv:") ?? false;
     let cancelled = false;
     (async () => {
+      const openingVid = videoIdFor(
+        src,
+        cloudWriteId(src.meta.id, src.imdbId ?? null, src.imdbIdVerified === true),
+      );
       const resolved = isLive
         ? { ms: 0, fromRemote: false }
         : await resolveStartMs(
@@ -64,6 +70,7 @@ export function useBridgeLoad(params: {
             authKey,
             src.imdbId ?? null,
             src.imdbIdVerified === true,
+            openingVid,
           );
       const startMs = resolved.ms;
       const startSec = startMs / 1000;
@@ -80,6 +87,13 @@ export function useBridgeLoad(params: {
           url: playUrl,
           subtitles: src.subtitles,
           notWebReady: src.notWebReady,
+          startAtSec: guestInRoom
+            ? undefined
+            : eligibleForPrompt
+              ? undefined
+              : startSec > 5
+                ? startSec
+                : undefined,
         });
       } catch (e) {
         if (cancelled) return;
@@ -99,11 +113,6 @@ export function useBridgeLoad(params: {
             setPendingSeekSec(0);
           }
         };
-        return;
-      }
-      if (!guestInRoom && !isLive && startSec > 5) {
-        bridge.pause();
-        setPendingSeekSec(startSec);
         return;
       }
       if (!inRoomRef.current) {
@@ -136,6 +145,7 @@ async function resolveStartMs(
   authKey: string | null,
   imdbId: string | null,
   imdbVerified: boolean,
+  openingVid: string | null,
 ): Promise<{ ms: number; fromRemote: boolean }> {
   const local = readResumeMs(metaId, season, episode);
   if (!authKey) return { ms: local, fromRemote: false };
@@ -144,7 +154,9 @@ async function resolveStartMs(
   ) => {
     if (!item) return false;
     if (typeof season !== "number" || typeof episode !== "number") return true;
-    const fromVid = episodeFromVideoId(item.state?.video_id);
+    const vid = item.state?.video_id;
+    if (openingVid && vid && vid === openingVid) return true;
+    const fromVid = episodeFromVideoId(vid);
     const se = item.state?.season ?? fromVid?.season;
     const ep = item.state?.episode ?? fromVid?.episode;
     return se === season && ep === episode;

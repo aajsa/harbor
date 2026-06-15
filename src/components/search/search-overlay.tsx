@@ -1,6 +1,7 @@
 import { Search, X, Loader2, CornerDownLeft, CalendarRange, Tag } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useT } from "@/lib/i18n";
 import { useSearch } from "@/lib/search-context";
 import { useView } from "@/lib/view";
 import { MOVIE_GENRES, TV_GENRES } from "@/lib/feed/tags";
@@ -20,14 +21,15 @@ export function SearchOverlay() {
   const { open, setOpen, query, setQuery, results, status, clear, recordRecent } = useSearch();
   const inputRef = useRef<HTMLInputElement>(null);
   const { openFilter, openMeta } = useView();
+  const t = useT();
   const [guideOpen, setGuideOpen] = useState(false);
 
   useEffect(() => {
     if (!open) return;
-    const t = window.setTimeout(() => inputRef.current?.focus(), 30);
+    const id = window.setTimeout(() => inputRef.current?.focus(), 30);
     document.body.style.overflow = "hidden";
     return () => {
-      window.clearTimeout(t);
+      window.clearTimeout(id);
       document.body.style.overflow = "";
     };
   }, [open]);
@@ -87,7 +89,7 @@ export function SearchOverlay() {
   return createPortal(
     <div className="fixed inset-0 z-[200] flex flex-col">
       <button
-        aria-label="Close search"
+        aria-label={t("Close search")}
         onClick={close}
         className="harbor-search-backdrop absolute inset-0 cursor-default"
       />
@@ -109,7 +111,7 @@ export function SearchOverlay() {
                 openMeta(meta);
               }
             }}
-            placeholder="Search movies, shows, people, genres, years..."
+            placeholder={t("Search movies, shows, people, genres, years...")}
             className="h-16 flex-1 bg-transparent text-[20px] text-ink placeholder:text-ink-subtle focus:outline-none sm:text-[22px]"
             spellCheck={false}
             autoComplete="off"
@@ -118,7 +120,7 @@ export function SearchOverlay() {
           {query && (
             <button
               type="button"
-              aria-label="Clear"
+              aria-label={t("Clear")}
               onClick={clear}
               className="flex h-10 w-10 items-center justify-center rounded-full text-ink-subtle transition-colors hover:bg-canvas/60 hover:text-ink"
             >
@@ -151,7 +153,7 @@ export function SearchOverlay() {
               </span>
               <span className="flex flex-col">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
-                  Browse
+                  {t("Browse")}
                 </span>
                 <span className="text-[15px] font-semibold text-ink">{results.intent.label}</span>
               </span>
@@ -166,8 +168,8 @@ export function SearchOverlay() {
               <AddonHits hits={results.addons} onClose={close} />
               <PeopleRow people={results.people} onClose={close} />
               <div className="grid gap-8 lg:grid-cols-2">
-                <MetaList title="Movies" items={results.movies} onClose={close} />
-                <MetaList title="Series" items={results.series} onClose={close} />
+                <MetaList title={t("Movies")} items={results.movies} onClose={close} />
+                <MetaList title={t("Series")} items={results.series} onClose={close} />
               </div>
               <AnimeRow items={results.anime} onClose={close} />
               <AddonResults groups={results.addonGroups} onClose={close} />
@@ -176,9 +178,9 @@ export function SearchOverlay() {
 
           {noResults && !magnetInput && (
             <div className="flex flex-col items-center gap-3 pt-16 text-center">
-              <span className="text-[17px] font-semibold text-ink">No matches for "{trimmed}"</span>
+              <span className="text-[17px] font-semibold text-ink">{t("No matches for \"{query}\"", { query: trimmed })}</span>
               <span className="max-w-[44ch] text-[14px] text-ink-muted">
-                Try a different spelling, a person's name, a year like "1972", or a genre like "Horror".
+                {t("Try a different spelling, a person's name, a year like \"1972\", or a genre like \"Horror\".")}
               </span>
             </div>
           )}
@@ -186,7 +188,7 @@ export function SearchOverlay() {
           {trimmed && !magnetInput && !results && status !== "done" && (
             <div className="flex flex-col items-center gap-3 pt-16 text-ink-muted">
               <Loader2 size={22} className="animate-spin" />
-              <span className="text-[13.5px]">Looking…</span>
+              <span className="text-[13.5px]">{t("Looking…")}</span>
             </div>
           )}
         </div>

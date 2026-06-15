@@ -1,9 +1,11 @@
 import { Check, ExternalLink, Loader2, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useT } from "@/lib/i18n";
 import { useAnilist } from "@/lib/anilist/provider";
 
 export function AnilistConnectModal({ onClose }: { onClose: () => void }) {
   const { connectState, beginConnect, submitCode, cancelConnect } = useAnilist();
+  const t = useT();
   const [draftCode, setDraftCode] = useState("");
   const started = useRef(false);
 
@@ -15,8 +17,8 @@ export function AnilistConnectModal({ onClose }: { onClose: () => void }) {
 
   useEffect(() => {
     if (connectState.kind === "success") {
-      const t = setTimeout(onClose, 1400);
-      return () => clearTimeout(t);
+      const id = setTimeout(onClose, 1400);
+      return () => clearTimeout(id);
     }
   }, [connectState.kind, onClose]);
 
@@ -37,10 +39,10 @@ export function AnilistConnectModal({ onClose }: { onClose: () => void }) {
 
   const heading =
     connectState.kind === "success"
-      ? "Connected"
+      ? t("Connected")
       : connectState.kind === "verifying"
-        ? "Verifying"
-        : "Authorize Harbor on AniList";
+        ? t("Verifying")
+        : t("Authorize Harbor on AniList");
 
   return (
     <div
@@ -53,14 +55,14 @@ export function AnilistConnectModal({ onClose }: { onClose: () => void }) {
         <div className="flex items-start justify-between gap-4">
           <div className="flex flex-col gap-0.5">
             <span className="text-[11px] font-bold uppercase tracking-[0.32em] text-ink-subtle">
-              Connect AniList
+              {t("Connect AniList")}
             </span>
             <h2 className="text-[20px] font-medium tracking-tight text-ink">{heading}</h2>
           </div>
           <button
             onClick={onCancel}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-canvas/40 text-ink-subtle transition-colors hover:bg-canvas/60 hover:text-ink"
-            aria-label="Cancel"
+            aria-label={t("Cancel")}
           >
             <X size={16} />
           </button>
@@ -69,20 +71,19 @@ export function AnilistConnectModal({ onClose }: { onClose: () => void }) {
         {connectState.kind === "idle" && (
           <p className="flex items-center gap-2 text-[12.5px] text-ink-subtle">
             <Loader2 size={13} className="animate-spin" />
-            Opening AniList...
+            {t("Opening AniList...")}
           </p>
         )}
 
         {connectState.kind === "needs-code" && (
           <div className="flex flex-col gap-5">
             <p className="text-[13px] leading-relaxed text-ink-muted">
-              A browser tab opened on AniList. Approve Harbor there, then copy the code it shows and
-              paste it below.
+              {t("A browser tab opened on AniList. Approve Harbor there, then copy the code it shows and paste it below.")}
             </p>
             <textarea
               value={draftCode}
               onChange={(e) => setDraftCode(e.target.value)}
-              placeholder="Paste the code from AniList"
+              placeholder={t("Paste the code from AniList")}
               autoFocus
               spellCheck={false}
               rows={3}
@@ -93,13 +94,13 @@ export function AnilistConnectModal({ onClose }: { onClose: () => void }) {
               disabled={!draftCode.trim()}
               className="flex h-11 items-center justify-center gap-2 rounded-xl bg-ink text-[13.5px] font-semibold text-canvas transition-transform hover:scale-[1.02] active:scale-[0.97] disabled:opacity-40 disabled:hover:scale-100"
             >
-              Connect
+              {t("Connect")}
             </button>
             <button
               onClick={beginConnect}
               className="flex items-center gap-1.5 self-start text-[12.5px] text-ink-subtle transition-colors hover:text-ink"
             >
-              Open AniList again
+              {t("Open AniList again")}
               <ExternalLink size={12} strokeWidth={2.2} />
             </button>
           </div>
@@ -108,7 +109,7 @@ export function AnilistConnectModal({ onClose }: { onClose: () => void }) {
         {connectState.kind === "verifying" && (
           <p className="flex items-center gap-2 text-[12.5px] text-ink-subtle">
             <Loader2 size={13} className="animate-spin" />
-            Checking with AniList...
+            {t("Checking with AniList...")}
           </p>
         )}
 
@@ -117,8 +118,8 @@ export function AnilistConnectModal({ onClose }: { onClose: () => void }) {
             <Check size={16} strokeWidth={2.4} className="text-emerald-300" />
             <span className="text-[14px] text-ink">
               {connectState.session.userName
-                ? `Connected as ${connectState.session.userName}`
-                : "Connected to AniList"}
+                ? t("Connected as {username}", { username: connectState.session.userName })
+                : t("Connected to AniList")}
             </span>
           </div>
         )}
@@ -126,14 +127,14 @@ export function AnilistConnectModal({ onClose }: { onClose: () => void }) {
         {connectState.kind === "error" && (
           <div className="flex flex-col gap-3 rounded-xl border border-red-400/25 bg-red-400/8 p-4">
             <div className="flex flex-col gap-0.5">
-              <span className="text-[14px] font-medium text-ink">Couldn't connect to AniList</span>
+              <span className="text-[14px] font-medium text-ink">{t("Couldn't connect to AniList")}</span>
               <span className="text-[12.5px] text-ink-muted">{connectState.message}</span>
             </div>
             <button
               onClick={beginConnect}
               className="self-start rounded-lg bg-ink px-3.5 py-1.5 text-[12.5px] font-semibold text-canvas transition-transform hover:scale-[1.02] active:scale-[0.97]"
             >
-              Try again
+              {t("Try again")}
             </button>
           </div>
         )}

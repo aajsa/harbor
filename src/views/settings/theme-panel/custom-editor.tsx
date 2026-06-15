@@ -1,6 +1,7 @@
 import { ArrowLeft, RotateCcw, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { applyCustomColorsPreview, CustomColors, type FontPairId } from "@/lib/theme";
+import { useT } from "@/lib/i18n";
 import { ColorPopoverTrigger } from "../color-picker";
 
 const COLOR_FIELDS: Array<{ key: keyof CustomColors; label: string; hint: string; group: string }> = [
@@ -29,6 +30,7 @@ export function CustomEditor({
   canDelete: boolean;
   onDelete: () => void;
 }) {
+  const t = useT();
   const [draft, setDraft] = useState<CustomColors>(seed);
 
   useEffect(() => {
@@ -47,8 +49,8 @@ export function CustomEditor({
           onClick={() => onSave(draft)}
           className="flex items-center gap-2 rounded-full border border-edge-soft px-4 py-2 text-[12.5px] font-semibold text-ink-muted transition-colors hover:border-edge hover:text-ink"
         >
-          <ArrowLeft size={13} strokeWidth={2.4} />
-          Done
+          <ArrowLeft size={13} strokeWidth={2.4} className="dir-icon" />
+          {t("Done")}
         </button>
         <div className="flex items-center gap-2">
           <button
@@ -56,7 +58,7 @@ export function CustomEditor({
             className="flex items-center gap-2 rounded-full border border-edge-soft px-4 py-2 text-[12.5px] font-semibold text-ink-muted transition-colors hover:border-edge hover:text-ink"
           >
             <RotateCcw size={13} strokeWidth={2.2} />
-            Reset
+            {t("Reset")}
           </button>
           {canDelete && (
             <button
@@ -64,14 +66,14 @@ export function CustomEditor({
               className="flex items-center gap-2 rounded-full border border-rose-300/30 bg-rose-400/10 px-4 py-2 text-[12.5px] font-semibold text-rose-200 transition-colors hover:bg-rose-400/15"
             >
               <Trash2 size={13} strokeWidth={2.2} />
-              Delete
+              {t("Delete")}
             </button>
           )}
           <button
             onClick={() => onSave(draft)}
             className="rounded-full bg-ink px-5 py-2 text-[12.5px] font-semibold text-canvas transition-opacity hover:opacity-90"
           >
-            Save
+            {t("Save")}
           </button>
         </div>
       </div>
@@ -80,14 +82,14 @@ export function CustomEditor({
         {Object.entries(groups).map(([groupName, fields]) => (
           <div key={groupName} className="flex flex-col gap-3">
             <span className="text-[10.5px] font-bold uppercase tracking-[0.22em] text-ink-subtle">
-              {groupName}
+              {t(groupName)}
             </span>
             <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
               {fields.map((f) => (
                 <ColorRow
                   key={f.key}
-                  label={f.label}
-                  hint={f.hint}
+                  label={t(f.label)}
+                  hint={t(f.hint)}
                   value={draft[f.key]}
                   onChange={(v) => setDraft((d) => ({ ...d, [f.key]: v }))}
                 />
@@ -98,7 +100,7 @@ export function CustomEditor({
       </div>
 
       <p className="text-[11.5px] leading-relaxed text-ink-subtle">
-        Live preview is on. Done and Save both keep what you've picked as your Custom theme. Reset reverts the editor to the saved palette.
+        {t("Live preview is on. Done and Save both keep what you've picked as your Custom theme. Reset reverts the editor to the saved palette.")}
       </p>
     </div>
   );

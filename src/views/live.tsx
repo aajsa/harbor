@@ -2,6 +2,7 @@ import { Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePlaylistMutations } from "./live/hooks/use-playlist-mutations";
 import { useLiveActions } from "./live/hooks/use-live-actions";
+import { useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
 import { useScrollMemory, useView } from "@/lib/view";
 import { FAVORITES_GROUP_KEY, useFavorites } from "@/lib/iptv/favorites";
@@ -61,6 +62,7 @@ function writeMode(m: ViewMode) {
 }
 
 export function LiveView({ active }: { active: boolean }) {
+  const t = useT();
   const { settings } = useSettings();
   const { openMeta } = useView();
   const sources = settings.iptvPlaylists;
@@ -268,7 +270,7 @@ export function LiveView({ active }: { active: boolean }) {
           />
           {mode === "multiview" ? (
             <div className="flex h-11 flex-1 min-w-[220px] items-center px-1 text-[13px] text-ink-subtle">
-              Pick channels into the grid below. Audio follows the highlighted tile.
+              {t("Pick channels into the grid below. Audio follows the highlighted tile.")}
             </div>
           ) : (
             <div className="flex h-11 flex-1 min-w-[220px] items-center gap-2.5 rounded-xl border border-edge-soft/55 bg-elevated px-3.5">
@@ -280,7 +282,7 @@ export function LiveView({ active }: { active: boolean }) {
                   setQuery(e.target.value);
                   if (e.target.value && mode === "home") setMode("grid");
                 }}
-                placeholder={`Search ${playlist?.channels.length ?? 0} channels`}
+                placeholder={t("Search {n} channels", { n: playlist?.channels.length ?? 0 })}
                 className="flex-1 bg-transparent text-[14px] text-ink placeholder:text-ink-subtle focus:outline-none"
               />
               {query && (
@@ -288,7 +290,7 @@ export function LiveView({ active }: { active: boolean }) {
                   onClick={() => setQuery("")}
                   className="text-[12.5px] font-medium text-ink-subtle transition-colors hover:text-ink"
                 >
-                  Clear
+                  {t("Clear")}
                 </button>
               )}
             </div>
@@ -298,7 +300,7 @@ export function LiveView({ active }: { active: boolean }) {
         )}
         {epgError && !epg && (
           <div className="mx-6 mt-2 flex items-center gap-2 rounded-xl border border-danger/40 bg-danger/10 px-4 py-2 text-[12.5px] text-ink-muted">
-            <span className="font-semibold text-danger">EPG failed:</span>
+            <span className="font-semibold text-danger">{t("EPG failed:")}</span>
             <span className="min-w-0 flex-1 truncate">{epgError}</span>
           </div>
         )}

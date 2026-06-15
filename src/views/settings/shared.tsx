@@ -1,6 +1,7 @@
 import { Check, ExternalLink, Key, Lock } from "lucide-react";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { openUrl } from "@/lib/window";
+import { useT } from "@/lib/i18n";
 
 export type SectionId =
   | "account"
@@ -85,6 +86,7 @@ export function KeyField({
   headerExtra?: React.ReactNode;
   badge?: string;
 }) {
+  const t = useT();
   const [reveal, setReveal] = useState(false);
   const [focused, setFocused] = useState(false);
   const [initialValue, setInitialValue] = useState(value);
@@ -131,7 +133,7 @@ export function KeyField({
           {!headerExtra && value.length > 0 && !showSave && (
             <span className="flex items-center gap-1.5 text-[11px] font-medium text-accent transition-colors">
               <span className="h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_6px_rgba(0,200,140,0.5)]" />
-              {saved ? "Saved" : "Active"}
+              {saved ? t("Saved") : t("Active")}
             </span>
           )}
         </div>
@@ -179,7 +181,7 @@ export function KeyField({
           <button
             type="button"
             onClick={() => setReveal((v) => !v)}
-            aria-label={reveal ? "Hide" : "Show"}
+            aria-label={reveal ? t("Hide") : t("Show")}
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-ink-subtle transition-colors hover:bg-canvas/40 hover:text-ink"
           >
             {reveal ? (
@@ -229,14 +231,14 @@ export function KeyField({
               }`}
             >
               <Check size={14} strokeWidth={2.6} />
-              Saved
+              {t("Saved")}
             </span>
             <span
               className={`flex items-center transition-all ${
                 saved ? "absolute -translate-y-3 opacity-0" : "translate-y-0 opacity-100"
               }`}
             >
-              Save
+              {t("Save")}
             </span>
           </button>
         </div>

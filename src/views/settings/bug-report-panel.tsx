@@ -9,6 +9,7 @@ import {
   type Severity,
 } from "@/lib/bug-report";
 import { useSettings } from "@/lib/settings";
+import { useT } from "@/lib/i18n";
 import { Section } from "./shared";
 import { ContributorCard } from "./bug-report/contributor-card";
 import { DiagnosticsCard } from "./bug-report/diagnostics-card";
@@ -17,6 +18,7 @@ import { SeverityPicker } from "./bug-report/severity-picker";
 import { SuccessCard } from "./bug-report/success-card";
 
 export function BugReportPanel() {
+  const t = useT();
   const { settings } = useSettings();
   const auth = useAuth();
   const [summary, setSummary] = useState("");
@@ -115,25 +117,25 @@ export function BugReportPanel() {
   return (
     <div className="flex flex-col gap-6">
       <Section
-        title="What broke?"
-        subtitle="A specific summary lands faster than a long paragraph. Steps to reproduce help most of all."
+        title={t("What broke?")}
+        subtitle={t("A specific summary lands faster than a long paragraph. Steps to reproduce help most of all.")}
       >
-        <Field label="Summary" required>
+        <Field label={t("Summary")} required>
           <input
             type="text"
             value={summary}
             onChange={(e) => setSummary(e.target.value)}
             maxLength={240}
-            placeholder="Player freezes after the second episode autoplays"
+            placeholder={t("Player freezes after the second episode autoplays")}
             className="h-12 rounded-xl border border-edge bg-canvas px-4 text-[14px] text-ink placeholder:text-ink-subtle outline-none focus:border-ink"
           />
         </Field>
 
-        <Field label="Severity">
+        <Field label={t("Severity")}>
           <SeverityPicker value={severity} onChange={setSeverity} />
         </Field>
 
-        <Field label="Steps to reproduce">
+        <Field label={t("Steps to reproduce")}>
           <TextArea
             value={steps}
             onChange={setSteps}
@@ -143,56 +145,56 @@ export function BugReportPanel() {
         </Field>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Field label="What you expected">
+          <Field label={t("What you expected")}>
             <TextArea
               value={expected}
               onChange={setExpected}
               rows={4}
-              placeholder="Stream should start playing within a few seconds."
+              placeholder={t("Stream should start playing within a few seconds.")}
             />
           </Field>
-          <Field label="What actually happened">
+          <Field label={t("What actually happened")}>
             <TextArea
               value={actual}
               onChange={setActual}
               rows={4}
-              placeholder="Spinner stays forever and nothing in the player loads."
+              placeholder={t("Spinner stays forever and nothing in the player loads.")}
             />
           </Field>
         </div>
       </Section>
 
       <Section
-        title="Screenshots and recordings"
-        subtitle="Drop a clip of the bug if you can. A 5-second screen recording usually says more than five paragraphs."
+        title={t("Screenshots and recordings")}
+        subtitle={t("Drop a clip of the bug if you can. A 5-second screen recording usually says more than five paragraphs.")}
       >
         <FileDrop files={files} onChange={setFiles} />
       </Section>
 
       <Section
-        title="Credit (optional)"
-        subtitle="Bug reporters get listed in the release notes when their report leads to a shipped fix. Leave blank to stay anonymous."
+        title={t("Credit (optional)")}
+        subtitle={t("Bug reporters get listed in the release notes when their report leads to a shipped fix. Leave blank to stay anonymous.")}
       >
         <div className="flex flex-col divide-y divide-edge overflow-hidden rounded-xl border border-edge bg-canvas focus-within:border-ink-subtle sm:flex-row sm:divide-y-0 sm:divide-x">
           <CreditField
             icon={<User size={14} strokeWidth={1.9} />}
             value={reporterName}
             onChange={setReporterName}
-            placeholder="Display name"
+            placeholder={t("Display name")}
             maxLength={120}
           />
           <CreditField
             icon={<Github size={14} strokeWidth={1.9} />}
             value={reporterGithub}
             onChange={setReporterGithub}
-            placeholder="GitHub username"
+            placeholder={t("GitHub username")}
             maxLength={60}
           />
           <CreditField
             icon={<AtSign size={14} strokeWidth={1.9} />}
             value={reporterContact}
             onChange={setReporterContact}
-            placeholder="Email or Discord"
+            placeholder={t("Email or Discord")}
             maxLength={200}
           />
         </div>
@@ -204,7 +206,7 @@ export function BugReportPanel() {
             className="h-4 w-4 accent-ink"
           />
           <span className="text-[12.5px] text-ink-muted">
-            Credit me in the release notes if this report leads to a fix.
+            {t("Credit me in the release notes if this report leads to a fix.")}
           </span>
         </label>
       </Section>
@@ -215,13 +217,13 @@ export function BugReportPanel() {
 
       {error && (
         <div className="rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-[12.5px] text-danger">
-          Could not send: {error}
+          {t("Could not send: {error}", { error })}
         </div>
       )}
 
       <div className="sticky bottom-3 z-10 flex items-center justify-end gap-3 rounded-2xl border border-edge-soft bg-elevated/85 px-5 py-3 backdrop-blur">
         <span className="me-auto text-[11.5px] text-ink-subtle">
-          {canSubmit ? "Ready to send" : summary.trim().length < 6 ? "Summary needs at least 6 characters" : "Preparing…"}
+          {canSubmit ? t("Ready to send") : summary.trim().length < 6 ? t("Summary needs at least 6 characters") : t("Preparing…")}
         </span>
         <button
           type="button"
@@ -229,7 +231,7 @@ export function BugReportPanel() {
           disabled={!canSubmit}
           className="h-11 rounded-xl bg-ink px-5 text-[13.5px] font-semibold text-canvas transition-opacity hover:opacity-90 disabled:opacity-40"
         >
-          {submitting ? "Sending…" : "Submit bug report"}
+          {submitting ? t("Sending…") : t("Submit bug report")}
         </button>
       </div>
     </div>

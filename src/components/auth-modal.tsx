@@ -2,10 +2,12 @@ import { Check, ExternalLink, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useAuth } from "@/lib/auth";
+import { useT } from "@/lib/i18n";
 import { openUrl } from "@/lib/window";
 
 export function AuthModal({ onClose }: { onClose: () => void }) {
   const { signIn } = useAuth();
+  const t = useT();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
@@ -43,16 +45,16 @@ export function AuthModal({ onClose }: { onClose: () => void }) {
       >
         <div className="flex flex-col items-center gap-2">
           <h2 className="font-display text-[22px] font-medium tracking-tight text-ink">
-            Login to Stremio
+            {t("Login to Stremio")}
           </h2>
           <p className="text-center text-[13px] leading-snug text-ink-muted">
-            Brings in your library, watchlist, and installed addons.
+            {t("Brings in your library, watchlist, and installed addons.")}
           </p>
         </div>
 
         <div className="flex flex-col gap-3">
           <Field
-            label="Email"
+            label={t("Email")}
             type="email"
             value={email}
             onChange={setEmail}
@@ -60,7 +62,7 @@ export function AuthModal({ onClose }: { onClose: () => void }) {
             disabled={busy}
           />
           <Field
-            label="Password"
+            label={t("Password")}
             type="password"
             value={password}
             onChange={setPassword}
@@ -82,8 +84,8 @@ export function AuthModal({ onClose }: { onClose: () => void }) {
             {remember && <Check size={11} strokeWidth={3} className="text-canvas" />}
           </span>
           <span className="flex flex-col">
-            <span className="text-[13px] font-medium text-ink">Remember me</span>
-            <span className="text-[11.5px] text-ink-subtle">Stays signed in on this device only.</span>
+            <span className="text-[13px] font-medium text-ink">{t("Remember me")}</span>
+            <span className="text-[11.5px] text-ink-subtle">{t("Stays signed in on this device only.")}</span>
           </span>
         </button>
 
@@ -99,10 +101,10 @@ export function AuthModal({ onClose }: { onClose: () => void }) {
           {busy ? (
             <>
               <Loader2 size={15} className="animate-spin" />
-              Signing in...
+              {t("Signing in...")}
             </>
           ) : (
-            "Sign in"
+            t("Sign in")
           )}
         </button>
 
@@ -112,14 +114,14 @@ export function AuthModal({ onClose }: { onClose: () => void }) {
             onClick={onClose}
             className="text-[12.5px] text-ink-subtle transition-colors hover:text-ink-muted"
           >
-            Cancel
+            {t("Cancel")}
           </button>
           <button
             type="button"
             onClick={() => openUrl("https://www.stremio.com/register")}
             className="flex items-center gap-1.5 text-[12.5px] text-ink-subtle transition-colors hover:text-ink-muted"
           >
-            <span>Create account</span>
+            <span>{t("Create account")}</span>
             <ExternalLink size={11} />
           </button>
         </div>
@@ -144,6 +146,7 @@ function Field({
   autoFocus?: boolean;
   disabled?: boolean;
 }) {
+  const t = useT();
   const [show, setShow] = useState(false);
   const isPassword = type === "password";
   return (
@@ -171,8 +174,8 @@ function Field({
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => setShow((v) => !v)}
             disabled={disabled}
-            aria-label={show ? "Hide password" : "Show password"}
-            title={show ? "Hide password" : "Show password"}
+            aria-label={show ? t("Hide password") : t("Show password")}
+            title={show ? t("Hide password") : t("Show password")}
             className="absolute inset-y-0 end-0 flex w-11 items-center justify-center text-ink-subtle transition-colors hover:text-ink disabled:opacity-50"
           >
             {show ? <EyeOff size={17} strokeWidth={2} /> : <Eye size={17} strokeWidth={2} />}

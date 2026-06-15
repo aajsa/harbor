@@ -1,6 +1,7 @@
 import { PanelTop } from "lucide-react";
 import { useSettings } from "@/lib/settings";
 import { type ThemeSettings } from "@/lib/theme";
+import { useT } from "@/lib/i18n";
 import { Section } from "./shared";
 import { BackgroundPicker } from "./theme-panel/background-picker";
 import { ColorThemeBody } from "./theme-panel/color-theme-body";
@@ -10,6 +11,7 @@ import { FontGrid } from "./theme-panel/font-grid";
 const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
 export function ThemePanel() {
+  const t = useT();
   const { settings, update } = useSettings();
   const theme = settings.theme;
 
@@ -20,8 +22,8 @@ export function ThemePanel() {
   return (
     <>
       <Section
-        title="Theme"
-        subtitle="Pick a look. Every color and surface updates instantly."
+        title={t("Theme")}
+        subtitle={t("Pick a look. Every color and surface updates instantly.")}
       >
         <ColorThemeBody
           activePreset={theme.preset}
@@ -39,8 +41,8 @@ export function ThemePanel() {
       </Section>
 
       <Section
-        title="Background image"
-        subtitle="Drop a wallpaper behind the app. The dim slider keeps text readable."
+        title={t("Background image")}
+        subtitle={t("Drop a wallpaper behind the app. The dim slider keeps text readable.")}
       >
         <BackgroundPicker
           imageData={theme.backgroundImage}
@@ -51,8 +53,8 @@ export function ThemePanel() {
       </Section>
 
       <Section
-        title="Typography"
-        subtitle="Pick a display and body pairing, or upload your own font to use across Harbor."
+        title={t("Typography")}
+        subtitle={t("Pick a display and body pairing, or upload your own font to use across Harbor.")}
       >
         <FontGrid
           pairValue={theme.fontPair}
@@ -63,16 +65,16 @@ export function ThemePanel() {
       </Section>
 
       <Section
-        title="Your themes"
-        subtitle="Make your own in the Theme Studio, or import one a friend shared."
+        title={t("Your themes")}
+        subtitle={t("Make your own in the Theme Studio, or import one a friend shared.")}
       >
         <CustomThemesSection />
       </Section>
 
       {isTauri && (
         <Section
-          title="Window title bar"
-          subtitle="Use your operating system's native title bar and window buttons instead of Harbor's built-in ones. Handy if the in-app buttons ever feel out of reach, like during playback."
+          title={t("Window title bar")}
+          subtitle={t("Use your operating system's native title bar and window buttons instead of Harbor's built-in ones. Handy if the in-app buttons ever feel out of reach, like during playback.")}
         >
           <NativeTitleBarRow />
         </Section>
@@ -82,6 +84,7 @@ export function ThemePanel() {
 }
 
 function NativeTitleBarRow() {
+  const t = useT();
   const { settings, update } = useSettings();
   const on = settings.useNativeTitleBar;
   return (
@@ -94,11 +97,9 @@ function NativeTitleBarRow() {
         <PanelTop size={15} strokeWidth={2.2} />
       </span>
       <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <span className="text-[14px] font-medium text-ink">Use the native window title bar</span>
+        <span className="text-[14px] font-medium text-ink">{t("Use the native window title bar")}</span>
         <p className="text-[12.5px] leading-relaxed text-ink-subtle">
-          Show your operating system&apos;s own title bar with its minimize, maximize, and close
-          buttons. They stay reachable everywhere, including while a video is playing. Turn this off
-          to use Harbor&apos;s built-in window buttons.
+          {t("Show your operating system's own title bar with its minimize, maximize, and close buttons. They stay reachable everywhere, including while a video is playing. Turn this off to use Harbor's built-in window buttons.")}
         </p>
       </div>
       <button

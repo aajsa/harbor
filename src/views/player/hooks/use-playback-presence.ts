@@ -21,7 +21,10 @@ export function usePlaybackPresence(params: {
     if (src.meta.id?.startsWith("iptv:")) return;
     const year =
       typeof src.meta.releaseInfo === "string" ? src.meta.releaseInfo.slice(0, 4) : undefined;
-    const epLabel = season != null && episode != null ? `S${season} E${episode}` : undefined;
+    const epLabel =
+      season != null && episode != null
+        ? `S${src.episode?.imdbSeason ?? season} E${src.episode?.imdbEpisode ?? episode}`
+        : undefined;
     const epTitle = src.episode?.name?.trim();
     const epLine = epLabel && epTitle ? `${epLabel} · ${epTitle}` : epLabel;
     setPlaybackPresence({

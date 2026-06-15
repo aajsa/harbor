@@ -4,6 +4,7 @@ import subtitlesIcon from "@/assets/category/subtitles.svg";
 import animeIcon from "@/assets/category/anime.svg";
 import sportsIcon from "@/assets/category/sports.svg";
 import livetvIcon from "@/assets/category/livetv.svg";
+import { useT } from "@/lib/i18n";
 
 const CATEGORY_TILES: Array<{
   cat: string;
@@ -21,42 +22,43 @@ const CATEGORY_TILES: Array<{
 ];
 
 export function CategoryGrid({ onCategorySelect }: { onCategorySelect: (cat: string) => void }) {
+  const t = useT();
   return (
     <section>
       <header className="mb-5 flex items-end justify-between gap-4 border-b border-edge-soft/70 pb-3">
         <div>
-          <h3 className="font-display text-[26px] font-medium tracking-tight text-ink">Browse by category</h3>
+          <h3 className="font-display text-[26px] font-medium tracking-tight text-ink">{t("Browse by category")}</h3>
           <p className="mt-1.5 text-[14px] leading-relaxed text-ink-muted">
-            Six places to start. Tap one and we'll filter the catalog for you.
+            {t("Six places to start. Tap one and we'll filter the catalog for you.")}
           </p>
         </div>
       </header>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-        {CATEGORY_TILES.map((t) => (
+        {CATEGORY_TILES.map((tile) => (
           <div
-            key={t.cat}
+            key={tile.cat}
             role="button"
             tabIndex={0}
-            onClick={() => onCategorySelect(t.cat)}
-            onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onCategorySelect(t.cat)}
+            onClick={() => onCategorySelect(tile.cat)}
+            onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onCategorySelect(tile.cat)}
             className="group relative flex h-[120px] cursor-pointer overflow-hidden rounded-2xl border border-edge-soft transition-all hover:border-edge"
           >
-            <div className={`absolute inset-0 bg-gradient-to-br ${t.accent}`} />
+            <div className={`absolute inset-0 bg-gradient-to-br ${tile.accent}`} />
             <div className="absolute inset-0 bg-gradient-to-t from-canvas/85 via-canvas/30 to-transparent" />
             <img
-              src={t.icon}
+              src={tile.icon}
               alt=""
               aria-hidden
               draggable={false}
               className={`pointer-events-none absolute end-4 top-4 select-none opacity-55 ${
-                t.cat === "streams" ? "h-16 w-16" : "h-14 w-14"
+                tile.cat === "streams" ? "h-16 w-16" : "h-14 w-14"
               }`}
             />
             <div className="relative flex flex-1 flex-col justify-end p-5">
               <h4 className="font-display text-[20px] font-medium tracking-tight text-ink">
-                {t.title}
+                {t(tile.title)}
               </h4>
-              <p className="text-[12px] text-ink-muted">{t.blurb}</p>
+              <p className="text-[12px] text-ink-muted">{t(tile.blurb)}</p>
             </div>
           </div>
         ))}

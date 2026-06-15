@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { awardSourceMeta, findTopAward, parseAwardYear } from "@/lib/anime-awards";
 import type { Meta } from "@/lib/cinemeta";
 import { isSaved, toggleSaved } from "@/lib/feed";
+import { useT } from "@/lib/i18n";
 import { kitsuCoverImage, parseKitsuId } from "@/lib/providers/kitsu";
 import { resolveAnimeBackdrop, resolveLogo } from "@/lib/logo";
 import { useSettings } from "@/lib/settings";
@@ -24,6 +25,7 @@ export function AnimeHero({
 }) {
   const { settings } = useSettings();
   const { openMeta } = useView();
+  const t = useT();
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
   const [inView, setInView] = useState(true);
@@ -192,7 +194,7 @@ export function AnimeHero({
               className="inline-flex items-center gap-2 rounded-md bg-accent px-5 py-3 text-[13px] font-bold uppercase tracking-[0.08em] text-canvas transition-colors duration-150 hover:bg-accent/90"
             >
               <Play size={17} fill="currentColor" />
-              Start Watching
+              {t("Start Watching")}
             </button>
             <button
               type="button"
@@ -200,7 +202,7 @@ export function AnimeHero({
                 toggleSaved(current.id);
                 setSavedTick((t) => t + 1);
               }}
-              aria-label={saved ? "Remove from saved" : "Save for later"}
+              aria-label={saved ? t("Remove from saved") : t("Save for later")}
               aria-pressed={saved}
               className="flex h-12 w-12 items-center justify-center rounded-md border border-edge bg-elevated/45 text-ink transition-colors duration-150 hover:bg-elevated"
             >
@@ -223,7 +225,7 @@ export function AnimeHero({
           <button
             type="button"
             onClick={prev}
-            aria-label="Previous"
+            aria-label={t("Previous")}
             className="absolute start-3 top-[260px] z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-canvas/35 text-ink-muted transition-colors duration-150 hover:bg-canvas/65 hover:text-ink"
           >
             <ChevronLeft size={26} className="dir-icon" />
@@ -231,7 +233,7 @@ export function AnimeHero({
           <button
             type="button"
             onClick={next}
-            aria-label="Next"
+            aria-label={t("Next")}
             className="absolute end-3 top-[260px] z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-canvas/35 text-ink-muted transition-colors duration-150 hover:bg-canvas/65 hover:text-ink"
           >
             <ChevronRight size={26} className="dir-icon" />
@@ -241,7 +243,7 @@ export function AnimeHero({
 
       <div className="relative z-10 flex flex-col gap-5 px-12 pb-12" data-saved={savedTick}>
         <div className="flex items-center justify-between gap-4">
-          <h2 className="text-[20px] font-medium tracking-tight text-ink">Top Picks for You</h2>
+          <h2 className="text-[20px] font-medium tracking-tight text-ink">{t("Top Picks for You")}</h2>
           {slides.length > 1 && (
             <div className="flex gap-1.5">
               {slides.map((_, i) => (
@@ -249,7 +251,7 @@ export function AnimeHero({
                   key={i}
                   type="button"
                   onClick={() => setActive(i)}
-                  aria-label={`Slide ${i + 1}`}
+                  aria-label={t("Slide {n}", { n: i + 1 })}
                   className={`h-1.5 rounded-full transition-all duration-200 ${
                     i === active ? "w-10 bg-accent" : "w-6 bg-ink-subtle/35 hover:bg-ink-subtle/60"
                   }`}

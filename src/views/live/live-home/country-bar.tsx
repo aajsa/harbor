@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Globe } from "lucide-react";
+import { useT } from "@/lib/i18n";
 import { flagUrl, type Country } from "@/lib/iptv/country-detect";
 
 export function CountryBar({
@@ -13,16 +14,17 @@ export function CountryBar({
   onToggle: (code: string) => void;
   onClear: () => void;
 }) {
+  const t = useT();
   if (countries.length < 2) return null;
   const sel = new Set(selected);
   return (
     <div className="flex flex-col gap-3 ps-[9px]">
       <div className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.18em] text-ink-subtle">
         <Globe size={13} strokeWidth={2.2} />
-        Browse by country
+        {t("Browse by country")}
       </div>
       <div className="flex gap-2 overflow-x-auto pb-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <Chip active={sel.size === 0} onClick={onClear} label="All" />
+        <Chip active={sel.size === 0} onClick={onClear} label={t("All")} />
         {countries.map((c) => (
           <Chip
             key={c.code}

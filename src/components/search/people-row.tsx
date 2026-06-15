@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight, User } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useT } from "@/lib/i18n";
 import type { SearchPerson } from "@/lib/search";
 import { useView } from "@/lib/view";
 
@@ -8,6 +9,7 @@ const GAP = 18;
 
 export function PeopleRow({ people, onClose }: { people: SearchPerson[]; onClose: () => void }) {
   const { openPerson } = useView();
+  const t = useT();
   const trackRef = useRef<HTMLDivElement>(null);
   const [scrollState, setScrollState] = useState({ canLeft: false, canRight: false });
 
@@ -52,7 +54,7 @@ export function PeopleRow({ people, onClose }: { people: SearchPerson[]; onClose
 
   return (
     <section>
-      <SectionTitle>People</SectionTitle>
+      <SectionTitle>{t("People")}</SectionTitle>
       <div className="group/people relative">
         <div
           ref={trackRef}
@@ -108,10 +110,11 @@ function ArrowButton({
   visible: boolean;
   onClick: () => void;
 }) {
+  const t = useT();
   return (
     <button
       type="button"
-      aria-label={side === "left" ? "Scroll left" : "Scroll right"}
+      aria-label={t(side === "left" ? "Scroll left" : "Scroll right")}
       onClick={onClick}
       className={`absolute top-[55px] z-10 -translate-y-1/2 ${
         side === "left" ? "start-1" : "end-1"

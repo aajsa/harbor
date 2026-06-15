@@ -58,7 +58,7 @@ export function MediaLightbox({
           e.stopPropagation();
           onClose();
         }}
-        aria-label="Close"
+        aria-label={t("Close")}
         className="absolute end-7 top-16 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-canvas/90 text-ink shadow-[0_8px_22px_rgba(0,0,0,0.4)] transition-colors hover:bg-canvas active:scale-[0.94]"
       >
         <X size={18} strokeWidth={2.4} />
@@ -104,7 +104,7 @@ export function MediaLightbox({
             e.stopPropagation();
             go(-1);
           }}
-          aria-label="Previous"
+          aria-label={t("Previous")}
           className="absolute start-7 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-canvas/85 text-ink backdrop-blur-md transition-transform hover:scale-105 active:scale-95"
         >
           <ChevronLeft size={24} strokeWidth={2.2} className="dir-icon" />
@@ -131,7 +131,7 @@ export function MediaLightbox({
             e.stopPropagation();
             go(1);
           }}
-          aria-label="Next"
+          aria-label={t("Next")}
           className="absolute end-7 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-canvas/85 text-ink backdrop-blur-md transition-transform hover:scale-105 active:scale-95"
         >
           <ChevronRight size={24} strokeWidth={2.2} className="dir-icon" />

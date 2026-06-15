@@ -1,3 +1,4 @@
+import { useT } from "@/lib/i18n";
 import {
   CHANNEL_COL_PX,
   PX_PER_MIN,
@@ -22,6 +23,7 @@ export function GridSkeleton() {
 }
 
 export function GuideSkeleton() {
+  const t = useT();
   const rows = 10;
   const slotMin = 30;
   const slots = Math.ceil((WINDOW_HOURS * 60) / slotMin);
@@ -41,7 +43,7 @@ export function GuideSkeleton() {
               style={{ width: CHANNEL_COL_PX, height: RULER_HEIGHT_PX }}
             >
               <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-ink-subtle">
-                Channel
+                {t("Channel")}
               </span>
             </div>
             <div

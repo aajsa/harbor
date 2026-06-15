@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Info, Tv } from "lucide-react";
 import type { Meta } from "@/lib/cinemeta";
+import { useT } from "@/lib/i18n";
 import { useFavorites } from "@/lib/iptv/favorites";
 import type { IptvChannel } from "@/lib/iptv/types";
 import { HoverTooltip } from "@/components/hover-tooltip";
@@ -23,6 +24,7 @@ export function GuideChannelCell({
   width?: number;
 }) {
   const [errored, setErrored] = useState(false);
+  const t = useT();
   const favorites = useFavorites();
   const isFav = favorites.has(channel.id);
   const posterUrl = hydrated?.poster && !errored ? hydrated.poster : null;
@@ -85,7 +87,7 @@ export function GuideChannelCell({
       {hydrated && onInfo && (
         <button
           onClick={() => onInfo(hydrated)}
-          aria-label="Open details"
+          aria-label={t("Open details")}
           className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-ink-subtle transition-colors hover:bg-raised hover:text-ink"
         >
           <Info size={13} strokeWidth={2.2} />

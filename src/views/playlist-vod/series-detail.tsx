@@ -1,6 +1,7 @@
 import { ArrowLeft, Play } from "lucide-react";
 import { useState } from "react";
 import { Poster } from "@/components/poster";
+import { useT } from "@/lib/i18n";
 import type { VodEpisode, VodSeries } from "@/lib/iptv/vod";
 
 type Props = {
@@ -10,6 +11,7 @@ type Props = {
 };
 
 export function SeriesDetail({ series, onBack, onPlay }: Props) {
+  const t = useT();
   const [season, setSeason] = useState<number>(series.seasons[0] ?? 1);
   const episodes = series.episodes.filter((e) => e.season === season);
 
@@ -18,7 +20,7 @@ export function SeriesDetail({ series, onBack, onPlay }: Props) {
       <div className="flex items-start gap-4">
         <button
           onClick={onBack}
-          aria-label="Back to library"
+          aria-label={t("Back to library")}
           className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-edge-soft/55 bg-elevated text-ink-muted transition-colors hover:bg-raised hover:text-ink"
         >
           <ArrowLeft size={18} strokeWidth={2} className="dir-icon" />
@@ -29,8 +31,10 @@ export function SeriesDetail({ series, onBack, onPlay }: Props) {
         <div className="min-w-0 pt-1">
           <h2 className="truncate text-[22px] font-semibold tracking-tight text-ink">{series.title}</h2>
           <p className="mt-1 text-[13px] text-ink-muted">
-            {series.episodes.length} {series.episodes.length === 1 ? "episode" : "episodes"}
-            {series.seasons.length > 1 ? ` · ${series.seasons.length} seasons` : ""}
+            {series.episodes.length === 1
+              ? t("{n} episode", { n: 1 })
+              : t("{n} episodes", { n: series.episodes.length })}
+            {series.seasons.length > 1 ? ` · ${t("{n} seasons", { n: series.seasons.length })}` : ""}
             {series.group ? ` · ${series.group}` : ""}
           </p>
         </div>
@@ -46,7 +50,7 @@ export function SeriesDetail({ series, onBack, onPlay }: Props) {
                 season === s ? "bg-ink text-canvas" : "bg-elevated text-ink-muted hover:bg-raised hover:text-ink"
               }`}
             >
-              Season {s}
+              {t("Season {n}", { n: s })}
             </button>
           ))}
         </div>

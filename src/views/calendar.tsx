@@ -169,7 +169,7 @@ export function CalendarView() {
               className="flex h-10 w-10 items-center justify-center rounded-full border border-edge-soft text-ink-muted transition-colors hover:border-edge hover:text-ink"
               aria-label={t("Previous month")}
             >
-              <ChevronLeft size={16} strokeWidth={2.2} />
+              <ChevronLeft size={16} strokeWidth={2.2} className="dir-icon" />
             </button>
             <button
               onClick={goToday}
@@ -186,7 +186,7 @@ export function CalendarView() {
               className="flex h-10 w-10 items-center justify-center rounded-full border border-edge-soft text-ink-muted transition-colors hover:border-edge hover:text-ink"
               aria-label={t("Next month")}
             >
-              <ChevronRight size={16} strokeWidth={2.2} />
+              <ChevronRight size={16} strokeWidth={2.2} className="dir-icon" />
             </button>
           </div>
         </div>

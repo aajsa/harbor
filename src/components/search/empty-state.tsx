@@ -26,6 +26,7 @@ const TV_GENRE_FOR_MOVIE: Record<string, number> = {
   Family: 10751,
 };
 import { useParental } from "@/lib/parental";
+import { useT } from "@/lib/i18n";
 import { useSearch } from "@/lib/search-context";
 import { useSettings } from "@/lib/settings";
 import { surpriseMe } from "@/lib/surprise-me";
@@ -65,6 +66,7 @@ export function EmptyState({ onClose, onOpenGuide }: { onClose: () => void; onOp
   const { setView, openMeta } = useView();
   const { hiddenTabs } = useParental();
   const { settings } = useSettings();
+  const t = useT();
   const [surpriseBusy, setSurpriseBusy] = useState(false);
   const [genreBrowse, setGenreBrowse] = useState<string | null>(null);
   const [filterTab, setFilterTab] = useState<FilterTab>("all");
@@ -259,10 +261,10 @@ export function EmptyState({ onClose, onOpenGuide }: { onClose: () => void; onOp
             className="flex h-9 items-center gap-1.5 rounded-full border border-edge-soft px-3 text-[12.5px] font-medium text-ink-muted transition-colors hover:border-edge hover:text-ink"
           >
             <ArrowLeft size={13} strokeWidth={2.4} className="dir-icon" />
-            Back
+            {t("Back")}
           </button>
           <span className="text-[10.5px] font-bold uppercase tracking-[0.22em] text-ink-subtle">
-            Browsing
+            {t("Browsing")}
           </span>
           <h3 className="font-display text-[22px] font-medium tracking-tight text-ink">
             {genreBrowse}
@@ -271,13 +273,13 @@ export function EmptyState({ onClose, onOpenGuide }: { onClose: () => void; onOp
 
         <div className="flex flex-wrap items-center gap-1.5">
           <FilterPill active={filterTab === "all"} onClick={() => setFilterTab("all")}>
-            All
+            {t("All")}
           </FilterPill>
           <FilterPill active={filterTab === "movies"} onClick={() => setFilterTab("movies")}>
-            Movies
+            {t("Movies")}
           </FilterPill>
           <FilterPill active={filterTab === "shows"} onClick={() => setFilterTab("shows")}>
-            Shows
+            {t("Shows")}
           </FilterPill>
           {enabledServices.length > 0 && (
             <span className="mx-1 h-5 w-px bg-edge-soft" aria-hidden />
@@ -303,9 +305,9 @@ export function EmptyState({ onClose, onOpenGuide }: { onClose: () => void; onOp
           </div>
         ) : items.length === 0 ? (
           <p className="rounded-xl border border-dashed border-edge px-4 py-8 text-center text-[13px] text-ink-subtle">
-            No titles found for {genreBrowse}
+            {t("No titles found for {genre}", { genre: genreBrowse })}
             {isServiceTab ? ` on ${SERVICES[filterTab as StreamingService].name}` : ""}.{" "}
-            {!settings.tmdbKey && isServiceTab && "Service-specific browsing needs a TMDB key. Pick All / Movies / Shows to browse via Cinemeta."}
+            {!settings.tmdbKey && isServiceTab && t("Service-specific browsing needs a TMDB key. Pick All / Movies / Shows to browse via Cinemeta.")}
           </p>
         ) : (
           <>
@@ -332,7 +334,7 @@ export function EmptyState({ onClose, onOpenGuide }: { onClose: () => void; onOp
             )}
             {exhausted && (
               <p className="pt-2 text-center text-[11.5px] text-ink-subtle">
-                You've reached the end · {items.length} titles
+                {t("You've reached the end · {count} titles", { count: items.length })}
               </p>
             )}
           </>
@@ -345,7 +347,7 @@ export function EmptyState({ onClose, onOpenGuide }: { onClose: () => void; onOp
     <div className="flex flex-col gap-9">
       {recent.length > 0 && (
         <section>
-          <Title icon={<Clock size={13} strokeWidth={2.2} />}>Recent searches</Title>
+          <Title icon={<Clock size={13} strokeWidth={2.2} />}>{t("Recent searches")}</Title>
           <div className="flex flex-wrap gap-2">
             {recent.map((q) => (
               <span
@@ -360,7 +362,7 @@ export function EmptyState({ onClose, onOpenGuide }: { onClose: () => void; onOp
                     e.stopPropagation();
                     removeRecent(q);
                   }}
-                  aria-label={`Remove ${q}`}
+                  aria-label={t("Remove {name}", { name: q })}
                   className="ms-0.5 flex h-7 w-7 items-center justify-center rounded-full text-ink-subtle transition-colors hover:bg-canvas/60 hover:text-ink"
                 >
                   <X size={12} strokeWidth={2.4} />
@@ -372,7 +374,7 @@ export function EmptyState({ onClose, onOpenGuide }: { onClose: () => void; onOp
       )}
 
       <section>
-        <Title icon={<Compass size={13} strokeWidth={2.2} />}>Jump to</Title>
+        <Title icon={<Compass size={13} strokeWidth={2.2} />}>{t("Jump to")}</Title>
         <div className="flex flex-wrap gap-2">
           {visibleJumps.map((j) => (
             <button
@@ -384,7 +386,7 @@ export function EmptyState({ onClose, onOpenGuide }: { onClose: () => void; onOp
               className="flex h-12 items-center gap-2.5 rounded-full border border-edge-soft bg-elevated/50 px-5 text-[14.5px] font-semibold text-ink transition-all hover:border-edge hover:bg-elevated active:scale-[0.97]"
             >
               <span className="flex h-5 w-5 items-center justify-center text-ink-muted">{j.icon}</span>
-              {j.label}
+              {t(j.label)}
             </button>
           ))}
           {!hiddenTabs.liveTv && (
@@ -395,14 +397,14 @@ export function EmptyState({ onClose, onOpenGuide }: { onClose: () => void; onOp
               <span className="flex h-5 w-5 items-center justify-center text-ink-muted">
                 <ListTree size={16} strokeWidth={2} />
               </span>
-              TV Guide
+              {t("TV Guide")}
             </button>
           )}
         </div>
       </section>
 
       <section>
-        <Title icon={<Sparkles size={13} strokeWidth={2.2} />}>Try a genre</Title>
+        <Title icon={<Sparkles size={13} strokeWidth={2.2} />}>{t("Try a genre")}</Title>
         <div className="flex flex-wrap gap-2">
           {visibleGenres.map((name) => (
             <button
@@ -429,7 +431,7 @@ export function EmptyState({ onClose, onOpenGuide }: { onClose: () => void; onOp
             className={`transition-transform duration-300 ${surpriseBusy ? "animate-spin" : "group-hover:rotate-[18deg]"}`}
           />
           <span className="underline decoration-edge-soft underline-offset-4 transition-colors group-hover:decoration-edge">
-            {surpriseBusy ? "Picking…" : "Surprise me"}
+            {surpriseBusy ? t("Picking…") : t("Surprise me")}
           </span>
         </button>
       </section>

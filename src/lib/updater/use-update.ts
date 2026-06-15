@@ -88,6 +88,16 @@ export function updateAvailable(s: UpdateState): boolean {
   return s.status === "available" || s.status === "downloading" || s.status === "downloaded";
 }
 
+function betaChannel(): boolean {
+  try {
+    const raw = localStorage.getItem("harbor.settings");
+    if (!raw) return false;
+    return (JSON.parse(raw) as { betaUpdates?: boolean }).betaUpdates === true;
+  } catch {
+    return false;
+  }
+}
+
 export async function checkForUpdate(manual = false): Promise<void> {
   if (!IS_TAURI) return;
   if (state.status === "downloading" || state.status === "installing") return;
@@ -95,7 +105,8 @@ export async function checkForUpdate(manual = false): Promise<void> {
   set({ status: "checking", manualCheck: manual, error: null });
   try {
     const { check } = await import("@tauri-apps/plugin-updater");
-    const update = (await check()) as UpdateHandle | null;
+    const opts = betaChannel() ? { headers: { "x-harbor-channel": "beta" } } : undefined;
+    const update = (await check(opts)) as UpdateHandle | null;
     if (update) {
       handle = update;
       set({ status: "available", version: update.version, notes: update.body ?? null });

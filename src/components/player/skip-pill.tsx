@@ -113,7 +113,7 @@ function UpNextCard({
   const progress = Math.min(1, Math.max(0, 1 - seconds / UP_NEXT_WINDOW_SEC));
   const epLabel =
     typeof ep.season === "number" && typeof ep.episode === "number"
-      ? `S${ep.season} · E${ep.episode}`
+      ? `S${ep.imdbSeason ?? ep.season} · E${ep.imdbEpisode ?? ep.episode}`
       : t("Up Next");
   const title = mask?.title ? epLabel : ep.name?.trim() || epLabel;
   const hideStill = mask?.thumb === true;

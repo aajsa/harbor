@@ -8,6 +8,7 @@ import {
 } from "@/lib/anime-awards";
 import { useSettings } from "@/lib/settings";
 import { useView } from "@/lib/view";
+import { useT } from "@/lib/i18n";
 
 const SOURCE_TINTS: Record<AwardSourceId, string> = {
   crunchyroll: "#f47521",
@@ -18,6 +19,7 @@ const SOURCE_TINTS: Record<AwardSourceId, string> = {
 };
 
 export function AnimeAwardView({ sourceId }: { sourceId: AwardSourceId }) {
+  const t = useT();
   const data = useMemo(() => readAnimeAwardSource(sourceId), [sourceId]);
   const scrollRef = useRef<HTMLElement>(null);
   const [year, setYear] = useState<number | null>(null);
@@ -58,7 +60,7 @@ export function AnimeAwardView({ sourceId }: { sourceId: AwardSourceId }) {
       <div className="relative mx-auto flex max-w-[1100px] flex-col gap-10 px-12 pb-32 pt-12">
         {data.categories.length === 0 ? (
           <p className="rounded-2xl border border-edge-soft bg-elevated/30 p-6 text-[14px] leading-relaxed text-ink-muted">
-            No data shipped for this award yet.
+            {t("No data shipped for this award yet.")}
           </p>
         ) : (
           <>
@@ -73,7 +75,7 @@ export function AnimeAwardView({ sourceId }: { sourceId: AwardSourceId }) {
 
             {noResults && (
               <p className="rounded-2xl border border-edge-soft bg-elevated/30 p-5 text-[13.5px] text-ink-muted">
-                No winners match these filters.{" "}
+                {t("No winners match these filters.")}{" "}
                 <button
                   type="button"
                   onClick={() => {
@@ -82,7 +84,7 @@ export function AnimeAwardView({ sourceId }: { sourceId: AwardSourceId }) {
                   }}
                   className="text-ink underline-offset-4 hover:underline"
                 >
-                  Clear filters
+                  {t("Clear filters")}
                 </button>
               </p>
             )}
@@ -110,6 +112,7 @@ function Banner({
   tint: string;
   totalWins: number;
 }) {
+  const t = useT();
   const yearSpan =
     data.years.length === 0
       ? ""
@@ -132,7 +135,7 @@ function Banner({
             style={{ borderColor: `${tint}55`, color: tint }}
           >
             <Trophy size={11} strokeWidth={2.6} />
-            Anime award
+            {t("Anime award")}
           </span>
           <h1
             className="font-display text-[52px] font-medium leading-[0.98] tracking-tight text-ink"
@@ -141,9 +144,9 @@ function Banner({
             {data.meta.name}
           </h1>
           <p className="text-[14px] font-semibold uppercase tracking-[0.18em]" style={{ color: tint }}>
-            <span className="text-ink">{totalWins.toLocaleString()}</span> recorded winners ·{" "}
+            <span className="text-ink">{totalWins.toLocaleString()}</span> {t("recorded winners")} ·{" "}
             <span className="text-ink">{data.categories.length}</span>{" "}
-            {data.categories.length === 1 ? "category" : "categories"}
+            {data.categories.length === 1 ? t("category") : t("categories")}
             {yearSpan && (
               <>
                 {" "}· <span className="text-ink">{yearSpan}</span>
@@ -177,6 +180,7 @@ function FilterBar({
   onQuery: (s: string) => void;
   tint: string;
 }) {
+  const t = useT();
   return (
     <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-edge-soft bg-elevated/15 p-3">
       <div className="flex flex-1 items-center gap-2 rounded-xl bg-canvas/40 px-3.5 py-2.5">
@@ -185,7 +189,7 @@ function FilterBar({
           type="text"
           value={query}
           onChange={(e) => onQuery(e.target.value)}
-          placeholder="Search winners or categories…"
+          placeholder={t("Search winners or categories…")}
           className="min-w-0 flex-1 bg-transparent text-[13.5px] text-ink placeholder:text-ink-subtle focus:outline-none"
         />
         {query && (
@@ -193,7 +197,7 @@ function FilterBar({
             type="button"
             onClick={() => onQuery("")}
             className="flex h-6 w-6 items-center justify-center rounded-full text-ink-subtle hover:text-ink"
-            aria-label="Clear search"
+            aria-label={t("Clear search")}
           >
             <X size={13} />
           </button>
@@ -201,7 +205,7 @@ function FilterBar({
       </div>
       <div className="flex max-w-full flex-wrap gap-1.5">
         <YearChip active={year === null} onClick={() => onYear(null)} tint={tint}>
-          All years
+          {t("All years")}
         </YearChip>
         {years.map((y) => (
           <YearChip key={y} active={year === y} onClick={() => onYear(year === y ? null : y)} tint={tint}>
@@ -242,6 +246,7 @@ function YearChip({
 }
 
 function CategoryBlock({ category, tint }: { category: AnimeAwardCategory; tint: string }) {
+  const t = useT();
   return (
     <section className="flex flex-col gap-4">
       <div className="flex items-baseline justify-between gap-3 border-b border-edge-soft pb-2">
@@ -251,13 +256,15 @@ function CategoryBlock({ category, tint }: { category: AnimeAwardCategory; tint:
               className="me-2 inline-flex items-center rounded-full px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-[0.18em]"
               style={{ background: `${tint}22`, color: tint }}
             >
-              Grand
+              {t("Grand")}
             </span>
           )}
           {category.name}
         </h2>
         <span className="shrink-0 text-[12px] font-semibold uppercase tracking-[0.18em] text-ink-subtle">
-          {category.winners.length} {category.winners.length === 1 ? "winner" : "winners"}
+          {category.winners.length === 1
+            ? t("{n} winner", { n: category.winners.length })
+            : t("{n} winners", { n: category.winners.length })}
         </span>
       </div>
       <ul className="grid grid-cols-1 gap-x-10 gap-y-0.5 md:grid-cols-2">

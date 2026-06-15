@@ -1,14 +1,16 @@
 import { Row } from "@/components/row";
 import { ServiceLogo } from "@/components/service-logo";
+import { useT } from "@/lib/i18n";
 import type { StreamingService } from "@/lib/settings";
 import { useView } from "@/lib/view";
 
 export function StreamingRail({ services }: { services: StreamingService[] }) {
   const { openService } = useView();
+  const t = useT();
   if (services.length === 0) return null;
 
   return (
-    <Row title="Your Streaming" min={172} shape="service" alwaysActive>
+    <Row title={t("Your Streaming")} min={172} shape="service" alwaysActive>
       {services.map((svc) => (
         <ServiceTile key={svc} service={svc} onOpen={() => openService(svc)} />
       ))}

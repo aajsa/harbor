@@ -1,3 +1,4 @@
+import { useT } from "@/lib/i18n";
 import { formatTimeLabel, PX_PER_MIN, RULER_HEIGHT_PX } from "./guide-utils";
 
 export function GuideTimeRuler({
@@ -9,6 +10,7 @@ export function GuideTimeRuler({
   windowMinutes: number;
   todayMs: number;
 }) {
+  const t = useT();
   const slotMin = 30;
   const slots: { ms: number; left: number; major: boolean }[] = [];
   for (let m = 0; m < windowMinutes; m += slotMin) {
@@ -39,7 +41,7 @@ export function GuideTimeRuler({
             </span>
             {slot.major && (
               <span className="text-[10px] uppercase tracking-[0.18em] text-ink-subtle">
-                {dayHint(slot.ms, todayMs)}
+                {t(dayHint(slot.ms, todayMs))}
               </span>
             )}
           </div>

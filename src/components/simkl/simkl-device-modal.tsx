@@ -1,10 +1,12 @@
 import { Check, Copy, ExternalLink, Loader2, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useT } from "@/lib/i18n";
 import { useSimkl } from "@/lib/simkl/provider";
 import { openUrl } from "@/lib/window";
 
 export function SimklDeviceModal({ onClose }: { onClose: () => void }) {
   const { connectState, beginConnect, cancelConnect } = useSimkl();
+  const t = useT();
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -15,8 +17,8 @@ export function SimklDeviceModal({ onClose }: { onClose: () => void }) {
 
   useEffect(() => {
     if (connectState.kind === "success") {
-      const t = setTimeout(onClose, 1400);
-      return () => clearTimeout(t);
+      const id = setTimeout(onClose, 1400);
+      return () => clearTimeout(id);
     }
   }, [connectState.kind, onClose]);
 
@@ -47,30 +49,30 @@ export function SimklDeviceModal({ onClose }: { onClose: () => void }) {
         <div className="flex items-start justify-between gap-4">
           <div className="flex flex-col gap-0.5">
             <span className="text-[11px] font-bold uppercase tracking-[0.32em] text-ink-subtle">
-              Connect Simkl
+              {t("Connect Simkl")}
             </span>
             <h2 className="text-[20px] font-medium tracking-tight text-ink">
-              {connectState.kind === "success" ? "Connected" : "Authorize Harbor on Simkl"}
+              {connectState.kind === "success" ? t("Connected") : t("Authorize Harbor on Simkl")}
             </h2>
           </div>
           <button
             onClick={onCancel}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-canvas/40 text-ink-subtle transition-colors hover:bg-canvas/60 hover:text-ink"
-            aria-label="Cancel"
+            aria-label={t("Cancel")}
           >
             <X size={16} />
           </button>
         </div>
 
         {(connectState.kind === "starting" || connectState.kind === "idle") && (
-          <Spinner label="Requesting code from Simkl…" />
+          <Spinner label={t("Requesting code from Simkl…")} />
         )}
 
         {connectState.kind === "awaiting" && (
           <div className="flex flex-col gap-5">
             <div className="flex flex-col gap-2.5">
               <span className="text-[12px] font-medium uppercase tracking-[0.16em] text-ink-subtle">
-                Step 1 · Open Simkl
+                {t("Step 1 · Open Simkl")}
               </span>
               <button
                 onClick={() => openUrl(connectState.pin.deepLinkUrl)}
@@ -84,7 +86,7 @@ export function SimklDeviceModal({ onClose }: { onClose: () => void }) {
             </div>
             <div className="flex flex-col gap-2.5">
               <span className="text-[12px] font-medium uppercase tracking-[0.16em] text-ink-subtle">
-                Step 2 · Enter this code
+                {t("Step 2 · Enter this code")}
               </span>
               <button
                 onClick={onCopy}
@@ -97,12 +99,12 @@ export function SimklDeviceModal({ onClose }: { onClose: () => void }) {
                   {copied ? (
                     <>
                       <Check size={13} strokeWidth={2.4} />
-                      Copied
+                      {t("Copied")}
                     </>
                   ) : (
                     <>
                       <Copy size={13} strokeWidth={2.2} />
-                      Copy
+                      {t("Copy")}
                     </>
                   )}
                 </span>
@@ -110,7 +112,7 @@ export function SimklDeviceModal({ onClose }: { onClose: () => void }) {
             </div>
             <p className="flex items-center gap-2 text-[12.5px] text-ink-subtle">
               <Loader2 size={12} className="animate-spin" />
-              Waiting for you to authorize on simkl.com…
+              {t("Waiting for you to authorize on simkl.com…")}
             </p>
           </div>
         )}
@@ -120,22 +122,22 @@ export function SimklDeviceModal({ onClose }: { onClose: () => void }) {
             <Check size={16} strokeWidth={2.4} className="text-emerald-300" />
             <span className="text-[14px] text-ink">
               {connectState.session.username
-                ? `Connected as ${connectState.session.username}`
-                : "Connected to Simkl"}
+                ? t("Connected as {username}", { username: connectState.session.username })
+                : t("Connected to Simkl")}
             </span>
           </div>
         )}
 
         {connectState.kind === "expired" && (
           <ErrorBox
-            title="Code expired"
-            message="The authorization code timed out before you finished. Try again."
+            title={t("Code expired")}
+            message={t("The authorization code timed out before you finished. Try again.")}
             onRetry={beginConnect}
           />
         )}
 
         {connectState.kind === "error" && (
-          <ErrorBox title="Couldn't reach Simkl" message={connectState.message} onRetry={beginConnect} />
+          <ErrorBox title={t("Couldn't reach Simkl")} message={connectState.message} onRetry={beginConnect} />
         )}
       </div>
     </div>
@@ -160,6 +162,7 @@ function ErrorBox({
   message: string;
   onRetry: () => void;
 }) {
+  const t = useT();
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-red-400/25 bg-red-400/8 p-4">
       <div className="flex flex-col gap-0.5">
@@ -170,7 +173,7 @@ function ErrorBox({
         onClick={onRetry}
         className="self-start rounded-lg bg-ink px-3.5 py-1.5 text-[12.5px] font-semibold text-canvas transition-transform hover:scale-[1.02] active:scale-[0.97]"
       >
-        Try again
+        {t("Try again")}
       </button>
     </div>
   );

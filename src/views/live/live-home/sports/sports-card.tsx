@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useT } from "@/lib/i18n";
 import type { SportsGame, SportsSide } from "@/lib/sports/espn";
 import { fmtClock } from "../now-format";
 
@@ -63,25 +64,26 @@ function SideRow({ side, active, dim }: { side: SportsSide; active: boolean; dim
 }
 
 function Status({ game }: { game: SportsGame }) {
+  const t = useT();
   if (game.state === "in") {
     return (
       <span className="flex h-[18px] items-center gap-1 rounded bg-danger px-1.5 text-[10.5px] font-bold uppercase tracking-[0.06em] text-white">
         <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
-        {game.detail || "Live"}
+        {game.detail || t("Live")}
       </span>
     );
   }
   if (game.state === "post") {
     return (
       <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-muted">
-        {game.detail || "Final"}
+        {game.detail || t("Final")}
       </span>
     );
   }
   return (
     <span className="flex h-[18px] items-center gap-1.5 rounded border border-edge-soft/60 px-1.5 text-[10.5px] font-semibold uppercase tracking-[0.06em] text-ink-subtle">
       <span className="h-1.5 w-1.5 rounded-full bg-ink-subtle/60" />
-      {startLabel(game.startMs)}
+      {t(startLabel(game.startMs))}
     </span>
   );
 }

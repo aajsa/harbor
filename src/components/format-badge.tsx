@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AlertTriangle, Info } from "lucide-react";
+import { useT } from "@/lib/i18n";
 import badge1080i from "@/assets/badges/1080i.png";
 import badge1080p from "@/assets/badges/1080p_fhd.webp";
 import badge2kQhd from "@/assets/badges/2k_qhd.png";
@@ -380,6 +381,7 @@ function BadgeWithTooltip({
   note: QualityNote;
   children: React.ReactNode;
 }) {
+  const t = useT();
   const wrapRef = useRef<HTMLSpanElement>(null);
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<{ top: number; left: number; place: "above" | "below" } | null>(null);
@@ -439,9 +441,9 @@ function BadgeWithTooltip({
               ) : (
                 <Info size={11} strokeWidth={2.4} />
               )}
-              {note.title}
+              {t(note.title)}
             </span>
-            <p className="text-[12.5px] leading-snug text-ink-muted">{note.body}</p>
+            <p className="text-[12.5px] leading-snug text-ink-muted">{t(note.body)}</p>
           </div>,
           document.body,
         )}

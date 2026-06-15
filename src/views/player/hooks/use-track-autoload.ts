@@ -143,9 +143,7 @@ export function useTrackAutoload(params: {
         const n = perLang.get(k) ?? 0;
         if (n >= PER_LANG_MAX) continue;
         perLang.set(k, n + 1);
-        const blocked = snapRef.current.subtitleTracks.some(
-          (t) => t.selected && langScore(t.lang ?? "", langs) >= 0,
-        );
+        const blocked = snapRef.current.subtitleTracks.some((t) => t.selected);
         const embeddedPreferred =
           settings.preferEmbeddedSubs &&
           snapRef.current.subtitleTracks.some((t) => !t.external);

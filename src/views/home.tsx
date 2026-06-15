@@ -393,11 +393,14 @@ export function Home({ active = true }: { active?: boolean }) {
         return;
       }
       if (!authKey || !target.state) return;
-      const se = episodeFromVideoId(target.state.video_id);
+      const vid = target.state.video_id ?? "";
+      const kitsuThreeSeg =
+        /^(kitsu|mal|anilist|anidb):/.test(target._id) && vid.split(":").length === 3;
+      const se = kitsuThreeSeg ? null : episodeFromVideoId(target.state.video_id);
       clearResume(
         target._id,
-        target.state.season ?? se?.season,
-        target.state.episode ?? se?.episode,
+        target.state.season ?? (kitsuThreeSeg ? 1 : se?.season),
+        target.state.episode ?? (kitsuThreeSeg ? Number(vid.split(":")[2]) : se?.episode),
       );
       void libraryPut(authKey, {
         ...target,
@@ -636,10 +639,24 @@ export function Home({ active = true }: { active?: boolean }) {
               onToggleHidden={() => handleToggleHidden("top10")}
             />
           )}
-          {settings.homeMode !== "classic" && settings.tmdbKey && (
+          {settings.homeMode !== "classic" && settings.tmdbKey && !homeRowsCustom.hidden.includes("collections") && (
             <div data-scroll-anchor="collections" style={{ contentVisibility: "auto", containIntrinsicSize: "auto 260px" }}>
+              {editMode && (
+                <PinnedRowControls
+                  label={t("Collections")}
+                  hidden={false}
+                  onToggleHidden={() => handleToggleHidden("collections")}
+                />
+              )}
               <CollectionsRow />
             </div>
+          )}
+          {editMode && settings.homeMode !== "classic" && settings.tmdbKey && homeRowsCustom.hidden.includes("collections") && (
+            <PinnedRowControls
+              label={t("Collections")}
+              hidden
+              onToggleHidden={() => handleToggleHidden("collections")}
+            />
           )}
           {rows.length === 0 && traktRows.length === 0 && simklRows.length === 0 && animeRows.length === 0 && arabicRows.length === 0 ? (
             Array.from({ length: 7 }).map((_, i) => <RowSkeleton key={`skel-${i}`} />)

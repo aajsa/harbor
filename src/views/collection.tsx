@@ -4,8 +4,10 @@ import type { Meta } from "@/lib/cinemeta";
 import { tmdbCollection, type TmdbCollection } from "@/lib/providers/tmdb";
 import { useSettings } from "@/lib/settings";
 import { useScrollMemory } from "@/lib/view";
+import { useT } from "@/lib/i18n";
 
 export function CollectionView({ collectionId }: { collectionId: number }) {
+  const t = useT();
   const { settings } = useSettings();
   const [data, setData] = useState<TmdbCollection | null>(null);
   const [loading, setLoading] = useState(true);
@@ -42,7 +44,7 @@ export function CollectionView({ collectionId }: { collectionId: number }) {
       {data?.backdrop && (
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[680px]"
+          className="harbor-bleed-stremio pointer-events-none absolute inset-x-0 top-0 -z-10 h-[680px]"
           style={{
             backgroundImage: `url(${data.backdrop})`,
             backgroundSize: "cover",
@@ -54,7 +56,7 @@ export function CollectionView({ collectionId }: { collectionId: number }) {
       )}
       <div className="relative">
         {data?.backdrop && (
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-[560px] overflow-hidden">
+          <div className="harbor-bleed-stremio pointer-events-none absolute inset-x-0 top-0 h-[560px] overflow-hidden">
             <img src={data.backdrop} alt="" className="h-full w-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-canvas via-canvas/70 to-canvas/10" />
             <div className="absolute inset-0 bg-gradient-to-r from-canvas/90 via-canvas/25 to-transparent" />
@@ -71,14 +73,16 @@ export function CollectionView({ collectionId }: { collectionId: number }) {
               />
             )}
             <div className="min-w-0 max-w-3xl">
-              <p className="text-[12px] font-semibold uppercase tracking-[0.22em] text-ink-subtle">Collection</p>
+              <p className="text-[12px] font-semibold uppercase tracking-[0.22em] text-ink-subtle">{t("Collection")}</p>
               <h1 className="mt-2 font-display text-[clamp(34px,4.4vw,56px)] font-medium leading-[1.03] tracking-tight text-ink">
-                {data?.name ?? "Collection"}
+                {data?.name ?? t("Collection")}
               </h1>
               {data && data.parts.length > 0 && (
                 <div className="mt-3.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13.5px] font-medium text-ink-muted">
                   <span>
-                    {data.parts.length} {data.parts.length === 1 ? "film" : "films"}
+                    {data.parts.length === 1
+                      ? t("{n} film", { n: data.parts.length })
+                      : t("{n} films", { n: data.parts.length })}
                   </span>
                   {years && (
                     <>
@@ -98,7 +102,7 @@ export function CollectionView({ collectionId }: { collectionId: number }) {
 
       <div className="px-12 pb-16 pt-10">
         {data && data.parts.length > 0 && (
-          <h2 className="mb-4 text-[13px] font-bold uppercase tracking-[0.2em] text-ink-subtle">Films</h2>
+          <h2 className="mb-4 text-[13px] font-bold uppercase tracking-[0.2em] text-ink-subtle">{t("Films")}</h2>
         )}
         {loading ? (
           <div className={grid}>
@@ -107,9 +111,9 @@ export function CollectionView({ collectionId }: { collectionId: number }) {
             ))}
           </div>
         ) : !settings.tmdbKey ? (
-          <Notice>Add a TMDB key in Settings to browse collections.</Notice>
+          <Notice>{t("Add a TMDB key in Settings to browse collections.")}</Notice>
         ) : !data || data.parts.length === 0 ? (
-          <Notice>No films found in this collection.</Notice>
+          <Notice>{t("No films found in this collection.")}</Notice>
         ) : (
           <div className={grid}>
             {data.parts.map((m) => (

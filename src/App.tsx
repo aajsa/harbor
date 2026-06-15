@@ -53,6 +53,7 @@ import { RankingsProvider } from "@/lib/rankings";
 import { SettingsProvider } from "@/lib/settings";
 import { SearchProvider } from "@/lib/search-context";
 import { SearchOverlay } from "@/components/search/search-overlay";
+import { SearchHotkey } from "@/components/search/search-hotkey";
 import { TogetherProvider, useTogether } from "@/lib/together/provider";
 import { DvrProvider } from "@/lib/dvr/provider";
 import { FavoritesProvider } from "@/lib/iptv/favorites";
@@ -238,6 +239,7 @@ export function App() {
                       <TopRankModal />
                       <ProfilePickerModal />
                       <SearchOverlay />
+                      <SearchHotkey />
                       <EmbedViewportRoot />
                       <InstallerViewportRoot />
                       <UpdateRoot />

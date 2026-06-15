@@ -36,7 +36,7 @@ export function ArabicHub({ active = true }: { active?: boolean }) {
 
           {!settings.tmdbKey && (
             <p className="text-[13.5px] text-ink-subtle">
-              <bdi>Add a TMDB key in Settings to load Arabic content.</bdi>
+              <bdi>{t("Add a TMDB key in Settings to load Arabic content.")}</bdi>
             </p>
           )}
 

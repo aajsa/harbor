@@ -2,6 +2,7 @@ import { ArrowDown, ArrowUp, ChevronsUp, GripVertical } from "lucide-react";
 import type { HTMLAttributes, ReactNode } from "react";
 import { AddonLogo } from "@/components/addon-logo";
 import { HoverTooltip } from "@/components/hover-tooltip";
+import { useT } from "@/lib/i18n";
 import type { DragList } from "./use-drag-list";
 
 export type OrganizeEntry = {
@@ -26,6 +27,7 @@ export function SectionCard({
   count: number;
   children: ReactNode;
 }) {
+  const t = useT();
   return (
     <section className="rounded-2xl border border-edge-soft bg-elevated/40 p-5 sm:p-6">
       <div className="mb-4 flex items-baseline justify-between gap-3">
@@ -34,7 +36,7 @@ export function SectionCard({
           <p className="text-[12.5px] text-ink-muted">{sub}</p>
         </div>
         <span className="shrink-0 rounded-full bg-raised px-3 py-1 text-[12px] font-semibold text-ink-muted">
-          {count} {count === 1 ? "addon" : "addons"}
+          {count === 1 ? t("{n} addon", { n: count }) : t("{n} addons", { n: count })}
         </span>
       </div>
       {children}
@@ -108,6 +110,7 @@ function OrganizeRow({
   onDown: () => void;
   onTop: () => void;
 }) {
+  const t = useT();
   return (
     <div
       ref={rowRef}
@@ -128,7 +131,7 @@ function OrganizeRow({
       </span>
       <span
         {...handleProps}
-        title="Drag to reorder"
+        title={t("Drag to reorder")}
         className="flex h-10 w-8 shrink-0 cursor-grab touch-none items-center justify-center text-ink-subtle transition-colors hover:text-ink active:cursor-grabbing"
       >
         <GripVertical size={18} strokeWidth={2.2} />
@@ -139,18 +142,18 @@ function OrganizeRow({
         <span className="truncate text-[12px] text-ink-subtle">{entry.host}</span>
       </div>
       <div className="flex shrink-0 items-center gap-0.5">
-        <HoverTooltip label="Move to top" side="top" align="center" delayMs={200}>
-          <button onClick={onTop} disabled={!canUp} aria-label="Move to top" className={BTN}>
+        <HoverTooltip label={t("Move to top")} side="top" align="center" delayMs={200}>
+          <button onClick={onTop} disabled={!canUp} aria-label={t("Move to top")} className={BTN}>
             <ChevronsUp size={17} strokeWidth={2.2} />
           </button>
         </HoverTooltip>
-        <HoverTooltip label="Move up" side="top" align="center" delayMs={200}>
-          <button onClick={onUp} disabled={!canUp} aria-label="Move up" className={BTN}>
+        <HoverTooltip label={t("Move up")} side="top" align="center" delayMs={200}>
+          <button onClick={onUp} disabled={!canUp} aria-label={t("Move up")} className={BTN}>
             <ArrowUp size={17} strokeWidth={2.2} />
           </button>
         </HoverTooltip>
-        <HoverTooltip label="Move down" side="top" align="center" delayMs={200}>
-          <button onClick={onDown} disabled={!canDown} aria-label="Move down" className={BTN}>
+        <HoverTooltip label={t("Move down")} side="top" align="center" delayMs={200}>
+          <button onClick={onDown} disabled={!canDown} aria-label={t("Move down")} className={BTN}>
             <ArrowDown size={17} strokeWidth={2.2} />
           </button>
         </HoverTooltip>

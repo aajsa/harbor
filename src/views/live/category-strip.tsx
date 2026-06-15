@@ -1,4 +1,5 @@
 import { forwardRef, useEffect, useRef } from "react";
+import { useT } from "@/lib/i18n";
 
 export function CategoryStrip({
   groups,
@@ -11,6 +12,7 @@ export function CategoryStrip({
   onSelect: (g: string | null) => void;
   counts: Map<string, number>;
 }) {
+  const t = useT();
   const scrollRef = useRef<HTMLDivElement>(null);
   const activeRef = useRef<HTMLButtonElement>(null);
   const allCount = Array.from(counts.values()).reduce((a, b) => a + b, 0);
@@ -33,7 +35,7 @@ export function CategoryStrip({
     >
       <Chip
         ref={active === null ? activeRef : undefined}
-        label="All channels"
+        label={t("All channels")}
         count={allCount}
         active={active === null}
         onClick={() => onSelect(null)}

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link2, Loader2 } from "lucide-react";
+import { useT } from "@/lib/i18n";
 import { computeTvgIdCounts, epgProgramsForChannel } from "@/lib/iptv/epg-resolver";
 import { useEpgMapVersion } from "@/lib/iptv/epg-map";
 import { channelHasCatchup } from "@/lib/iptv/catchup";
@@ -49,6 +50,7 @@ export function GuideView({
   resetKey: string;
   showPrograms?: boolean;
 }) {
+  const t = useT();
   const { visible: channels, sentinelRef, hasMore } = useLazyVisible(allChannels, resetKey);
   const scrollRef = useRef<HTMLDivElement>(null);
   const scrolledRef = useRef(false);
@@ -134,7 +136,10 @@ export function GuideView({
           <div ref={sentinelRef} className="flex h-12 items-center justify-center">
             <div className="flex items-center gap-2 text-[12px] text-ink-subtle">
               <Loader2 size={13} className="animate-spin" />
-              Loading more channels ({channels.length.toLocaleString()} of {allChannels.length.toLocaleString()})
+              {t("Loading more channels ({shown} of {total})", {
+                shown: channels.length.toLocaleString(),
+                total: allChannels.length.toLocaleString(),
+              })}
             </div>
           </div>
         )}
@@ -147,7 +152,7 @@ export function GuideView({
       {!epg && (
         <div className="mx-6 mb-3 flex items-center gap-2 rounded-xl border border-edge-soft/55 bg-elevated/70 px-4 py-2 text-[12.5px] text-ink-muted">
           <Loader2 size={13} className="animate-spin text-ink-subtle" />
-          Loading program listings… channels are ready to play in the meantime.
+          {t("Loading program listings… channels are ready to play in the meantime.")}
         </div>
       )}
       <div
@@ -172,7 +177,7 @@ export function GuideView({
               }}
             >
               <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-ink-subtle">
-                Channel
+                {t("Channel")}
               </span>
               <div
                 onPointerDown={onResizeDown}
@@ -180,7 +185,7 @@ export function GuideView({
                 onPointerUp={onResizeUp}
                 role="separator"
                 aria-orientation="vertical"
-                title="Drag to resize the channel column"
+                title={t("Drag to resize the channel column")}
                 className="absolute right-0 top-0 z-50 h-full w-2.5 cursor-col-resize touch-none transition-colors hover:bg-accent/40 active:bg-accent/60"
               />
             </div>
@@ -210,14 +215,14 @@ export function GuideView({
                 >
                   {programs.length === 0 && (
                     <div className="flex h-full items-center gap-3 px-3 text-[11.5px] text-ink-subtle">
-                      <span>No program info</span>
+                      <span>{t("No program info")}</span>
                       {epg && epg.byChannel.size > 0 && (
                         <button
                           onClick={() => setMatchTarget(ch)}
                           className="flex items-center gap-1.5 rounded-md border border-edge-soft/55 bg-elevated/70 px-2 py-1 font-medium text-ink-muted transition-colors hover:text-ink"
                         >
                           <Link2 size={11} strokeWidth={2.2} />
-                          Match EPG
+                          {t("Match EPG")}
                         </button>
                       )}
                     </div>
@@ -265,7 +270,7 @@ export function GuideView({
                   top: RULER_HEIGHT_PX + 4,
                 }}
               >
-                Now
+                {t("Now")}
               </div>
             </>
           )}
@@ -275,12 +280,18 @@ export function GuideView({
         <div ref={sentinelRef} className="flex h-12 items-center justify-center">
           <div className="flex items-center gap-2 text-[12px] text-ink-subtle">
             <Loader2 size={13} className="animate-spin" />
-            Loading more channels ({channels.length.toLocaleString()} of {allChannels.length.toLocaleString()})
+            {t("Loading more channels ({shown} of {total})", {
+              shown: channels.length.toLocaleString(),
+              total: allChannels.length.toLocaleString(),
+            })}
           </div>
         </div>
       ) : allChannels.length > channels.length ? (
         <div className="mx-6 mt-3 mb-2 rounded-xl border border-edge-soft/55 bg-elevated/60 px-4 py-2.5 text-center text-[12px] text-ink-subtle">
-          Showing first {channels.length.toLocaleString()} of {allChannels.length.toLocaleString()} channels. Use search or a category to narrow down.
+          {t("Showing first {shown} of {total} channels. Use search or a category to narrow down.", {
+            shown: channels.length.toLocaleString(),
+            total: allChannels.length.toLocaleString(),
+          })}
         </div>
       ) : null}
       {matchTarget && epg && (

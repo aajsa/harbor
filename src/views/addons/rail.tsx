@@ -1,6 +1,7 @@
 import { ChevronRight } from "lucide-react";
 import { useState } from "react";
 import type { ResolvedAddon } from "@/lib/addons-store/store";
+import { useT } from "@/lib/i18n";
 import { addonKey, idOf } from "./addons-utils";
 import { FeatureCard } from "./feature-card";
 import { ListCard } from "./list-card";
@@ -25,6 +26,7 @@ export function Rail({
   onUninstall: (r: ResolvedAddon) => Promise<void>;
   installedIds: Set<string>;
 }) {
+  const t = useT();
   const collapsedCount = layout === "feature" ? 2 : layout === "list" ? 2 : 4;
   const [expanded, setExpanded] = useState(false);
   const hasMore = items.length > collapsedCount;
@@ -42,7 +44,7 @@ export function Rail({
             onClick={() => setExpanded((v) => !v)}
             className="shrink-0 text-[12.5px] font-semibold text-accent transition-opacity hover:opacity-70"
           >
-            {expanded ? "Show less" : `See all (${items.length})`}
+            {expanded ? t("Show less") : t("See all ({n})", { n: items.length })}
             <ChevronRight
               className={`-me-0.5 ms-0.5 inline transition-transform ${expanded ? "rotate-90" : "rtl:-scale-x-100"}`}
               size={12}

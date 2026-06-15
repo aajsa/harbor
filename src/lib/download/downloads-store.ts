@@ -159,7 +159,7 @@ export async function enqueueDownload(args: EnqueueArgs): Promise<string> {
     metaId: meta.id,
     title: meta.name ?? "Download",
     subtitle: episode
-      ? `S${episode.season} · E${String(episode.episode).padStart(2, "0")}${episode.name ? ` · ${episode.name}` : ""}`
+      ? `S${episode.imdbSeason ?? episode.season} · E${String(episode.imdbEpisode ?? episode.episode).padStart(2, "0")}${episode.name ? ` · ${episode.name}` : ""}`
       : (meta.releaseInfo ?? null),
     poster: meta.poster ?? null,
     season: episode?.season ?? null,

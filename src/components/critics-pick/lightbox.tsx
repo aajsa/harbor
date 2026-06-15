@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { useT } from "@/lib/i18n";
 
 export function Lightbox({
   images,
@@ -13,6 +14,7 @@ export function Lightbox({
   title: string;
   onClose: () => void;
 }) {
+  const t = useT();
   const [index, setIndex] = useState(startIndex);
   const total = images.length;
 
@@ -42,7 +44,7 @@ export function Lightbox({
       className="fixed inset-0 z-[120] flex items-center justify-center bg-canvas/95 p-10"
       role="dialog"
       aria-modal="true"
-      aria-label={`${title} image viewer`}
+      aria-label={t("{title} image viewer", { title })}
       onClick={onClose}
     >
       <div
@@ -60,7 +62,7 @@ export function Lightbox({
           e.stopPropagation();
           onClose();
         }}
-        aria-label="Close image viewer"
+        aria-label={t("Close image viewer")}
         className="absolute end-8 top-8 flex h-12 w-12 items-center justify-center rounded-full border border-edge-soft bg-elevated/50 text-ink-muted transition-colors duration-200 hover:bg-elevated hover:text-ink"
       >
         <X size={22} />
@@ -73,7 +75,7 @@ export function Lightbox({
               e.stopPropagation();
               prev();
             }}
-            aria-label="Previous image"
+            aria-label={t("Previous image")}
             className="absolute start-8 top-1/2 flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full border border-edge-soft bg-elevated/50 text-ink-muted transition-colors duration-200 hover:bg-elevated hover:text-ink"
           >
             <ChevronLeft size={28} className="dir-icon" />
@@ -84,7 +86,7 @@ export function Lightbox({
               e.stopPropagation();
               next();
             }}
-            aria-label="Next image"
+            aria-label={t("Next image")}
             className="absolute end-8 top-1/2 flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full border border-edge-soft bg-elevated/50 text-ink-muted transition-colors duration-200 hover:bg-elevated hover:text-ink"
           >
             <ChevronRight size={28} className="dir-icon" />
@@ -108,7 +110,7 @@ export function Lightbox({
               key={i}
               type="button"
               onClick={() => setIndex(i)}
-              aria-label={`Image ${i + 1}`}
+              aria-label={t("Image {n}", { n: i + 1 })}
               className={`h-1.5 rounded-full transition-all duration-200 ${
                 i === index ? "w-7 bg-ink" : "w-1.5 bg-ink-subtle/40 hover:bg-ink-muted"
               }`}

@@ -1,4 +1,11 @@
 const library: Record<string, string> = {
+  "My library": "مكتبتي",
+  "Your collection.": "مجموعتك.",
+  "Watchlist is what you've saved for later. History is everything you've watched. Local is files on your computer.":
+    "قائمة المشاهدة هي ما حفظته لوقت لاحق. السجلّ هو كل ما شاهدته. المحلي هو الملفات الموجودة على حاسوبك.",
+  History: "السجلّ",
+  Local: "محلي",
+
   Watchlist: "قائمة المشاهدة",
   "Watchlist only": "قائمة المشاهدة فقط",
   "Watchlist shows only saved titles": "تعرض قائمة المشاهدة العناوين المحفوظة فقط",

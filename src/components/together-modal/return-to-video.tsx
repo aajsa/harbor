@@ -28,7 +28,8 @@ export function ReturnToVideo({ media, onReturn }: { media: SyncState; onReturn:
         </span>
         {media.episode && (
           <span className="font-mono text-[10.5px] tracking-[0.1em] text-ink-subtle">
-            S{media.episode.season} · E{String(media.episode.episode).padStart(2, "0")}
+            S{media.episode.imdbSeason ?? media.episode.season} · E
+            {String(media.episode.imdbEpisode ?? media.episode.episode).padStart(2, "0")}
           </span>
         )}
       </div>

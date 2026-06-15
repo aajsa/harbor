@@ -1,6 +1,7 @@
 import { ArrowUpToLine, Check, ChevronDown, ChevronUp, Copy, Download, MoreHorizontal, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useT } from "@/lib/i18n";
 import type { IptvPlaylistSource } from "@/lib/iptv/types";
 import { EMPTY_FORM, PlaylistForm, type PlaylistFormValue } from "./source-picker/playlist-form";
 
@@ -37,6 +38,7 @@ export function SourcePicker({
   channelCount: number | null;
   loading: boolean;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"list" | "add" | "edit">("list");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -72,7 +74,7 @@ export function SourcePicker({
 
   const editing = editingId ? sources.find((s) => s.id === editingId) ?? null : null;
   const active = sources.find((s) => s.id === activeId);
-  const ago = fetchedAt ? formatAgo(Date.now() - fetchedAt) : null;
+  const ago = fetchedAt ? formatAgo(Date.now() - fetchedAt, t) : null;
 
   const copyUrl = async (url: string, id: string) => {
     try {
@@ -94,7 +96,7 @@ export function SourcePicker({
           className="flex h-11 items-center gap-2.5 rounded-xl border border-edge-soft/55 bg-elevated px-3.5 pe-3 text-[13.5px] font-medium text-ink transition-colors hover:bg-raised"
         >
           <span className="flex h-2 w-2 shrink-0 rounded-full bg-danger" />
-          <span className="max-w-[200px] truncate">{active?.name ?? "No playlist"}</span>
+          <span className="max-w-[200px] truncate">{active?.name ?? t("No playlist")}</span>
           {channelCount != null && (
             <span className="rounded-full bg-canvas/70 px-2 py-0.5 text-[11px] font-semibold tabular-nums text-ink-muted">
               {channelCount.toLocaleString()}
@@ -145,7 +147,7 @@ export function SourcePicker({
                           setActions(null);
                         }}
                         onDelete={() => {
-                          if (confirm(`Remove playlist "${s.name}"?`)) {
+                          if (confirm(t('Remove playlist "{name}"?', { name: s.name }))) {
                             onRemove(s.id);
                             setActions(null);
                           }
@@ -160,7 +162,7 @@ export function SourcePicker({
                     className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-start text-[13px] font-medium text-ink-muted transition-colors hover:bg-raised hover:text-ink"
                   >
                     <Plus size={15} strokeWidth={2} />
-                    Add another playlist
+                    {t("Add another playlist")}
                   </button>
                 </div>
               </>
@@ -168,7 +170,7 @@ export function SourcePicker({
             {mode === "add" && (
               <PlaylistForm
                 initial={EMPTY_FORM}
-                submitLabel="Add"
+                submitLabel={t("Add")}
                 onCancel={() => setMode("list")}
                 onSubmit={(v) => {
                   onAdd(v);
@@ -185,7 +187,7 @@ export function SourcePicker({
                   epgUrl: editing.epgUrl ?? "",
                   xtream: editing.xtream ?? { server: "", username: "", password: "" },
                 }}
-                submitLabel="Save"
+                submitLabel={t("Save")}
                 onCancel={() => {
                   setMode("list");
                   setEditingId(null);
@@ -203,7 +205,7 @@ export function SourcePicker({
       <button
         onClick={onRefresh}
         disabled={loading || !activeId}
-        title={ago ? `Last updated ${ago}` : "Refresh playlist"}
+        title={ago ? t("Last updated {ago}", { ago }) : t("Refresh playlist")}
         className="flex h-11 w-11 items-center justify-center rounded-xl border border-edge-soft/55 bg-elevated text-ink-muted transition-colors hover:bg-raised hover:text-ink disabled:opacity-40"
       >
         <RefreshCw size={15} strokeWidth={2} className={loading ? "animate-spin" : ""} />
@@ -247,6 +249,7 @@ function SourceRow({
   onExport: () => void;
   onDelete: () => void;
 }) {
+  const t = useT();
   const triggerRef = useRef<HTMLButtonElement>(null);
   return (
     <>
@@ -275,7 +278,7 @@ function SourceRow({
                 onMove(-1);
               }}
               disabled={index === 0}
-              aria-label="Move up"
+              aria-label={t("Move up")}
               className="flex h-4 w-6 items-center justify-center text-ink-subtle transition-colors hover:text-ink disabled:opacity-25"
             >
               <ChevronUp size={13} strokeWidth={2.2} />
@@ -287,7 +290,7 @@ function SourceRow({
                 onMove(1);
               }}
               disabled={index === total - 1}
-              aria-label="Move down"
+              aria-label={t("Move down")}
               className="flex h-4 w-6 items-center justify-center text-ink-subtle transition-colors hover:text-ink disabled:opacity-25"
             >
               <ChevronDown size={13} strokeWidth={2.2} />
@@ -300,7 +303,7 @@ function SourceRow({
             e.stopPropagation();
             onToggleMenu();
           }}
-          aria-label={`More for ${source.name}`}
+          aria-label={t("More for {name}", { name: source.name })}
           className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-opacity ${
             isMenuOpen
               ? "text-ink"
@@ -317,33 +320,33 @@ function SourceRow({
         >
           {onMoveTop && index > 0 && (
             <MenuItem icon={<ArrowUpToLine size={14} strokeWidth={1.9} />} onClick={onMoveTop}>
-              Move to top
+              {t("Move to top")}
             </MenuItem>
           )}
           <MenuItem icon={<Pencil size={14} strokeWidth={1.9} />} onClick={onEdit}>
-            Edit
+            {t("Edit")}
           </MenuItem>
           <MenuItem
             icon={copied ? <Check size={14} strokeWidth={2.2} /> : <Copy size={14} strokeWidth={1.9} />}
             onClick={onCopy}
             accent={copied}
           >
-            {copied ? "Copied to clipboard" : "Copy URL"}
+            {copied ? t("Copied to clipboard") : t("Copy URL")}
           </MenuItem>
           <MenuItem
             icon={<Download size={14} strokeWidth={1.9} />}
             onClick={onExport}
             disabled={!exportEnabled}
-            hint={!isActive ? "Switch to this playlist first" : undefined}
+            hint={!isActive ? t("Switch to this playlist first") : undefined}
           >
-            Export as .m3u
+            {t("Export as .m3u")}
           </MenuItem>
           <div className="my-0.5 mx-2 h-px bg-edge-soft/60" />
           <MenuItem icon={<Trash2 size={14} strokeWidth={1.9} />} onClick={onDelete} danger>
-            Delete
+            {t("Delete")}
           </MenuItem>
           <div className="border-t border-edge-soft/40 px-3 py-2 text-[10.5px] uppercase tracking-[0.16em] text-ink-subtle">
-            {source.epgUrl ? "URL + EPG saved" : "URL saved"}
+            {source.epgUrl ? t("URL + EPG saved") : t("URL saved")}
           </div>
         </PortalMenu>
       )}
@@ -452,12 +455,12 @@ function MenuItem({
   );
 }
 
-function formatAgo(ms: number): string {
+function formatAgo(ms: number, t: (key: string, vars?: Record<string, string | number>) => string): string {
   const s = Math.floor(ms / 1000);
-  if (s < 60) return "just now";
+  if (s < 60) return t("just now");
   const m = Math.floor(s / 60);
-  if (m < 60) return `${m}m ago`;
+  if (m < 60) return t("{m}m ago", { m });
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  return `${Math.floor(h / 24)}d ago`;
+  if (h < 24) return t("{h}h ago", { h });
+  return t("{d}d ago", { d: Math.floor(h / 24) });
 }

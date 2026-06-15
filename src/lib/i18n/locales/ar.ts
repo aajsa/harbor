@@ -1,3 +1,5 @@
+import addons from "./ar/addons";
+import awards from "./ar/awards";
 import catalog from "./ar/catalog";
 import chrome from "./ar/chrome";
 import common from "./ar/common";
@@ -34,6 +36,8 @@ const ar: Record<string, string> = {
   ...discover,
   ...spotlights,
   ...misc,
+  ...awards,
+  ...addons,
 };
 
 export default ar;

@@ -15,7 +15,9 @@ export function AutoExhaustedModal({
 }) {
   const { goBack } = useView();
   const title = meta.name ?? "this title";
-  const epSuffix = episode ? ` S${episode.season}E${String(episode.episode).padStart(2, "0")}` : "";
+  const epSuffix = episode
+    ? ` S${episode.imdbSeason ?? episode.season}E${String(episode.imdbEpisode ?? episode.episode).padStart(2, "0")}`
+    : "";
   const subject = `Harbor: no working stream for ${title}${epSuffix}`;
   const body =
     `Title: ${title}${epSuffix}\n` +

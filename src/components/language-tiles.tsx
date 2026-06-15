@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Meta } from "@/lib/cinemeta";
+import { useT } from "@/lib/i18n";
 import { tmdbDiscover } from "@/lib/providers/tmdb";
 import { rpdbPoster } from "@/lib/providers/rpdb";
 import { useSettings } from "@/lib/settings";
@@ -31,8 +32,9 @@ const LANGS: Lang[] = [
 ];
 
 export function LanguageTiles() {
+  const t = useT();
   return (
-    <Row title="Browse by Language" min={210} shape="tile" alwaysActive>
+    <Row title={t("Browse by Language")} min={210} shape="tile" alwaysActive>
       {LANGS.map((l) => (
         <LanguageTile key={l.iso} lang={l} />
       ))}

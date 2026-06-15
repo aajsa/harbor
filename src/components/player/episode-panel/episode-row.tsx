@@ -23,7 +23,7 @@ export function EpisodeRow({
   spoiler?: SpoilerMask;
 }) {
   const t = useT();
-  const epLabel = `S${episode.season} · E${String(episode.episode).padStart(2, "0")}`;
+  const epLabel = `S${episode.imdbSeason ?? episode.season} · E${String(episode.imdbEpisode ?? episode.episode).padStart(2, "0")}`;
   const hasStill = !!episode.still;
   return (
     <div

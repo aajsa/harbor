@@ -1,10 +1,12 @@
 import { Sparkles, Star } from "lucide-react";
 import type { AnimeHit } from "@/lib/search";
+import { useT } from "@/lib/i18n";
 import { useView } from "@/lib/view";
 import type { Meta } from "@/lib/cinemeta";
 
 export function AnimeRow({ items, onClose }: { items: AnimeHit[]; onClose: () => void }) {
   const { openMeta } = useView();
+  const t = useT();
   if (items.length === 0) return null;
 
   const open = (hit: AnimeHit) => {
@@ -26,7 +28,7 @@ export function AnimeRow({ items, onClose }: { items: AnimeHit[]; onClose: () =>
     <section>
       <h3 className="mb-3 flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.2em] text-ink-subtle">
         <Sparkles size={11} strokeWidth={2.2} />
-        Anime
+        {t("Anime")}
       </h3>
       <div className="flex flex-col gap-2">
         {items.map((hit) => (
@@ -45,7 +47,7 @@ export function AnimeRow({ items, onClose }: { items: AnimeHit[]; onClose: () =>
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <span className="m-auto text-[10px] text-ink-subtle">No art</span>
+                <span className="m-auto text-[10px] text-ink-subtle">{t("No art")}</span>
               )}
             </span>
             <span className="flex min-w-0 flex-1 flex-col gap-1">

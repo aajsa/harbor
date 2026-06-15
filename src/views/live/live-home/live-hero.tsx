@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { RotateCcw, Tv } from "lucide-react";
 import type { Meta } from "@/lib/cinemeta";
+import { useT } from "@/lib/i18n";
 import type { IptvChannel } from "@/lib/iptv/types";
 import { MultiPlayer } from "@/views/multiview/multi-player";
 import { fmtLeft } from "./now-format";
@@ -19,6 +20,7 @@ export function LiveHero({
   onAmbient?: (art: string | null) => void;
   onPlay: (ch: IptvChannel) => void;
 }) {
+  const t = useT();
   const [idx, setIdx] = useState(0);
   const [paused, setPaused] = useState(false);
   const [playing, setPlaying] = useState(false);
@@ -52,7 +54,7 @@ export function LiveHero({
 
   if (!active) return null;
   const { channel, current, progress } = active;
-  const left = current ? fmtLeft(current.endMs, nowMs) : null;
+  const left = current ? fmtLeft(current.endMs, nowMs, t) : null;
   const title = current?.title || hydrated?.name || channel.name;
   const meta = [channel.name, channel.group].filter(Boolean).join(" · ");
 
@@ -99,7 +101,7 @@ export function LiveHero({
       >
         <div className="flex items-center gap-3 text-[13px] font-semibold">
           <span className="flex h-[24px] items-center rounded-md bg-danger px-2.5 text-[11px] font-bold uppercase tracking-[0.16em] text-white">
-            Live
+            {t("Live")}
           </span>
           {left && (
             <span className="flex items-center gap-1.5 text-ink">
@@ -129,7 +131,7 @@ export function LiveHero({
                 e.stopPropagation();
                 setIdx(i);
               }}
-              aria-label={`Spotlight ${i + 1}`}
+              aria-label={t("Spotlight {n}", { n: i + 1 })}
               className={`h-1.5 rounded-full transition-all duration-300 ${
                 i === activeIdx ? "w-8 bg-ink" : "w-4 bg-ink-muted/60 hover:bg-ink-muted"
               }`}

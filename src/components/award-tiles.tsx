@@ -1,5 +1,6 @@
 import { AwardLogo, laurelColorFor } from "@/components/icons/award-logo";
 import { Laurel } from "@/components/icons/laurel";
+import { useT } from "@/lib/i18n";
 import type { AwardType } from "@/lib/providers/wikidata";
 import { useView } from "@/lib/view";
 import { Row } from "./row";
@@ -17,8 +18,9 @@ const AWARDS: Array<{ type: AwardType; name: string; sub: string }> = [
 ];
 
 export function AwardTiles() {
+  const t = useT();
   return (
-    <Row title="Browse by Award" min={210} shape="tile" alwaysActive>
+    <Row title={t("Browse by Award")} min={210} shape="tile" alwaysActive>
       {AWARDS.map((a) => (
         <AwardTile key={a.type} type={a.type} name={a.name} sub={a.sub} />
       ))}

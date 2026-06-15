@@ -116,6 +116,7 @@ export type Settings = {
   subShowInPip: boolean;
   subtitlesOffByDefault: boolean;
   preferEmbeddedSubs: boolean;
+  betaUpdates: boolean;
   autoSkipIntro: boolean;
   trackBlockWords: string[];
   forcedSubsWhenNativeAudio: boolean;

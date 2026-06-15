@@ -10,9 +10,10 @@ import { openInstallerViewport } from "@/components/installer-viewport";
 import { pushActivityHint } from "@/lib/discord/activity-hint";
 import { isWeb } from "@/lib/platform";
 import { openUrl } from "@/lib/window";
+import { useT } from "@/lib/i18n";
 import { AddonDescription } from "./addon-description";
 import { AddonDocumentation } from "./addon-documentation";
-import { CATEGORY_LABELS } from "./addons-types";
+import { categoryLabel } from "./addons-types";
 import { idOf, nameOf, resourceLabels } from "./addons-utils";
 import { DetailRail } from "./detail-rail";
 import { TagRow } from "./tag-row";
@@ -39,6 +40,7 @@ export function AddonDetail({
   onInstallUrl: (rawUrl: string) => Promise<string | null>;
   showToast: (kind: "ok" | "error", text: string) => void;
 }) {
+  const t = useT();
   const m = resolved.manifest;
   const c = resolved.curated;
   const isConfigurable =
@@ -57,7 +59,7 @@ export function AddonDetail({
   const openRate = () => {
     if (!community) return;
     openUrl(rateOnSiteUrl(community.slug));
-    showToast("ok", "Opening stremio-addons.net in your browser to sign in and rate");
+    showToast("ok", t("Opening stremio-addons.net in your browser to sign in and rate"));
   };
 
   useEffect(() => {
@@ -134,12 +136,12 @@ export function AddonDetail({
   };
 
   const stats: Array<[string, string]> = [
-    ["Version", m?.version ?? "–"],
-    ["Resources", resourceLabels(m?.resources ?? []).join(", ") || "–"],
-    ["Types", (m?.types ?? []).join(", ") || "–"],
-    ["ID prefixes", (m?.idPrefixes ?? []).slice(0, 3).join(", ") || "–"],
-    ["Catalogs", String(m?.catalogs?.length ?? 0)],
-    ["P2P", m?.behaviorHints?.p2p ? "Yes" : "No"],
+    [t("Version"), m?.version ?? "–"],
+    [t("Resources"), resourceLabels(m?.resources ?? []).join(", ") || "–"],
+    [t("Types"), (m?.types ?? []).join(", ") || "–"],
+    [t("ID prefixes"), (m?.idPrefixes ?? []).slice(0, 3).join(", ") || "–"],
+    [t("Catalogs"), String(m?.catalogs?.length ?? 0)],
+    [t("P2P"), m?.behaviorHints?.p2p ? t("Yes") : t("No")],
   ];
 
   const copy = async (kind: "https" | "stremio") => {
@@ -148,9 +150,9 @@ export function AddonDetail({
       await navigator.clipboard.writeText(text);
       setCopied(kind);
       setTimeout(() => setCopied(null), 1600);
-      showToast("ok", `${kind === "stremio" ? "Stremio link" : "Manifest URL"} copied`);
+      showToast("ok", kind === "stremio" ? t("Stremio link copied") : t("Manifest URL copied"));
     } catch {
-      showToast("error", "Couldn't copy. Select the URL manually.");
+      showToast("error", t("Couldn't copy. Select the URL manually."));
     }
   };
 
@@ -179,7 +181,7 @@ export function AddonDetail({
             type="button"
             onClick={openRate}
             className="absolute end-12 top-32 flex items-baseline gap-2 leading-none transition-opacity hover:opacity-80"
-            title="Rate on stremio-addons.net"
+            title={t("Rate on stremio-addons.net")}
           >
             <Star
               size={22}
@@ -194,8 +196,8 @@ export function AddonDetail({
         )}
         <div className="relative flex min-w-0 flex-1 flex-col gap-2">
           <span className="text-[11px] font-bold uppercase tracking-[0.32em] text-ink-subtle">
-            {c?.tags.includes("official") ? "Official" : "Community"} ·{" "}
-            {CATEGORY_LABELS[c?.category ?? categorizeAddon(resolved)] ?? "Addon"}
+            {c?.tags.includes("official") ? t("Official") : t("Community")} ·{" "}
+            {categoryLabel(c?.category ?? categorizeAddon(resolved)) ?? t("Addon")}
             {m?.id && <> · <span className="font-mono normal-case tracking-normal">{m.id}</span></>}
           </span>
           <h1 className="font-display text-[36px] font-medium leading-tight tracking-tight text-ink">
@@ -204,7 +206,9 @@ export function AddonDetail({
           {risingEntry && (
             <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-rose-500/15 px-2.5 py-1 text-[11px] font-bold text-rose-300 ring-1 ring-rose-500/40">
               <TrendingUp size={12} strokeWidth={2.6} />
-              Rising · +{risingEntry.recentStars} star{risingEntry.recentStars === 1 ? "" : "s"} in 24h
+              {risingEntry.recentStars === 1
+                ? t("Rising · +{n} star in 24h", { n: risingEntry.recentStars })
+                : t("Rising · +{n} stars in 24h", { n: risingEntry.recentStars })}
             </span>
           )}
           {m?.description && <AddonDescription text={m.description} />}
@@ -215,7 +219,7 @@ export function AddonDetail({
                 className="flex h-11 items-center gap-2 rounded-full bg-elevated/60 px-5 text-[13.5px] font-semibold text-ink-muted ring-1 ring-edge-soft"
               >
                 <Loader2 size={14} strokeWidth={2.4} className="animate-spin" />
-                Removing
+                {t("Removing")}
               </button>
             ) : busy === "install" ? (
               <button
@@ -223,7 +227,7 @@ export function AddonDetail({
                 className="flex h-11 items-center gap-2 rounded-full bg-ink/85 px-5 text-[13.5px] font-semibold text-canvas/80"
               >
                 <Loader2 size={14} strokeWidth={2.4} className="animate-spin" />
-                Installing
+                {t("Installing")}
               </button>
             ) : installed ? (
               <button
@@ -232,8 +236,8 @@ export function AddonDetail({
               >
                 <Check size={14} strokeWidth={2.4} className="block text-accent group-hover/pill:hidden" />
                 <Trash2 size={14} strokeWidth={2.2} className="hidden group-hover/pill:block" />
-                <span className="block group-hover/pill:hidden">Installed</span>
-                <span className="hidden group-hover/pill:block">Remove</span>
+                <span className="block group-hover/pill:hidden">{t("Installed")}</span>
+                <span className="hidden group-hover/pill:block">{t("Remove")}</span>
               </button>
             ) : isConfigurable ? (
               <button
@@ -241,14 +245,14 @@ export function AddonDetail({
                 className="flex h-11 items-center gap-2 rounded-full bg-ink px-5 text-[13.5px] font-semibold text-canvas transition-opacity hover:opacity-90"
               >
                 <Settings2 size={14} strokeWidth={2.2} />
-                Configure & install
+                {t("Configure & install")}
               </button>
             ) : (
               <button
                 onClick={() => void handleInstall()}
                 className="flex h-11 items-center gap-2 rounded-full bg-ink px-5 text-[13.5px] font-semibold text-canvas transition-opacity hover:opacity-90"
               >
-                Install
+                {t("Install")}
               </button>
             )}
             {!installed && isConfigurable && !busy && !web && (
@@ -256,7 +260,7 @@ export function AddonDetail({
                 onClick={() => void handleInstall()}
                 className="flex h-11 items-center gap-2 rounded-full border border-edge-soft px-5 text-[13.5px] font-semibold text-ink-muted transition-colors hover:border-edge hover:text-ink"
               >
-                Install default
+                {t("Install default")}
               </button>
             )}
             {installed && isConfigurable && !busy && (
@@ -265,7 +269,7 @@ export function AddonDetail({
                 className="flex h-11 items-center gap-2 rounded-full border border-edge-soft px-5 text-[13.5px] font-semibold text-ink-muted transition-colors hover:border-edge hover:text-ink"
               >
                 <Settings2 size={14} strokeWidth={2.2} />
-                Reconfigure
+                {t("Reconfigure")}
               </button>
             )}
             <button
@@ -273,14 +277,14 @@ export function AddonDetail({
               className="flex h-11 items-center gap-2 rounded-full border border-edge-soft px-5 text-[13.5px] font-semibold text-ink-muted transition-colors hover:border-edge hover:text-ink"
             >
               {copied === "https" ? <Check size={14} strokeWidth={2.4} /> : <Copy size={14} strokeWidth={2.2} />}
-              {copied === "https" ? "Copied" : "Copy URL"}
+              {copied === "https" ? t("Copied") : t("Copy URL")}
             </button>
             <button
               onClick={() => copy("stremio")}
               className="flex h-11 items-center gap-2 rounded-full border border-edge-soft px-5 text-[13.5px] font-semibold text-ink-muted transition-colors hover:border-edge hover:text-ink"
             >
               {copied === "stremio" ? <Check size={14} strokeWidth={2.4} /> : <ExternalLink size={14} strokeWidth={2.2} />}
-              {copied === "stremio" ? "Copied" : "stremio:// link"}
+              {copied === "stremio" ? t("Copied") : t("stremio:// link")}
             </button>
             {community && (
               <>
@@ -290,7 +294,7 @@ export function AddonDetail({
                   className="flex h-11 items-center gap-2 rounded-full border border-accent/40 bg-accent-soft px-5 text-[13.5px] font-semibold text-accent transition-colors hover:border-accent hover:bg-accent-soft/80"
                 >
                   <Star size={14} strokeWidth={2.4} fill="currentColor" className="harbor-rating-star" />
-                  Rate
+                  {t("Rate")}
                 </button>
                 <button
                   onClick={() => openUrl(addonSiteUrl(community.slug))}
@@ -307,7 +311,7 @@ export function AddonDetail({
                       }}
                     />
                   </span>
-                  On Stremio-Addons
+                  {t("On Stremio-Addons")}
                 </button>
               </>
             )}
@@ -318,7 +322,7 @@ export function AddonDetail({
 
       {c?.warnings && c.warnings.length > 0 && (
         <section className="mt-8 rounded-2xl border border-amber-300/30 bg-amber-300/[0.06] p-5">
-          <h3 className="text-[13.5px] font-semibold text-amber-200">Worth knowing</h3>
+          <h3 className="text-[13.5px] font-semibold text-amber-200">{t("Worth knowing")}</h3>
           <ul className="mt-2 ms-1 list-disc ps-4 text-[13px] text-ink-muted">
             {c.warnings.map((w) => (
               <li key={w}>{w}</li>
@@ -332,10 +336,10 @@ export function AddonDetail({
           {community?.slug && <AddonDocumentation slug={community.slug} />}
           <div className="mb-8 flex items-baseline justify-between gap-4">
             <h2 className="font-display text-[22px] font-medium tracking-tight text-ink">
-              Project information
+              {t("Project information")}
             </h2>
             <span className="text-[10.5px] uppercase tracking-[0.22em] text-ink-subtle">
-              Pulled from manifest
+              {t("Pulled from manifest")}
             </span>
           </div>
           <div className="grid gap-12 md:grid-cols-[1.1fr_1fr]">
@@ -355,7 +359,7 @@ export function AddonDetail({
             <div className="flex flex-col gap-3">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-[12px] uppercase tracking-[0.16em] text-ink-subtle">
-                  Manifest URL
+                  {t("Manifest URL")}
                 </span>
                 <div className="flex items-center gap-1.5">
                   {manifestVisible && (
@@ -369,7 +373,7 @@ export function AddonDetail({
                       ) : (
                         <Copy size={11} strokeWidth={2.4} />
                       )}
-                      {copied === "https" ? "Copied" : "Copy"}
+                      {copied === "https" ? t("Copied") : t("Copy")}
                     </button>
                   )}
                   <button
@@ -378,8 +382,8 @@ export function AddonDetail({
                     className="flex h-7 items-center gap-1.5 rounded-full border border-edge-soft px-2.5 text-[11px] font-semibold text-ink-muted transition-colors hover:border-edge hover:text-ink"
                     title={
                       manifestVisible
-                        ? "Hide the full URL"
-                        : "URLs can carry debrid keys or tokens; reveal when you need to copy"
+                        ? t("Hide the full URL")
+                        : t("URLs can carry debrid keys or tokens; reveal when you need to copy")
                     }
                   >
                     {manifestVisible ? (
@@ -387,7 +391,7 @@ export function AddonDetail({
                     ) : (
                       <Eye size={11} strokeWidth={2.4} />
                     )}
-                    {manifestVisible ? "Hide" : "Reveal"}
+                    {manifestVisible ? t("Hide") : t("Reveal")}
                   </button>
                 </div>
               </div>
@@ -398,19 +402,17 @@ export function AddonDetail({
               </div>
               {!manifestVisible && (
                 <p className="text-[11.5px] leading-relaxed text-ink-subtle">
-                  Hidden by default. Manifest paths often carry API keys (debrid tokens, OMDB
-                  keys, etc.) you don&apos;t want over a shoulder.
+                  {t("Hidden by default. Manifest paths often carry API keys (debrid tokens, OMDB keys, etc.) you don't want over a shoulder.")}
                 </p>
               )}
             </div>
           </div>
           <div className="mt-10 flex flex-col items-center gap-2 border-t border-edge-soft pt-6 text-center">
             <p className="text-[12px] text-ink-subtle">
-              Stremio addon, packaged into Harbor&apos;s catalog.
+              {t("Stremio addon, packaged into Harbor's catalog.")}
             </p>
             <p className="text-[11.5px] leading-relaxed text-ink-subtle">
-              Version and capabilities come straight from the addon&apos;s manifest. Ratings and
-              categories come from the{" "}
+              {t("Version and capabilities come straight from the addon's manifest. Ratings and categories come from the")}{" "}
               <button
                 type="button"
                 onClick={() => openUrl("https://stremio-addons.net")}
@@ -418,7 +420,7 @@ export function AddonDetail({
               >
                 stremio-addons.net
               </button>{" "}
-              community API. Star, browse, and contribute on their site.
+              {t("community API. Star, browse, and contribute on their site.")}
             </p>
           </div>
         </div>
@@ -426,14 +428,14 @@ export function AddonDetail({
 
       <div className="mx-auto w-full max-w-5xl pb-20">
         <DetailRail
-          title="More like this"
+          title={t("More like this")}
           items={related}
           installedIds={installedIds}
           onOpen={onOpen}
           onInstall={onInstallAddon}
         />
         <DetailRail
-          title="Recommended for you"
+          title={t("Recommended for you")}
           items={recommended}
           installedIds={installedIds}
           onOpen={onOpen}

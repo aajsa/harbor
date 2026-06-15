@@ -63,6 +63,8 @@ const detail: Record<string, string> = {
   "Next Episode": "الحلقة التالية",
   "Previous episode": "الحلقة السابقة",
   "Previous Episode": "الحلقة السابقة",
+  Previous: "السابق",
+  Next: "التالي",
   "No episodes available for this season.": "لا توجد حلقات متاحة لهذا الموسم.",
   "No episodes found for this season.": "لم يُعثر على حلقات لهذا الموسم.",
   "No sources found for this episode.": "لم يُعثر على مصادر لهذه الحلقة.",

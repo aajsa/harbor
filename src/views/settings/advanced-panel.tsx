@@ -1,4 +1,4 @@
-import { Check, Download, Github, Link2, Loader2, Lock, RotateCw, Wrench } from "lucide-react";
+import { Check, Download, FlaskConical, Github, Link2, Loader2, Lock, RotateCw, Wrench } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import cornerSvg from "@/assets/corner.svg";
 import harborDiscord from "@/assets/harbor-discord.svg";
@@ -25,43 +25,48 @@ import { TrayRow } from "./tray-row";
 import { Section } from "./shared";
 import { Signature } from "./signature";
 import { DesktopOnlyBlock } from "./player-panel/internals";
+import { useT } from "@/lib/i18n";
 
 const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 const DOWNLOAD_URL = "https://harbor.site/download";
 const SOURCE_URL = "https://github.com/harborstremio/harbor";
 
 export function AdvancedPanel() {
+  const t = useT();
   return (
     <>
       {!isTauri && <WebBuildBanner />}
 
       {isTauri && (
         <Section
-          title="Updates"
-          subtitle="Harbor checks harbor.site for new versions and installs them in place. Nothing installs until you choose to, and a dismissed update never nags you again."
+          title={t("Updates")}
+          subtitle={t("Harbor checks harbor.site for new versions and installs them in place. Nothing installs until you choose to, and a dismissed update never nags you again.")}
         >
-          <UpdatesRow />
+          <div className="flex flex-col gap-2.5">
+            <UpdatesRow />
+            <BetaChannelRow />
+          </div>
         </Section>
       )}
 
       <Section
-        title="Backup & restore"
-        subtitle="Export your entire Harbor setup to a single file, then restore it on a new computer or keep it as a backup. Everything is included except your Stremio sign-in."
+        title={t("Backup & restore")}
+        subtitle={t("Export your entire Harbor setup to a single file, then restore it on a new computer or keep it as a backup. Everything is included except your Stremio sign-in.")}
       >
         <BackupRow />
       </Section>
 
       <Section
-        title="Privacy"
-        subtitle="Harbor sends no telemetry. This also drops outbound ad, analytics, and tracker requests that addons or metadata providers try to make, before they leave your machine."
+        title={t("Privacy")}
+        subtitle={t("Harbor sends no telemetry. This also drops outbound ad, analytics, and tracker requests that addons or metadata providers try to make, before they leave your machine.")}
       >
         <PrivacyRow />
       </Section>
 
       {isTauri && (
         <Section
-          title="System tray"
-          subtitle="Keep Harbor a click away. Close it to the system tray instead of quitting, and control it from the tray menu. These also mirror into the tray menu live."
+          title={t("System tray")}
+          subtitle={t("Keep Harbor a click away. Close it to the system tray instead of quitting, and control it from the tray menu. These also mirror into the tray menu live.")}
         >
           <TrayRow />
         </Section>
@@ -69,8 +74,8 @@ export function AdvancedPanel() {
 
       {isTauri && (
         <Section
-          title="Stremio install links"
-          subtitle="Harbor catches stremio:// install links so the configure-and-install flow stays inside the app. Every install also syncs to your Stremio account, so the official app remains the canonical home for your library."
+          title={t("Stremio install links")}
+          subtitle={t("Harbor catches stremio:// install links so the configure-and-install flow stays inside the app. Every install also syncs to your Stremio account, so the official app remains the canonical home for your library.")}
         >
           <StremioDeeplinkRow />
         </Section>
@@ -78,30 +83,30 @@ export function AdvancedPanel() {
 
       {isTauri && (
         <Section
-          title="Discord Rich Presence"
-          subtitle="Let your Discord friends see what you are watching, with the show poster and a live progress bar. Desktop only, and only your own Discord client is involved (nothing touches a Harbor server)."
+          title={t("Discord Rich Presence")}
+          subtitle={t("Let your Discord friends see what you are watching, with the show poster and a live progress bar. Desktop only, and only your own Discord client is involved (nothing touches a Harbor server).")}
         >
           <DiscordPresenceRow />
         </Section>
       )}
 
       <Section
-        title="API budget"
-        subtitle="Daily call counter for OMDb rating lookups. Reset if it stops returning fresh scores."
+        title={t("API budget")}
+        subtitle={t("Daily call counter for OMDb rating lookups. Reset if it stops returning fresh scores.")}
       >
         <OmdbBudgetRow />
       </Section>
 
       <Section
-        title="Onboarding"
-        subtitle="Replay the walkthrough or unhide every dismissed tip in the app."
+        title={t("Onboarding")}
+        subtitle={t("Replay the walkthrough or unhide every dismissed tip in the app.")}
       >
         <OnboardingRow />
       </Section>
 
       <Section
-        title="Stremio library repair"
-        subtitle="Scans your Stremio library and rewrites any item whose shape doesn't match Stremio's exact schema. Safe to run anytime; only items that need fixing get touched."
+        title={t("Stremio library repair")}
+        subtitle={t("Scans your Stremio library and rewrites any item whose shape doesn't match Stremio's exact schema. Safe to run anytime; only items that need fixing get touched.")}
       >
         <DesktopOnlyBlock>
           <LibraryRepairRow />
@@ -109,8 +114,8 @@ export function AdvancedPanel() {
       </Section>
 
       <Section
-        title="About"
-        subtitle="Build identity. Useful when filing a bug report at bugs@harbor.site."
+        title={t("About")}
+        subtitle={t("Build identity. Useful when filing a bug report at bugs@harbor.site.")}
       >
         <AboutRow />
       </Section>
@@ -203,6 +208,44 @@ function WebBuildBanner() {
         </div>
       </div>
     </section>
+  );
+}
+
+function BetaChannelRow() {
+  const { settings, update } = useSettings();
+  const on = settings.betaUpdates;
+  return (
+    <div className="flex items-start gap-3 rounded-xl border border-edge-soft bg-canvas/40 px-4 py-3.5">
+      <span
+        className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
+          on ? "bg-accent/15 text-accent" : "bg-raised text-ink-subtle"
+        }`}
+      >
+        <FlaskConical size={15} strokeWidth={2.2} />
+      </span>
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <span className="text-[14px] font-medium text-ink">Get beta updates</span>
+        <p className="text-[12.5px] leading-relaxed text-ink-subtle">
+          Receive early builds with the newest fixes before they reach the stable release. Betas can
+          be rough around the edges; switch this off to return to stable at the next update.
+        </p>
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={on}
+        onClick={() => update({ betaUpdates: !on })}
+        className={`mt-1 flex h-6 w-11 shrink-0 items-center rounded-full px-0.5 transition-colors ${
+          on ? "bg-accent" : "bg-raised"
+        }`}
+      >
+        <span
+          className={`h-5 w-5 rounded-full bg-canvas shadow-sm transition-transform ${
+            on ? "translate-x-5 rtl:-translate-x-5" : "translate-x-0"
+          }`}
+        />
+      </button>
+    </div>
   );
 }
 

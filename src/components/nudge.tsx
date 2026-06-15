@@ -1,5 +1,6 @@
 import { ArrowRight, X } from "lucide-react";
 import tmdbLogo from "@/assets/addon-logos/tmdb.png";
+import { useT } from "@/lib/i18n";
 import { useOnboarding } from "@/lib/onboarding";
 import { useSettings } from "@/lib/settings";
 import { useView } from "@/lib/view";
@@ -10,6 +11,7 @@ export function TmdbNudge({ suppress }: { suppress?: boolean } = {}) {
   const { settings } = useSettings();
   const { isDismissed, dismiss } = useOnboarding();
   const { openSettings } = useView();
+  const t = useT();
 
   if (settings.tmdbKey || isDismissed(KEY) || suppress) return null;
 
@@ -22,21 +24,21 @@ export function TmdbNudge({ suppress }: { suppress?: boolean } = {}) {
         draggable={false}
       />
       <div className="min-w-0 flex-1">
-        <p className="text-[13.5px] font-medium text-ink">Add a TMDB key for the full Harbor</p>
+        <p className="text-[13.5px] font-medium text-ink">{t("Add a TMDB key for the full Harbor")}</p>
         <p className="text-[12.5px] text-ink-subtle">
-          Free key unlocks Trending, In Theaters, and per-service catalogs. 60 seconds.
+          {t("Free key unlocks Trending, In Theaters, and per-service catalogs. 60 seconds.")}
         </p>
       </div>
       <button
         onClick={() => openSettings("library")}
         className="flex h-9 items-center gap-1.5 rounded-full bg-ink px-4 text-[13px] font-semibold text-canvas transition-transform hover:scale-[1.03] active:scale-[0.97]"
       >
-        Set up
+        {t("Set up")}
         <ArrowRight size={13} strokeWidth={2.6} className="dir-icon" />
       </button>
       <button
         onClick={() => dismiss(KEY)}
-        aria-label="Dismiss"
+        aria-label={t("Dismiss")}
         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-subtle transition-colors hover:bg-raised hover:text-ink"
       >
         <X size={15} />

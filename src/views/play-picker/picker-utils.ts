@@ -307,7 +307,7 @@ export function displayTitle(s: ScoredStream, showName: string, episode?: PlayEp
   }
   const parts = [showName || s.parsedTitle];
   parts.push(
-    `S${String(episode.season).padStart(2, "0")}E${String(episode.episode).padStart(2, "0")}`,
+    `S${String(episode.imdbSeason ?? episode.season).padStart(2, "0")}E${String(episode.imdbEpisode ?? episode.episode).padStart(2, "0")}`,
   );
   if (episode.name) parts.push(episode.name);
   else if (s.episodeTitle) parts.push(s.episodeTitle);

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import type { Meta } from "@/lib/cinemeta";
 import { trackEvent } from "@/lib/discover/store";
 import { getVote, setVote, subscribePrefs, type FeedVote } from "@/lib/feed/preferences";
+import { useT } from "@/lib/i18n";
 import { useOnboarding } from "@/lib/onboarding";
 import { Tooltip } from "@/views/detail/tooltip";
 
@@ -20,6 +21,7 @@ function profileFromMeta(meta: Meta) {
 }
 
 export function ThumbsDock({ meta }: { meta: Meta }) {
+  const t = useT();
   const metaId = meta.id;
   const [vote, setVoteState] = useState<FeedVote | null>(() => getVote(metaId));
   const { isDismissed, dismiss } = useOnboarding();
@@ -40,11 +42,11 @@ export function ThumbsDock({ meta }: { meta: Meta }) {
       className="absolute bottom-6 end-6 flex items-center gap-1.5"
       onClick={(e) => e.stopPropagation()}
     >
-      <Tooltip label="Show me less like this">
+      <Tooltip label={t("Show me less like this")}>
         <ThumbButton
           active={vote === "down"}
           accent="negative"
-          ariaLabel="Show me less like this"
+          ariaLabel={t("Show me less like this")}
           onClick={(e) => {
             e.stopPropagation();
             cast("down");
@@ -54,11 +56,11 @@ export function ThumbsDock({ meta }: { meta: Meta }) {
         </ThumbButton>
       </Tooltip>
       <div className="relative inline-flex">
-        <Tooltip label="Show me more like this">
+        <Tooltip label={t("Show me more like this")}>
           <ThumbButton
             active={vote === "up"}
             accent="positive"
-            ariaLabel="Show me more like this"
+            ariaLabel={t("Show me more like this")}
             onClick={(e) => {
               e.stopPropagation();
               cast("up");
@@ -74,13 +76,14 @@ export function ThumbsDock({ meta }: { meta: Meta }) {
 }
 
 function ThumbsHint({ onDismiss }: { onDismiss: () => void }) {
+  const t = useT();
   return (
     <div className="pointer-events-none absolute bottom-full end-0 z-30 mb-3 flex w-[300px] justify-end">
       <div className="pointer-events-auto animate-nudge-in relative flex w-full items-start gap-3 rounded-2xl border border-edge-soft bg-elevated/95 px-4 py-3.5 backdrop-blur-md shadow-[0_18px_50px_-20px_rgba(0,0,0,0.65)]">
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-          <p className="text-[13px] font-semibold text-ink">Tune your recommendations</p>
+          <p className="text-[13px] font-semibold text-ink">{t("Tune your recommendations")}</p>
           <p className="text-[12px] leading-snug text-ink-subtle">
-            Thumbs down hides this title from Featured. Thumbs up helps surface similar picks.
+            {t("Thumbs down hides this title from Featured. Thumbs up helps surface similar picks.")}
           </p>
         </div>
         <button
@@ -88,7 +91,7 @@ function ThumbsHint({ onDismiss }: { onDismiss: () => void }) {
             e.stopPropagation();
             onDismiss();
           }}
-          aria-label="Dismiss"
+          aria-label={t("Dismiss")}
           className="-me-1 -mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-ink-subtle transition-colors hover:bg-raised hover:text-ink"
         >
           <X size={13} />

@@ -12,9 +12,11 @@ import {
   type HotkeyScope,
 } from "@/lib/hotkeys";
 import { useSettings } from "@/lib/settings";
+import { useT } from "@/lib/i18n";
 import { Section } from "./shared";
 
 export function HotkeysPanel() {
+  const t = useT();
   const { settings, update } = useSettings();
   const overrides = settings.hotkeys ?? {};
   const [capturing, setCapturing] = useState<HotkeyId | null>(null);
@@ -64,7 +66,7 @@ export function HotkeysPanel() {
     <>
       <div className="flex items-center justify-between">
         <p className="text-[13px] text-ink-subtle">
-          Click any binding to rebind it. Press Esc while capturing to cancel. Letters ignore Shift (so K and Shift+K trigger the same action).
+          {t("Click any binding to rebind it. Press Esc while capturing to cancel. Letters ignore Shift (so K and Shift+K trigger the same action).")}
         </p>
         {overrideCount > 0 && (
           <button
@@ -72,7 +74,7 @@ export function HotkeysPanel() {
             className="flex shrink-0 items-center gap-1.5 rounded-full border border-edge-soft bg-canvas/80 px-3 py-1.5 text-[12.5px] font-medium text-ink-muted transition-colors hover:border-edge hover:text-ink"
           >
             <RotateCcw size={13} strokeWidth={2.2} />
-            Reset all ({overrideCount})
+            {t("Reset all ({n})", { n: overrideCount })}
           </button>
         )}
       </div>
@@ -88,12 +90,12 @@ export function HotkeysPanel() {
           subgroups.set(g, arr);
         }
         return (
-          <Section key={scope} title={scope} subtitle={scope === "Player" ? "Inside the playback view." : "Anywhere in Harbor."}>
+          <Section key={scope} title={t(scope)} subtitle={scope === "Player" ? t("Inside the playback view.") : t("Anywhere in Harbor.")}>
             <div className="flex flex-col gap-6">
               {Array.from(subgroups.entries()).map(([groupName, items]) => (
                 <div key={groupName} className="flex flex-col gap-1.5">
                   <h4 className="px-1 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-ink-subtle">
-                    {groupName}
+                    {t(groupName)}
                   </h4>
                   {items.map((def) => {
                     const binding = effectiveBinding(def.id, overrides);
@@ -143,6 +145,7 @@ function HotkeyRow({
   onStartCapture: () => void;
   onReset: () => void;
 }) {
+  const t = useT();
   const rowRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (isCapturing) rowRef.current?.scrollIntoView({ block: "nearest" });
@@ -156,25 +159,25 @@ function HotkeyRow({
     >
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <div className="flex items-center gap-2">
-          <span className="text-[14px] font-medium text-ink">{def.label}</span>
+          <span className="text-[14px] font-medium text-ink">{t(def.label)}</span>
           {isCustom && !isCapturing && (
             <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-[9.5px] font-semibold uppercase tracking-[0.14em] text-accent">
-              Custom
+              {t("Custom")}
             </span>
           )}
           {conflict && (
             <span className="rounded-full bg-danger/15 px-1.5 py-0.5 text-[9.5px] font-semibold uppercase tracking-[0.14em] text-danger">
-              Conflict
+              {t("Conflict")}
             </span>
           )}
         </div>
-        <span className="text-[12.5px] text-ink-subtle">{def.description}</span>
+        <span className="text-[12.5px] text-ink-subtle">{t(def.description)}</span>
       </div>
       {isCapturing ? (
         <div className="flex items-center gap-2">
           <span className="rounded-md border border-accent/60 bg-accent/12 px-3 py-1.5 text-[12px] font-semibold uppercase tracking-[0.12em] text-accent">
             <Keyboard size={12} strokeWidth={2.4} className="me-1.5 inline-block" />
-            Press a key…
+            {t("Press a key…")}
           </span>
           <button
             onClick={onStartCapture}
@@ -187,7 +190,7 @@ function HotkeyRow({
           {isCustom && (
             <button
               onClick={onReset}
-              title="Reset to default"
+              title={t("Reset to default")}
               className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-subtle transition-colors hover:bg-raised hover:text-ink"
             >
               <X size={14} strokeWidth={2.2} />

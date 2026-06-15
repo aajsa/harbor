@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Tv } from "lucide-react";
+import { useT } from "@/lib/i18n";
 import type { IptvChannel } from "@/lib/iptv/types";
 import { channelNumber, fmtClock } from "./now-format";
 import type { NowItem } from "./use-live-home";
 
 export function GuideCard({ item, onPlay }: { item: NowItem; onPlay: (ch: IptvChannel) => void }) {
+  const t = useT();
   const { channel, current, next, progress } = item;
   const [err, setErr] = useState(false);
   const logo = channel.logo && !err ? channel.logo : null;
@@ -34,9 +36,9 @@ export function GuideCard({ item, onPlay }: { item: NowItem; onPlay: (ch: IptvCh
         </span>
         <span className="flex items-center gap-1.5 text-[10.5px] font-bold uppercase tracking-[0.16em] text-danger">
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-danger" />
-          Live
+          {t("Live")}
         </span>
-        <span className="ml-auto flex items-center gap-1 truncate text-[11.5px] text-ink-subtle">
+        <span className="ms-auto flex items-center gap-1 truncate text-[11.5px] text-ink-subtle">
           {chno && <span className="tabular-nums">{chno}</span>}
           <span className="truncate">{channel.name}</span>
         </span>
@@ -54,11 +56,11 @@ export function GuideCard({ item, onPlay }: { item: NowItem; onPlay: (ch: IptvCh
       <div className="truncate text-[11.5px] text-ink-subtle">
         {next ? (
           <>
-            <span className="font-medium text-ink-muted">Next {fmtClock(next.startMs)} · </span>
+            <span className="font-medium text-ink-muted">{t("Next {time}", { time: fmtClock(next.startMs) })} · </span>
             {next.title}
           </>
         ) : (
-          <span className="text-ink-subtle/70">{channel.group ?? "Live"}</span>
+          <span className="text-ink-subtle/70">{channel.group ?? t("Live")}</span>
         )}
       </div>
     </button>

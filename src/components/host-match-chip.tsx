@@ -1,3 +1,5 @@
+import { useT } from "@/lib/i18n";
+
 export function HostMatchChip({
   match,
   long = false,
@@ -5,6 +7,7 @@ export function HostMatchChip({
   match: "same" | "close" | null;
   long?: boolean;
 }) {
+  const t = useT();
   if (!match) return null;
   return (
     <span
@@ -16,11 +19,11 @@ export function HostMatchChip({
     >
       {match === "same"
         ? long
-          ? "Same file as host"
-          : "Same file"
+          ? t("Same file as host")
+          : t("Same file")
         : long
-          ? "Close match to host"
-          : "Close match"}
+          ? t("Close match to host")
+          : t("Close match")}
     </span>
   );
 }

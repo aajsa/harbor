@@ -1,4 +1,5 @@
 import { Crown } from "lucide-react";
+import { useT } from "@/lib/i18n";
 import type { SourceDescriptor } from "@/lib/together/protocol";
 import { formatBytes, formatRuntime } from "@/lib/together/source-descriptor";
 
@@ -17,6 +18,7 @@ export function HostSourceBanner({
   source: SourceDescriptor;
   compact?: boolean;
 }) {
+  const t = useT();
   return (
     <div
       className={`flex items-center gap-3 border border-accent/30 bg-accent/10 ${
@@ -28,10 +30,10 @@ export function HostSourceBanner({
       </span>
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="text-[10.5px] font-semibold uppercase tracking-[0.18em] text-accent">
-          Host is watching
+          {t("Host is watching")}
         </span>
         <span className="truncate text-[12.5px] font-medium text-ink">
-          {source.title ?? "Unknown release"}
+          {source.title ?? t("Unknown release")}
         </span>
       </div>
       <div className="flex shrink-0 items-center gap-1.5">

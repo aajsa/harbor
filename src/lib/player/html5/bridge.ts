@@ -383,6 +383,9 @@ export function createHtml5Bridge(): PlayerBridge {
       snap.errorMessage = null;
       snap.noAudio = false;
       audioProbeDone = false;
+      snap.positionSec = 0;
+      snap.durationSec = 0;
+      snap.bufferedSec = 0;
       startCueTicker();
       emit();
     },
@@ -425,7 +428,11 @@ export function createHtml5Bridge(): PlayerBridge {
     },
     seek(sec) {
       if (!video) return;
-      const max = Number.isFinite(video.duration) ? video.duration - 0.25 : sec;
+      if (!Number.isFinite(video.duration)) {
+        pendingStart = sec;
+        return;
+      }
+      const max = video.duration - 0.25;
       video.currentTime = Math.max(0, Math.min(sec, max));
     },
     setVolume(v) {

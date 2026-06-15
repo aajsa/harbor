@@ -7,6 +7,7 @@ import {
   type ActiveThemeId,
   type FontPairId,
 } from "@/lib/theme";
+import { useT } from "@/lib/i18n";
 import { CustomEditor } from "./custom-editor";
 
 const LAYOUT_PRESET_IDS = new Set(["crunch"]);
@@ -118,6 +119,7 @@ function CustomTile({
   onApply: () => void;
   onEdit: () => void;
 }) {
+  const t = useT();
   if (!custom) {
     return (
       <button
@@ -127,8 +129,8 @@ function CustomTile({
         <span className="flex h-9 w-9 items-center justify-center rounded-full bg-elevated/60">
           <Plus size={18} strokeWidth={2.2} />
         </span>
-        <p className="text-[14px] font-semibold">Custom</p>
-        <p className="text-[11.5px] text-ink-subtle">Build your own palette</p>
+        <p className="text-[14px] font-semibold">{t("Custom")}</p>
+        <p className="text-[11.5px] text-ink-subtle">{t("Build your own palette")}</p>
       </button>
     );
   }
@@ -142,7 +144,7 @@ function CustomTile({
       <button
         onClick={onApply}
         className="absolute inset-0 z-0 cursor-pointer"
-        aria-label="Apply custom theme"
+        aria-label={t("Apply custom theme")}
       />
       <div
         className="absolute inset-x-0 top-0 h-2/5"
@@ -165,13 +167,13 @@ function CustomTile({
           borderColor: custom.edge + "8c",
           color: custom.ink,
         }}
-        aria-label="Edit custom theme"
+        aria-label={t("Edit custom theme")}
       >
         <Pencil size={12} strokeWidth={2.2} />
       </button>
       <div className="relative">
         <p className="text-[14.5px] font-semibold" style={{ color: custom.ink }}>
-          Custom
+          {t("Custom")}
         </p>
       </div>
     </div>

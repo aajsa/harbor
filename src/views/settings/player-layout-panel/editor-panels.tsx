@@ -1,4 +1,5 @@
 import { Crown } from "lucide-react";
+import { t } from "@/lib/i18n";
 import {
   PANEL_META,
   PANELS,
@@ -124,7 +125,7 @@ function AvatarDockBody() {
           {["A", "J", "Y"][i]}
           {i === 0 && (
             <span
-              aria-label="Host"
+              aria-label={t("Host")}
               className="pointer-events-none absolute -top-2 -right-1 z-10 inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-300 text-black shadow-[0_2px_6px_rgba(0,0,0,0.45)] ring-2 ring-black/35"
             >
               <Crown size={11} strokeWidth={2.4} fill="currentColor" />

@@ -101,6 +101,7 @@ export const DEFAULT: Settings = {
   subShowInPip: true,
   subtitlesOffByDefault: false,
   preferEmbeddedSubs: false,
+  betaUpdates: false,
   autoSkipIntro: false,
   trackBlockWords: ["commentary"],
   forcedSubsWhenNativeAudio: false,

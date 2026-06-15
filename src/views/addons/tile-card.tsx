@@ -4,6 +4,7 @@ import { AddonLogo, resolveAddonLogo } from "@/components/addon-logo";
 import { AddonStarBadge } from "@/components/addon-star-badge";
 import { CardArtBackdrop } from "@/components/card-art-backdrop";
 import type { ResolvedAddon } from "@/lib/addons-store/store";
+import { useT } from "@/lib/i18n";
 import { idOf, nameOf, subtitleFromManifest } from "./addons-utils";
 
 export function TileCard({
@@ -17,6 +18,7 @@ export function TileCard({
   onInstall: () => void | Promise<void>;
   installed: boolean;
 }) {
+  const t = useT();
   const description = resolved.manifest?.description ?? subtitleFromManifest(resolved);
   const [installing, setInstalling] = useState(false);
   const configurable =
@@ -79,20 +81,20 @@ export function TileCard({
         {installed ? (
           <>
             <Check size={14} strokeWidth={2.4} />
-            Installed
+            {t("Installed")}
           </>
         ) : installing ? (
           <>
             <Loader2 size={14} strokeWidth={2.2} className="animate-spin" />
-            Installing
+            {t("Installing")}
           </>
         ) : configurable ? (
           <>
             <Settings2 size={14} strokeWidth={2.2} />
-            Set up
+            {t("Set up")}
           </>
         ) : (
-          "Install"
+          t("Install")
         )}
       </button>
     </div>

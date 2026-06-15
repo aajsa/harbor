@@ -83,7 +83,8 @@ export function CinematicPlayerLoader({
         />
         {src.episode && (
           <p className="text-[12.5px] font-semibold uppercase tracking-[0.32em] text-white/70">
-            S{src.episode.season} · E{String(src.episode.episode).padStart(2, "0")}
+            S{src.episode.imdbSeason ?? src.episode.season} · E
+            {String(src.episode.imdbEpisode ?? src.episode.episode).padStart(2, "0")}
             {src.episode.name ? ` · ${src.episode.name}` : ""}
           </p>
         )}

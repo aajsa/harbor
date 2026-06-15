@@ -15,9 +15,10 @@ import {
 } from "@/lib/addons-store/reorder";
 import { pushOverlayPin } from "@/lib/overlay-pin";
 import { useSearch } from "@/lib/search-context";
+import { useT } from "@/lib/i18n";
 import { BackupsPanel } from "./backups-card";
 import { OrganizeList, SectionCard, SkeletonRows } from "./section-card";
-import { entriesOf, noticeFor, STEP_LABEL, urlsOf, type Notice } from "./utils";
+import { entriesOf, noticeFor, stepLabel as stepLabelFor, urlsOf, type Notice } from "./utils";
 import { useDragList } from "./use-drag-list";
 
 type Phase =
@@ -35,6 +36,7 @@ export function OrganizeAddonsPage({
   onClose: () => void;
   onSaved: (scope: "cloud" | "local") => void;
 }) {
+  const t = useT();
   const [phase, setPhase] = useState<Phase>({ kind: "loading" });
   const [notice, setNotice] = useState<Notice | null>(null);
   const [baselineCloud, setBaselineCloud] = useState<Addon[]>([]);
@@ -175,7 +177,7 @@ export function OrganizeAddonsPage({
       setPhase({ kind: "ready" });
       setNotice({
         tone: "danger",
-        text: "Something unexpected went wrong. Nothing may have been written. Retry to re-check.",
+        text: t("Something unexpected went wrong. Nothing may have been written. Retry to re-check."),
         retry: true,
       });
     }
@@ -187,7 +189,7 @@ export function OrganizeAddonsPage({
     setBackupsKey((k) => k + 1);
     setNotice({
       tone: "info",
-      text: "Backed up. The current account order is saved in the Backups panel.",
+      text: t("Backed up. The current account order is saved in the Backups panel."),
     });
   };
 
@@ -196,11 +198,11 @@ export function OrganizeAddonsPage({
     setBackupsOpen(false);
     setNotice({
       tone: "info",
-      text: "Backup loaded into the editor. Addons added since stay at the end. Nothing changes until you press Save.",
+      text: t("Backup loaded into the editor. Addons added since stay at the end. Nothing changes until you press Save."),
     });
   };
 
-  const stepLabel = phase.kind === "saving" ? STEP_LABEL[phase.step] : null;
+  const stepLabel = phase.kind === "saving" ? stepLabelFor(phase.step) : null;
   const showBackups = !!authKey && phase.kind !== "loadError";
 
   return (
@@ -214,18 +216,17 @@ export function OrganizeAddonsPage({
             onClick={onClose}
             disabled={saving}
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-elevated text-ink-muted ring-1 ring-edge-soft transition-colors hover:bg-raised hover:text-ink disabled:opacity-40"
-            aria-label="Back to addons"
-            title="Back to addons"
+            aria-label={t("Back to addons")}
+            title={t("Back to addons")}
           >
             <ArrowLeft size={18} strokeWidth={2.2} className="dir-icon" />
           </button>
           <div className="flex min-w-0 flex-1 flex-col">
             <h1 className="truncate font-display text-[26px] font-medium tracking-tight text-ink sm:text-[30px]">
-              Organize addons
+              {t("Organize addons")}
             </h1>
             <p className="hidden truncate text-[13px] text-ink-muted sm:block">
-              The order decides who answers first when you press Play. Drag, use the arrows, or
-              jump anything straight to the top.
+              {t("The order decides who answers first when you press Play. Drag, use the arrows, or jump anything straight to the top.")}
             </p>
           </div>
           {showBackups && (
@@ -239,7 +240,7 @@ export function OrganizeAddonsPage({
                 }`}
               >
                 <History size={15} strokeWidth={2.2} />
-                Backups
+                {t("Backups")}
                 {backupCount > 0 && (
                   <span className="rounded-full bg-accent/15 px-2 text-[11px] font-bold text-accent">
                     {backupCount}
@@ -271,7 +272,7 @@ export function OrganizeAddonsPage({
                 disabled={saving}
                 className="flex h-11 items-center rounded-full bg-elevated px-5 text-[13.5px] font-semibold text-ink-muted ring-1 ring-edge-soft transition-colors hover:bg-raised hover:text-ink disabled:opacity-40"
               >
-                Cancel
+                {t("Cancel")}
               </button>
               <button
                 onClick={() => void handleSave()}
@@ -286,7 +287,7 @@ export function OrganizeAddonsPage({
                     {stepLabel}
                   </>
                 ) : (
-                  "Save order"
+                  t("Save order")
                 )}
               </button>
             </div>
@@ -299,20 +300,20 @@ export function OrganizeAddonsPage({
           {phase.kind === "loadError" ? (
             <div className="mx-auto flex max-w-md flex-col items-center gap-5 py-20 text-center">
               <p className="text-[15px] leading-relaxed text-ink-muted">
-                Couldn't load your Stremio collection. Nothing can be reordered safely without it.
+                {t("Couldn't load your Stremio collection. Nothing can be reordered safely without it.")}
               </p>
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => void load()}
                   className="flex h-12 items-center rounded-full bg-ink px-6 text-[14.5px] font-semibold text-canvas transition-opacity hover:opacity-90"
                 >
-                  Try again
+                  {t("Try again")}
                 </button>
                 <button
                   onClick={onClose}
                   className="flex h-12 items-center rounded-full bg-elevated px-6 text-[14.5px] font-semibold text-ink-muted ring-1 ring-edge-soft transition-colors hover:bg-raised hover:text-ink"
                 >
-                  Go back
+                  {t("Go back")}
                 </button>
               </div>
             </div>
@@ -335,7 +336,7 @@ export function OrganizeAddonsPage({
                             onClick={() => void handleSave()}
                             className="rounded-full bg-raised px-4 py-1.5 text-[12.5px] font-semibold text-ink-muted transition-colors hover:bg-elevated hover:text-ink"
                           >
-                            Retry
+                            {t("Retry")}
                           </button>
                         )}
                         {notice.reload && (
@@ -343,7 +344,7 @@ export function OrganizeAddonsPage({
                             onClick={() => void load()}
                             className="rounded-full bg-raised px-4 py-1.5 text-[12.5px] font-semibold text-ink-muted transition-colors hover:bg-elevated hover:text-ink"
                           >
-                            Reload list
+                            {t("Reload list")}
                           </button>
                         )}
                       </div>
@@ -353,15 +354,15 @@ export function OrganizeAddonsPage({
                 {authKey ? (
                   <>
                     <SectionCard
-                      title="Your Stremio account"
-                      sub="This order syncs to every Stremio app signed into this account."
+                      title={t("Your Stremio account")}
+                      sub={t("This order syncs to every Stremio app signed into this account.")}
                       count={workingCloud.length}
                     >
                       {phase.kind === "loading" ? (
                         <SkeletonRows />
                       ) : workingCloud.length === 0 ? (
                         <p className="rounded-xl border border-dashed border-edge-soft bg-canvas/30 px-5 py-4 text-[13.5px] text-ink-subtle">
-                          No addons are synced to this account yet.
+                          {t("No addons are synced to this account yet.")}
                         </p>
                       ) : (
                         <OrganizeList
@@ -375,8 +376,8 @@ export function OrganizeAddonsPage({
                     </SectionCard>
                     {workingDevice.length > 0 && (
                       <SectionCard
-                        title="On this device only"
-                        sub="These live in Harbor on this computer and never touch your account."
+                        title={t("On this device only")}
+                        sub={t("These live in Harbor on this computer and never touch your account.")}
                         count={workingDevice.length}
                       >
                         <OrganizeList
@@ -391,8 +392,8 @@ export function OrganizeAddonsPage({
                   </>
                 ) : (
                   <SectionCard
-                    title="On this device"
-                    sub="Sign in to Stremio to organize the addons synced to your account."
+                    title={t("On this device")}
+                    sub={t("Sign in to Stremio to organize the addons synced to your account.")}
                     count={workingDevice.length}
                   >
                     {phase.kind === "loading" ? (
@@ -415,15 +416,15 @@ export function OrganizeAddonsPage({
                   <div className="mb-2 flex items-center gap-2">
                     <Info size={15} strokeWidth={2.2} className="text-ink-muted" />
                     <h2 className="font-display text-[18px] font-medium tracking-tight text-ink">
-                      Good to know
+                      {t("Good to know")}
                     </h2>
                   </div>
                   <ul className="flex flex-col gap-2.5 text-[13px] leading-relaxed text-ink-muted">
-                    <li>Number 1 gets asked first for streams when you press Play.</li>
-                    <li>The order also decides which addon's rows win on your Home screen.</li>
-                    <li>Nothing changes until you press Save. Leaving this page discards edits.</li>
-                    <li>The Backups button at the top keeps your last five orders. One click restores any of them.</li>
-                    <li>Harbor double-checks with Stremio after saving, so a half-written order can't slip through.</li>
+                    <li>{t("Number 1 gets asked first for streams when you press Play.")}</li>
+                    <li>{t("The order also decides which addon's rows win on your Home screen.")}</li>
+                    <li>{t("Nothing changes until you press Save. Leaving this page discards edits.")}</li>
+                    <li>{t("The Backups button at the top keeps your last five orders. One click restores any of them.")}</li>
+                    <li>{t("Harbor double-checks with Stremio after saving, so a half-written order can't slip through.")}</li>
                   </ul>
                 </section>
               </div>

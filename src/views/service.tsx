@@ -10,6 +10,7 @@ import { SERVICES, providerIdsFor } from "@/lib/providers/streaming";
 import { safeFetch } from "@/lib/safe-fetch";
 import { useSettings, type StreamingService } from "@/lib/settings";
 import { useScrollMemory } from "@/lib/view";
+import { useT } from "@/lib/i18n";
 
 type Category = {
   id: string;
@@ -42,6 +43,7 @@ const MAX_PER_BUCKET = 200;
 type Bucket = { movies: Meta[]; series: Meta[] };
 
 export function ServiceView({ service }: { service: StreamingService }) {
+  const t = useT();
   const { settings } = useSettings();
   const meta = SERVICES[service];
   const [category, setCategory] = useState<Category>(CATEGORIES[0]);
@@ -124,13 +126,13 @@ export function ServiceView({ service }: { service: StreamingService }) {
         <div className="relative flex items-end justify-between gap-8">
           <div className="flex flex-col gap-3">
             <span className="text-[12.5px] font-medium uppercase tracking-[0.18em] text-ink-subtle">
-              Popular on
+              {t("Popular on")}
             </span>
             <div className="flex h-16 items-center">
               <ServiceLogo service={service} height={56} />
             </div>
             <p className="max-w-xl text-[14.5px] leading-relaxed text-ink-muted">
-              The most-watched movies and series on {meta.name} right now in {settings.region}.
+              {t("The most-watched movies and series on {name} right now in {region}.", { name: meta.name, region: settings.region })}
             </p>
           </div>
         </div>
@@ -156,13 +158,13 @@ export function ServiceView({ service }: { service: StreamingService }) {
               <>
                 {bucket.movies.length >= 10 ? (
                   <>
-                    <Row title={`Top 10 Movies on ${meta.name}`} min={180} shape="rank">
+                    <Row title={t("Top 10 Movies on {name}", { name: meta.name })} min={180} shape="rank">
                       {bucket.movies.slice(0, 10).map((m, i) => (
                         <TopRankCard key={m.id} meta={m} rank={i + 1} />
                       ))}
                     </Row>
                     {bucket.movies.length > 10 && (
-                      <Row title="More Movies">
+                      <Row title={t("More Movies")}>
                         {bucket.movies.slice(10).map((m) => (
                           <PickCard key={m.id} meta={m} />
                         ))}
@@ -170,7 +172,7 @@ export function ServiceView({ service }: { service: StreamingService }) {
                     )}
                   </>
                 ) : bucket.movies.length > 0 ? (
-                  <Row title={`Movies on ${meta.name}`}>
+                  <Row title={t("Movies on {name}", { name: meta.name })}>
                     {bucket.movies.map((m) => (
                       <PickCard key={m.id} meta={m} />
                     ))}
@@ -178,13 +180,13 @@ export function ServiceView({ service }: { service: StreamingService }) {
                 ) : null}
                 {bucket.series.length >= 10 ? (
                   <>
-                    <Row title={`Top 10 Series on ${meta.name}`} min={180} shape="rank">
+                    <Row title={t("Top 10 Series on {name}", { name: meta.name })} min={180} shape="rank">
                       {bucket.series.slice(0, 10).map((m, i) => (
                         <TopRankCard key={m.id} meta={m} rank={i + 1} />
                       ))}
                     </Row>
                     {bucket.series.length > 10 && (
-                      <Row title="More Series">
+                      <Row title={t("More Series")}>
                         {bucket.series.slice(10).map((m) => (
                           <PickCard key={m.id} meta={m} />
                         ))}
@@ -192,7 +194,7 @@ export function ServiceView({ service }: { service: StreamingService }) {
                     )}
                   </>
                 ) : bucket.series.length > 0 ? (
-                  <Row title={`Series on ${meta.name}`}>
+                  <Row title={t("Series on {name}", { name: meta.name })}>
                     {bucket.series.map((m) => (
                       <PickCard key={m.id} meta={m} />
                     ))}
@@ -229,6 +231,7 @@ function CategoryPills({
   active: Category;
   onChange: (c: Category) => void;
 }) {
+  const t = useT();
   const trackRef = useRef<HTMLDivElement>(null);
   const [scrollState, setScrollState] = useState({ canLeft: false, canRight: false });
 
@@ -296,7 +299,7 @@ function CategoryPills({
                     : "border border-edge-soft bg-canvas/40 text-ink-muted hover:bg-elevated hover:text-ink"
                 }`}
               >
-                {c.label}
+                {t(c.label)}
               </button>
             );
           })}
@@ -319,10 +322,11 @@ function ScrollArrow({
   visible: boolean;
   onClick: () => void;
 }) {
+  const t = useT();
   return (
     <button
       type="button"
-      aria-label={side === "left" ? "Scroll filters left" : "Scroll filters right"}
+      aria-label={side === "left" ? t("Scroll filters left") : t("Scroll filters right")}
       onClick={onClick}
       className={`absolute top-1/2 -translate-y-1/2 ${side === "left" ? "left-0 -translate-x-1/3" : "right-0 translate-x-1/3"} z-20 flex h-9 w-9 items-center justify-center rounded-full bg-canvas/85 text-ink shadow-[0_8px_24px_-6px_rgba(0,0,0,0.6)] backdrop-blur-md transition-all duration-200 hover:bg-canvas focus:outline-none ${
         visible
@@ -355,6 +359,7 @@ function CategoryFab({
   active: Category;
   onChange: (c: Category) => void;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -375,9 +380,9 @@ function CategoryFab({
   }, [open]);
 
   return (
-    <div data-filter-fab className="fixed bottom-16 right-5 z-40">
+    <div data-filter-fab className="fixed bottom-16 end-5 z-40">
       {open && (
-        <div className="absolute bottom-full right-0 mb-2 max-h-[60vh] w-44 overflow-y-auto rounded-2xl border border-edge-soft/60 bg-canvas py-1.5 shadow-2xl">
+        <div className="absolute bottom-full end-0 mb-2 max-h-[60vh] w-44 overflow-y-auto rounded-2xl border border-edge-soft/60 bg-canvas py-1.5 shadow-2xl">
           {CATEGORIES.map((c) => (
             <button
               key={c.id}
@@ -385,13 +390,13 @@ function CategoryFab({
                 onChange(c);
                 setOpen(false);
               }}
-              className={`block w-full px-4 py-2 text-left text-[13.5px] transition-colors ${
+              className={`block w-full px-4 py-2 text-start text-[13.5px] transition-colors ${
                 c.id === active.id
                   ? "bg-ink/10 text-ink"
                   : "text-ink-muted hover:bg-elevated/60 hover:text-ink"
               }`}
             >
-              {c.label}
+              {t(c.label)}
             </button>
           ))}
         </div>
@@ -401,18 +406,19 @@ function CategoryFab({
         className="flex h-8 items-center gap-1.5 rounded-md border border-edge-soft/40 bg-canvas/90 px-2.5 text-[12px] font-medium text-ink-muted transition-colors hover:bg-canvas hover:text-ink"
       >
         <SlidersHorizontal size={12} strokeWidth={2.2} />
-        {active.label}
+        {t(active.label)}
       </button>
     </div>
   );
 }
 
 function EmptyState({ hasKey }: { hasKey: boolean }) {
+  const t = useT();
   return (
     <div className="rounded-2xl border border-dashed border-edge px-6 py-16 text-center text-[14px] text-ink-muted">
       {hasKey
-        ? "Nothing matched this filter. Try another category or change your region in Settings."
-        : "Add a TMDB key in Settings → Library to power this view."}
+        ? t("Nothing matched this filter. Try another category or change your region in Settings.")
+        : t("Add a TMDB key in Settings → Library to power this view.")}
     </div>
   );
 }

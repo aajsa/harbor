@@ -101,6 +101,9 @@ const misc: Record<string, string> = {
   "Open details": "فتح التفاصيل",
   "Unpin channel": "إلغاء تثبيت القناة",
   "Pin to top": "التثبيت في الأعلى",
+
+  "Add a TMDB key in Settings to load Arabic content.":
+    "أضف مفتاح TMDB في الإعدادات لتحميل المحتوى العربي.",
 };
 
 export default misc;

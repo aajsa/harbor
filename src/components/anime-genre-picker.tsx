@@ -1,6 +1,7 @@
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { useT } from "@/lib/i18n";
 import { GENRE } from "@/lib/providers/jikan";
 
 const OPTIONS: Array<{ id: number; label: string }> = [
@@ -31,6 +32,7 @@ export function AnimeGenrePicker({
   onSave: (genres: number[]) => void;
   onClose: () => void;
 }) {
+  const t = useT();
   const [selected, setSelected] = useState<Set<number>>(() => new Set(initial));
 
   useEffect(() => {
@@ -63,14 +65,14 @@ export function AnimeGenrePicker({
   return createPortal(
     <div className="fixed inset-0 z-[210] flex items-center justify-center px-4 py-10">
       <button
-        aria-label="Close"
+        aria-label={t("Close")}
         onClick={onClose}
         className="absolute inset-0 -z-10 cursor-default bg-canvas/88"
       />
       <div className="relative flex max-h-full w-full max-w-xl flex-col overflow-hidden rounded-[26px] border border-edge-soft/70 bg-elevated shadow-[0_40px_120px_-30px_rgba(0,0,0,0.85)]">
         <button
           type="button"
-          aria-label="Close"
+          aria-label={t("Close")}
           onClick={onClose}
           className="absolute end-4 top-4 flex h-9 w-9 items-center justify-center rounded-full text-ink-subtle transition-colors hover:bg-canvas/60 hover:text-ink"
         >
@@ -79,13 +81,13 @@ export function AnimeGenrePicker({
 
         <div className="flex flex-col gap-1.5 px-8 pt-8">
           <span className="text-[11px] font-bold uppercase tracking-[0.28em] text-ink-subtle">
-            Tune your picks
+            {t("Tune your picks")}
           </span>
           <h2 className="font-display text-[27px] font-medium leading-tight tracking-tight text-ink">
-            More of what you love.
+            {t("More of what you love.")}
           </h2>
           <p className="text-[13.5px] text-ink-muted">
-            Tap the genres you want more of. They steer the Top Picks row at the top of this page.
+            {t("Tap the genres you want more of. They steer the Top Picks row at the top of this page.")}
           </p>
         </div>
 
@@ -119,18 +121,18 @@ export function AnimeGenrePicker({
               selected.size > 0 ? "text-ink-subtle hover:text-ink" : "pointer-events-none text-transparent"
             }`}
           >
-            Clear all
+            {t("Clear all")}
           </button>
           <div className="flex items-center gap-4">
             <span className="text-[12.5px] tabular-nums text-ink-subtle">
-              {selected.size > 0 ? `${selected.size} selected` : "None yet"}
+              {selected.size > 0 ? t("{count} selected", { count: selected.size }) : t("None yet")}
             </span>
             <button
               type="button"
               onClick={save}
               className="h-11 rounded-full bg-ink px-7 text-[14px] font-semibold text-canvas transition-transform hover:scale-[1.02] active:scale-[0.98]"
             >
-              Done
+              {t("Done")}
             </button>
           </div>
         </div>

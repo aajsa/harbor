@@ -5,8 +5,10 @@ import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import { getAddon } from "@/lib/providers/stremio-addons";
 import { openUrl } from "@/lib/window";
+import { useT } from "@/lib/i18n";
 
 export function AddonDocumentation({ slug }: { slug: string }) {
+  const t = useT();
   const [text, setText] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [needsToggle, setNeedsToggle] = useState(false);
@@ -47,10 +49,10 @@ export function AddonDocumentation({ slug }: { slug: string }) {
     <div className="border-b border-edge-soft pb-12 mb-12">
       <div className="mb-8 flex items-baseline justify-between gap-4">
         <h2 className="font-display text-[22px] font-medium tracking-tight text-ink">
-          Documentation
+          {t("Documentation")}
         </h2>
         <span className="text-[10.5px] uppercase tracking-[0.22em] text-ink-subtle">
-          From stremio-addons.net
+          {t("From stremio-addons.net")}
         </span>
       </div>
       <div
@@ -171,7 +173,7 @@ export function AddonDocumentation({ slug }: { slug: string }) {
           onClick={() => setExpanded((e) => !e)}
           className="mt-4 inline-flex items-center gap-1 text-[11.5px] font-bold uppercase tracking-[0.18em] text-accent transition-opacity hover:opacity-80"
         >
-          {expanded ? "Show less" : "Show full documentation"}
+          {expanded ? t("Show less") : t("Show full documentation")}
           <ChevronDown
             size={12}
             strokeWidth={2.6}

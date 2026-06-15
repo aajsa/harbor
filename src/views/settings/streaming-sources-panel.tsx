@@ -15,6 +15,7 @@ import {
 } from "@/lib/streams/aiostatus";
 import { ExtLink, KeyField, Section } from "./shared";
 import { ManualAddonCard, ServiceCard } from "./streaming-panel";
+import { useT } from "@/lib/i18n";
 
 export type DebridKey = "rd" | "tb" | "ad" | "pm" | "dl";
 
@@ -45,13 +46,14 @@ export function StreamingSourcesPanel({
   savedKey: string | null;
   saveKey: (which: DebridKey, value: string) => void;
 }) {
+  const t = useT();
   const { settings, update, toggleStreaming } = useSettings();
   const aioHealth = useAioStatusHealth();
   return (
     <>
       <Section
-        title="Stream safety filter"
-        subtitle="How aggressively Harbor rejects shady or mismatched streams before showing them in the picker."
+        title={t("Stream safety filter")}
+        subtitle={t("How aggressively Harbor rejects shady or mismatched streams before showing them in the picker.")}
       >
         <StreamFilterPicker
           value={settings.streamFilterLevel}
@@ -60,8 +62,8 @@ export function StreamingSourcesPanel({
       </Section>
 
       <Section
-        title="Picker layout"
-        subtitle="Condensed shows a top pick, quality tiles, and a drawer. Stremio is a flat list grouped by addon, no scoring."
+        title={t("Picker layout")}
+        subtitle={t("Condensed shows a top pick, quality tiles, and a drawer. Stremio is a flat list grouped by addon, no scoring.")}
       >
         <PickerLayoutPicker
           value={settings.pickerLayout}
@@ -70,30 +72,26 @@ export function StreamingSourcesPanel({
       </Section>
 
       <Section
-        title="Result order"
-        subtitle="Harbor ranking puts the best-scoring sources first. Addon order follows your addon priority (organize it in Addons, Installed tab, Reorder) and keeps each addon's results in the order it returned them, like the Stremio and Vidi apps."
+        title={t("Result order")}
+        subtitle={t("Harbor ranking puts the best-scoring sources first. Addon order follows your addon priority (organize it in Addons, Installed tab, Reorder) and keeps each addon's results in the order it returned them, like the Stremio and Vidi apps.")}
       >
         <StreamSortPicker
           value={settings.streamSort}
           onChange={(v) => update({ streamSort: v })}
         />
         <p className="mt-3 rounded-xl border border-edge-soft bg-canvas/40 px-4 py-3 text-[12.5px] leading-relaxed text-ink-muted">
-          Using AIOStreams or another aggregator addon? Its own sorting and filtering happen inside
-          the addon before Harbor ever sees the results, then Harbor applies the stream filter and
-          result order above on top. If results look thinner than expected, keep one side
-          permissive: either relax the addon's internal filters or set Harbor's stream filter to
-          Balanced or Off.
+          {t("Using AIOStreams or another aggregator addon? Its own sorting and filtering happen inside the addon before Harbor ever sees the results, then Harbor applies the stream filter and result order above on top. If results look thinner than expected, keep one side permissive: either relax the addon's internal filters or set Harbor's stream filter to Balanced or Off.")}
         </p>
       </Section>
 
       <Section
-        title="Debrid services"
-        subtitle="Real-Debrid, TorBox, AllDebrid, Premiumize, Debrid-Link. Cached streams play direct. Keys stay local."
+        title={t("Debrid services")}
+        subtitle={t("Real-Debrid, TorBox, AllDebrid, Premiumize, Debrid-Link. Cached streams play direct. Keys stay local.")}
       >
         {aioHealth && <AioStatusBanner snapshot={aioHealth} />}
         <KeyField
-          label="Real-Debrid API token"
-          placeholder="API token"
+          label={t("Real-Debrid API token")}
+          placeholder={t("API token")}
           value={rdDraft}
           onChange={setRdDraft}
           onSave={() => saveKey("rd", rdDraft)}
@@ -114,8 +112,8 @@ export function StreamingSourcesPanel({
           }
         />
         <KeyField
-          label="TorBox API key"
-          placeholder="API key"
+          label={t("TorBox API key")}
+          placeholder={t("API key")}
           value={tbDraft}
           onChange={setTbDraft}
           onSave={() => saveKey("tb", tbDraft)}
@@ -136,8 +134,8 @@ export function StreamingSourcesPanel({
           }
         />
         <KeyField
-          label="AllDebrid API key"
-          placeholder="API key"
+          label={t("AllDebrid API key")}
+          placeholder={t("API key")}
           value={adDraft}
           onChange={setAdDraft}
           onSave={() => saveKey("ad", adDraft)}
@@ -158,8 +156,8 @@ export function StreamingSourcesPanel({
           }
         />
         <KeyField
-          label="Premiumize API key"
-          placeholder="API key"
+          label={t("Premiumize API key")}
+          placeholder={t("API key")}
           value={pmDraft}
           onChange={setPmDraft}
           onSave={() => saveKey("pm", pmDraft)}
@@ -179,8 +177,8 @@ export function StreamingSourcesPanel({
           }
         />
         <KeyField
-          label="Debrid-Link API key"
-          placeholder="API key"
+          label={t("Debrid-Link API key")}
+          placeholder={t("API key")}
           value={dlDraft}
           onChange={setDlDraft}
           onSave={() => saveKey("dl", dlDraft)}
@@ -204,19 +202,19 @@ export function StreamingSourcesPanel({
       </Section>
 
       <Section
-        title="Usenet"
-        subtitle="Faster and quieter than torrents if you already pay for Usenet. Configure on the addon page, paste the manifest URL it returns."
+        title={t("Usenet")}
+        subtitle={t("Faster and quieter than torrents if you already pay for Usenet. Configure on the addon page, paste the manifest URL it returns.")}
       >
         <ManualAddonCard
           title="Easynews+"
-          blurb="Searches and streams directly off Easynews. No debrid needed. Just your Easynews login."
+          blurb={t("Searches and streams directly off Easynews. No debrid needed. Just your Easynews login.")}
           configureUrl="https://b89262c192b0-stremio-easynews-addon.baby-beamup.club/configure"
         />
       </Section>
 
       <Section
-        title="Streaming catalogs"
-        subtitle="Top titles per service. Toggle off the ones you don't pay for."
+        title={t("Streaming catalogs")}
+        subtitle={t("Top titles per service. Toggle off the ones you don't pay for.")}
       >
         <div className="grid grid-cols-3 gap-2.5">
           {(Object.keys(SERVICES) as StreamingService[]).map((svc) => (
@@ -230,7 +228,7 @@ export function StreamingSourcesPanel({
         </div>
         {!settings.tmdbKey && (
           <p className="mt-3 text-[13px] text-ink-subtle">
-            Save a TMDB key in Library &amp; metadata to turn on streaming catalogs.
+            {t("Save a TMDB key in Library & metadata to turn on streaming catalogs.")}
           </p>
         )}
       </Section>
@@ -245,21 +243,22 @@ function StreamFilterPicker({
   value: "strict" | "balanced" | "off";
   onChange: (v: "strict" | "balanced" | "off") => void;
 }) {
+  const t = useT();
   const options: Array<{ id: "strict" | "balanced" | "off"; label: string; sub: string }> = [
     {
       id: "strict",
-      label: "Strict",
-      sub: "Default. Rejects size outliers, suspicious extensions, year/episode mismatches, season packs (for episode requests), trailers, and likely cams.",
+      label: t("Strict"),
+      sub: t("Default. Rejects size outliers, suspicious extensions, year/episode mismatches, season packs (for episode requests), trailers, and likely cams."),
     },
     {
       id: "balanced",
-      label: "Balanced",
-      sub: "Keeps the malware/year/episode-mismatch checks but allows season packs and oversized files. Same as hitting Search wider in the picker.",
+      label: t("Balanced"),
+      sub: t("Keeps the malware/year/episode-mismatch checks but allows season packs and oversized files. Same as hitting Search wider in the picker."),
     },
     {
       id: "off",
-      label: "Off",
-      sub: "No filtering. Every stream every addon returns shows up, including obvious junk. You'll be on your own.",
+      label: t("Off"),
+      sub: t("No filtering. Every stream every addon returns shows up, including obvious junk. You'll be on your own."),
     },
   ];
   return (
@@ -302,16 +301,17 @@ function PickerLayoutPicker({
   value: "condensed" | "stremio";
   onChange: (v: "condensed" | "stremio") => void;
 }) {
+  const t = useT();
   const options: Array<{ id: "condensed" | "stremio"; label: string; sub: string }> = [
     {
       id: "condensed",
-      label: "Condensed",
-      sub: "Default. Top pick at the top, quality tiles, and an All-Sources drawer. Harbor scores and ranks results.",
+      label: t("Condensed"),
+      sub: t("Default. Top pick at the top, quality tiles, and an All-Sources drawer. Harbor scores and ranks results."),
     },
     {
       id: "stremio",
       label: "Stremio",
-      sub: "Flat list of sources grouped by addon, with a filter dropdown. No re-ranking. Closest match to the Stremio app's stream picker.",
+      sub: t("Flat list of sources grouped by addon, with a filter dropdown. No re-ranking. Closest match to the Stremio app's stream picker."),
     },
   ];
   return (
@@ -354,16 +354,17 @@ function StreamSortPicker({
   value: "harbor" | "addon";
   onChange: (v: "harbor" | "addon") => void;
 }) {
+  const t = useT();
   const options: Array<{ id: "harbor" | "addon"; label: string; sub: string }> = [
     {
       id: "harbor",
-      label: "Harbor ranking",
-      sub: "Default. Harbor parses and scores every source and surfaces the best quality first.",
+      label: t("Harbor ranking"),
+      sub: t("Default. Harbor parses and scores every source and surfaces the best quality first."),
     },
     {
       id: "addon",
-      label: "Addon order",
-      sub: "Show each addon's results in the order it returned them, grouped by your addon list. Matches the Stremio and Vidi apps.",
+      label: t("Addon order"),
+      sub: t("Show each addon's results in the order it returned them, grouped by your addon list. Matches the Stremio and Vidi apps."),
     },
   ];
   return (
@@ -421,6 +422,7 @@ function useAioStatusHealth(): AioStatusSnapshot | null {
 }
 
 function AioStatusBanner({ snapshot }: { snapshot: AioStatusSnapshot }) {
+  const t = useT();
   const count = snapshot.health.size;
   if (count === 0) return null;
   const expiringSoon = Array.from(snapshot.health.values()).filter(
@@ -439,8 +441,12 @@ function AioStatusBanner({ snapshot }: { snapshot: AioStatusSnapshot }) {
       <span className="text-ink-subtle">·</span>
       <span>
         {hasWarning
-          ? `${expiringSoon.length} service${expiringSoon.length === 1 ? "" : "s"} need${expiringSoon.length === 1 ? "s" : ""} attention`
-          : `Health for ${count} service${count === 1 ? "" : "s"} below`}
+          ? expiringSoon.length === 1
+            ? t("{n} service needs attention", { n: expiringSoon.length })
+            : t("{n} services need attention", { n: expiringSoon.length })
+          : count === 1
+            ? t("Health for {n} service below", { n: count })
+            : t("Health for {n} services below", { n: count })}
       </span>
     </div>
   );
@@ -453,6 +459,7 @@ function HealthBadge({
   health: ServiceHealth | undefined;
   logo: string | null;
 }) {
+  const t = useT();
   if (!health) return null;
   const palette =
     health.status === "expired"
@@ -471,11 +478,11 @@ function HealthBadge({
           ? "bg-emerald-300"
           : "bg-ink-subtle";
   const label = (() => {
-    if (health.status === "expired") return "Expired";
+    if (health.status === "expired") return t("Expired");
     if (health.daysLeft != null && health.status === "expiring")
-      return `${health.daysLeft}d left`;
-    if (health.daysLeft != null) return `${health.daysLeft}d left`;
-    if (health.status === "active") return "Active";
+      return t("{n}d left", { n: health.daysLeft });
+    if (health.daysLeft != null) return t("{n}d left", { n: health.daysLeft });
+    if (health.status === "active") return t("Active");
     return health.rawLine.slice(0, 40);
   })();
   return (

@@ -1,5 +1,6 @@
 import { CalendarRange, Globe2, Tv } from "lucide-react";
 import { useState } from "react";
+import { useT } from "@/lib/i18n";
 
 export type PlaylistKind = "m3u" | "xtream" | "epg";
 
@@ -48,6 +49,7 @@ export function PlaylistForm({
   onCancel: () => void;
   onSubmit: (v: PlaylistFormValue) => void;
 }) {
+  const t = useT();
   const [name, setName] = useState(initial.name);
   const [kind, setKind] = useState<PlaylistKind>(initial.kind);
   const [url, setUrl] = useState(initial.url);
@@ -69,7 +71,7 @@ export function PlaylistForm({
   const submit = () => {
     if (!canSave) return;
     onSubmit({
-      name: name.trim() || "Playlist",
+      name: name.trim() || t("Playlist"),
       kind,
       url: url.trim(),
       epgUrl: epgUrl.trim(),
@@ -83,7 +85,7 @@ export function PlaylistForm({
 
   return (
     <div className="flex flex-col gap-3 p-3">
-      <Field label="Type">
+      <Field label={t("Type")}>
         <div className="grid grid-cols-3 gap-1.5">
           {KINDS.map((k) => {
             const selected = kind === k.id;
@@ -100,29 +102,29 @@ export function PlaylistForm({
               >
                 <span className="flex items-center gap-1.5 text-[11.5px] font-semibold">
                   {k.icon}
-                  {k.label}
+                  {t(k.label)}
                 </span>
-                <span className="text-[10px] text-ink-subtle">{k.sub}</span>
+                <span className="text-[10px] text-ink-subtle">{t(k.sub)}</span>
               </button>
             );
           })}
         </div>
       </Field>
 
-      <Field label="Name">
+      <Field label={t("Name")}>
         <input
           autoFocus
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="My provider"
+          placeholder={t("My provider")}
           className="h-10 rounded-lg border border-edge-soft/70 bg-canvas px-3 text-[13px] text-ink placeholder:text-ink-subtle focus:border-edge focus:outline-none"
         />
       </Field>
 
       {kind === "m3u" && (
         <>
-          <Field label="Playlist URL">
+          <Field label={t("Playlist URL")}>
             <input
               type="url"
               value={url}
@@ -132,7 +134,7 @@ export function PlaylistForm({
               className="h-10 rounded-lg border border-edge-soft/70 bg-canvas px-3 font-mono text-[11.5px] text-ink placeholder:text-ink-subtle focus:border-edge focus:outline-none"
             />
           </Field>
-          <Field label="EPG URL (optional)">
+          <Field label={t("EPG URL (optional)")}>
             <input
               type="url"
               value={epgUrl}
@@ -147,7 +149,7 @@ export function PlaylistForm({
 
       {kind === "xtream" && (
         <>
-          <Field label="Server URL">
+          <Field label={t("Server URL")}>
             <input
               type="url"
               value={xtream.server}
@@ -157,7 +159,7 @@ export function PlaylistForm({
               className="h-10 rounded-lg border border-edge-soft/70 bg-canvas px-3 font-mono text-[11.5px] text-ink placeholder:text-ink-subtle focus:border-edge focus:outline-none"
             />
           </Field>
-          <Field label="Username">
+          <Field label={t("Username")}>
             <input
               type="text"
               value={xtream.username}
@@ -168,7 +170,7 @@ export function PlaylistForm({
               className="h-10 rounded-lg border border-edge-soft/70 bg-canvas px-3 font-mono text-[11.5px] text-ink placeholder:text-ink-subtle focus:border-edge focus:outline-none"
             />
           </Field>
-          <Field label="Password">
+          <Field label={t("Password")}>
             <input
               type="password"
               value={xtream.password}
@@ -184,7 +186,7 @@ export function PlaylistForm({
 
       {kind === "epg" && (
         <>
-          <Field label="EPG / XMLTV URL">
+          <Field label={t("EPG / XMLTV URL")}>
             <input
               type="url"
               value={epgUrl}
@@ -195,8 +197,9 @@ export function PlaylistForm({
             />
           </Field>
           <p className="text-[11px] leading-snug text-ink-subtle">
-            Stored as a standalone EPG source. No channels are loaded for EPG-only entries; they're
-            kept here for future attachment to existing playlists.
+            {t(
+              "Stored as a standalone EPG source. No channels are loaded for EPG-only entries; they're kept here for future attachment to existing playlists.",
+            )}
           </p>
         </>
       )}
@@ -206,7 +209,7 @@ export function PlaylistForm({
           onClick={onCancel}
           className="h-9 rounded-lg px-3 text-[12.5px] font-medium text-ink-muted transition-colors hover:text-ink"
         >
-          Cancel
+          {t("Cancel")}
         </button>
         <button
           disabled={!canSave}

@@ -63,9 +63,11 @@ export function episodeFromVideoId(
 }
 
 function resumeForItem(i: LibraryItem): { ms: number; t: number } | null {
-  const se = episodeFromVideoId(i.state?.video_id);
-  const season = i.state?.season ?? se?.season;
-  const episode = i.state?.episode ?? se?.episode;
+  const vid = i.state?.video_id ?? "";
+  const kitsuThreeSeg = /^(kitsu|mal|anilist|anidb):/.test(i._id) && vid.split(":").length === 3;
+  const se = kitsuThreeSeg ? null : episodeFromVideoId(i.state?.video_id);
+  const season = i.state?.season ?? (kitsuThreeSeg ? 1 : se?.season);
+  const episode = i.state?.episode ?? (kitsuThreeSeg ? Number(vid.split(":")[2]) : se?.episode);
   return readResumeEntry(i._id, season, episode);
 }
 

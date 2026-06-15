@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 export function MediaRail({ children }: { children: React.ReactNode }) {
   const trackRef = useRef<HTMLDivElement>(null);
@@ -51,13 +52,14 @@ export function MediaRail({ children }: { children: React.ReactNode }) {
 }
 
 function RailArrow({ side, visible, onClick }: { side: "start" | "end"; visible: boolean; onClick: () => void }) {
+  const t = useT();
   const sideClass = side === "start" ? "start-0 justify-start" : "end-0 justify-end";
   return (
     <div className={`pointer-events-none absolute inset-y-0 z-20 flex w-14 items-center ${sideClass}`}>
       <button
         type="button"
         onClick={onClick}
-        aria-label={side === "start" ? "Scroll left" : "Scroll right"}
+        aria-label={side === "start" ? t("Scroll left") : t("Scroll right")}
         tabIndex={visible ? 0 : -1}
         className={`flex h-11 w-11 items-center justify-center rounded-full bg-canvas/85 text-ink backdrop-blur-md transition-all duration-200 hover:scale-105 hover:bg-canvas ${
           visible

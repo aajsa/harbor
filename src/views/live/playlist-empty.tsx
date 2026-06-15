@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   Tv,
 } from "lucide-react";
+import { useT } from "@/lib/i18n";
 import {
   EMPTY_FORM,
   type PlaylistFormValue,
@@ -30,29 +31,31 @@ export function PlaylistEmpty({
 }
 
 function Intro({ onContinue }: { onContinue: () => void }) {
+  const t = useT();
   return (
     <div className="relative flex min-h-full flex-col px-12 py-20">
       <div className="mx-auto flex w-full max-w-[820px] flex-1 flex-col justify-center gap-14">
         <header className="flex flex-col gap-6">
           <span className="text-[11px] font-bold uppercase tracking-[0.42em] text-ink-subtle">
-            Live TV
+            {t("Live TV")}
           </span>
           <h1
             className="font-display text-[60px] font-medium leading-[1.02] tracking-tight text-ink"
             style={{ fontFamily: '"Fraunces", "Iowan Old Style", "Georgia", serif' }}
           >
-            Connect a playlist to get started.
+            {t("Connect a playlist to get started.")}
           </h1>
           <p className="max-w-[560px] text-[16.5px] leading-relaxed text-ink-muted">
-            Connect any IPTV provider. Channels are sorted by category, EPG is pulled automatically
-            when your provider supplies it, and playback runs through native libmpv.
+            {t(
+              "Connect any IPTV provider. Channels are sorted by category, EPG is pulled automatically when your provider supplies it, and playback runs through native libmpv.",
+            )}
           </p>
           <div className="pt-2">
             <button
               onClick={onContinue}
               className="group inline-flex h-12 items-center gap-2.5 rounded-full bg-ink ps-6 pe-5 text-[14.5px] font-semibold text-canvas transition-all duration-150 ease-out hover:opacity-90 active:scale-[0.97]"
             >
-              Connect a provider
+              {t("Connect a provider")}
               <ArrowRight
                 size={16}
                 strokeWidth={2.4}
@@ -65,23 +68,23 @@ function Intro({ onContinue }: { onContinue: () => void }) {
         <div className="grid grid-cols-1 gap-x-12 gap-y-7 border-t border-edge-soft/40 pt-10 md:grid-cols-2">
           <Feature
             icon={<Grid2x2 size={17} strokeWidth={1.9} />}
-            title="Multi-view"
-            body="Four channels at once, pre-spawned and swap-ready."
+            title={t("Multi-view")}
+            body={t("Four channels at once, pre-spawned and swap-ready.")}
           />
           <Feature
             icon={<Clock size={17} strokeWidth={1.9} />}
-            title="Live EPG"
-            body="Now-playing and a seven-day guide when your provider supplies it."
+            title={t("Live EPG")}
+            body={t("Now-playing and a seven-day guide when your provider supplies it.")}
           />
           <Feature
             icon={<Radio size={17} strokeWidth={1.9} />}
-            title="Native libmpv"
-            body="HEVC, HDR, TrueHD, plus real subtitle and audio menus."
+            title={t("Native libmpv")}
+            body={t("HEVC, HDR, TrueHD, plus real subtitle and audio menus.")}
           />
           <Feature
             icon={<ShieldCheck size={17} strokeWidth={1.9} />}
-            title="Local only"
-            body="Credentials stored on this device. Nothing leaves your machine."
+            title={t("Local only")}
+            body={t("Credentials stored on this device. Nothing leaves your machine.")}
           />
         </div>
       </div>
@@ -146,6 +149,7 @@ function Form({
   onBack: () => void;
   onSave: (entry: PlaylistFormValue) => void;
 }) {
+  const t = useT();
   const [name, setName] = useState("");
   const [kind, setKind] = useState<PlaylistKind>("m3u");
   const [url, setUrl] = useState("");
@@ -183,7 +187,7 @@ function Form({
     if (!canSave) return;
     const value: PlaylistFormValue = {
       ...EMPTY_FORM,
-      name: name.trim() || defaultName(kind),
+      name: name.trim() || t(defaultName(kind)),
       kind,
       url: url.trim(),
       epgUrl: epgUrl.trim(),
@@ -208,17 +212,17 @@ function Form({
             strokeWidth={2.4}
             className="dir-icon transition-transform group-hover:-translate-x-0.5 rtl:group-hover:translate-x-0.5"
           />
-          Back
+          {t("Back")}
         </button>
         <header className="flex flex-col gap-3">
           <h2
             className="font-display text-[38px] font-medium leading-[1.05] tracking-tight text-ink"
             style={{ fontFamily: '"Fraunces", "Iowan Old Style", "Georgia", serif' }}
           >
-            Connect your provider.
+            {t("Connect your provider.")}
           </h2>
           <p className="text-[14.5px] leading-relaxed text-ink-muted">
-            Pick how you authenticate. Everything is stored locally.
+            {t("Pick how you authenticate. Everything is stored locally.")}
           </p>
         </header>
 
@@ -244,8 +248,8 @@ function Form({
                   {k.icon}
                 </span>
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <span className="text-[14.5px] font-semibold text-ink">{k.label}</span>
-                  <span className="text-[12.5px] text-ink-muted">{k.blurb}</span>
+                  <span className="text-[14.5px] font-semibold text-ink">{t(k.label)}</span>
+                  <span className="text-[12.5px] text-ink-muted">{t(k.blurb)}</span>
                 </div>
                 <span
                   className={`h-4 w-4 shrink-0 rounded-full border transition-colors ${
@@ -263,12 +267,12 @@ function Form({
         </div>
 
         <div className="flex flex-col gap-5 border-t border-edge-soft/40 pt-7">
-          <Field label="Display name" hint="Optional">
+          <Field label={t("Display name")} hint={t("Optional")}>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder={defaultName(kind)}
+              placeholder={t(defaultName(kind))}
               onKeyDown={(e) => e.key === "Enter" && submit()}
               className="h-12 w-full rounded-xl border border-edge-soft/70 bg-canvas/70 px-4 text-[14.5px] text-ink placeholder:text-ink-subtle/70 transition-colors focus:border-edge focus:outline-none"
             />
@@ -276,7 +280,7 @@ function Form({
 
           {kind === "m3u" && (
             <>
-              <Field label="Playlist URL">
+              <Field label={t("Playlist URL")}>
                 <input
                   ref={firstFieldRef}
                   type="url"
@@ -288,7 +292,7 @@ function Form({
                   className="h-12 w-full rounded-xl border border-edge-soft/70 bg-canvas/70 px-4 font-mono text-[13px] text-ink placeholder:text-ink-subtle/70 transition-colors focus:border-edge focus:outline-none"
                 />
               </Field>
-              <Field label="EPG URL" hint="Optional">
+              <Field label={t("EPG URL")} hint={t("Optional")}>
                 <input
                   type="url"
                   value={epgUrl}
@@ -304,7 +308,7 @@ function Form({
 
           {kind === "xtream" && (
             <>
-              <Field label="Server URL">
+              <Field label={t("Server URL")}>
                 <input
                   ref={firstFieldRef}
                   type="url"
@@ -317,7 +321,7 @@ function Form({
                 />
               </Field>
               <div className="grid grid-cols-2 gap-4">
-                <Field label="Username">
+                <Field label={t("Username")}>
                   <input
                     type="text"
                     value={username}
@@ -329,7 +333,7 @@ function Form({
                     className="h-12 w-full rounded-xl border border-edge-soft/70 bg-canvas/70 px-4 font-mono text-[13px] text-ink placeholder:text-ink-subtle/70 transition-colors focus:border-edge focus:outline-none"
                   />
                 </Field>
-                <Field label="Password">
+                <Field label={t("Password")}>
                   <input
                     type="password"
                     value={password}
@@ -346,7 +350,7 @@ function Form({
           )}
 
           {kind === "epg" && (
-            <Field label="EPG / XMLTV URL">
+            <Field label={t("EPG / XMLTV URL")}>
               <input
                 ref={firstFieldRef}
                 type="url"
@@ -365,22 +369,23 @@ function Form({
               onClick={onBack}
               className="h-12 rounded-full px-5 text-[13.5px] font-medium text-ink-muted transition-colors hover:text-ink"
             >
-              Cancel
+              {t("Cancel")}
             </button>
             <button
               disabled={!canSave}
               onClick={submit}
               className="flex h-12 items-center gap-2 rounded-full bg-ink px-6 text-[14px] font-semibold text-canvas transition-all duration-150 ease-out hover:opacity-90 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-30"
             >
-              Save and continue
+              {t("Save and continue")}
               <ArrowRight size={15} strokeWidth={2.4} className="dir-icon" />
             </button>
           </div>
         </div>
 
         <p className="text-[11.5px] leading-relaxed text-ink-subtle">
-          Stored locally on this device. Credentials never leave your machine. If a channel fails to
-          play, your provider may rate-limit shared accounts: refresh the playlist or check with them.
+          {t(
+            "Stored locally on this device. Credentials never leave your machine. If a channel fails to play, your provider may rate-limit shared accounts: refresh the playlist or check with them.",
+          )}
         </p>
       </div>
     </div>

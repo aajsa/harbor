@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, Play, Plus, Star } from "lucide-react";
+import { Check, Pencil, Play, Plus, RotateCcw, Star } from "lucide-react";
 import { animeDetails, franchiseTags, type FranchiseEntry } from "@/lib/providers/anime-detail";
 import { imdbToKitsu, tmdbTvToKitsu } from "@/lib/providers/anime-mapping";
 import { stripFranchiseSuffix } from "@/lib/providers/jikan";
@@ -43,6 +43,15 @@ import { AddToAnilistButton } from "./detail/add-to-anilist-button";
 import { AddToSimklButton } from "./detail/add-to-simkl-button";
 import { CollectionRow } from "./detail/collection-row";
 import { MediaGallery } from "./detail/media-gallery";
+import { ContentRails, type DetailSection } from "./detail/content-rails";
+import {
+  loadDetailCustomization,
+  saveDetailCustomization,
+  moveSection,
+  toggleSectionHidden,
+  resetDetailCustomization,
+  type DetailCustomization,
+} from "@/lib/detail-customization";
 import { EpisodeDownloadButton } from "./detail/episode-download-button";
 import { isTitleUpcoming } from "./detail/helpers";
 import { HeroAwardsCorner } from "./detail/hero-awards";
@@ -104,6 +113,8 @@ export function DetailView({
   const { authKey } = useAuth();
   const [loading, setLoading] = useState(true);
   const [trailerOpen, setTrailerOpen] = useState(false);
+  const [layout, setLayout] = useState<DetailCustomization>(loadDetailCustomization);
+  const [layoutEdit, setLayoutEdit] = useState(false);
   const [scores, setScores] = useState<OmdbScores | null>(null);
   const [watchProviders, setWatchProviders] = useState<WatchProvider[]>([]);
   const mdblist = useMdblistScores(
@@ -882,47 +893,103 @@ export function DetailView({
           </div>
         )}
 
-        {detail && detail.cast.length > 0 && (
-          <LazyMount minHeight={240}>
-            <Row title={t("Cast · {n}", { n: detail.cast.length })} min={128}>
-              {detail.cast.map((c, i) => (
-                <CastCard key={`${c.id}-${i}`} cast={c} />
-              ))}
-            </Row>
-          </LazyMount>
-        )}
-
-        {detail?.collection && (
-          <LazyMount minHeight={280}>
-            <CollectionRow collection={detail.collection} currentId={meta.id} />
-          </LazyMount>
-        )}
-
-        {recommendations.length > 0 && (
-          <LazyMount minHeight={280}>
-            <Row title={t("More Like This")}>
-              {recommendations.map((r) => (
-                <PickCard key={r.id} meta={r} />
-              ))}
-            </Row>
-          </LazyMount>
-        )}
-
-        {similar.length > 0 && (
-          <LazyMount minHeight={280}>
-            <Row title={t("You Might Also Like")}>
-              {similar.map((r) => (
-                <PickCard key={`s-${r.id}`} meta={r} />
-              ))}
-            </Row>
-          </LazyMount>
-        )}
-
-        {detail && (
-          <LazyMount minHeight={280}>
-            <MediaGallery detail={detail} title={title} logo={logo} />
-          </LazyMount>
-        )}
+        {(() => {
+          const railSections: DetailSection[] = [];
+          if (detail && detail.cast.length > 0) {
+            railSections.push({
+              key: "cast",
+              label: t("Cast"),
+              minHeight: 240,
+              node: (
+                <Row title={t("Cast · {n}", { n: detail.cast.length })} min={128}>
+                  {detail.cast.map((c, i) => (
+                    <CastCard key={`${c.id}-${i}`} cast={c} />
+                  ))}
+                </Row>
+              ),
+            });
+          }
+          if (detail?.collection) {
+            railSections.push({
+              key: "collection",
+              label: t("Collection"),
+              node: <CollectionRow collection={detail.collection} currentId={meta.id} />,
+            });
+          }
+          if (recommendations.length > 0) {
+            railSections.push({
+              key: "moreLikeThis",
+              label: t("More Like This"),
+              node: (
+                <Row title={t("More Like This")}>
+                  {recommendations.map((r) => (
+                    <PickCard key={r.id} meta={r} />
+                  ))}
+                </Row>
+              ),
+            });
+          }
+          if (similar.length > 0) {
+            railSections.push({
+              key: "similar",
+              label: t("You Might Also Like"),
+              node: (
+                <Row title={t("You Might Also Like")}>
+                  {similar.map((r) => (
+                    <PickCard key={`s-${r.id}`} meta={r} />
+                  ))}
+                </Row>
+              ),
+            });
+          }
+          if (detail) {
+            railSections.push({
+              key: "mediaGallery",
+              label: t("Media"),
+              node: <MediaGallery detail={detail} title={title} logo={logo} />,
+            });
+          }
+          if (railSections.length === 0) return null;
+          const railKeys = railSections.map((s) => s.key);
+          const persist = (next: DetailCustomization) => {
+            setLayout(next);
+            saveDetailCustomization(next);
+          };
+          const hasChanges = layout.order.length > 0 || layout.hidden.length > 0;
+          return (
+            <>
+              <div className="flex items-center justify-end gap-2">
+                {layoutEdit && hasChanges && (
+                  <button
+                    onClick={() => persist(resetDetailCustomization())}
+                    className="flex h-8 items-center gap-1.5 rounded-md border border-edge-soft/40 bg-canvas/80 px-2.5 text-[12px] font-medium text-ink-muted transition-colors hover:bg-canvas hover:text-ink"
+                  >
+                    <RotateCcw size={12} strokeWidth={2.2} />
+                    {t("Reset")}
+                  </button>
+                )}
+                <button
+                  onClick={() => setLayoutEdit((v) => !v)}
+                  className={`flex h-8 items-center gap-1.5 rounded-md border px-2.5 text-[12px] font-medium transition-colors ${
+                    layoutEdit
+                      ? "border-ink bg-ink text-canvas hover:opacity-90"
+                      : "border-edge-soft/40 bg-canvas/80 text-ink-muted hover:bg-canvas hover:text-ink"
+                  }`}
+                >
+                  <Pencil size={12} strokeWidth={2.4} />
+                  {layoutEdit ? t("Done editing") : t("Customize layout")}
+                </button>
+              </div>
+              <ContentRails
+                sections={railSections}
+                custom={layout}
+                editMode={layoutEdit}
+                onMove={(k, d) => persist(moveSection(layout, railKeys, k, d))}
+                onToggleHidden={(k) => persist(toggleSectionHidden(layout, k))}
+              />
+            </>
+          );
+        })()}
 
         <div id="anime-awards-section" style={{ scrollMarginTop: 96 }}>
           <LazyMount minHeight={160}>

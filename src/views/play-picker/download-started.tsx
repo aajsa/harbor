@@ -20,7 +20,7 @@ export function DownloadStarted({
     return () => window.clearTimeout(t);
   }, [onDone]);
   const title = episode
-    ? `${meta.name}  ·  S${episode.season} E${String(episode.episode).padStart(2, "0")}`
+    ? `${meta.name}  ·  S${episode.imdbSeason ?? episode.season} E${String(episode.imdbEpisode ?? episode.episode).padStart(2, "0")}`
     : meta.name;
   return (
     <main className="fixed inset-0 z-[120] flex items-center justify-center overflow-hidden bg-black">

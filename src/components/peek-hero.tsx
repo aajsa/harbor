@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { ImdbIcon } from "@/components/icons/imdb-icon";
 import { MetaAwardsCorner } from "@/components/meta-awards-corner";
 import { meta as fetchMeta, narrowMediaType, type Meta } from "@/lib/cinemeta";
+import { useT } from "@/lib/i18n";
 import { tmdbLogo, useTmdbImdbId } from "@/lib/providers/tmdb";
 import { useSettings } from "@/lib/settings";
 import { smartPlayEpisode } from "@/lib/smart-play";
@@ -17,6 +18,7 @@ const SNAP_FRACTION = 0.15;
 const FLICK_VELOCITY = 0.45;
 
 export function PeekHero({ slides }: { slides: Meta[] }) {
+  const t = useT();
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -152,7 +154,7 @@ export function PeekHero({ slides }: { slides: Meta[] }) {
             <button
               key={i}
               onClick={() => setActive(i)}
-              aria-label={`Slide ${i + 1}`}
+              aria-label={t("Slide {n}", { n: i + 1 })}
               className={`h-1.5 rounded-full transition-all duration-500 ${
                 i === active ? "w-8 bg-ink" : "w-1.5 bg-ink-muted/55 hover:bg-ink-muted"
               }`}
@@ -188,6 +190,7 @@ function PeekSlide({
   trackWidth: number;
   onSelect: () => void;
 }) {
+  const t = useT();
   const { settings } = useSettings();
   const { openMeta, openPicker } = useView();
   const resolvedImdb = useTmdbImdbId(meta.id);
@@ -292,7 +295,7 @@ function PeekSlide({
                 className="flex h-10 items-center gap-2 rounded-full bg-white px-5 text-[13px] font-semibold text-black transition-transform hover:scale-[1.04] active:scale-[0.97]"
               >
                 <Play size={14} fill="currentColor" />
-                Play
+                {t("Play")}
               </button>
               <button
                 onClick={(e) => {
@@ -301,7 +304,7 @@ function PeekSlide({
                 }}
                 className="flex h-10 items-center gap-2 rounded-full border border-white/30 bg-white/10 px-5 text-[13px] font-medium text-white backdrop-blur-md transition-colors hover:bg-white/20"
               >
-                Episodes
+                {t("Episodes")}
               </button>
             </div>
           </>

@@ -54,7 +54,7 @@ export function ProfileBlock({ onOpenSettings }: { onOpenSettings: () => void })
         <span className="truncate text-[13px] text-ink">{name}</span>
       </button>
       {open && (
-        <div className="absolute bottom-full left-0 right-0 mb-2 overflow-hidden rounded-xl border border-edge bg-[#1a1d28] shadow-[0_20px_50px_-15px_rgba(0,0,0,0.8)]">
+        <div className="absolute bottom-full start-0 end-0 mb-2 overflow-hidden rounded-xl border border-edge bg-[#1a1d28] shadow-[0_20px_50px_-15px_rgba(0,0,0,0.8)]">
           <div className="border-b border-white/10 px-4 py-3">
             <div className="text-[13px] font-semibold text-ink">{name}</div>
             {user?.email && (

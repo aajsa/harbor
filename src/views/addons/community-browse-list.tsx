@@ -7,6 +7,7 @@ import { openInstallerViewport } from "@/components/installer-viewport";
 import { listAddons, risingEntryFor, useRising, type SAAddon } from "@/lib/providers/stremio-addons";
 import { useTopMovers } from "@/lib/providers/stremio-addons-velocity";
 import { openUrl } from "@/lib/window";
+import { useT } from "@/lib/i18n";
 
 export type BrowseMode = "top" | "new" | "rising";
 
@@ -50,6 +51,7 @@ function ApiSortedList({
   onOpen: (manifestId: string) => void;
   onChange?: () => void;
 }) {
+  const t = useT();
   const [items, setItems] = useState<SAAddon[]>([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
@@ -139,7 +141,7 @@ function ApiSortedList({
       )}
       {exhausted && items.length > 0 && (
         <p className="pt-3 text-center text-[11.5px] text-ink-subtle">
-          You&apos;ve reached the end · {items.length} addons
+          {t("You've reached the end · {n} addons", { n: items.length })}
         </p>
       )}
     </div>
@@ -161,6 +163,7 @@ function RisingList({
   onOpen: (manifestId: string) => void;
   onChange?: () => void;
 }) {
+  const t = useT();
   const official = useRising();
   const allMovers = useTopMovers(80);
   const q = search?.trim().toLowerCase() ?? "";
@@ -212,10 +215,9 @@ function RisingList({
         <span className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-full bg-rose-500/15 ring-1 ring-rose-500/30">
           <TrendingUp size={20} strokeWidth={2.4} className="text-rose-300" />
         </span>
-        <p className="font-display text-[18px] font-medium text-ink">No velocity data yet</p>
+        <p className="font-display text-[18px] font-medium text-ink">{t("No velocity data yet")}</p>
         <p className="mt-1.5 text-[12.5px] text-ink-muted">
-          Trending tracks star growth across your Harbor visits.
-          Open the addons page again tomorrow and the top risers will appear here.
+          {t("Trending tracks star growth across your Harbor visits. Open the addons page again tomorrow and the top risers will appear here.")}
         </p>
       </div>
     );
@@ -277,6 +279,7 @@ function CommunityRow({
   onOpen: (manifestId: string) => void;
   onChange?: () => void;
 }) {
+  const t = useT();
   const [busy, setBusy] = useState(false);
   const m = addon.manifest;
   const name = m?.name ?? addon.slug;
@@ -345,7 +348,7 @@ function CommunityRow({
           {showNew && (
             <span className="inline-flex h-5 items-center gap-1 rounded-full bg-emerald-500/15 px-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-300 ring-1 ring-emerald-500/30">
               <Sparkles size={9} strokeWidth={2.6} />
-              New
+              {t("New")}
             </span>
           )}
         </div>
@@ -364,12 +367,12 @@ function CommunityRow({
             ) : (
               <Plus size={12} strokeWidth={2.6} />
             )}
-            Install
+            {t("Install")}
           </button>
         )}
         {installed && (
           <span className="flex h-9 items-center gap-1 rounded-full bg-accent/15 px-3 text-[12.5px] font-semibold text-accent">
-            Installed
+            {t("Installed")}
           </span>
         )}
         <ChevronRight size={16} className="dir-icon text-ink-subtle" />

@@ -1,6 +1,7 @@
 import { Play } from "lucide-react";
 import type { Meta } from "@/lib/cinemeta";
 import { Poster } from "@/components/poster";
+import { useT } from "@/lib/i18n";
 import type { IptvChannel } from "@/lib/iptv/types";
 import { hydrationKey, type NowItem } from "./use-live-home";
 
@@ -13,10 +14,11 @@ export function MoreOnNow({
   hydrations: Map<string, Meta | null>;
   onPlay: (ch: IptvChannel) => void;
 }) {
+  const t = useT();
   if (items.length === 0) return null;
   return (
     <div className="flex w-[40%] min-w-[300px] shrink-0 flex-col gap-3">
-      <h3 className="ps-0.5 text-[15px] font-medium italic text-ink-muted">On now</h3>
+      <h3 className="ps-0.5 text-[15px] font-medium italic text-ink-muted">{t("On now")}</h3>
       <div className="flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {items.map((it) => (
           <Pick
@@ -40,6 +42,7 @@ function Pick({
   hydrated: Meta | null;
   onPlay: (ch: IptvChannel) => void;
 }) {
+  const t = useT();
   const { channel, current } = item;
   return (
     <button
@@ -61,7 +64,7 @@ function Pick({
           </span>
         </div>
         <span className="absolute start-2 top-2 flex h-[19px] items-center rounded bg-danger px-1.5 text-[9.5px] font-bold uppercase tracking-[0.14em] text-white">
-          Live
+          {t("Live")}
         </span>
       </div>
       <p className="line-clamp-2 text-[12.5px] font-medium leading-snug text-ink">

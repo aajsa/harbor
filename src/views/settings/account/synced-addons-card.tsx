@@ -4,9 +4,11 @@ import { AddonLogo, AddonLogoStack, resolveAddonLogo } from "@/components/addon-
 import type { Addon } from "@/lib/addons";
 import { useAuth } from "@/lib/auth";
 import { useView } from "@/lib/view";
+import { useT } from "@/lib/i18n";
 import { requestAddonsTab } from "@/views/addons";
 
 export function SyncedAddonsCard() {
+  const t = useT();
   const { authKey } = useAuth();
   const [addons, setAddons] = useState<Addon[] | null>(null);
   const [busy, setBusy] = useState(false);
@@ -35,7 +37,7 @@ export function SyncedAddonsCard() {
   if (!authKey) {
     return (
       <div className="flex items-center gap-3 rounded-2xl border border-edge-soft bg-canvas/40 p-5 text-[13px] text-ink-subtle">
-        Sign in to Stremio first. Your installed addons sync from there.
+        {t("Sign in to Stremio first. Your installed addons sync from there.")}
       </div>
     );
   }
@@ -52,7 +54,7 @@ export function SyncedAddonsCard() {
               {count != null ? count : "–"}
             </span>
             <span className="mt-1 text-[11.5px] uppercase tracking-[0.18em] text-ink-subtle">
-              {count === 1 ? "addon synced" : "addons synced"}
+              {count === 1 ? t("addon synced") : t("addons synced")}
             </span>
           </div>
           {addons && addons.length > 0 && (
@@ -66,7 +68,7 @@ export function SyncedAddonsCard() {
             className="flex h-10 items-center gap-1.5 rounded-xl bg-ink px-4 text-[12.5px] font-semibold text-canvas transition-transform hover:scale-[1.02] disabled:opacity-60"
           >
             {busy ? <Loader2 size={13} className="animate-spin" /> : null}
-            {busy ? "Syncing…" : "Sync now"}
+            {busy ? t("Syncing…") : t("Sync now")}
           </button>
           <button
             onClick={() => {
@@ -75,14 +77,14 @@ export function SyncedAddonsCard() {
             }}
             className="flex h-10 items-center gap-1.5 rounded-xl border border-edge-soft px-3 text-[12.5px] font-medium text-ink-muted transition-colors hover:border-edge hover:text-ink"
           >
-            Manage
-            <ArrowRight size={12} strokeWidth={2.2} />
+            {t("Manage")}
+            <ArrowRight size={12} strokeWidth={2.2} className="dir-icon" />
           </button>
         </div>
       </div>
       {lastSynced && (
         <p className="border-t border-edge-soft/60 pt-2 text-[11.5px] text-ink-subtle">
-          Last synced {Math.round((Date.now() - lastSynced) / 1000)}s ago.
+          {t("Last synced {n}s ago.", { n: Math.round((Date.now() - lastSynced) / 1000) })}
         </p>
       )}
     </div>
@@ -90,6 +92,7 @@ export function SyncedAddonsCard() {
 }
 
 function AddonStackPeek({ addons, max }: { addons: Addon[]; max: number }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
   const overflow = addons.length - max;
@@ -125,7 +128,7 @@ function AddonStackPeek({ addons, max }: { addons: Addon[]; max: number }) {
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          aria-label={`Show ${overflow} more addons`}
+          aria-label={t("Show {n} more addons", { n: overflow })}
           className={`flex h-9 min-w-[44px] items-center justify-center rounded-full border px-2.5 text-[12.5px] font-semibold transition-colors ${
             open
               ? "border-edge bg-elevated text-ink"
@@ -141,16 +144,17 @@ function AddonStackPeek({ addons, max }: { addons: Addon[]; max: number }) {
 }
 
 function AddonListTooltip({ addons, onClose }: { addons: Addon[]; onClose: () => void }) {
+  const t = useT();
   return (
     <div className="absolute start-0 top-[calc(100%+10px)] z-30 flex w-[320px] flex-col overflow-hidden rounded-2xl border border-edge-soft bg-elevated/95 shadow-[0_24px_60px_-15px_rgba(0,0,0,0.65)] backdrop-blur-md animate-in fade-in slide-in-from-top-1 duration-150">
       <div className="flex items-center justify-between border-b border-edge-soft/70 px-4 py-2.5">
         <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink-subtle">
-          All addons ({addons.length})
+          {t("All addons ({n})", { n: addons.length })}
         </span>
         <button
           type="button"
           onClick={onClose}
-          aria-label="Close"
+          aria-label={t("Close")}
           className="flex h-6 w-6 items-center justify-center rounded-full text-ink-subtle transition-colors hover:bg-raised hover:text-ink"
         >
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden>

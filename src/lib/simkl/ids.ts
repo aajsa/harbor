@@ -13,17 +13,7 @@ export function stremioIdToSimklTarget(
   if (metaId.startsWith("mal:")) {
     const n = Number(metaId.split(":")[1]);
     if (!Number.isFinite(n)) return { ok: false, reason: "unrecognized" };
-    if (episode) {
-      return {
-        ok: true,
-        target: {
-          kind: "episode",
-          show: { ids: { mal: n } },
-          season: episode.season,
-          number: episode.episode,
-        },
-      };
-    }
+    if (episode) return { ok: false, reason: "anime" };
     return { ok: true, target: { kind: "show", ids: { mal: n } } };
   }
 

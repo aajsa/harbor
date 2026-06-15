@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Meta } from "@/lib/cinemeta";
+import { useT } from "@/lib/i18n";
 import { peekCachedLogo, resolveLogo } from "@/lib/logo";
 import { useTmdbImdbId } from "@/lib/providers/tmdb";
 import { useSettings } from "@/lib/settings";
@@ -34,6 +35,7 @@ export function BigCardStack({
 }) {
   const { settings } = useSettings();
   const { openMeta } = useView();
+  const t = useT();
   const current = items[active] ?? items[0];
   const resolvedImdb = useTmdbImdbId(current.id);
   const [logos, setLogos] = useState<LogoMap>(() => seedLogos(settings.tmdbKey, items));
@@ -176,7 +178,7 @@ export function BigCardStack({
         }}
       />
       <div className="absolute start-7 top-6 flex items-center gap-2 text-[10.5px] font-semibold uppercase tracking-[0.22em] text-accent">
-        <span className="rounded-full bg-canvas/55 px-2.5 py-1">Featured</span>
+        <span className="rounded-full bg-canvas/55 px-2.5 py-1">{t("Featured")}</span>
       </div>
       <div
         className="absolute inset-x-7 bottom-7 flex flex-col gap-3"
@@ -203,7 +205,7 @@ export function BigCardStack({
         <button
           type="button"
           data-no-drag
-          aria-label="Previous"
+          aria-label={t("Previous")}
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => {
             e.stopPropagation();
@@ -219,7 +221,7 @@ export function BigCardStack({
         <button
           type="button"
           data-no-drag
-          aria-label="Next"
+          aria-label={t("Next")}
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => {
             e.stopPropagation();

@@ -140,7 +140,7 @@ export function usePlayerMedia(params: {
   useEffect(() => {
     const name = src.meta.name ?? "";
     const mediaTitle = src.episode
-      ? `${name} · S${src.episode.season}E${src.episode.episode}${src.episode.name ? ` · ${src.episode.name}` : ""}`
+      ? `${name} · S${src.episode.imdbSeason ?? src.episode.season}E${src.episode.imdbEpisode ?? src.episode.episode}${src.episode.name ? ` · ${src.episode.name}` : ""}`
       : name;
     if (!mediaTitle) return;
     bridgeRef.current?.setMediaInfo?.({

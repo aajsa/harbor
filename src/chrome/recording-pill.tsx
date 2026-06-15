@@ -138,7 +138,7 @@ function SessionRow({
       {isActive && (
         <div className="relative h-[3px] overflow-hidden rounded-full bg-canvas/40">
           <div
-            className="absolute inset-y-0 left-0 rounded-full bg-danger transition-[width] duration-500"
+            className="absolute inset-y-0 start-0 rounded-full bg-danger transition-[width] duration-500"
             style={{ width: `${ratio * 100}%` }}
           />
         </div>

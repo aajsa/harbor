@@ -1,4 +1,5 @@
 import { Star } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 export function FavoriteButton({
   active,
@@ -11,6 +12,7 @@ export function FavoriteButton({
   size?: number;
   variant?: "overlay" | "inline";
 }) {
+  const t = useT();
   return (
     <button
       onClick={(e) => {
@@ -18,7 +20,7 @@ export function FavoriteButton({
         e.preventDefault();
         onToggle();
       }}
-      aria-label={active ? "Remove from favorites" : "Add to favorites"}
+      aria-label={active ? t("Remove from favorites") : t("Add to favorites")}
       aria-pressed={active}
       className={
         variant === "overlay"

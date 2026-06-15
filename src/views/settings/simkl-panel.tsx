@@ -6,9 +6,11 @@ import { useSettings } from "@/lib/settings";
 import { fetchSimklAvatar } from "@/lib/simkl/profile";
 import { useSimkl } from "@/lib/simkl/provider";
 import { openUrl } from "@/lib/window";
+import { useT } from "@/lib/i18n";
 import { Section, ToggleRow } from "./shared";
 
 export function SimklPanel() {
+  const t = useT();
   const { isConnected, username, disconnect } = useSimkl();
   const { settings, update } = useSettings();
   const { activeProfile, updateProfile } = useProfiles();
@@ -57,12 +59,10 @@ export function SimklPanel() {
         <section className="flex flex-col gap-5 rounded-2xl border border-edge-soft bg-elevated/40 p-7">
           <div className="flex flex-col gap-2">
             <h2 className="text-[19px] font-medium tracking-tight text-ink">
-              Connect your Simkl account
+              {t("Connect your Simkl account")}
             </h2>
             <p className="text-[13.5px] leading-relaxed text-ink-muted">
-              Sync and track movies, shows, and anime across everything you use. Harbor marks
-              what you finish as watched on Simkl and keeps your plan-to-watch list in step. Free
-              at simkl.com.
+              {t("Sync and track movies, shows, and anime across everything you use. Harbor marks what you finish as watched on Simkl and keeps your plan-to-watch list in step. Free at simkl.com.")}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -71,21 +71,21 @@ export function SimklPanel() {
               className="flex h-11 items-center gap-2.5 rounded-xl bg-ink px-5 text-[13.5px] font-semibold text-canvas transition-transform hover:scale-[1.02] active:scale-[0.97]"
             >
               <Link2 size={15} strokeWidth={2.2} />
-              Connect Simkl
+              {t("Connect Simkl")}
             </button>
             <button
               onClick={() => openUrl("https://simkl.com")}
               className="flex h-11 items-center gap-2 rounded-xl border border-edge-soft px-4 text-[13.5px] font-medium text-ink-muted transition-colors hover:border-edge hover:text-ink"
             >
-              About Simkl
+              {t("About Simkl")}
               <ExternalLink size={13} strokeWidth={2.2} />
             </button>
           </div>
         </section>
       ) : (
         <Section
-          title="Connected"
-          subtitle="Harbor will mark what you finish as watched on Simkl and sync your plan-to-watch list."
+          title={t("Connected")}
+          subtitle={t("Harbor will mark what you finish as watched on Simkl and sync your plan-to-watch list.")}
         >
           <div className="flex items-center justify-between gap-4 rounded-xl border border-edge-soft bg-canvas/40 px-4 py-3">
             <div className="flex items-center gap-3">
@@ -102,8 +102,8 @@ export function SimklPanel() {
                 </span>
               )}
               <div className="flex flex-col gap-0.5">
-                <span className="text-[14px] font-medium text-ink">{username || "Connected"}</span>
-                <span className="text-[12px] text-ink-subtle">Authorized on this device</span>
+                <span className="text-[14px] font-medium text-ink">{username || t("Connected")}</span>
+                <span className="text-[12px] text-ink-subtle">{t("Authorized on this device")}</span>
               </div>
             </div>
             {username && (
@@ -111,15 +111,15 @@ export function SimklPanel() {
                 onClick={() => openUrl(`https://simkl.com/${encodeURIComponent(username)}`)}
                 className="flex h-9 items-center gap-1.5 rounded-lg border border-edge-soft px-3 text-[12.5px] font-medium text-ink-muted transition-colors hover:border-edge hover:text-ink"
               >
-                Open profile
+                {t("Open profile")}
                 <ExternalLink size={11} strokeWidth={2.2} />
               </button>
             )}
           </div>
           {simklAvatar && (
             <ToggleRow
-              label="Use my Simkl avatar as my Harbor avatar"
-              sub="Wear your Simkl profile picture across Harbor instead of the default."
+              label={t("Use my Simkl avatar as my Harbor avatar")}
+              sub={t("Wear your Simkl profile picture across Harbor instead of the default.")}
               value={settings.useSimklAvatar}
               onChange={toggleSimklAvatar}
               leading={
@@ -138,19 +138,19 @@ export function SimklPanel() {
               className="flex items-center gap-2 self-start rounded-lg px-2 py-1.5 text-[12.5px] font-medium text-ink-subtle transition-colors hover:text-red-300"
             >
               <Trash2 size={12} />
-              Disconnect from Simkl
+              {t("Disconnect from Simkl")}
             </button>
           ) : (
             <div className="flex items-center justify-between gap-3 rounded-lg border border-red-400/30 bg-red-400/5 p-3">
               <span className="text-[12.5px] text-red-200">
-                Disconnect Simkl? Syncing will stop until you reconnect.
+                {t("Disconnect Simkl? Syncing will stop until you reconnect.")}
               </span>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setConfirmDisconnect(false)}
                   className="rounded-md px-2.5 py-1 text-[12px] text-ink-muted hover:text-ink"
                 >
-                  Cancel
+                  {t("Cancel")}
                 </button>
                 <button
                   onClick={() => {
@@ -164,7 +164,7 @@ export function SimklPanel() {
                   className="flex items-center gap-1.5 rounded-md bg-red-400/20 px-3 py-1 text-[12px] font-semibold text-red-200 hover:bg-red-400/30"
                 >
                   <LogOut size={11} strokeWidth={2.4} />
-                  Disconnect
+                  {t("Disconnect")}
                 </button>
               </div>
             </div>

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Tv } from "lucide-react";
+import { useT } from "@/lib/i18n";
 import type { IptvChannel } from "@/lib/iptv/types";
 import {
   type NetworkRow,
@@ -47,6 +48,7 @@ function Row({
   resolved: ResolvedNetwork[];
   onPlay: (ch: IptvChannel) => void;
 }) {
+  const t = useT();
   const containerRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const [cellWidth, setCellWidth] = useState<number | null>(null);
@@ -215,7 +217,7 @@ function Row({
       onKeyDown={onKey}
     >
       <h2 className="text-[11px] font-semibold uppercase tracking-[0.22em] text-ink-subtle">
-        {title}
+        {t(title)}
       </h2>
       <div className="relative w-full">
         <div
@@ -243,7 +245,7 @@ function Row({
         </div>
         {canPrev && (
           <button
-            aria-label="Scroll left"
+            aria-label={t("Scroll left")}
             onClick={() => scrollPage(-1)}
             className="absolute start-0 top-1/2 z-10 flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-edge-soft/55 bg-canvas/90 text-ink opacity-0 backdrop-blur transition-opacity duration-150 hover:bg-canvas group-hover/row:opacity-100 focus-visible:opacity-100 rtl:translate-x-1/2"
           >
@@ -252,7 +254,7 @@ function Row({
         )}
         {canNext && (
           <button
-            aria-label="Scroll right"
+            aria-label={t("Scroll right")}
             onClick={() => scrollPage(1)}
             className="absolute end-0 top-1/2 z-10 flex h-11 w-11 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-edge-soft/55 bg-canvas/90 text-ink opacity-0 backdrop-blur transition-opacity duration-150 hover:bg-canvas group-hover/row:opacity-100 focus-visible:opacity-100 rtl:-translate-x-1/2"
           >

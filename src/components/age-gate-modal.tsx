@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import piratePeek from "@/assets/piratepeek.svg";
+import { useT } from "@/lib/i18n";
 
 type Question = {
   q: string;
@@ -270,6 +271,7 @@ export function AgeGateModal({
   onClose: () => void;
   onPass: () => void;
 }) {
+  const t = useT();
   const [seed, setSeed] = useState(() => Date.now() % 1_000_000);
   const questions = useMemo(() => pickThree(seed), [seed]);
   const [picks, setPicks] = useState<(number | null)[]>([null, null, null]);
@@ -335,11 +337,10 @@ export function AgeGateModal({
         <header className="relative shrink-0 overflow-hidden border-b border-edge-soft bg-gradient-to-b from-elevated/35 to-canvas px-7 py-6">
           <div className="relative flex flex-col gap-1.5">
             <h2 className="font-display text-[28px] font-medium leading-tight tracking-tight text-ink">
-              Holdup Matey!
+              {t("Holdup Matey!")}
             </h2>
             <p className="text-[14px] leading-relaxed text-ink-muted">
-              We need to check your age before you sail ahead. Three quick questions a working adult would
-              know in their sleep. Get them all right and the adult shelf opens.
+              {t("We need to check your age before you sail ahead. Three quick questions a working adult would know in their sleep. Get them all right and the adult shelf opens.")}
             </p>
           </div>
         </header>
@@ -400,7 +401,7 @@ export function AgeGateModal({
               onClick={onClose}
               className="rounded-full border border-edge-soft px-5 py-2 text-[12.5px] font-semibold text-ink-muted transition-colors hover:border-edge hover:text-ink"
             >
-              Nevermind
+              {t("Nevermind")}
             </button>
             <button
               onClick={handleSubmit}
@@ -411,12 +412,12 @@ export function AgeGateModal({
                   : "cursor-not-allowed bg-edge text-ink-subtle"
               }`}
             >
-              Set sail
+              {t("Set sail")}
             </button>
           </div>
           {submitted && !allCorrect && (
             <p className="mt-3 text-center text-[12px] font-medium text-rose-200">
-              That's not it. Try a fresh round in a moment.
+              {t("That's not it. Try a fresh round in a moment.")}
             </p>
           )}
         </footer>
@@ -428,6 +429,7 @@ export function AgeGateModal({
 }
 
 function VerifiedSplash() {
+  const t = useT();
   return (
     <div className="flex w-full max-w-md flex-col items-center gap-8 rounded-3xl border border-edge bg-canvas px-12 py-14 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.7)] animate-modal-in">
       <div className="animate-done-pop">
@@ -455,7 +457,7 @@ function VerifiedSplash() {
         </svg>
       </div>
       <p className="font-display text-[26px] font-medium leading-tight tracking-tight text-ink">
-        Welcome aboard
+        {t("Welcome aboard")}
       </p>
     </div>
   );

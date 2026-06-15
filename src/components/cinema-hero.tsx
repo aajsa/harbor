@@ -7,6 +7,7 @@ import { tmdbLogo, tmdbTrailerList, useTmdbImdbId } from "@/lib/providers/tmdb";
 import { useSettings } from "@/lib/settings";
 import { smartPlayEpisode } from "@/lib/smart-play";
 import { fetchTrailer, prefetchTrailer, trailerSrc, type TrailerInfo } from "@/lib/trailer";
+import { useT } from "@/lib/i18n";
 import { useView } from "@/lib/view";
 import { observe, usePageVisible } from "@/lib/visibility";
 
@@ -27,6 +28,7 @@ export function CinemaHero({
   slides: Meta[];
   eyebrow?: string;
 }) {
+  const t = useT();
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -178,7 +180,7 @@ export function CinemaHero({
             <button
               key={i}
               onClick={() => setActive(i)}
-              aria-label={`Slide ${i + 1}`}
+              aria-label={t("Slide {n}", { n: i + 1 })}
               className={`h-1.5 rounded-full transition-all duration-500 ${
                 i === active ? "w-10 bg-ink" : "w-1.5 bg-ink-muted/55 hover:bg-ink-muted"
               }`}
@@ -199,6 +201,7 @@ function CinemaSlide({
   active: boolean;
   eyebrow: string;
 }) {
+  const t = useT();
   const { settings } = useSettings();
   const { openMeta, openPicker } = useView();
   const resolvedImdb = useTmdbImdbId(meta.id);
@@ -341,7 +344,7 @@ function CinemaSlide({
       <div className="relative flex h-full items-end pb-28 pl-20 pr-20">
         <div className="flex max-w-[640px] flex-col gap-5">
           <span className="text-[11px] font-bold uppercase tracking-[0.42em] text-ink-subtle">
-            {eyebrow}
+            {t(eyebrow)}
           </span>
           <CinemaTitlePlate
             name={meta.name}
@@ -381,14 +384,14 @@ function CinemaSlide({
               className="flex h-12 items-center gap-2.5 rounded-md bg-ink px-7 text-[14.5px] font-semibold text-canvas shadow-[0_8px_24px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.5)] transition-transform duration-200 hover:scale-[1.03] active:scale-[0.97]"
             >
               <Play size={17} fill="currentColor" />
-              Play
+              {t("Play")}
             </button>
             <button
               onClick={() => openMeta(meta)}
               className="flex h-12 items-center gap-2.5 rounded-md border border-edge bg-canvas/50 px-6 text-[14.5px] font-medium text-ink backdrop-blur-sm transition-colors duration-200 hover:bg-canvas/70"
             >
               <Info size={16} strokeWidth={2} />
-              More info
+              {t("More info")}
               <ChevronRight size={15} strokeWidth={2} className="dir-icon opacity-65" />
             </button>
           </div>

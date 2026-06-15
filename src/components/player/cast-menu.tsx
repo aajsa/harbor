@@ -1,6 +1,7 @@
 import { Cast, Loader2, Subtitles, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { discoverCastDevices, type CastDeviceInfo } from "@/lib/cast";
+import { useT } from "@/lib/i18n";
 import { CastIcon } from "./cast-icon";
 
 export function CastMenu({
@@ -20,6 +21,7 @@ export function CastMenu({
   burnSubsOnTv: boolean;
   setBurnSubsOnTv: (next: boolean) => void;
 }) {
+  const t = useT();
   const [devices, setDevices] = useState<CastDeviceInfo[]>([]);
   const [loading, setLoading] = useState(false);
   const [scanCount, setScanCount] = useState(0);
@@ -74,11 +76,11 @@ export function CastMenu({
       <div className="mb-2 flex items-center justify-between">
         <span className="flex items-center gap-2 text-[12.5px] font-semibold text-ink">
           <Cast size={13} strokeWidth={2.4} />
-          Cast to TV or speaker
+          {t("Cast to TV or speaker")}
         </span>
         <button
           onClick={onClose}
-          aria-label="Close"
+          aria-label={t("Close")}
           className="flex h-6 w-6 items-center justify-center rounded-full text-ink-subtle transition-colors hover:bg-raised hover:text-ink"
         >
           <X size={13} />
@@ -91,7 +93,7 @@ export function CastMenu({
             role="switch"
             aria-checked={burnSubsOnTv}
             onClick={() => setBurnSubsOnTv(!burnSubsOnTv)}
-            className="group mb-2 flex w-full items-start gap-3 rounded-xl border border-edge-soft bg-canvas/40 px-3 py-2.5 text-left transition-colors hover:border-edge hover:bg-canvas/55"
+            className="group mb-2 flex w-full items-start gap-3 rounded-xl border border-edge-soft bg-canvas/40 px-3 py-2.5 text-start transition-colors hover:border-edge hover:bg-canvas/55"
           >
             <span
               className={`mt-0.5 flex h-[18px] w-8 shrink-0 items-center rounded-full px-[3px] transition-colors duration-200 ${
@@ -111,12 +113,12 @@ export function CastMenu({
                   strokeWidth={2.4}
                   className={burnSubsOnTv ? "text-accent" : "text-ink-subtle"}
                 />
-                Burn in subtitles
+                {t("Burn in subtitles")}
               </span>
               <span className="text-[11px] leading-snug text-ink-subtle">
                 {burnSubsOnTv
-                  ? "Subtitles are baked into the picture so they always show. Re-encodes the video."
-                  : "Subtitles may not appear on the TV."}
+                  ? t("Subtitles are baked into the picture so they always show. Re-encodes the video.")
+                  : t("Subtitles may not appear on the TV.")}
               </span>
             </span>
           </button>
@@ -126,18 +128,18 @@ export function CastMenu({
       {loading ? (
         <div className="flex items-center gap-2 px-1 py-3 text-[12.5px] text-ink-muted">
           <Loader2 size={13} strokeWidth={2.2} className="animate-spin" />
-          Scanning your network…
+          {t("Scanning your network…")}
         </div>
       ) : devices.length === 0 ? (
         <div className="flex flex-col gap-2 px-1 py-3">
           <p className="text-[12.5px] text-ink-muted">
-            No Chromecast, DLNA, or Roku devices found. Make sure your TV is on, woken up, and on the same Wi-Fi.
+            {t("No Chromecast, DLNA, or Roku devices found. Make sure your TV is on, woken up, and on the same Wi-Fi.")}
           </p>
           <button
             onClick={() => setScanCount((c) => c + 1)}
             className="self-start rounded-md border border-edge-soft px-2 py-1 text-[11.5px] font-semibold text-ink-muted transition-colors hover:border-edge hover:text-ink"
           >
-            Scan again
+            {t("Scan again")}
           </button>
         </div>
       ) : (
@@ -146,7 +148,7 @@ export function CastMenu({
             <button
               key={d.id}
               onClick={() => onPick(d)}
-              className="flex items-center gap-3 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-canvas/65"
+              className="flex items-center gap-3 rounded-lg px-2.5 py-2 text-start transition-colors hover:bg-canvas/65"
             >
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-canvas/55 p-1">
                 <CastIcon device={d} size={28} />
@@ -156,12 +158,12 @@ export function CastMenu({
                   <span className="truncate">{d.name}</span>
                   {d.audio_only && (
                     <span className="shrink-0 rounded-md bg-accent/20 px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-[0.12em] text-accent">
-                      Audio
+                      {t("Audio")}
                     </span>
                   )}
                 </span>
                 <span className="truncate text-[11px] text-ink-subtle">
-                  {d.kind === "dlna" ? d.model ?? "DLNA TV" : d.model || `${d.host}:${d.port}`}
+                  {d.kind === "dlna" ? d.model ?? t("DLNA TV") : d.model || `${d.host}:${d.port}`}
                 </span>
               </div>
             </button>
@@ -170,7 +172,7 @@ export function CastMenu({
             onClick={() => setScanCount((c) => c + 1)}
             className="mt-1 self-start rounded-md px-2 py-1 text-[11px] font-medium text-ink-subtle transition-colors hover:bg-raised hover:text-ink"
           >
-            Rescan
+            {t("Rescan")}
           </button>
         </div>
       )}

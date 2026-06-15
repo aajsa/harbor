@@ -11,6 +11,7 @@ import {
   type ReactNode,
 } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
 import { useView } from "@/lib/view";
 
@@ -121,6 +122,7 @@ export function Row({
   viewAllLabel?: string;
 }) {
   const { settings } = useSettings();
+  const t = useT();
   const effMin = Math.max(72, Math.round(min * settings.posterScale));
   const containerRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
@@ -421,7 +423,7 @@ export function Row({
               onClick={onViewAll}
               className="group/va inline-flex shrink-0 items-center gap-1 text-[12.5px] font-medium text-ink-subtle transition-colors hover:text-ink"
             >
-              {viewAllLabel}
+              {t(viewAllLabel)}
               <ChevronRight
                 size={14}
                 strokeWidth={2.2}
@@ -474,6 +476,8 @@ function EdgeArrow({
   always?: boolean;
   onClick: () => void;
 }) {
+  const t = useT();
+  const label = t(side === "left" ? "Scroll left" : "Scroll right");
   if (always) {
     return (
       <div
@@ -483,7 +487,7 @@ function EdgeArrow({
       >
         <button
           onClick={onClick}
-          aria-label={`Scroll ${side}`}
+          aria-label={label}
           tabIndex={visible ? 0 : -1}
           className={`mx-1 flex h-12 w-12 items-center justify-center rounded-full border border-edge-soft/50 bg-canvas/90 text-ink shadow-[0_6px_20px_-6px_rgba(0,0,0,0.6)] backdrop-blur-md transition-transform duration-150 hover:scale-110 active:scale-95 ${
             visible ? "pointer-events-auto" : "pointer-events-none"
@@ -503,7 +507,7 @@ function EdgeArrow({
     <div className={`pointer-events-none absolute inset-y-0 z-30 flex w-14 items-center ${sideClass}`}>
       <button
         onClick={onClick}
-        aria-label={`Scroll ${side}`}
+        aria-label={label}
         tabIndex={visible ? 0 : -1}
         className={`pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full bg-canvas/85 text-ink backdrop-blur-md transition-all duration-200 hover:scale-105 hover:bg-canvas ${
           visible ? "opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100" : "pointer-events-none opacity-0"

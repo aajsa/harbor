@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Play, Tv } from "lucide-react";
 import type { Meta } from "@/lib/cinemeta";
+import { useT } from "@/lib/i18n";
 import type { IptvChannel } from "@/lib/iptv/types";
 import { channelNumber, fmtLeft } from "./now-format";
 import type { NowItem } from "./use-live-home";
@@ -14,6 +15,7 @@ export function NowCard({
   hydrated?: Meta | null;
   onPlay: (ch: IptvChannel) => void;
 }) {
+  const t = useT();
   const { channel, current, progress } = item;
   const [artErr, setArtErr] = useState(false);
   const [logoErr, setLogoErr] = useState(false);
@@ -21,14 +23,14 @@ export function NowCard({
   const art = backdrop && !artErr ? backdrop : null;
   const logo = channel.logo && !logoErr ? channel.logo : null;
   const chno = channelNumber(channel.attrs);
-  const left = current ? fmtLeft(current.endMs, Date.now()) : null;
+  const left = current ? fmtLeft(current.endMs, Date.now(), t) : null;
 
   return (
     <button
       type="button"
       data-art={backdrop || channel.logo || ""}
       onClick={() => onPlay(channel)}
-      aria-label={`Play ${channel.name}`}
+      aria-label={t("Play {name}", { name: channel.name })}
       className="group/now relative flex aspect-[16/9] w-full flex-col justify-end overflow-hidden rounded-lg border border-edge-soft/55 bg-elevated text-start transition-all duration-200 hover:border-edge hover:shadow-[0_10px_30px_-12px_rgba(0,0,0,0.6)]"
     >
       {art ? (
@@ -60,7 +62,7 @@ export function NowCard({
 
       <span className="absolute start-3 top-3 flex h-[22px] items-center gap-1.5 rounded-full bg-canvas/90 px-2.5 text-[10.5px] font-bold uppercase tracking-[0.16em] text-danger backdrop-blur">
         <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-danger" />
-        Live
+        {t("Live")}
       </span>
       <span className="absolute end-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-ink text-canvas opacity-0 shadow-[0_4px_14px_rgba(0,0,0,0.4)] transition-all duration-200 group-hover/now:opacity-100">
         <Play size={15} fill="currentColor" />
@@ -81,7 +83,7 @@ export function NowCard({
           <span className="truncate">{channel.name}</span>
         </div>
         <div dir="auto" className="truncate text-[14.5px] font-semibold leading-tight text-ink">
-          {current?.title || hydrated?.name || channel.group || "Live channel"}
+          {current?.title || hydrated?.name || channel.group || t("Live channel")}
         </div>
         {progress != null && (
           <div className="mt-1 flex items-center gap-2">

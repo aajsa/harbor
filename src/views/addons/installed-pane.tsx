@@ -4,6 +4,7 @@ import { AddonLogo, resolveAddonLogo } from "@/components/addon-logo";
 import { HoverTooltip } from "@/components/hover-tooltip";
 import { isAddonEnabled, setAddonEnabled } from "@/lib/addon-store";
 import type { ResolvedAddon } from "@/lib/addons-store/store";
+import { useT } from "@/lib/i18n";
 import { addonKey, idOf, nameOf, subtitleFromManifest } from "./addons-utils";
 
 export function InstalledPane({
@@ -21,6 +22,7 @@ export function InstalledPane({
   onManage?: (r: ResolvedAddon) => void;
   onReorder?: () => void;
 }) {
+  const t = useT();
   const q = search?.trim().toLowerCase() ?? "";
   const filtered = q
     ? installed.filter((r) => {
@@ -33,10 +35,9 @@ export function InstalledPane({
   if (installed.length === 0) {
     return (
       <div className="rounded-2xl border border-edge-soft bg-elevated/30 p-12 text-center">
-        <h3 className="font-display text-[22px] font-medium text-ink">No addons installed yet</h3>
+        <h3 className="font-display text-[22px] font-medium text-ink">{t("No addons installed yet")}</h3>
         <p className="mx-auto mt-2 max-w-md text-[13.5px] text-ink-muted">
-          Head to Discover. Cinemeta and OpenSubtitles cover the basics; Torrentio + a debrid key
-          cover almost everything else.
+          {t("Head to Discover. Cinemeta and OpenSubtitles cover the basics; Torrentio + a debrid key cover almost everything else.")}
         </p>
       </div>
     );
@@ -44,9 +45,9 @@ export function InstalledPane({
   if (filtered.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-edge-soft bg-canvas/30 p-10 text-center">
-        <p className="font-display text-[16px] font-medium text-ink">No installed addon matches that.</p>
+        <p className="font-display text-[16px] font-medium text-ink">{t("No installed addon matches that.")}</p>
         <p className="mt-1.5 text-[12.5px] text-ink-subtle">
-          Clear the search to see all {installed.length} installed.
+          {t("Clear the search to see all {n} installed.", { n: installed.length })}
         </p>
       </div>
     );
@@ -57,11 +58,11 @@ export function InstalledPane({
         <div className="flex justify-end">
           <button
             onClick={onReorder}
-            title="Change the order addons are tried in"
+            title={t("Change the order addons are tried in")}
             className="flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-edge-soft px-3 text-[11.5px] font-semibold uppercase tracking-[0.14em] text-ink-subtle transition-colors hover:border-edge hover:text-ink-muted"
           >
             <ArrowUpDown size={13} strokeWidth={2.4} />
-            Reorder
+            {t("Reorder")}
           </button>
         </div>
       )}
@@ -91,6 +92,7 @@ function InstalledRow({
   onUninstall: (r: ResolvedAddon) => Promise<void>;
   onManage?: (r: ResolvedAddon) => void;
 }) {
+  const t = useT();
   const r = resolved;
   const [busy, setBusy] = useState(false);
   const [enabled, setEnabled] = useState(() => isAddonEnabled(r.transportUrl));
@@ -143,7 +145,7 @@ function InstalledRow({
       <div className={`flex min-w-0 flex-1 flex-col gap-0.5 ${enabled ? "" : "opacity-55"}`}>
         <span className="truncate text-[14px] font-medium text-ink">{nameOf(r)}</span>
         <span className="truncate text-[11.5px] text-ink-subtle">
-          {enabled ? subtitleFromManifest(r) : "Off · catalogs and streams hidden"}
+          {enabled ? subtitleFromManifest(r) : t("Off · catalogs and streams hidden")}
         </span>
       </div>
       {!busy && (
@@ -151,14 +153,14 @@ function InstalledRow({
           side="top"
           align="center"
           className="shrink-0"
-          label={enabled ? "Enabled" : "Disabled"}
-          sublabel={enabled ? "Click to turn off" : "Click to turn on"}
+          label={enabled ? t("Enabled") : t("Disabled")}
+          sublabel={enabled ? t("Click to turn off") : t("Click to turn on")}
         >
           <button
             onClick={handleToggle}
             role="switch"
             aria-checked={enabled}
-            aria-label={enabled ? `Turn ${nameOf(r)} off` : `Turn ${nameOf(r)} on`}
+            aria-label={enabled ? t("Turn {name} off", { name: nameOf(r) }) : t("Turn {name} on", { name: nameOf(r) })}
             className={`relative h-[22px] w-10 shrink-0 rounded-full outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-accent/50 ${
               enabled ? "bg-accent" : "bg-edge/70 ring-1 ring-inset ring-edge-soft"
             }`}
@@ -177,11 +179,11 @@ function InstalledRow({
             e.stopPropagation();
             onManage(r);
           }}
-          title="Re-configure this addon and apply the updated link"
+          title={t("Re-configure this addon and apply the updated link")}
           className="flex shrink-0 items-center gap-1.5 rounded-full bg-raised px-3.5 py-1.5 text-[12px] font-semibold text-ink-muted ring-1 ring-edge-soft transition-colors hover:bg-elevated hover:text-ink hover:ring-edge"
         >
           <Settings2 size={12} strokeWidth={2.2} />
-          Manage
+          {t("Manage")}
         </button>
       )}
       <button
@@ -195,11 +197,11 @@ function InstalledRow({
       >
         {busy ? (
           <>
-            <span>Uninstalling</span>
+            <span>{t("Uninstalling")}</span>
             <DotsAnim />
           </>
         ) : (
-          "Installed"
+          t("Installed")
         )}
       </button>
     </div>

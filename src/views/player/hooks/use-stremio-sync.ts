@@ -225,12 +225,15 @@ export function cloudWriteId(
   return CLOUD_OK.test(metaId) ? metaId : null;
 }
 
-function videoIdFor(s: PlayerSrc, cid: string | null): string | null {
+export function videoIdFor(s: PlayerSrc, cid: string | null): string | null {
   if (!cid) return null;
   const isSeries = s.meta.type === "series" || !!s.episode;
   if (!isSeries || !s.episode) return cid;
   const threaded = s.episode.videoId ?? s.episode.kitsuStreamId;
   if (threaded && threaded.split(":")[0] === cid.split(":")[0]) return threaded;
+  if (cid.startsWith("tt") && s.episode.imdbSeason != null && s.episode.imdbEpisode != null) {
+    return `${cid}:${s.episode.imdbSeason}:${s.episode.imdbEpisode}`;
+  }
   return `${cid}:${s.episode.season}:${s.episode.episode}`;
 }
 

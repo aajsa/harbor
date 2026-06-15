@@ -7,6 +7,7 @@ import { useAnilist } from "@/lib/anilist/provider";
 import { useSimkl } from "@/lib/simkl/provider";
 import { useTrakt } from "@/lib/trakt/provider";
 import { useScrollMemory } from "@/lib/view";
+import { useT } from "@/lib/i18n";
 import { watchlistHas } from "@/lib/watchlist";
 import { AnilistTab } from "./library/anilist-tab";
 import { HistoryTab } from "./library/history-tab";
@@ -113,34 +114,34 @@ function Header({
   anilistConnected: boolean;
   simklConnected: boolean;
 }) {
+  const t = useT();
   return (
     <header className="flex flex-col gap-5">
       <div className="flex items-end justify-between gap-6">
         <div className="flex flex-col gap-1.5">
           <span className="text-[11px] font-bold uppercase tracking-[0.28em] text-ink-subtle">
-            My library
+            {t("My library")}
           </span>
           <h1 className="font-display text-[44px] font-medium leading-[1.05] text-ink">
-            Your collection.
+            {t("Your collection.")}
           </h1>
           <p className="text-[14px] leading-snug text-ink-muted">
-            Watchlist is what you've saved for later. History is everything you've watched. Local is
-            files on your computer.
+            {t("Watchlist is what you've saved for later. History is everything you've watched. Local is files on your computer.")}
           </p>
         </div>
       </div>
       <div className="flex items-center gap-1 border-b border-edge-soft">
         <TabBtn active={tab === "watchlist"} onClick={() => onTab("watchlist")}>
           <Bookmark size={14} strokeWidth={2.2} />
-          Watchlist
+          {t("Watchlist")}
         </TabBtn>
         <TabBtn active={tab === "history"} onClick={() => onTab("history")}>
           <Clock size={14} strokeWidth={2.2} />
-          History
+          {t("History")}
         </TabBtn>
         <TabBtn active={tab === "local"} onClick={() => onTab("local")}>
           <HardDrive size={14} strokeWidth={2.2} />
-          Local
+          {t("Local")}
         </TabBtn>
         {traktConnected && (
           <TabBtn active={tab === "trakt"} onClick={() => onTab("trakt")}>

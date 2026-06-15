@@ -9,8 +9,10 @@ import { tmdbPersonIdByName } from "@/lib/providers/tmdb";
 import { useSettings } from "@/lib/settings";
 import type { AwardType } from "@/lib/providers/wikidata";
 import { useView } from "@/lib/view";
+import { useT } from "@/lib/i18n";
 
 export function AwardView({ awardType }: { awardType: AwardType }) {
+  const t = useT();
   const meta = AWARD_CATALOG[awardType];
   const history = useMemo(
     () => readAwardHistory(awardType, meta.categories),
@@ -71,7 +73,7 @@ export function AwardView({ awardType }: { awardType: AwardType }) {
 
         {history.length === 0 && (
           <p className="rounded-2xl border border-edge-soft bg-elevated/30 p-6 text-[14px] leading-relaxed text-ink-muted">
-            No data shipped for this award yet. Re-run <code>node scripts/scrape-awards.mjs</code> to refresh the bundled dataset.
+            {t("No data shipped for this award yet. Re-run")} <code>node scripts/scrape-awards.mjs</code> {t("to refresh the bundled dataset.")}
           </p>
         )}
 
@@ -88,7 +90,7 @@ export function AwardView({ awardType }: { awardType: AwardType }) {
 
         {noResults && (
           <p className="rounded-2xl border border-edge-soft bg-elevated/30 p-5 text-[13.5px] text-ink-muted">
-            No winners match these filters.{" "}
+            {t("No winners match these filters.")}{" "}
             <button
               type="button"
               onClick={() => {
@@ -97,7 +99,7 @@ export function AwardView({ awardType }: { awardType: AwardType }) {
               }}
               className="text-ink underline-offset-4 hover:underline"
             >
-              Clear filters
+              {t("Clear filters")}
             </button>
             .
           </p>
@@ -127,6 +129,7 @@ function FilterBar({
   onQuery: (q: string) => void;
   tint: string;
 }) {
+  const t = useT();
   return (
     <section className="flex flex-col gap-4 rounded-2xl border border-edge-soft bg-elevated/40 p-5">
       <div className="flex items-center gap-3">
@@ -135,14 +138,14 @@ function FilterBar({
           type="text"
           value={query}
           onChange={(e) => onQuery(e.target.value)}
-          placeholder="Search by recipient or title…"
+          placeholder={t("Search by recipient or title…")}
           className="flex-1 bg-transparent text-[14.5px] text-ink placeholder:text-ink-subtle/65 outline-none"
         />
         {query && (
           <button
             type="button"
             onClick={() => onQuery("")}
-            aria-label="Clear search"
+            aria-label={t("Clear search")}
             className="flex h-7 w-7 items-center justify-center rounded-full text-ink-subtle transition-colors hover:bg-canvas/60 hover:text-ink"
           >
             <X size={13} strokeWidth={2.4} />
@@ -150,7 +153,7 @@ function FilterBar({
         )}
       </div>
       <div className="flex gap-1.5 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-        <DecadePill active={decade === null} label="All years" onClick={() => onDecade(null)} tint={tint} />
+        <DecadePill active={decade === null} label={t("All years")} onClick={() => onDecade(null)} tint={tint} />
         {decades.map((d) => (
           <DecadePill
             key={d}
@@ -191,6 +194,7 @@ function DecadePill({
 }
 
 function Banner({ type, tint }: { type: AwardType; tint: string }) {
+  const t = useT();
   const meta = AWARD_CATALOG[type];
   const bgGradient = `radial-gradient(ellipse at 18% 28%, ${tint}26 0%, transparent 56%), radial-gradient(ellipse at 82% 75%, ${tint}1a 0%, transparent 60%), linear-gradient(180deg, var(--color-canvas) 0%, color-mix(in oklab, var(--color-elevated) 65%, var(--color-canvas)) 100%)`;
   return (
@@ -221,9 +225,9 @@ function Banner({ type, tint }: { type: AwardType; tint: string }) {
             {meta.title}
           </h1>
           <p className="text-[13.5px] font-medium tabular-nums text-ink-muted">
-            Founded {meta.founded}
+            {t("Founded {year}", { year: meta.founded })}
             <span className="mx-3 opacity-40">·</span>
-            <span style={{ color: tint }}>{new Date().getFullYear() - meta.founded} years</span>
+            <span style={{ color: tint }}>{t("{n} years", { n: new Date().getFullYear() - meta.founded })}</span>
           </p>
         </div>
         <div className="hidden lg:flex items-center justify-center" style={{ color: tint }}>
@@ -243,6 +247,7 @@ function CategorySection({
   group: CategoryHistory;
   tint: string;
 }) {
+  const t = useT();
   return (
     <section className="flex flex-col gap-6">
       <div className="flex items-baseline justify-between gap-4">
@@ -250,7 +255,9 @@ function CategorySection({
           {group.category.name}
         </h2>
         <span className="text-[12px] font-semibold uppercase tracking-[0.18em] text-ink-subtle">
-          {group.entries.length} {group.entries.length === 1 ? "year" : "years"}
+          {group.entries.length === 1
+            ? t("{n} year", { n: group.entries.length })
+            : t("{n} years", { n: group.entries.length })}
         </span>
       </div>
       <ol className="flex flex-col">

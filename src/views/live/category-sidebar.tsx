@@ -1,5 +1,6 @@
 import { Eye, EyeOff, Layers, Pin, Search, Star, Tv, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useT } from "@/lib/i18n";
 import { FAVORITES_GROUP_KEY } from "@/lib/iptv/favorites";
 import { toggleGroupHidden, toggleGroupPin, useGroupPrefs } from "@/lib/iptv/group-order";
 
@@ -20,6 +21,7 @@ export function CategorySidebar({
   favoritesCount?: number;
   sourceId: string;
 }) {
+  const t = useT();
   const total = Array.from(counts.values()).reduce((a, b) => a + b, 0);
   const prefs = useGroupPrefs(sourceId);
   const pinnedSet = useMemo(() => new Set(prefs.pinned), [prefs.pinned]);
@@ -77,7 +79,7 @@ export function CategorySidebar({
   return (
     <aside
       role="listbox"
-      aria-label="Channel categories"
+      aria-label={t("Channel categories")}
       className="flex w-[220px] shrink-0 flex-col border-e border-s border-edge-soft/40 bg-surface/45"
       onKeyDown={handleKey}
     >
@@ -88,13 +90,13 @@ export function CategorySidebar({
             type="text"
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            placeholder="Filter categories"
+            placeholder={t("Filter categories")}
             className="flex-1 bg-transparent text-[12.5px] text-ink placeholder:text-ink-subtle focus:outline-none"
           />
           {filter && (
             <button
               onClick={() => setFilter("")}
-              aria-label="Clear filter"
+              aria-label={t("Clear filter")}
               className="text-ink-subtle transition-colors hover:text-ink"
             >
               <X size={13} strokeWidth={2} />
@@ -106,7 +108,7 @@ export function CategorySidebar({
         {showFavs && (
           <CategoryItem
             idx={favIdx}
-            label="Favorites"
+            label={t("Favorites")}
             count={favoritesCount}
             active={activeKey === FAVORITES_GROUP_KEY}
             onClick={() => onSelect(FAVORITES_GROUP_KEY)}
@@ -116,7 +118,7 @@ export function CategorySidebar({
         {!filter && (
           <CategoryItem
             idx={allIdx}
-            label="All channels"
+            label={t("All channels")}
             count={total}
             active={activeKey === "__ALL__"}
             onClick={() => onSelect(null)}
@@ -139,12 +141,12 @@ export function CategorySidebar({
         ))}
         {visibleGroups.length === 0 && (
           <div className="flex flex-col items-center gap-1.5 px-4 py-8 text-center text-[12px] text-ink-subtle">
-            <span>No categories match</span>
+            <span>{t("No categories match")}</span>
             <button
               onClick={() => setFilter("")}
               className="text-[11.5px] font-medium text-ink-muted underline-offset-2 hover:underline"
             >
-              Clear filter
+              {t("Clear filter")}
             </button>
           </div>
         )}
@@ -155,8 +157,8 @@ export function CategorySidebar({
             onClick={() => setShowHidden((v) => !v)}
             className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-[11.5px] font-medium text-ink-subtle transition-colors hover:bg-elevated/60 hover:text-ink"
           >
-            <span>{prefs.hidden.length} hidden</span>
-            <span className="text-ink-muted">{showHidden ? "Done" : "Manage"}</span>
+            <span>{t("{n} hidden", { n: prefs.hidden.length })}</span>
+            <span className="text-ink-muted">{showHidden ? t("Done") : t("Manage")}</span>
           </button>
           {showHidden && (
             <div className="mt-1 flex max-h-44 flex-col gap-0.5 overflow-y-auto">
@@ -168,7 +170,7 @@ export function CategorySidebar({
                   <span className="flex-1 truncate">{g}</span>
                   <button
                     onClick={() => toggleGroupHidden(sourceId, g)}
-                    aria-label={`Unhide ${g}`}
+                    aria-label={t("Unhide {name}", { name: g })}
                     className="flex h-6 w-6 items-center justify-center rounded text-ink-muted transition-colors hover:bg-elevated hover:text-ink"
                   >
                     <Eye size={13} strokeWidth={2} />
@@ -206,6 +208,7 @@ function CategoryItem({
   sourceId?: string;
   pinned?: boolean;
 }) {
+  const t = useT();
   const [errored, setErrored] = useState(false);
   const showLogo = logoUrl && !errored;
   const hasActions = !!groupName && !!sourceId;
@@ -261,8 +264,8 @@ function CategoryItem({
               e.stopPropagation();
               toggleGroupPin(sourceId!, groupName!);
             }}
-            title={pinned ? "Unpin from top" : "Pin category to top"}
-            aria-label={pinned ? "Unpin category" : "Pin category to top"}
+            title={pinned ? t("Unpin from top") : t("Pin category to top")}
+            aria-label={pinned ? t("Unpin category") : t("Pin category to top")}
             className={`flex h-6 w-6 items-center justify-center rounded-md ${
               pinned ? "bg-accent text-canvas" : "bg-canvas/90 text-ink-muted hover:text-ink"
             }`}
@@ -275,8 +278,8 @@ function CategoryItem({
               e.stopPropagation();
               toggleGroupHidden(sourceId!, groupName!);
             }}
-            title="Hide category"
-            aria-label="Hide category"
+            title={t("Hide category")}
+            aria-label={t("Hide category")}
             className="flex h-6 w-6 items-center justify-center rounded-md bg-canvas/90 text-ink-muted hover:text-ink"
           >
             <EyeOff size={12} strokeWidth={2.2} />

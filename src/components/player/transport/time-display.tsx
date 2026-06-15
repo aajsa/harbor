@@ -25,7 +25,7 @@ export function TimeStart({
     const positionText = fmtTime(positionSec);
     if (fmt === "elapsed-only") {
       return (
-        <span className="pointer-events-auto ml-2 shrink-0 font-medium tabular-nums text-[14px] text-white/90">
+        <span className="pointer-events-auto ms-2 shrink-0 font-medium tabular-nums text-[14px] text-white/90">
           {positionText}
         </span>
       );
@@ -33,7 +33,7 @@ export function TimeStart({
     const remaining = Math.max(0, (durationSec ?? 0) - positionSec);
     const endText = fmt === "remaining" ? `-${fmtTime(remaining)}` : fmtTime(durationSec ?? 0);
     return (
-      <span className="pointer-events-auto ml-2 shrink-0 font-medium tabular-nums text-[14px] text-white/90">
+      <span className="pointer-events-auto ms-2 shrink-0 font-medium tabular-nums text-[14px] text-white/90">
         {positionText}
         <span className="mx-1 text-white/55">/</span>
         {endText}

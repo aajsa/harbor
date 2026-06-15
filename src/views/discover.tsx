@@ -1,5 +1,6 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BackToTop } from "@/components/back-to-top";
+import { CollectionsRow } from "@/components/collections-row";
 import { CriticsPick } from "@/components/critics-pick";
 import { LazyMount } from "@/components/lazy-mount";
 import { DiscoveryQueueCta } from "@/components/discovery-queue-cta";
@@ -227,6 +228,11 @@ export function Discover({ active = true }: { active?: boolean }) {
               {i === 0 && <GenreTiles />}
               {i === 1 && queue.length > 0 && <DiscoveryQueueCta items={queue} />}
               {i === 2 && <LanguageTiles />}
+              {i === 2 && settings.tmdbKey && (
+                <LazyMount minHeight={260}>
+                  <CollectionsRow />
+                </LazyMount>
+              )}
               {i === 3 && criticsPick && (
                 <LazyMount minHeight={580}>
                   <CriticsPick meta={criticsPick} />

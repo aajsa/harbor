@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import type { Meta } from "@/lib/cinemeta";
 import { animeDetails } from "@/lib/providers/anime-detail";
 import { useSettings } from "@/lib/settings";
+import { useT } from "@/lib/i18n";
 import { activeLayout } from "@/lib/theme";
 import { IMG } from "@/lib/providers/tmdb/tmdb-client";
 import { tmdbDetails, type CastEntry, type TmdbDetail } from "@/lib/providers/tmdb/tmdb-details";
@@ -22,6 +23,7 @@ export function CastModal({
   meta: Meta;
   tmdbKey: string | null;
 }) {
+  const t = useT();
   const { settings } = useSettings();
   const [detail, setDetail] = useState<TmdbDetail | null>(null);
   const [loading, setLoading] = useState(false);
@@ -69,7 +71,12 @@ export function CastModal({
   if (!open) return null;
 
   const title = detail?.title ?? meta.name;
-  const poster = detail?.poster ? `${IMG}/w342${detail.poster}` : meta.poster;
+  const detailPoster = detail?.poster
+    ? detail.poster.startsWith("http")
+      ? detail.poster
+      : `${IMG}/w342${detail.poster}`
+    : null;
+  const poster = detailPoster ?? meta.poster;
   const overview = detail?.overview?.trim() || meta.description?.trim() || "";
   const year = detail?.year ?? meta.releaseInfo ?? meta.releaseDate?.slice(0, 4) ?? "";
   const rating = detail?.rating ?? meta.imdbRating ?? "";
@@ -87,16 +94,16 @@ export function CastModal({
         <header className="flex shrink-0 items-start justify-between gap-4 border-b border-edge-soft px-6 py-4">
           <div className="flex flex-col gap-0.5">
             <span className="text-[11px] font-bold uppercase tracking-[0.28em] text-ink-subtle">
-              About this title
+              {t("About this title")}
             </span>
             <span className="text-[15px] font-medium text-ink">
-              {meta.type === "series" ? "Series" : "Movie"}
+              {meta.type === "series" ? t("Series") : t("Movie")}
             </span>
           </div>
           <button
             onClick={onClose}
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-raised text-ink-muted transition-colors hover:bg-canvas/55 hover:text-ink"
-            aria-label="Close"
+            aria-label={t("Close")}
           >
             <X size={18} strokeWidth={2.2} />
           </button>
@@ -106,6 +113,7 @@ export function CastModal({
           <Header
             title={title}
             poster={poster}
+            fallback={meta.poster}
             year={year}
             rating={rating}
             runtime={runtime}
@@ -120,7 +128,7 @@ export function CastModal({
           <div className="flex items-center gap-2 border-t border-edge-soft px-6 pt-4 pb-2">
             <Users size={14} strokeWidth={2.2} className="text-ink-subtle" />
             <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-ink-subtle">
-              Cast
+              {t("Cast")}
             </span>
             {loading && <Loader2 size={13} className="animate-spin text-ink-subtle" />}
           </div>
@@ -129,11 +137,11 @@ export function CastModal({
             <CastStrip cast={detail.cast} />
           ) : !anime && !tmdbKey ? (
             <div className="px-6 pb-5 text-[13.5px] leading-relaxed text-ink-muted">
-              Add a TMDB key in Settings to see the cast for every title.
+              {t("Add a TMDB key in Settings to see the cast for every title.")}
             </div>
           ) : !loading ? (
             <div className="px-6 pb-5 text-[13.5px] leading-relaxed text-ink-muted">
-              Cast information isn't available for this title.
+              {t("Cast information isn't available for this title.")}
             </div>
           ) : null}
         </div>
@@ -145,6 +153,7 @@ export function CastModal({
 function Header({
   title,
   poster,
+  fallback,
   year,
   rating,
   runtime,
@@ -153,6 +162,7 @@ function Header({
 }: {
   title: string;
   poster: string | undefined;
+  fallback: string | undefined;
   year: string | undefined;
   rating: string | undefined;
   runtime: string | undefined;
@@ -160,6 +170,8 @@ function Header({
   overview: string;
 }) {
   const { settings } = useSettings();
+  const [imgSrc, setImgSrc] = useState(poster);
+  useEffect(() => setImgSrc(poster), [poster]);
   const ratingClass =
     activeLayout(settings.theme) === "stremio" ? "text-amber-400" : "text-accent";
   const facts: React.ReactNode[] = [];
@@ -175,10 +187,13 @@ function Header({
   if (runtime) facts.push(<span key="run">{runtime}</span>);
   return (
     <div className="flex gap-5 px-6 pt-5 pb-4">
-      {poster && (
+      {imgSrc && (
         <img
-          src={poster}
+          src={imgSrc}
           alt=""
+          onError={() => {
+            if (fallback && imgSrc !== fallback) setImgSrc(fallback);
+          }}
           className="h-44 w-28 shrink-0 rounded-lg object-cover ring-1 ring-edge-soft"
         />
       )}
@@ -221,12 +236,13 @@ function CrewRows({
   directors: TmdbDetail["directors"];
   writers: TmdbDetail["writers"];
 }) {
+  const t = useT();
   return (
     <div className="flex flex-col gap-1 border-t border-edge-soft bg-canvas/30 px-6 py-3">
       {directors.length > 0 && (
         <div className="flex items-baseline gap-2 text-[13px]">
           <span className="w-20 shrink-0 text-[10.5px] font-bold uppercase tracking-[0.18em] text-ink-subtle">
-            Director
+            {t("Director")}
           </span>
           <span className="text-ink">{directors.map((p) => p.name).join(", ")}</span>
         </div>
@@ -234,7 +250,7 @@ function CrewRows({
       {writers.length > 0 && (
         <div className="flex items-baseline gap-2 text-[13px]">
           <span className="w-20 shrink-0 text-[10.5px] font-bold uppercase tracking-[0.18em] text-ink-subtle">
-            Writer
+            {t("Writer")}
           </span>
           <span className="text-ink">
             {writers

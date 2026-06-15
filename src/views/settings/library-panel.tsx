@@ -266,7 +266,7 @@ export function LibraryPanel({
         />
         <KeyField
           label={t("Custom poster service")}
-          placeholder={t("https://posters.example.com or a pattern with {id}")}
+          placeholder={t("RPDB key above, https://btttr.cc, or a {imdbId} template")}
           value={posterSrvDraft}
           onChange={setPosterSrvDraft}
           onSave={() => {
@@ -277,10 +277,12 @@ export function LibraryPanel({
           iconSrc={rpdbLogo}
           help={
             <>
-              Two formats work: a bare RPDB-compatible server URL (your RPDB key above is still
-              sent), or a full URL pattern from services like BetterPosters containing{" "}
-              <code>{"{id}"}</code>. Patterns may also use <code>{"{imdbId}"}</code>,{" "}
-              <code>{"{tmdbId}"}</code>, and <code>{"{type}"}</code>. Leave empty for the default.
+              Leave empty to use your RPDB key above. Or paste{" "}
+              <strong>Better Posters</strong> (<code>https://btttr.cc</code>), a bare
+              RPDB-compatible server (your RPDB key is still sent), or a full URL template using{" "}
+              <code>{"{imdbId}"}</code>, <code>{"{tmdbId}"}</code>, <code>{"{type}"}</code>, or{" "}
+              <code>{"{id}"}</code>. PostersPlus needs the template form, e.g.{" "}
+              <code>{"postersplus.elfhosted.com/poster?tmdb_id={tmdbId}&imdb_id={imdbId}&type={type}"}</code>.
             </>
           }
         />

@@ -339,7 +339,7 @@ function PlacementPad({ settings, update }: { settings: Settings; update: (p: Pa
 
 function AssOverrideToggle({ settings, update }: { settings: Settings; update: (p: Partial<Settings>) => void }) {
   const t = useT();
-  const on = settings.subAssOverride !== "no";
+  const on = settings.subAssOverride !== "no" && settings.subAssOverride !== "scale";
   return (
     <PresetTip
       label={

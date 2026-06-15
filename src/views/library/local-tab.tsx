@@ -116,7 +116,7 @@ export function LocalTab() {
             type="button"
             onClick={onAddFolder}
             disabled={busy}
-            className="ml-auto flex h-9 items-center gap-1.5 rounded-full bg-raised px-3.5 text-[12.5px] font-semibold text-ink-muted transition-colors hover:bg-elevated hover:text-ink disabled:cursor-wait disabled:opacity-60"
+            className="ms-auto flex h-9 items-center gap-1.5 rounded-full bg-raised px-3.5 text-[12.5px] font-semibold text-ink-muted transition-colors hover:bg-elevated hover:text-ink disabled:cursor-wait disabled:opacity-60"
           >
             {busy ? (
               <Loader2 size={13} className="animate-spin" />

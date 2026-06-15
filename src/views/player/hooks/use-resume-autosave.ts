@@ -94,7 +94,13 @@ export function useResumeAutosave(params: {
   }, [snap.status]);
 
   useEffect(() => {
-    if (snap.status === "playing") return;
+    if (
+      snap.status === "playing" ||
+      snap.status === "loading" ||
+      snap.status === "idle" ||
+      snap.status === "ready"
+    )
+      return;
     persistNow(true);
   }, [snap.status]);
 

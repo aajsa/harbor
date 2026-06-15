@@ -9,6 +9,7 @@ import {
 } from "@/lib/addon-store";
 import { openInstallerViewport } from "@/components/installer-viewport";
 import { isWeb } from "@/lib/platform";
+import { useT } from "@/lib/i18n";
 import type { Addon } from "@/lib/addons";
 
 type Mode =
@@ -37,6 +38,7 @@ export function AddonInstallModal({
     opts: { replaceId?: string },
   ) => Promise<{ replaced: boolean; addon: Addon } | null>;
 }) {
+  const t = useT();
   const [pasted, setPasted] = useState(mode.kind === "install" ? mode.url : "");
   const [resolved, setResolved] = useState<ResolveMatch | null>(null);
   const [loading, setLoading] = useState(false);
@@ -86,7 +88,7 @@ export function AddonInstallModal({
       }
       setResolved({ manifest, url: parsed.url, matchKind, replaceId, replaceName });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Couldn't read that addon URL.");
+      setError(e instanceof Error ? e.message : t("Couldn't read that addon URL."));
     } finally {
       setLoading(false);
     }
@@ -104,9 +106,9 @@ export function AddonInstallModal({
       return;
     }
     const stages: InstallStage[] = [
-      { label: resolved.matchKind === "fresh" ? "Reading manifest" : "Reading new manifest", done: true },
-      { label: resolved.matchKind === "fresh" ? "Saving to library" : "Swapping configuration", done: false },
-      { label: "Syncing to Stremio", done: false },
+      { label: resolved.matchKind === "fresh" ? t("Reading manifest") : t("Reading new manifest"), done: true },
+      { label: resolved.matchKind === "fresh" ? t("Saving to library") : t("Swapping configuration"), done: false },
+      { label: t("Syncing to Stremio"), done: false },
     ];
     setInstallStage(stages);
     await new Promise((r) => setTimeout(r, 220));
@@ -120,7 +122,7 @@ export function AddonInstallModal({
       if (result) setDone({ replaced: result.replaced, manifest: resolved.manifest });
       else setInstallStage(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Install failed.");
+      setError(e instanceof Error ? e.message : t("Install failed."));
       setInstallStage(null);
     }
   };
@@ -158,10 +160,10 @@ export function AddonInstallModal({
             )}
             <div className="flex min-w-0 flex-col gap-0.5">
               <span className="text-[11px] font-bold uppercase tracking-[0.28em] text-ink-subtle">
-                {mode.kind === "manage" ? "Manage addon" : "Install addon"}
+                {mode.kind === "manage" ? t("Manage addon") : t("Install addon")}
               </span>
               <span className="truncate text-[15px] font-medium text-ink">
-                {mode.kind === "manage" ? mode.existing.name : "Add from URL"}
+                {mode.kind === "manage" ? mode.existing.name : t("Add from URL")}
               </span>
             </div>
           </div>
@@ -169,7 +171,7 @@ export function AddonInstallModal({
             onClick={onClose}
             disabled={!!installStage && !done}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-raised text-ink-muted transition-colors hover:bg-canvas/55 hover:text-ink disabled:opacity-40 disabled:hover:bg-raised disabled:hover:text-ink-muted"
-            aria-label="Close"
+            aria-label={t("Close")}
           >
             <X size={16} strokeWidth={2.2} />
           </button>
@@ -237,7 +239,7 @@ export function AddonInstallModal({
               onClick={onClose}
               className="flex h-10 items-center gap-1.5 rounded-full bg-raised px-4 text-[12.5px] font-semibold text-ink-muted transition-colors hover:bg-canvas/55 hover:text-ink"
             >
-              Cancel
+              {t("Cancel")}
             </button>
             <button
               onClick={onSubmit}
@@ -246,11 +248,11 @@ export function AddonInstallModal({
             >
               {!resolved
                 ? loading
-                  ? "Reading"
-                  : "Continue"
+                  ? t("Reading")
+                  : t("Continue")
                 : isUpdate
-                  ? "Update"
-                  : "Install"}
+                  ? t("Update")
+                  : t("Install")}
             </button>
           </footer>
         )}
@@ -268,6 +270,7 @@ function ManageStep1({
   hasResolved: boolean;
   onOpenSetup: () => void;
 }) {
+  const t = useT();
   return (
     <div
       className={`mb-5 flex flex-col gap-3 rounded-xl border border-edge-soft bg-canvas/40 p-4 transition-opacity ${
@@ -278,22 +281,12 @@ function ManageStep1({
         <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ink text-[10.5px] font-bold text-canvas">
           1
         </span>
-        <p className="text-[13.5px] font-semibold text-ink">Configure on the addon's setup page</p>
+        <p className="text-[13.5px] font-semibold text-ink">{t("Configure on the addon's setup page")}</p>
       </div>
       <p className="ps-7 text-[12.5px] leading-relaxed text-ink-muted">
-        {isWeb() ? (
-          <>
-            Click below to open <span className="font-semibold text-ink">{name}</span>'s setup page.
-            Pick your options, then copy the install link it gives you and paste it below to update
-            the addon.
-          </>
-        ) : (
-          <>
-            Click below to open <span className="font-semibold text-ink">{name}</span>'s setup page in
-            Harbor's built-in browser. Pick your options. When you click Install on their page, Harbor
-            catches the link automatically and updates the addon.
-          </>
-        )}
+        {isWeb()
+          ? t("Click below to open {name}'s setup page. Pick your options, then copy the install link it gives you and paste it below to update the addon.", { name })
+          : t("Click below to open {name}'s setup page in Harbor's built-in browser. Pick your options. When you click Install on their page, Harbor catches the link automatically and updates the addon.", { name })}
       </p>
       <button
         type="button"
@@ -301,12 +294,10 @@ function ManageStep1({
         className="ms-7 flex h-9 w-fit items-center gap-1.5 rounded-full bg-raised px-3.5 text-[12px] font-semibold text-ink-muted transition-colors hover:bg-elevated hover:text-ink"
       >
         <Settings2 size={12} strokeWidth={2.2} />
-        Open setup page
+        {t("Open setup page")}
       </button>
       <p className="mt-1 ps-7 text-[11.5px] leading-relaxed text-ink-subtle">
-        Heads-up: a few addons (like AIOStatus) don't pre-fill from the URL. If the form loads
-        blank, paste the existing manifest URL into their "Import from URL" field to restore your
-        settings.
+        {t("Heads-up: a few addons (like AIOStatus) don't pre-fill from the URL. If the form loads blank, paste the existing manifest URL into their \"Import from URL\" field to restore your settings.")}
       </p>
     </div>
   );
@@ -327,6 +318,7 @@ function PasteRow({
   step: number;
   managing: boolean;
 }) {
+  const t = useT();
   const inputRef = useRef<HTMLInputElement>(null);
   return (
     <div className="flex flex-col gap-2.5">
@@ -335,7 +327,7 @@ function PasteRow({
           <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ink text-[10.5px] font-bold text-canvas">
             {step}
           </span>
-          <p className="text-[13.5px] font-semibold text-ink">Or paste the install link manually</p>
+          <p className="text-[13.5px] font-semibold text-ink">{t("Or paste the install link manually")}</p>
         </div>
       )}
       <div className={managing ? "ps-7" : ""}>
@@ -361,7 +353,7 @@ function PasteRow({
               className="flex h-7 items-center gap-1 rounded-full bg-raised px-2.5 text-[11px] font-semibold text-ink-muted transition-colors hover:bg-elevated hover:text-ink disabled:opacity-50"
             >
               {loading ? <Loader2 size={11} className="animate-spin" /> : null}
-              {loading ? "" : "Read"}
+              {loading ? "" : t("Read")}
             </button>
           )}
         </div>
@@ -379,6 +371,7 @@ function ManifestPreview({
   matchKind: ResolveMatch["matchKind"];
   replaceName: string | null;
 }) {
+  const t = useT();
   const types = manifest.types ?? [];
   const resources = (manifest.resources ?? []).map((r) =>
     typeof r === "string" ? r : r.name,
@@ -400,7 +393,7 @@ function ManifestPreview({
             <h3 className="truncate text-[16px] font-semibold text-ink">{manifest.name}</h3>
             {matchKind !== "fresh" && (
               <span className="rounded-full bg-amber-300/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-amber-300 ring-1 ring-amber-300/30">
-                Update
+                {t("Update")}
               </span>
             )}
           </div>
@@ -416,18 +409,17 @@ function ManifestPreview({
       </div>
       {matchKind === "hostname-match" && replaceName && (
         <p className="rounded-lg bg-amber-300/[0.06] px-3 py-2 text-[12px] leading-relaxed text-amber-200 ring-1 ring-amber-300/20">
-          Looks like a re-configure of <span className="font-semibold">{replaceName}</span>. We'll
-          replace the existing entry so you don't end up with two copies.
+          {t("Looks like a re-configure of {name}. We'll replace the existing entry so you don't end up with two copies.", { name: replaceName })}
         </p>
       )}
       {(types.length > 0 || resources.length > 0) && (
         <div className="flex flex-wrap gap-1.5 border-t border-edge-soft pt-3">
-          {types.map((t) => (
+          {types.map((type) => (
             <span
-              key={`t-${t}`}
+              key={`t-${type}`}
               className="rounded-full bg-raised px-2.5 py-0.5 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-ink-muted"
             >
-              {t}
+              {type}
             </span>
           ))}
           {resources.map((r) => (
@@ -453,6 +445,7 @@ function InstallingPane({
   manifest: Addon["manifest"] | null;
   isUpdate: boolean;
 }) {
+  const t = useT();
   return (
     <div className="flex flex-col items-center gap-5 py-6">
       <div className="relative flex h-16 w-16 items-center justify-center">
@@ -467,9 +460,11 @@ function InstallingPane({
       </div>
       <div className="flex flex-col items-center gap-1 text-center">
         <p className="text-[15px] font-semibold text-ink">
-          {isUpdate ? "Updating" : "Installing"} {manifest?.name ?? "addon"}
+          {isUpdate
+            ? t("Updating {name}", { name: manifest?.name ?? t("addon") })
+            : t("Installing {name}", { name: manifest?.name ?? t("addon") })}
         </p>
-        <p className="text-[12.5px] text-ink-subtle">Hang tight, won't be a sec.</p>
+        <p className="text-[12.5px] text-ink-subtle">{t("Hang tight, won't be a sec.")}</p>
       </div>
       <ul className="flex w-full max-w-xs flex-col gap-2 pt-2">
         {stages.map((s, i) => (
@@ -504,6 +499,7 @@ function SuccessPane({
   replaced: boolean;
   onClose: () => void;
 }) {
+  const t = useT();
   return (
     <div className="flex flex-col items-center gap-4 py-6 text-center animate-in fade-in zoom-in-95 duration-200">
       <div className="relative flex h-16 w-16 items-center justify-center">
@@ -514,14 +510,14 @@ function SuccessPane({
       </div>
       <div className="flex flex-col gap-1">
         <h3 className="text-[18px] font-semibold text-ink">
-          {replaced ? "Updated" : "Installed"}
+          {replaced ? t("Updated") : t("Installed")}
         </h3>
         {manifest && (
           <p className="text-[13px] text-ink-muted">
             <span className="font-semibold text-ink">{manifest.name}</span>{" "}
             {replaced
-              ? "is now using your new configuration."
-              : "is ready. Open Discover or hit Play on a title to use it."}
+              ? t("is now using your new configuration.")
+              : t("is ready. Open Discover or hit Play on a title to use it.")}
           </p>
         )}
       </div>
@@ -530,7 +526,7 @@ function SuccessPane({
         onClick={onClose}
         className="mt-2 flex h-10 items-center gap-1.5 rounded-full bg-ink px-5 text-[13px] font-semibold text-canvas transition-opacity hover:opacity-90"
       >
-        Done
+        {t("Done")}
       </button>
     </div>
   );

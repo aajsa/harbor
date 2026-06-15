@@ -4,6 +4,7 @@ import { AgeGateModal } from "@/components/age-gate-modal";
 import { HarborLoader } from "@/components/harbor-loader";
 import { useScrollMemory, useView } from "@/lib/view";
 import { useSettings } from "@/lib/settings";
+import { useT } from "@/lib/i18n";
 import { AddonsMosaicBackdrop } from "@/components/addons-mosaic-backdrop";
 import { CURATED_RAILS, heroEntry } from "@/lib/addons-store/curated";
 import { useAddonsCatalog, buildRail, type ResolvedAddon } from "@/lib/addons-store/store";
@@ -59,6 +60,7 @@ const BROWSE_MODES: Array<{
 void Library;
 
 export function AddonsView() {
+  const t = useT();
   const { settings, update } = useSettings();
   const { authKey } = useAuth();
   const { byId, installedIds, loading, refetch } = useAddonsCatalog(settings.showAdultAddons);
@@ -193,13 +195,13 @@ export function AddonsView() {
         }),
       );
       refetch();
-      showToast("ok", `Installed`, {
+      showToast("ok", t("Installed"), {
         id: addon.manifest.id,
         name: addon.manifest.name,
         logo: addon.manifest.logo ?? r.manifest?.logo ?? null,
       });
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Install failed.";
+      const msg = e instanceof Error ? e.message : t("Install failed.");
       console.warn("[addons] install failed", e);
       showToast("error", msg);
     }
@@ -216,10 +218,10 @@ export function AddonsView() {
       showToast(
         "ok",
         result.replaced
-          ? "Updated"
+          ? t("Updated")
           : result.syncedToStremio
-            ? "Installed"
-            : "Installed locally",
+            ? t("Installed")
+            : t("Installed locally"),
         {
           id: result.addon.manifest.id,
           name: result.addon.manifest.name,
@@ -228,7 +230,7 @@ export function AddonsView() {
       );
       return result.addon.manifest.id;
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Install failed.";
+      const msg = e instanceof Error ? e.message : t("Install failed.");
       console.warn("[addons] installFromUrl failed", e);
       showToast("error", msg);
       return null;
@@ -245,14 +247,14 @@ export function AddonsView() {
         }),
       );
       refetch();
-      showToast("ok", "Removed", {
+      showToast("ok", t("Removed"), {
         id,
         name: r.manifest?.name ?? id,
         logo: r.manifest?.logo ?? null,
       });
     } catch (e) {
       console.warn("[addons] uninstall failed", e);
-      showToast("error", "Couldn't remove. Try again.");
+      showToast("error", t("Couldn't remove. Try again."));
     }
   };
 
@@ -286,13 +288,13 @@ export function AddonsView() {
       <header className="shrink-0 px-12 pt-20 pb-3">
         <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
           <nav className="flex flex-wrap items-center gap-1">
-            {(["discover", "browse", "installed"] as Tab[]).map((t) => {
-              const active = tab === t;
-              if (t === "installed") {
+            {(["discover", "browse", "installed"] as Tab[]).map((tabId) => {
+              const active = tab === tabId;
+              if (tabId === "installed") {
                 return (
                   <button
-                    key={t}
-                    onClick={() => setTab(t)}
+                    key={tabId}
+                    onClick={() => setTab(tabId)}
                     className={`flex h-12 items-center gap-2 rounded-full px-4 text-[14px] font-semibold transition-colors ${
                       active
                         ? "bg-ink text-canvas"
@@ -300,7 +302,7 @@ export function AddonsView() {
                     }`}
                   >
                     <Check size={15} strokeWidth={2.6} className={active ? "" : "text-accent"} />
-                    <span>Installed</span>
+                    <span>{t("Installed")}</span>
                     <span
                       className={`min-w-[1.5rem] rounded-full px-1.5 py-0.5 text-[11.5px] font-bold tabular-nums ${
                         active ? "bg-canvas/15 text-canvas" : "bg-edge text-ink-muted"
@@ -314,30 +316,29 @@ export function AddonsView() {
               const btn = (
                 <button
                   onClick={() => {
-                    setTab(t);
-                    if (t === "browse") setCategoryFilter(null);
+                    setTab(tabId);
+                    if (tabId === "browse") setCategoryFilter(null);
                   }}
-                  className={`flex h-12 items-center rounded-full px-5 text-[14px] font-semibold capitalize transition-colors ${
+                  className={`flex h-12 items-center rounded-full px-5 text-[14px] font-semibold transition-colors ${
                     active
                       ? "bg-ink text-canvas"
                       : "text-ink-muted hover:bg-elevated hover:text-ink"
                   }`}
                 >
-                  {t}
+                  {tabId === "discover" ? t("Discover") : t("Browse")}
                 </button>
               );
-              if (t === "discover") {
+              if (tabId === "discover") {
                 return (
-                  <div key={t} className="group relative">
+                  <div key={tabId} className="group relative">
                     {btn}
-                    <div className="pointer-events-none invisible absolute left-0 top-full z-50 mt-2 w-80 rounded-xl border border-edge-soft bg-elevated/95 px-4 py-3 text-[12.5px] leading-relaxed text-ink-muted opacity-0 shadow-xl backdrop-blur-md transition duration-150 group-hover:visible group-hover:opacity-100">
-                      Curated for popularity and reliability. No paid placements. Install anything
-                      else by URL on the Browse tab.
+                    <div className="pointer-events-none invisible absolute start-0 top-full z-50 mt-2 w-80 rounded-xl border border-edge-soft bg-elevated/95 px-4 py-3 text-[12.5px] leading-relaxed text-ink-muted opacity-0 shadow-xl backdrop-blur-md transition duration-150 group-hover:visible group-hover:opacity-100">
+                      {t("Curated for popularity and reliability. No paid placements. Install anything else by URL on the Browse tab.")}
                     </div>
                   </div>
                 );
               }
-              return <span key={t}>{btn}</span>;
+              return <span key={tabId}>{btn}</span>;
             })}
           </nav>
           <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
@@ -353,7 +354,7 @@ export function AddonsView() {
                   setAgeGateOpen(true);
                 }
               }}
-              title={settings.showAdultAddons ? "Hide adult addons" : "Show adult addons"}
+              title={settings.showAdultAddons ? t("Hide adult addons") : t("Show adult addons")}
               className={`flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[11.5px] font-semibold uppercase tracking-[0.14em] transition-colors ${
                 settings.showAdultAddons
                   ? "border-ink bg-ink/10 text-ink"
@@ -371,7 +372,7 @@ export function AddonsView() {
                   </svg>
                 )}
               </span>
-              <span>Adult</span>
+              <span>{t("Adult")}</span>
             </button>
             {tab === "browse" && (
               <button
@@ -383,7 +384,7 @@ export function AddonsView() {
                   strokeWidth={2.4}
                   className={`transition-transform duration-300 ${filtersOpen ? "rotate-90" : "-rotate-90"}`}
                 />
-                {filtersOpen ? "Hide" : "Filters"}
+                {filtersOpen ? t("Hide") : t("Filters")}
               </button>
             )}
           </div>
@@ -404,7 +405,7 @@ export function AddonsView() {
                       : "bg-elevated/40 text-ink-muted ring-1 ring-edge-soft/60 hover:bg-elevated/70 hover:text-ink"
                   }`}
                 >
-                  All
+                  {t("All")}
                 </button>
                 {saCategories.filter((c) => settings.showAdultAddons || c.slug !== "nsfw").map((c) => {
                   const active = categoryFilter === c.slug;
@@ -430,7 +431,7 @@ export function AddonsView() {
                       key={m.id}
                       type="button"
                       onClick={() => setBrowseMode(m.id)}
-                      title={m.sub}
+                      title={t(m.sub)}
                       className={`flex h-10 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-semibold transition-colors ${
                         active
                           ? "bg-ink text-canvas"
@@ -438,7 +439,7 @@ export function AddonsView() {
                       }`}
                     >
                       <m.Icon size={13} strokeWidth={2.4} className={active ? "" : "text-accent"} />
-                      {m.label}
+                      {t(m.label)}
                     </button>
                   );
                 })}
@@ -451,7 +452,7 @@ export function AddonsView() {
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-12 pb-20 pt-6">
         {loading && allAddons.length === 0 ? (
           <div className="flex h-full items-center justify-center py-24">
-            <HarborLoader size="lg" caption="Loading the catalog" keyed />
+            <HarborLoader size="lg" caption={t("Loading the catalog")} keyed />
           </div>
         ) : tab === "discover" ? (
           <DiscoverPane
@@ -509,7 +510,7 @@ export function AddonsView() {
               refetch();
               showToast(
                 "ok",
-                result.replaced ? "Updated" : result.syncedToStremio ? "Installed" : "Installed locally",
+                result.replaced ? t("Updated") : result.syncedToStremio ? t("Installed") : t("Installed locally"),
                 {
                   id: result.addon.manifest.id,
                   name: result.addon.manifest.name,
@@ -518,7 +519,7 @@ export function AddonsView() {
               );
               return { replaced: result.replaced, addon: result.addon };
             } catch (e) {
-              const msg = e instanceof Error ? e.message : "Install failed.";
+              const msg = e instanceof Error ? e.message : t("Install failed.");
               showToast("error", msg);
               return null;
             }
@@ -537,8 +538,8 @@ export function AddonsView() {
             showToast(
               "ok",
               scope === "cloud"
-                ? "Addon order synced to your Stremio account"
-                : "Addon order saved on this device",
+                ? t("Addon order synced to your Stremio account")
+                : t("Addon order saved on this device"),
             );
           }}
         />

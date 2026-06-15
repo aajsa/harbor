@@ -1,5 +1,6 @@
 import { Link } from "lucide-react";
 import { useState } from "react";
+import { useT } from "@/lib/i18n";
 
 export function AddByUrlBar({
   onSubmit,
@@ -8,6 +9,7 @@ export function AddByUrlBar({
   onSubmit: (raw: string) => Promise<void>;
   compact?: boolean;
 }) {
+  const t = useT();
   const [value, setValue] = useState("");
   const [busy, setBusy] = useState(false);
   const [focused, setFocused] = useState(false);
@@ -28,8 +30,8 @@ export function AddByUrlBar({
   const btnText = compact ? "text-[12.5px]" : "text-[14.5px]";
   const btnPad = compact ? "px-4" : "px-6";
   const placeholder = compact
-    ? "Paste manifest URL or stremio:// link"
-    : "Install from URL: paste any manifest or stremio:// link";
+    ? t("Paste manifest URL or stremio:// link")
+    : t("Install from URL: paste any manifest or stremio:// link");
   return (
     <div className="flex items-center gap-2">
       <div
@@ -64,7 +66,7 @@ export function AddByUrlBar({
           disabled={!value.trim() || busy}
           className={`flex ${heightClass} items-center gap-1.5 ${radius} bg-ink ${btnPad} ${btnText} font-semibold text-canvas transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40`}
         >
-          {busy ? "Installing…" : "Install"}
+          {busy ? t("Installing…") : t("Install")}
         </button>
       )}
     </div>

@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight, ExternalLink, Quote, X } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import { useT } from "@/lib/i18n";
 import type { CriticReview } from "@/lib/providers/tmdb";
 import { openUrl } from "@/lib/window";
 import { LinkedReview } from "./linked-review";
@@ -30,6 +31,7 @@ export function OverviewModal({
   reviewIndex?: number;
   onNavReview?: (dir: 1 | -1) => void;
 }) {
+  const t = useT();
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -67,7 +69,7 @@ export function OverviewModal({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={`${title} overview`}
+      aria-label={t("{title} overview", { title })}
       onClick={onClose}
       className="fixed inset-0 z-[120] flex items-center justify-center bg-canvas/85 p-8 backdrop-blur-sm"
     >
@@ -78,14 +80,14 @@ export function OverviewModal({
         <button
           type="button"
           onClick={onClose}
-          aria-label="Close overview"
+          aria-label={t("Close overview")}
           className="absolute end-5 top-5 flex h-9 w-9 items-center justify-center rounded-full border border-edge-soft text-ink-muted transition-colors duration-150 hover:bg-elevated hover:text-ink"
         >
           <X size={18} />
         </button>
         <div className="flex flex-col gap-1.5">
           <span className="text-[11.5px] uppercase tracking-[0.2em] text-ink-subtle">
-            {review ? "Reader review" : "Synopsis"}
+            {review ? t("Reader review") : t("Synopsis")}
           </span>
           <h3 className="font-display text-[24px] font-medium tracking-tight text-ink">{title}</h3>
         </div>
@@ -113,7 +115,7 @@ export function OverviewModal({
                     <button
                       type="button"
                       onClick={() => onNavReview(-1)}
-                      aria-label="Previous review"
+                      aria-label={t("Previous review")}
                       className="flex h-7 w-7 items-center justify-center rounded-full border border-edge-soft text-ink-muted transition-colors hover:bg-elevated hover:text-ink"
                     >
                       <ChevronLeft size={15} strokeWidth={2.2} className="dir-icon" />
@@ -124,7 +126,7 @@ export function OverviewModal({
                     <button
                       type="button"
                       onClick={() => onNavReview(1)}
-                      aria-label="Next review"
+                      aria-label={t("Next review")}
                       className="flex h-7 w-7 items-center justify-center rounded-full border border-edge-soft text-ink-muted transition-colors hover:bg-elevated hover:text-ink"
                     >
                       <ChevronRight size={15} strokeWidth={2.2} className="dir-icon" />
@@ -137,7 +139,7 @@ export function OverviewModal({
                     onClick={() => openUrl(review.url!)}
                     className="inline-flex items-center gap-1.5 rounded-full border border-edge px-3 py-1 text-[11.5px] font-semibold uppercase tracking-[0.14em] text-ink-muted transition-colors hover:bg-elevated hover:text-ink"
                   >
-                    Source <ExternalLink size={11} strokeWidth={2} />
+                    {t("Source")} <ExternalLink size={11} strokeWidth={2} />
                   </button>
                 )}
               </div>

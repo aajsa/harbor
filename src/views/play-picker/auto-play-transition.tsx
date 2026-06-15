@@ -49,7 +49,8 @@ export function AutoPlayTransition({
         />
         {episode && (
           <p className="text-[12.5px] font-semibold uppercase tracking-[0.32em] text-white/70">
-            S{episode.season} · E{String(episode.episode).padStart(2, "0")}
+            S{episode.imdbSeason ?? episode.season} · E
+            {String(episode.imdbEpisode ?? episode.episode).padStart(2, "0")}
             {episode.name ? ` · ${episode.name}` : ""}
           </p>
         )}

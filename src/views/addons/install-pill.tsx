@@ -1,6 +1,7 @@
 import { Check, Loader2, Plus, Settings2, X } from "lucide-react";
 import { useState } from "react";
 import type { ResolvedAddon } from "@/lib/addons-store/store";
+import { useT } from "@/lib/i18n";
 import { withMinDuration } from "./addons-utils";
 
 const MIN_INSTALL_FEEDBACK_MS = 650;
@@ -18,6 +19,7 @@ export function InstallPill({
   onUninstall: () => void | Promise<void>;
   onOpen: () => void;
 }) {
+  const t = useT();
   const [busy, setBusy] = useState(false);
 
   const runInstall = async (e: React.MouseEvent) => {
@@ -49,7 +51,7 @@ export function InstallPill({
         className="flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-full bg-ink/80 px-5 text-[13.5px] font-semibold text-canvas transition-transform duration-150"
       >
         <Loader2 size={14} strokeWidth={2.4} className="animate-spin" />
-        Installing
+        {t("Installing")}
       </button>
     );
   }
@@ -62,8 +64,8 @@ export function InstallPill({
       >
         <Check size={14} strokeWidth={2.6} className="block text-accent group-hover/pill:hidden" />
         <X size={14} strokeWidth={2.6} className="hidden group-hover/pill:block" />
-        <span className="block group-hover/pill:hidden">Installed</span>
-        <span className="hidden group-hover/pill:block">Remove</span>
+        <span className="block group-hover/pill:hidden">{t("Installed")}</span>
+        <span className="hidden group-hover/pill:block">{t("Remove")}</span>
       </button>
     );
   }
@@ -79,7 +81,7 @@ export function InstallPill({
         className="flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-full bg-ink px-5 text-[13.5px] font-semibold text-canvas transition-all duration-150 ease-out hover:opacity-90 active:scale-[0.96]"
       >
         <Settings2 size={14} strokeWidth={2.2} />
-        Set up
+        {t("Set up")}
       </button>
     );
   }
@@ -89,7 +91,7 @@ export function InstallPill({
       className="flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-full bg-ink px-5 text-[13.5px] font-semibold text-canvas transition-all duration-150 ease-out hover:opacity-90 active:scale-[0.96]"
     >
       <Plus size={14} strokeWidth={2.6} />
-      Install
+      {t("Install")}
     </button>
   );
 }

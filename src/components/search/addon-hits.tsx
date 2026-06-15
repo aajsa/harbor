@@ -1,15 +1,17 @@
 import { Blocks, Check, ChevronRight } from "lucide-react";
 import type { AddonHit } from "@/lib/search-addon-index";
+import { useT } from "@/lib/i18n";
 import { useView } from "@/lib/view";
 
 export function AddonHits({ hits, onClose }: { hits: AddonHit[]; onClose: () => void }) {
   const { openAddonDetail } = useView();
+  const t = useT();
   if (hits.length === 0) return null;
   return (
     <section className="flex flex-col gap-3">
       <h3 className="flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.2em] text-ink-subtle">
         <Blocks size={11} strokeWidth={2.2} />
-        Addons
+        {t("Addons")}
       </h3>
       <div className="grid gap-1.5">
         {hits.map((a) => (
@@ -34,7 +36,7 @@ export function AddonHits({ hits, onClose }: { hits: AddonHit[]; onClose: () => 
                 {a.installed && (
                   <span className="flex shrink-0 items-center gap-1 rounded-full bg-accent/15 px-2 py-0.5 text-[10.5px] font-semibold text-accent">
                     <Check size={10} strokeWidth={3} />
-                    Installed
+                    {t("Installed")}
                   </span>
                 )}
               </div>

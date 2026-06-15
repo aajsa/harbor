@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { useProfiles } from "@/lib/profiles";
 import { useSettings } from "@/lib/settings";
 import { useTogether } from "@/lib/together/provider";
+import { useT } from "@/lib/i18n";
 import { ColorPicker } from "./color-picker";
 import { Section } from "./shared";
 import { AvatarRing } from "./account/avatar-ring";
@@ -12,6 +13,7 @@ import { resizeAvatar } from "./account/avatar-utils";
 import { SyncedAddonsCard } from "./account/synced-addons-card";
 
 export function AccountStub() {
+  const t = useT();
   const { user, signOut } = useAuth();
   const { settings, update } = useSettings();
   const { displayName, setDisplayName } = useTogether();
@@ -68,8 +70,8 @@ export function AccountStub() {
   return (
     <div className="flex flex-col gap-5">
       <Section
-        title="Harbor identity"
-        subtitle="Your face in Watch Together rooms, sessions, and chat. Sits on top of your Stremio account."
+        title={t("Harbor identity")}
+        subtitle={t("Your face in Watch Together rooms, sessions, and chat. Sits on top of your Stremio account.")}
       >
         <div className="flex items-center gap-5 rounded-2xl border border-edge-soft bg-canvas/40 p-5">
           <AvatarRing
@@ -110,7 +112,7 @@ export function AccountStub() {
                   }}
                   className="h-10 rounded-xl bg-ink px-4 text-[12.5px] font-semibold text-canvas"
                 >
-                  Save
+                  {t("Save")}
                 </button>
               </div>
             ) : (
@@ -145,14 +147,14 @@ export function AccountStub() {
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
                   <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                 </svg>
-                Upload photo
+                {t("Upload photo")}
               </button>
               {customAvatar && (
                 <button
                   onClick={() => pushIdentity({ harborAvatar: null })}
                   className="flex h-9 items-center rounded-lg border border-edge-soft px-3 text-[12.5px] font-medium text-ink-subtle transition-colors hover:border-danger/40 hover:text-danger"
                 >
-                  Reset to {stremioAvatar ? "Stremio avatar" : "default"}
+                  {stremioAvatar ? t("Reset to Stremio avatar") : t("Reset to default")}
                 </button>
               )}
             </div>
@@ -165,8 +167,8 @@ export function AccountStub() {
       </Section>
 
       <Section
-        title="Stremio account"
-        subtitle="Library, watch progress, and addon collection sync from this account."
+        title={t("Stremio account")}
+        subtitle={t("Library, watch progress, and addon collection sync from this account.")}
       >
         {user ? (
           <div className="relative flex flex-col gap-3 overflow-hidden rounded-2xl border border-edge-soft bg-canvas/40 p-5">
@@ -181,7 +183,7 @@ export function AccountStub() {
             <div className="flex items-center justify-between gap-4">
               <div className="flex min-w-0 flex-col">
                 <span className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-ink-subtle">
-                  Email
+                  {t("Email")}
                 </span>
                 <span className="truncate font-mono text-[14.5px] text-ink">
                   {reveal ? user.email : maskedEmail}
@@ -191,13 +193,13 @@ export function AccountStub() {
                 onClick={() => setReveal((v) => !v)}
                 className="flex h-9 shrink-0 items-center rounded-lg border border-edge-soft px-3 text-[12.5px] font-medium text-ink-muted transition-colors hover:border-edge hover:text-ink"
               >
-                {reveal ? "Hide" : "Reveal"}
+                {reveal ? t("Hide") : t("Reveal")}
               </button>
             </div>
             <div className="flex items-center justify-between gap-4">
               <div className="flex min-w-0 flex-col">
                 <span className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-ink-subtle">
-                  Stremio ID
+                  {t("Stremio ID")}
                 </span>
                 <span className="truncate font-mono text-[12.5px] text-ink-muted">{user._id}</span>
               </div>
@@ -207,37 +209,37 @@ export function AccountStub() {
                 onClick={() => setShowAuth(true)}
                 className="flex h-10 items-center gap-1.5 rounded-xl border border-edge-soft px-4 text-[12.5px] font-medium text-ink-muted transition-colors hover:border-edge hover:text-ink"
               >
-                Re-authenticate
+                {t("Re-authenticate")}
               </button>
               <button
                 onClick={signOut}
                 className="flex h-10 items-center gap-1.5 rounded-xl border border-edge-soft px-4 text-[12.5px] font-medium text-ink-subtle transition-colors hover:border-danger/40 hover:bg-danger/10 hover:text-danger"
               >
-                Sign out
+                {t("Sign out")}
               </button>
             </div>
           </div>
         ) : (
           <div className="flex items-center justify-between gap-4 rounded-2xl border border-edge-soft bg-canvas/40 p-5">
             <div className="flex flex-col">
-              <span className="text-[14px] font-medium text-ink">Not signed in</span>
+              <span className="text-[14px] font-medium text-ink">{t("Not signed in")}</span>
               <span className="text-[12.5px] text-ink-subtle">
-                Sign in to sync your library, watch progress, and addons.
+                {t("Sign in to sync your library, watch progress, and addons.")}
               </span>
             </div>
             <button
               onClick={() => setShowAuth(true)}
               className="flex h-10 items-center gap-1.5 rounded-xl bg-ink px-4 text-[13px] font-semibold text-canvas transition-transform hover:scale-[1.02]"
             >
-              Sign in
+              {t("Sign in")}
             </button>
           </div>
         )}
       </Section>
 
       <Section
-        title="Synced addons"
-        subtitle="Harbor pulls your addon collection from Stremio. Manage individual addons in Streaming sources."
+        title={t("Synced addons")}
+        subtitle={t("Harbor pulls your addon collection from Stremio. Manage individual addons in Streaming sources.")}
       >
         <SyncedAddonsCard />
       </Section>

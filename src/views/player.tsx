@@ -654,7 +654,7 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
           hoverTitle={src.meta.name}
           hoverSub={
             src.episode
-              ? `S${src.episode.season} · E${String(src.episode.episode).padStart(2, "0")}`
+              ? `S${src.episode.imdbSeason ?? src.episode.season} · E${String(src.episode.imdbEpisode ?? src.episode.episode).padStart(2, "0")}`
               : undefined
           }
           hasPrevEp={canChangeEpisode && !!adjacent.prev}
