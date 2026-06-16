@@ -95,6 +95,18 @@ const live: Record<string, string> = {
   "{n} LIVE": "{n} مباشر",
   "No live or upcoming games right now.": "لا توجد مباريات مباشرة أو قادمة الآن.",
 
+  "sports.customize": "تخصيص",
+  "sports.customize.title": "تخصيص الدوريات",
+  "sports.customize.selected": "{n} محدد",
+  "sports.customize.all": "الكل",
+  "sports.customize.selectGroupAll": "تحديد الكل",
+  "sports.customize.deselectGroupAll": "إلغاء تحديد الكل",
+  "sports.customize.selectAll": "تحديد الكل",
+  "sports.customize.clearAll": "مسح الكل",
+  "sports.customize.cancel": "إلغاء",
+  "sports.customize.save": "حفظ",
+  "Upcoming": "قادم",
+
   "Connect a playlist to get started.": "وصّل قائمة تشغيل للبدء.",
   "Connect any IPTV provider. Channels are sorted by category, EPG is pulled automatically when your provider supplies it, and playback runs through native libmpv.":
     "وصّل أي مزوّد IPTV. تُرتّب القنوات حسب الفئة، ويُجلب دليل البرامج تلقائيًا عندما يوفّره مزوّدك، ويعمل التشغيل عبر libmpv الأصلي.",

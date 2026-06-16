@@ -8,6 +8,8 @@ import type { PartialSyncState } from "@/lib/together/provider";
 import { useView, type PlayerSrc, type PlayerStreamRef } from "@/lib/view";
 import { MAX_AUTORETRY_ATTEMPTS } from "../player-utils";
 
+const REMEMBER_MIN_SEC = 30;
+
 export function usePlayerExit(params: {
   src: PlayerSrc;
   season: number | undefined;
@@ -54,10 +56,17 @@ export function usePlayerExit(params: {
     const pos = getPlaybackPosition();
     if (Number.isFinite(pos) && pos > 0) {
       saveResumeMs(src.meta.id, pos * 1000, season, episode);
-      if (liveStreamRef) {
+      if (liveStreamRef && pos >= REMEMBER_MIN_SEC) {
         savePlayback(
           src.meta.id,
           { ...liveStreamRef, url: liveUrl || src.url, title: src.meta.name },
+          season,
+          episode,
+        );
+      } else if (pos < REMEMBER_MIN_SEC) {
+        savePlayback(
+          src.meta.id,
+          { infoHash: null, fileIdx: null, url: null, title: src.meta.name },
           season,
           episode,
         );

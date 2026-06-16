@@ -58,6 +58,26 @@ export function PlayModePanel() {
           </button>
         );
       })}
+      <button
+        type="button"
+        onClick={() => update({ rememberLastStream: !settings.rememberLastStream })}
+        className="mt-1 flex items-start gap-3.5 rounded-2xl border border-edge-soft bg-canvas/40 px-5 py-4 text-start transition-colors hover:border-edge hover:bg-canvas/60"
+      >
+        <span
+          className={`mt-0.5 flex h-6 w-10 shrink-0 items-center rounded-full p-0.5 transition-colors ${
+            settings.rememberLastStream ? "justify-end bg-accent" : "justify-start bg-edge"
+          }`}
+        >
+          <span className="h-5 w-5 rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.4)]" />
+        </span>
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <span className="text-[15px] font-semibold text-ink">Remember last stream</span>
+          <span className="text-[12.5px] leading-snug text-ink-muted">
+            When you resume something you were watching, replay the exact stream you last used (same
+            addon and source) instead of opening the picker again. Turn off to always choose fresh.
+          </span>
+        </div>
+      </button>
     </div>
   );
 }

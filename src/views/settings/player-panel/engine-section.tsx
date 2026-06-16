@@ -90,6 +90,44 @@ export function PlayerEnginePanel() {
           />
           {isWindowsDesktop() && (
             <ToggleRow
+              label="HDR in a separate window"
+              sub="Plays HDR content in its own window so Windows treats it as true HDR (the SDR brightness slider stops dimming it). Turn off HDR-to-SDR tonemapping above to use this on an HDR display."
+              value={settings.playerHdrOpaqueWindow}
+              onChange={(v) => update({ playerHdrOpaqueWindow: v })}
+            />
+          )}
+          {isWindowsDesktop() && (
+            <div className="flex flex-col gap-1.5 rounded-2xl border border-edge-soft bg-canvas/40 px-5 py-4">
+              <span className="text-[15px] font-semibold text-ink">HDR display mode</span>
+              <span className="text-[12.5px] leading-snug text-ink-muted">
+                Keeps Harbor embedded but lifts the HDR video onto its own opaque plane with the controls floating above, so Windows shows true HDR without the brightness slider dimming it. Needs HDR-to-SDR tonemapping off.
+              </span>
+              <div className="mt-1 flex gap-1.5">
+                {(
+                  [
+                    { id: "auto", label: "Auto" },
+                    { id: "off", label: "Off" },
+                    { id: "always", label: "Always" },
+                  ] as const
+                ).map((o) => (
+                  <button
+                    key={o.id}
+                    type="button"
+                    onClick={() => update({ playerHdrStage: o.id })}
+                    className={`rounded-xl border px-3.5 py-1.5 text-[13px] font-semibold transition-colors ${
+                      settings.playerHdrStage === o.id
+                        ? "border-ink bg-elevated text-ink"
+                        : "border-edge-soft bg-canvas/40 text-ink-muted hover:border-edge"
+                    }`}
+                  >
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {isWindowsDesktop() && (
+            <ToggleRow
               label="Line-free video mode"
               sub="Forces a compatibility present mode that removes a thin bright line some monitors show at the screen edge. Side effects: 4K playback can drop to a slideshow and HDR content looks dimmer (this mode bypasses the HDR display path). Leave OFF unless you see that line. Restart playback to apply."
               value={settings.playerD3d11Flip}

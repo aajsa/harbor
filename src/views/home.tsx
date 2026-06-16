@@ -26,7 +26,8 @@ import { t, useT, useUiLanguage } from "@/lib/i18n";
 import { useSettings, type StreamingService } from "@/lib/settings";
 import { trackEvent } from "@/lib/discover";
 import { publishResumeStates } from "@/lib/hover-preview/store";
-import { clearResume, readResumeEntry, saveResumeBatch } from "@/lib/resume";
+import { readResumeEntry, saveResumeBatch } from "@/lib/resume";
+import { dismissCw, isCwDismissed, useCwDismissVersion } from "@/lib/cw-dismiss";
 import { repairLibraryNames } from "@/lib/stremio-repair";
 import {
   cwSortKey,
@@ -34,7 +35,6 @@ import {
   isAnimeCwItem,
   isCwMember,
   library,
-  libraryPut,
   type LibraryItem,
 } from "@/lib/stremio";
 import { useTrakt } from "@/lib/trakt/provider";
@@ -76,19 +76,7 @@ export function Home({ active = true }: { active?: boolean }) {
   const [traktWatched, setTraktWatched] = useState<Set<string>>(() => new Set());
   const [heroPool, setHeroPool] = useState<Meta[]>([]);
   const [items, setItems] = useState<LibraryItem[]>([]);
-  const [dismissed, setDismissed] = useState<Set<string>>(() => {
-    try {
-      const raw = JSON.parse(localStorage.getItem("harbor.cw.dismissed.simkl") ?? "[]");
-      const arr = Array.isArray(raw) ? (raw as string[]) : [];
-      const migrated = arr.map((v) => (v.startsWith("simkl|") ? v : `simkl|${v}`));
-      if (migrated.some((v, i) => v !== arr[i])) {
-        localStorage.setItem("harbor.cw.dismissed.simkl", JSON.stringify(migrated));
-      }
-      return new Set(migrated);
-    } catch {
-      return new Set();
-    }
-  });
+  const cwVersion = useCwDismissVersion();
   const [tmdbProvidedByAddon, setTmdbProvidedByAddon] = useState(false);
   const [addonsTick, setAddonsTick] = useState(0);
   const { isConnected: traktConnected } = useTrakt();
@@ -283,9 +271,12 @@ export function Home({ active = true }: { active?: boolean }) {
           for (const i of libItems) {
             const mt = Date.parse(i._mtime ?? "");
             if (i.state?.timeOffset && i.state.timeOffset > 0) {
-              const se = episodeFromVideoId(i.state.video_id);
-              const s = i.state.season ?? se?.season;
-              const e = i.state.episode ?? se?.episode;
+              const vid = i.state.video_id ?? "";
+              const kitsuThreeSeg =
+                /^(kitsu|mal|anilist|anidb):/.test(i._id) && vid.split(":").length === 3;
+              const se = kitsuThreeSeg ? null : episodeFromVideoId(i.state.video_id);
+              const s = i.state.season ?? (kitsuThreeSeg ? 1 : se?.season);
+              const e = i.state.episode ?? (kitsuThreeSeg ? Number(vid.split(":")[2]) : se?.episode);
               const local = readResumeEntry(i._id, s, e);
               if (!local || (Number.isFinite(mt) && mt > local.t)) {
                 resumeEntries.push({
@@ -345,8 +336,7 @@ export function Home({ active = true }: { active?: boolean }) {
         (i) =>
           (i.type as string) !== "other" &&
           !i._id.startsWith("iptv:") &&
-          !dismissed.has(i._id) &&
-          !(i.external === "simkl" && dismissed.has(`simkl|${i._id}`)) &&
+          !isCwDismissed(i) &&
           isCwMember(i) &&
           !(settings.animeOnlyInAnimeRoom && isAnimeCwItem(i)),
       )
@@ -370,46 +360,14 @@ export function Home({ active = true }: { active?: boolean }) {
       if (out.length >= 100) break;
     }
     return out;
-  }, [items, simklCw, dismissed, settings.animeOnlyInAnimeRoom]);
+  }, [items, simklCw, cwVersion, settings.animeOnlyInAnimeRoom]);
   const cwItems = useCwAdvance(continueWatching, settings.tmdbKey, settings.cwAdvanceNext);
 
   useEffect(() => {
     publishResumeStates(cwItems);
   }, [cwItems]);
 
-  const onDismissCw = useCallback(
-    (id: string) => {
-      setDismissed((prev) => new Set(prev).add(id));
-      const target = [...items, ...simklCw].find((i) => i._id === id);
-      if (!target) return;
-      if ((target as { external?: string }).external === "simkl") {
-        setDismissed((prev) => new Set(prev).add(`simkl|${id}`));
-        try {
-          const raw = JSON.parse(localStorage.getItem("harbor.cw.dismissed.simkl") ?? "[]");
-          const set = new Set(Array.isArray(raw) ? (raw as string[]) : []);
-          set.add(`simkl|${id}`);
-          localStorage.setItem("harbor.cw.dismissed.simkl", JSON.stringify([...set]));
-        } catch {}
-        return;
-      }
-      if (!authKey || !target.state) return;
-      const vid = target.state.video_id ?? "";
-      const kitsuThreeSeg =
-        /^(kitsu|mal|anilist|anidb):/.test(target._id) && vid.split(":").length === 3;
-      const se = kitsuThreeSeg ? null : episodeFromVideoId(target.state.video_id);
-      clearResume(
-        target._id,
-        target.state.season ?? (kitsuThreeSeg ? 1 : se?.season),
-        target.state.episode ?? (kitsuThreeSeg ? Number(vid.split(":")[2]) : se?.episode),
-      );
-      void libraryPut(authKey, {
-        ...target,
-        state: { ...target.state, timeOffset: 0 },
-        _mtime: new Date().toISOString(),
-      }).catch(() => {});
-    },
-    [authKey, items, simklCw],
-  );
+  const onDismissCw = useCallback((item: LibraryItem) => dismissCw(item, authKey), [authKey]);
 
   const { items: favItems } = useMediaFavorites();
   const { items: localItems } = useLocalWatchlist();

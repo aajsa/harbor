@@ -82,12 +82,14 @@ export type Settings = {
   playerShellId: string;
   seekPreviewEnabled: boolean;
   instantPlay: boolean;
+  rememberLastStream: boolean;
   playerHdrToSdr: boolean;
   playerMotionInterp: boolean;
   playerAnime4k: boolean;
   playerMpvEmbed: boolean;
   stremioServerTranscode: boolean;
   directTorrentStream: boolean;
+  p2pAutoConsent: boolean;
   localEngine: boolean;
   remoteStreamServerUrl: string;
   remoteStreamServerStrict: boolean;
@@ -127,6 +129,7 @@ export type Settings = {
   mdblistKey: string;
   playerD3d11Flip: boolean;
   playerHdrOpaqueWindow: boolean;
+  playerHdrStage: "auto" | "off" | "always";
   opensubtitlesApiKey: string;
   jimakuToken: string;
   audioNormalize: boolean;
@@ -134,6 +137,7 @@ export type Settings = {
   bandwidthMbps: number;
   nextEpisodeLeadSec: number;
   showPlaylistsTab: boolean;
+  sportsLeagues: string[];
   hideSpoilers: boolean;
   spoilerHideThumbnails: boolean;
   spoilerHideTitles: boolean;

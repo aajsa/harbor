@@ -61,7 +61,7 @@ export function Poster({
           key={src}
           src={src}
           alt=""
-          decoding="async"
+          decoding="sync"
           onError={() => {
             setFailed(true);
             onError?.();
