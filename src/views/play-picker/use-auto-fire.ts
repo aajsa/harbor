@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { ScoredStream } from "@/lib/streams/types";
 import type { SourceDescriptor } from "@/lib/together/protocol";
+import { engineP2pEligible } from "@/lib/torrent/stremio-stream";
 import { hasInstantMarker, streamMatchesLangs } from "./picker-utils";
 
 const AUTO_SETTLE_MS = 1500;
@@ -17,6 +18,7 @@ export function useAutoFire(args: {
   pipelineDone: boolean;
   firstResultAt: number | null;
   isCached: (s: ScoredStream) => boolean;
+  p2pAutoConsent: boolean;
   preferredLangs: string[];
   hasStrongAddon: boolean;
   isTorrentioStream: (s: ScoredStream) => boolean;
@@ -29,7 +31,7 @@ export function useAutoFire(args: {
 }): void {
   const {
     autoActive, attempt, autoCandidates, resolving, autoAttemptIdx, autoSettleReady,
-    pipelineDone, firstResultAt, isCached, preferredLangs, hasStrongAddon, isTorrentioStream,
+    pipelineDone, firstResultAt, isCached, p2pAutoConsent, preferredLangs, hasStrongAddon, isTorrentioStream,
     expectHostSource, hostSource,
     autoFiredRef, setAutoSettleReady, setAutoCancelled, onPlay,
   } = args;
@@ -90,7 +92,7 @@ export function useAutoFire(args: {
     const idx = Math.min((attempt ?? 0) + autoAttemptIdx, autoCandidates.length - 1);
     const pick = autoCandidates[idx];
     if (!pick) return;
-    const pickInstant = isCached(pick) || !!pick.url;
+    const pickInstant = isCached(pick) || !!pick.url || (p2pAutoConsent && engineP2pEligible(pick));
     if (!pickInstant) {
       if (pipelineDone) setAutoCancelled(true);
       return;

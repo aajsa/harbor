@@ -6,12 +6,13 @@ import { LayoutStep } from "@/components/onboarding/layout-step";
 import { SplashStep } from "@/components/onboarding/splash-step";
 import { StreamingStep } from "@/components/onboarding/streaming-step";
 import { StremioStep } from "@/components/onboarding/stremio-step";
+import { SubtitlesStep } from "@/components/onboarding/subtitles-step";
 import { TmdbStep } from "@/components/onboarding/tmdb-step";
 import { WelcomeStep } from "@/components/onboarding/welcome-step";
 import { useOnboarding } from "@/lib/onboarding";
 
-type StepId = "splash" | "welcome" | "layout" | "tmdb" | "stremio" | "streaming" | "done";
-const STEPS: StepId[] = ["splash", "welcome", "layout", "tmdb", "stremio", "streaming", "done"];
+type StepId = "splash" | "welcome" | "layout" | "tmdb" | "stremio" | "streaming" | "subtitles" | "done";
+const STEPS: StepId[] = ["splash", "welcome", "layout", "tmdb", "stremio", "streaming", "subtitles", "done"];
 
 export function OnboardingModal() {
   const { onboarded, finishOnboarding } = useOnboarding();
@@ -68,6 +69,7 @@ export function OnboardingModal() {
                 {step === "tmdb" && <TmdbStep />}
                 {step === "stremio" && <StremioStep />}
                 {step === "streaming" && <StreamingStep />}
+                {step === "subtitles" && <SubtitlesStep />}
                 {step === "done" && <DoneStep />}
               </div>
             </div>
@@ -79,7 +81,7 @@ export function OnboardingModal() {
                 onJump={(i) => setStepIdx(i + 1)}
               />
               <div className="flex items-center gap-2.5">
-                {(step === "tmdb" || step === "stremio" || step === "streaming") && (
+                {(step === "tmdb" || step === "stremio" || step === "streaming" || step === "subtitles") && (
                   <button
                     key={`skip-${step}`}
                     onClick={next}

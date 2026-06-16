@@ -244,6 +244,7 @@ const LANGUAGE_OPTIONS = [
   "German",
   "Italian",
   "Portuguese",
+  "Portuguese (Brazil)",
   "Russian",
   "Japanese",
   "Korean",

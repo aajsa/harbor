@@ -24,6 +24,7 @@ function snapChangedIgnoringClock(a: PlayerSnapshot, b: PlayerSnapshot): boolean
     a.audioNormalize !== b.audioNormalize ||
     a.videoWidth !== b.videoWidth ||
     a.videoHeight !== b.videoHeight ||
+    a.hdrGamma !== b.hdrGamma ||
     a.errorMessage !== b.errorMessage ||
     a.errorCode !== b.errorCode
   );
@@ -59,16 +60,13 @@ export function usePlayerBridge(params: {
         const el = videoMountRef.current;
         if (!el) return null;
         const r = el.getBoundingClientRect();
-        const dpr = window.devicePixelRatio || 1;
-        const left = Math.floor(r.left * dpr);
-        const top = Math.floor(r.top * dpr);
-        const right = Math.ceil((r.left + r.width) * dpr);
-        const bottom = Math.ceil((r.top + r.height) * dpr);
         return {
-          screenX: left,
-          screenY: top,
-          w: Math.max(1, right - left),
-          h: Math.max(1, bottom - top),
+          cssLeft: r.left,
+          cssTop: r.top,
+          cssWidth: r.width,
+          cssHeight: r.height,
+          cssViewW: document.documentElement.clientWidth,
+          cssViewH: document.documentElement.clientHeight,
         };
       };
       const { bridge: choose, engine: chosen } = await pickBridge(want, src.notWebReady === true, {

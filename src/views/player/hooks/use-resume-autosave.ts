@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { markAnimeWatching, syncAnimeProgress } from "@/lib/anilist/sync";
 import { profileFromMeta } from "@/lib/discover/profile";
 import { trackEvent } from "@/lib/discover/store";
+import { isExternalPlaylistId } from "@/lib/iptv/vod";
 import { savePlayback } from "@/lib/playback-history";
 import { saveResumeMs } from "@/lib/resume";
 import type { PlayerSnapshot } from "@/lib/player/bridge";
@@ -60,6 +61,7 @@ export function useResumeAutosave(params: {
     if (pos < MIN_POSITION_SEC) return;
     lastSavedRef.current = pos * 1000;
     saveResumeMs(id, pos * 1000, se, ep);
+    if (isExternalPlaylistId(id)) return;
     savePlayback(id, { title: s.meta.name, parsedTitle: s.meta.name }, se, ep);
     if (pos < TASTE_MIN_SEC) return;
     const trackId = animeTrackId(s);

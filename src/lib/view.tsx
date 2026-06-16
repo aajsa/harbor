@@ -32,6 +32,8 @@ export type PlayerSrc = {
   attempt?: number;
   streamRef?: PlayerStreamRef;
   liveProgram?: string;
+  isLive?: boolean;
+  headers?: Record<string, string>;
 };
 
 export type PlayerStreamRef = {

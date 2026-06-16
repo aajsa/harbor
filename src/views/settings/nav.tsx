@@ -373,6 +373,7 @@ const SETTINGS_OPTIONS: SettingsOption[] = [
   { label: "Subtitle distance from bottom", section: "player", anchorTitle: "Subtitle style", keywords: ["sub", "subtitle", "position", "margin"] },
   { label: "Player engine (mpv / HTML5)", section: "player", anchorTitle: "Player engine", keywords: ["mpv", "html5", "engine", "playback"] },
   { label: "HDR-to-SDR tonemapping", section: "player", anchorTitle: "Player engine", keywords: ["hdr", "sdr", "tonemap", "color"] },
+  { label: "HDR display mode", section: "player", anchorTitle: "Player engine", keywords: ["hdr", "passthrough", "display", "stage", "opaque", "color"] },
   { label: "Anime4K upscaling", section: "player", anchorTitle: "Player engine", keywords: ["anime4k", "upscale", "shader", "quality"] },
   { label: "Seek bar style", section: "player", anchorTitle: "Seek bar", keywords: ["seek", "scrubber", "progress", "bar", "timeline"] },
   { label: "Play button behavior", section: "player", anchorTitle: "Play button behavior", keywords: ["autoplay", "instant", "manual", "picker", "play mode"] },

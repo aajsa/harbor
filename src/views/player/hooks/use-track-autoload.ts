@@ -146,7 +146,9 @@ export function useTrackAutoload(params: {
         const blocked = snapRef.current.subtitleTracks.some((t) => t.selected);
         const embeddedPreferred =
           settings.preferEmbeddedSubs &&
-          snapRef.current.subtitleTracks.some((t) => !t.external);
+          snapRef.current.subtitleTracks.some(
+            (t) => !t.external && langScore(t.lang ?? "", langs) >= 0,
+          );
         const nativeForced =
           settings.forcedSubsWhenNativeAudio &&
           (() => {

@@ -62,7 +62,7 @@ export function PlayPicker({
   const isDownload = intent === "download";
   const { openPlayer, openSettings, exitPickerToDetail } = useView();
   const backToDetail = () => exitPickerToDetail(meta);
-  const { settings } = useSettings();
+  const { settings, update } = useSettings();
   const { authKey } = useAuth();
   const debrids = useDebridClients();
   const { snapshot: roomSnapshot, sendInvite, claimHost, wasInvitedTo, clientId, hostSource, roomGuestPick, lastInviteProto } = useTogether();
@@ -235,8 +235,11 @@ export function PlayPicker({
   }, [filteredPicker]);
 
   const previousPlayback = useMemo(
-    () => readPlayback(meta.id, episode?.season, episode?.episode),
-    [meta.id, episode?.season, episode?.episode],
+    () =>
+      settings.rememberLastStream
+        ? readPlayback(meta.id, episode?.season, episode?.episode)
+        : null,
+    [meta.id, episode?.season, episode?.episode, settings.rememberLastStream],
   );
 
   const autoCandidates = useAutoCandidates({
@@ -314,6 +317,17 @@ export function PlayPicker({
     setResolving,
   });
 
+  const rememberedFiredRef = useRef(false);
+  useEffect(() => {
+    if (rememberedFiredRef.current) return;
+    const autoOpen = !!(autoPlay || wasInvitedTo(inviteKey));
+    if (!settings.rememberLastStream || autoOpen || isDownload || roomGuestPick || inSession) return;
+    if ((attempt ?? 0) > 0) return;
+    if (!previousMatch) return;
+    rememberedFiredRef.current = true;
+    onPlay(previousMatch, true);
+  }, [settings.rememberLastStream, autoPlay, wasInvitedTo, inviteKey, previousMatch, onPlay, isDownload, roomGuestPick, inSession, attempt]);
+
   useAutoFire({
     autoActive,
     attempt,
@@ -324,6 +338,7 @@ export function PlayPicker({
     pipelineDone,
     firstResultAt,
     isCached,
+    p2pAutoConsent: settings.p2pAutoConsent,
     preferredLangs,
     hasStrongAddon,
     isTorrentioStream,
@@ -440,7 +455,10 @@ export function PlayPicker({
       <P2pConfirmModal
         meta={meta}
         stream={p2pConfirm.stream}
-        onConfirm={confirmP2p}
+        onConfirm={(remember) => {
+          if (remember) update({ p2pAutoConsent: true });
+          confirmP2p();
+        }}
         onCancel={cancelP2p}
       />
     );
