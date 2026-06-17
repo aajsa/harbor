@@ -134,7 +134,7 @@ export function useTrackAutoload(params: {
       const matches = results.filter((r) => langScore(r.lang ?? "", langs) >= 0);
       console.info(`[subs/autoload] ${matches.length} match preferred langs`);
       const perLang = new Map<string, number>();
-      const PER_LANG_MAX = 6;
+      const PER_LANG_MAX = 30; // Increased from 6 to allow more subtitles per language
       let firstAdded = false;
       let attempted = 0;
       let added = 0;
@@ -311,7 +311,7 @@ function labelForTrack(r: { title?: string; source: string; release?: string | n
   if (release && release !== r.title) {
     return `${sourceLabel} · ${release}`;
   }
-  if (r.title && r.title !== sourceLabel) {
+  if (r.title && r.title !== sourceLabel && r.source !== "addon") {
     return `${sourceLabel} · ${r.title}`;
   }
   return sourceLabel;

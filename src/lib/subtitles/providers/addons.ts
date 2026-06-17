@@ -99,10 +99,15 @@ export async function searchAddons(
   const out: SubResult[] = [];
   settled.forEach((subs, i) => {
     const addonName = subAddons[i].manifest.name;
-    for (const s of subs) {
+    for (let idx = 0; idx < subs.length; idx++) {
+      const s = subs[idx];
       if (!s.url) continue;
+      // Include addon name and index to ensure unique IDs across different addons
+      const uniqueId = s.id 
+        ? `${addonName.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${s.id}` 
+        : `${addonName.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${idx}`;
       out.push({
-        id: String(s.id ?? `${addonName}:${s.url}`),
+        id: uniqueId,
         url: s.url,
         lang: normalizeLang(s.lang),
         title: addonName,
