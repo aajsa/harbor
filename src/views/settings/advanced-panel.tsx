@@ -20,6 +20,7 @@ import {
   useUpdate,
 } from "@/lib/updater/use-update";
 import { BackupRow } from "./backup-row";
+import { RollbackRow } from "./rollback-row";
 import { PrivacyRow } from "./privacy-row";
 import { TrayRow } from "./tray-row";
 import { Section } from "./shared";
@@ -45,6 +46,7 @@ export function AdvancedPanel() {
           <div className="flex flex-col gap-2.5">
             <UpdatesRow />
             <BetaChannelRow />
+            <RollbackRow />
           </div>
         </Section>
       )}

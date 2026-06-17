@@ -17,6 +17,9 @@ export type PlayEpisode = {
   videoId?: string;
   still?: string;
   overview?: string;
+  rating?: number;
+  airDate?: string;
+  runtime?: number;
 };
 
 export type PlayerSrc = {

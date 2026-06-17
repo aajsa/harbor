@@ -368,6 +368,7 @@ export function PlayerOverlayLayers(p: PlayerOverlayLayersProps) {
         onHostAdvance={p.onHostAdvance}
         watchedFor={p.watchedFor}
         nextEp={p.adjacentNext}
+        onRestart={() => p.seekTo(0)}
         pendingResumeSec={p.pendingResumeSec}
         durationSec={p.snap.durationSec}
         resumeTitle={p.src.meta.name ?? p.src.title}

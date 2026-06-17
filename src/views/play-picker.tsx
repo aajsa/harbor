@@ -8,7 +8,7 @@ import { useTogether } from "@/lib/together/provider";
 import { buildMatchScores, matchBadge, MATCH_CLOSE } from "@/lib/together/source-match";
 import { HostSourceBanner } from "@/components/host-source-banner";
 import { consumeRecentStubEvent } from "@/lib/dead-streams";
-import { readPlayback } from "@/lib/playback-history";
+import { readPlayback, streamMatchesEntry } from "@/lib/playback-history";
 import { useSettings } from "@/lib/settings";
 import type { ScoredStream, Tier } from "@/lib/streams/types";
 import { isAddonRanked } from "@/lib/streams/addon-detect";
@@ -266,19 +266,7 @@ export function PlayPicker({
 
   const previousMatch: ScoredStream | null = useMemo(() => {
     if (!filteredPicker || !previousPlayback) return null;
-    return (
-      filteredPicker.all.find((s) => {
-        if (previousPlayback.infoHash && s.infoHash) {
-          if (s.infoHash.toLowerCase() !== previousPlayback.infoHash.toLowerCase()) return false;
-          if (previousPlayback.fileIdx == null || s.fileIdx == null) return true;
-          return s.fileIdx === previousPlayback.fileIdx;
-        }
-        if (previousPlayback.url && s.url) {
-          return s.url === previousPlayback.url;
-        }
-        return false;
-      }) ?? null
-    );
+    return filteredPicker.all.find((s) => streamMatchesEntry(s, previousPlayback)) ?? null;
   }, [filteredPicker, previousPlayback]);
 
   const currentPick: ScoredStream | null = useMemo(() => {
@@ -318,18 +306,23 @@ export function PlayPicker({
   });
 
   const rememberedFiredRef = useRef(false);
+  const rememberedHandledFirst =
+    !!previousMatch &&
+    settings.rememberLastStream &&
+    !wasInvitedTo(inviteKey) &&
+    !isDownload &&
+    !roomGuestPick &&
+    !inSession &&
+    (attempt ?? 0) === 0;
   useEffect(() => {
-    if (rememberedFiredRef.current) return;
-    const autoOpen = !!(autoPlay || wasInvitedTo(inviteKey));
-    if (!settings.rememberLastStream || autoOpen || isDownload || roomGuestPick || inSession) return;
-    if ((attempt ?? 0) > 0) return;
-    if (!previousMatch) return;
+    if (rememberedFiredRef.current || !rememberedHandledFirst || !previousMatch) return;
     rememberedFiredRef.current = true;
     onPlay(previousMatch, true);
-  }, [settings.rememberLastStream, autoPlay, wasInvitedTo, inviteKey, previousMatch, onPlay, isDownload, roomGuestPick, inSession, attempt]);
+  }, [rememberedHandledFirst, previousMatch, onPlay]);
 
   useAutoFire({
     autoActive,
+    rememberedHandledFirst: rememberedHandledFirst && autoAttemptIdx === 0,
     attempt,
     autoCandidates,
     resolving,

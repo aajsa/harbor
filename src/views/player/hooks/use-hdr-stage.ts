@@ -41,7 +41,13 @@ export function useHdrStage(params: {
       if (want) {
         await invoke("mpv_set_hdr_stage", { active: true }).catch(() => {});
         window.dispatchEvent(new Event("harbor:mpv-force-geom"));
-        await hdrOverlayOpen();
+        try {
+          await hdrOverlayOpen();
+        } catch {
+          await invoke("mpv_set_hdr_stage", { active: false }).catch(() => {});
+          window.dispatchEvent(new Event("harbor:mpv-force-geom"));
+          return;
+        }
         setActive(true);
       } else {
         await hdrOverlayClose();
@@ -69,7 +75,13 @@ export function useHdrStage(params: {
       if (want) {
         await invoke("mpv_set_hdr_stage", { active: true }).catch(() => {});
         window.dispatchEvent(new Event("harbor:mpv-force-geom"));
-        await hdrOverlayOpen();
+        try {
+          await hdrOverlayOpen();
+        } catch {
+          await invoke("mpv_set_hdr_stage", { active: false }).catch(() => {});
+          window.dispatchEvent(new Event("harbor:mpv-force-geom"));
+          return;
+        }
         setActive(true);
       } else {
         await hdrOverlayClose();

@@ -580,6 +580,8 @@ export function createHtml5Bridge(): PlayerBridge {
         if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
           const fs = await import("@tauri-apps/plugin-fs");
           const bytes = new Uint8Array(await blob.arrayBuffer());
+          const dir = path.replace(/[\\/][^\\/]+$/, "");
+          if (dir && dir !== path) await fs.mkdir(dir, { recursive: true }).catch(() => {});
           await fs.writeFile(path, bytes);
           return { ok: true, path };
         }
