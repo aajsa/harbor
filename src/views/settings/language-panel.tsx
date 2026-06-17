@@ -1,11 +1,32 @@
 import { Github } from "lucide-react";
 import { useState } from "react";
+import { Dropdown, type DropdownOption } from "@/components/dropdown";
 import { useSettings } from "@/lib/settings";
 import { useT } from "@/lib/i18n";
 import { openUrl } from "@/lib/window";
 import { Section, ToggleRow } from "./shared";
 import { LanguagesPicker } from "./streaming-panel";
 import { DisplayLanguageSection } from "./language-panel/display-language-section";
+
+const TMDB_LANGUAGES: DropdownOption[] = [
+  { value: "es-ES", label: "Español (España)" },
+  { value: "es-MX", label: "Español (Latinoamérica)" },
+  { value: "fr-FR", label: "Français" },
+  { value: "de-DE", label: "Deutsch" },
+  { value: "it-IT", label: "Italiano" },
+  { value: "pt-BR", label: "Português (Brasil)" },
+  { value: "pt-PT", label: "Português (Portugal)" },
+  { value: "ja-JP", label: "日本語" },
+  { value: "ko-KR", label: "한국어" },
+  { value: "zh-CN", label: "中文 (简体)" },
+  { value: "ar-SA", label: "العربية" },
+  { value: "tr-TR", label: "Türkçe" },
+  { value: "ru-RU", label: "Русский" },
+  { value: "hi-IN", label: "हिन्दी" },
+  { value: "pl-PL", label: "Polski" },
+  { value: "nl-NL", label: "Nederlands" },
+  { value: "uk-UA", label: "Українська" },
+];
 
 export function LanguagePanel() {
   const { settings, update } = useSettings();
@@ -67,30 +88,12 @@ export function LanguagePanel() {
       title={t("Metadata language")}
       subtitle={t("Titles, overviews, and taglines from TMDB display in this language when a translation exists. Needs a TMDB key.")}
     >
-      <select
+      <Dropdown
         value={settings.tmdbLanguage}
-        onChange={(e) => update({ tmdbLanguage: e.target.value })}
-        className="h-11 w-full max-w-[340px] rounded-xl border border-edge-soft bg-canvas/40 px-3.5 text-[13.5px] text-ink outline-none transition-colors focus:border-edge"
-      >
-        <option value="">{t("English (default)")}</option>
-        <option value="es-ES">Español (España)</option>
-        <option value="es-MX">Español (Latinoamérica)</option>
-        <option value="fr-FR">Français</option>
-        <option value="de-DE">Deutsch</option>
-        <option value="it-IT">Italiano</option>
-        <option value="pt-BR">Português (Brasil)</option>
-        <option value="pt-PT">Português (Portugal)</option>
-        <option value="ja-JP">日本語</option>
-        <option value="ko-KR">한국어</option>
-        <option value="zh-CN">中文 (简体)</option>
-        <option value="ar-SA">العربية</option>
-        <option value="tr-TR">Türkçe</option>
-        <option value="ru-RU">Русский</option>
-        <option value="hi-IN">हिन्दी</option>
-        <option value="pl-PL">Polski</option>
-        <option value="nl-NL">Nederlands</option>
-        <option value="uk-UA">Українська</option>
-      </select>
+        onChange={(v) => update({ tmdbLanguage: v })}
+        options={[{ value: "", label: t("English (default)") }, ...TMDB_LANGUAGES]}
+        className="w-full max-w-[340px]"
+      />
     </Section>
 
     <Section

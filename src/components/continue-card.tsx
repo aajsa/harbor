@@ -190,7 +190,6 @@ export const ContinueCard = memo(function ContinueCard({ item, watched = false, 
             key={src}
             src={src}
             alt=""
-            loading="lazy"
             decoding="sync"
             onError={() => setImgIdx((i) => i + 1)}
             className="absolute inset-0 h-full w-full object-cover brightness-95"

@@ -736,7 +736,7 @@ function Shell() {
       <CustomCodeMount />
       <WebhookLoopMount />
       <MemoryHud />
-      <OfflineBanner />
+      {!player && <OfflineBanner />}
     </div>
   );
 }

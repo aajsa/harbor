@@ -1,6 +1,6 @@
 import { useCallback, type RefObject } from "react";
 import { clearOnePickerCache } from "@/lib/picker-cache";
-import { savePlayback } from "@/lib/playback-history";
+import { clearPlayback, readPlayback, savePlayback, streamMatchesEntry } from "@/lib/playback-history";
 import type { PlayerBridge } from "@/lib/player/bridge";
 import { getPlaybackPosition } from "@/lib/player/playback-clock";
 import { saveResumeMs } from "@/lib/resume";
@@ -63,13 +63,6 @@ export function usePlayerExit(params: {
           season,
           episode,
         );
-      } else if (pos < REMEMBER_MIN_SEC) {
-        savePlayback(
-          src.meta.id,
-          { infoHash: null, fileIdx: null, url: null, title: src.meta.name },
-          season,
-          episode,
-        );
       }
     }
     await exitPip();
@@ -95,6 +88,12 @@ export function usePlayerExit(params: {
       bridgeRef.current.destroy();
       bridgeRef.current = null;
     }
+    if (src.streamRef) {
+      const remembered = readPlayback(src.meta.id, season, episode);
+      if (remembered && streamMatchesEntry(src.streamRef, remembered)) {
+        clearPlayback(src.meta.id, season, episode);
+      }
+    }
     if (nextAttempt > MAX_AUTORETRY_ATTEMPTS) {
       void closePlayer();
       return;
@@ -105,7 +104,7 @@ export function usePlayerExit(params: {
       src.episode,
       instantPlay || inRoom ? { autoPlay: true, attempt: nextAttempt } : { autoPlay: false },
     );
-  }, [src.attempt, src.meta, src.episode, openPicker, instantPlay, inRoom, closePlayer, bridgeRef]);
+  }, [src.attempt, src.meta, src.episode, src.streamRef, season, episode, openPicker, instantPlay, inRoom, closePlayer, bridgeRef]);
 
   return { closePlayer, onStubEject };
 }

@@ -4,6 +4,7 @@ import { HeroCarousel, type Slide } from "@/components/hero-carousel";
 import { CollectionsRow } from "@/components/collections-row";
 import { TmdbNudge } from "@/components/nudge";
 import { Row, ScrollRootContext } from "@/components/row";
+import { isMacDesktop } from "@/lib/platform";
 import {
   applyHomeRowCustomization,
   effectiveOrder,
@@ -557,7 +558,7 @@ export function Home({ active = true }: { active?: boolean }) {
               />
             </div>
           )}
-          <div data-scroll-anchor="cw" style={{ contentVisibility: "auto", containIntrinsicSize: "auto 300px" }}>
+          <div data-scroll-anchor="cw" style={{ contentVisibility: isMacDesktop() ? undefined : "auto", containIntrinsicSize: "auto 300px" }}>
             <CWSection
               signedIn={!!authKey}
               items={cwItems}
@@ -566,12 +567,12 @@ export function Home({ active = true }: { active?: boolean }) {
             />
           </div>
           {settings.homeMode !== "classic" && (
-            <div data-scroll-anchor="streaming" style={{ contentVisibility: "auto", containIntrinsicSize: "auto 340px" }}>
+            <div data-scroll-anchor="streaming" style={{ contentVisibility: isMacDesktop() ? undefined : "auto", containIntrinsicSize: "auto 340px" }}>
               <StreamingRail services={enabledServices} />
             </div>
           )}
           {settings.homeMode !== "classic" && top10.length >= 10 && !homeRowsCustom.hidden.includes("top10") && (
-            <div data-scroll-anchor="top10" style={{ contentVisibility: "auto", containIntrinsicSize: "auto 380px" }}>
+            <div data-scroll-anchor="top10" style={{ contentVisibility: isMacDesktop() ? undefined : "auto", containIntrinsicSize: "auto 380px" }}>
               {editMode && (
                 <PinnedRowControls
                   label={t("Top 10 Trending This Week")}
@@ -598,7 +599,7 @@ export function Home({ active = true }: { active?: boolean }) {
             />
           )}
           {settings.homeMode !== "classic" && settings.tmdbKey && !homeRowsCustom.hidden.includes("collections") && (
-            <div data-scroll-anchor="collections" style={{ contentVisibility: "auto", containIntrinsicSize: "auto 260px" }}>
+            <div data-scroll-anchor="collections" style={{ contentVisibility: isMacDesktop() ? undefined : "auto", containIntrinsicSize: "auto 260px" }}>
               {editMode && (
                 <PinnedRowControls
                   label={t("Collections")}

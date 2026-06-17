@@ -62,7 +62,7 @@ export function AnimeEpisodes({
     episodes,
   );
   const { settings, update } = useSettings();
-  useSyncExternalStore(subscribeManualWatched, manualWatchedVersion);
+  const mwVersion = useSyncExternalStore(subscribeManualWatched, manualWatchedVersion);
   const [watchedMenu, setWatchedMenu] = useState<WatchedMenuTarget | null>(null);
   const openWatchedMenu = (
     e: React.MouseEvent,
@@ -92,7 +92,7 @@ export function AnimeEpisodes({
       );
     }
     return m;
-  }, [episodes, meta.id, traktWatched, anilistWatched]);
+  }, [episodes, meta.id, traktWatched, anilistWatched, mwVersion]);
   const progressFor = (ep: KitsuEpisode) =>
     progressByNum.get(ep.number) ?? { ratio: 0, watched: false, startedAt: 0 };
   const nextUpNum = useMemo(() => {

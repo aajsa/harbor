@@ -10,6 +10,7 @@ const HOST_SOURCE_WAIT_MS = 12_000;
 
 export function useAutoFire(args: {
   autoActive: boolean;
+  rememberedHandledFirst?: boolean;
   attempt?: number;
   autoCandidates: ScoredStream[];
   resolving: unknown;
@@ -30,7 +31,7 @@ export function useAutoFire(args: {
   onPlay: (s: ScoredStream, committed: boolean) => void;
 }): void {
   const {
-    autoActive, attempt, autoCandidates, resolving, autoAttemptIdx, autoSettleReady,
+    autoActive, rememberedHandledFirst, attempt, autoCandidates, resolving, autoAttemptIdx, autoSettleReady,
     pipelineDone, firstResultAt, isCached, p2pAutoConsent, preferredLangs, hasStrongAddon, isTorrentioStream,
     expectHostSource, hostSource,
     autoFiredRef, setAutoSettleReady, setAutoCancelled, onPlay,
@@ -70,6 +71,7 @@ export function useAutoFire(args: {
 
   useEffect(() => {
     if (!autoActive || autoFiredRef.current) return;
+    if (rememberedHandledFirst) return;
     if (waitingForHostSource) return;
     const top = autoCandidates[0];
     const isFirstAttempt = (attempt ?? 0) === 0 && autoAttemptIdx === 0;
@@ -99,5 +101,5 @@ export function useAutoFire(args: {
     }
     autoFiredRef.current = true;
     onPlay(pick, false);
-  }, [autoActive, attempt, autoCandidates, resolving, autoAttemptIdx, autoSettleReady, pipelineDone, isCached, preferredLangs, hasStrongAddon, isTorrentioStream, autoFiredRef, setAutoCancelled, onPlay, highConfidenceTick, waitingForHostSource]);
+  }, [autoActive, rememberedHandledFirst, attempt, autoCandidates, resolving, autoAttemptIdx, autoSettleReady, pipelineDone, isCached, preferredLangs, hasStrongAddon, isTorrentioStream, autoFiredRef, setAutoCancelled, onPlay, highConfidenceTick, waitingForHostSource]);
 }

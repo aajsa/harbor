@@ -27,6 +27,7 @@ export function EpisodePanel({
   onHostAdvance,
   watchedFor,
   nextEp,
+  onRestart,
 }: {
   open: boolean;
   onClose: () => void;
@@ -37,6 +38,7 @@ export function EpisodePanel({
   onHostAdvance?: (ep: PlayEpisode) => void;
   watchedFor?: (ep: PlayEpisode) => boolean;
   nextEp?: PlayEpisode | null;
+  onRestart?: () => void;
 }) {
   const t = useT();
   const { settings } = useSettings();
@@ -233,8 +235,15 @@ export function EpisodePanel({
                         episode={ep}
                         expanded={expandedEp === key}
                         onToggle={() => setExpandedEp((cur) => (cur === key ? null : key))}
-                        onPlay={() => handlePlay(ep)}
-                        manualMode={manualMode}
+                        onPlay={() => {
+                          if (isCurrent) {
+                            if (roomGuest) return;
+                            onRestart?.();
+                            onClose();
+                          } else {
+                            handlePlay(ep);
+                          }
+                        }}
                         isCurrent={isCurrent}
                         watched={watchedFor?.(ep) ?? false}
                         spoiler={spoilerMaskFor(settings, {

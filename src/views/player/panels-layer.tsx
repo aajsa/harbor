@@ -20,6 +20,7 @@ export function PanelsLayer({
   onHostAdvance,
   watchedFor,
   nextEp,
+  onRestart,
   pendingResumeSec,
   durationSec,
   resumeTitle,
@@ -44,6 +45,7 @@ export function PanelsLayer({
   onHostAdvance: (ep: PlayEpisode) => void;
   watchedFor: (ep: PlayEpisode) => boolean;
   nextEp: PlayEpisode | null;
+  onRestart: () => void;
   pendingResumeSec: number | null;
   durationSec: number;
   resumeTitle: string;
@@ -97,6 +99,7 @@ export function PanelsLayer({
           onHostAdvance={onHostAdvance}
           watchedFor={watchedFor}
           nextEp={nextEp}
+          onRestart={onRestart}
         />
       )}
 
