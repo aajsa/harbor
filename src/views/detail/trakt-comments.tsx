@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Heart, MessageCircle, ChevronDown } from "lucide-react";
+import { Heart, MessageCircle, ChevronDown, ExternalLink } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import { getSession } from "@/lib/trakt/session";
 import { fetchComments, type TraktComment } from "@/lib/trakt/comments";
-import type { TraktTarget } from "@/lib/trakt/types";
+import type { IdResolution } from "@/lib/trakt/ids";
 import { openUrl } from "@/lib/window";
 import { useSettings } from "@/lib/settings";
 
@@ -75,15 +75,23 @@ function CommentCard({ comment }: { comment: TraktComment }) {
 
 const SORTS = ["likes", "newest", "oldest"] as const;
 
-export function TraktComments({ target }: { target: TraktTarget }) {
+export function TraktComments({ resolution }: { resolution: IdResolution | null }) {
   const t = useT();
   const [comments, setComments] = useState<TraktComment[]>([]);
   const [loading, setLoading] = useState(true);
   const [sort, setSort] = useState<string>("likes");
   const [showSort, setShowSort] = useState(false);
   const sortRef = useRef<HTMLDivElement>(null);
+  const { settings } = useSettings();
+  const connected = !!settings.traktAccessToken;
+
+  const target = resolution?.ok ? resolution.target : null;
 
   useEffect(() => {
+    if (!target) {
+      setLoading(false);
+      return;
+    }
     const session = getSession();
     if (!session) {
       setLoading(false);
@@ -110,6 +118,7 @@ export function TraktComments({ target }: { target: TraktTarget }) {
   }, []);
 
   const handleOpenTrakt = useCallback(() => {
+    if (!target) return;
     const id = target.kind === "episode" ? target.show.ids : target.ids;
     const provider = id.tmdb ? "tmdb" : "imdb";
     const val = provider === "tmdb" ? String(id.tmdb) : id.imdb;
@@ -122,56 +131,72 @@ export function TraktComments({ target }: { target: TraktTarget }) {
     }
   }, [target]);
 
-  const session = getSession();
-  const { settings } = useSettings();
-  if (!session && !settings.traktAccessToken) return null;
-
   return (
     <section>
       <div className="mb-5 flex items-center justify-between">
-        <h2 className="text-[20px] font-bold text-ink">
-          {t("Trakt Comments")}
-          {!loading && comments.length > 0 && (
-            <span className="ml-2 text-[14px] font-normal text-ink-muted">
-              ({comments.length})
-            </span>
-          )}
-        </h2>
-        <div className="flex items-center gap-3">
-          <div ref={sortRef} className="relative">
+        <h2 className="text-[20px] font-bold text-ink">{t("Trakt Comments")}</h2>
+        {target && connected && (
+          <div className="flex items-center gap-3">
+            <div ref={sortRef} className="relative">
+              <button
+                onClick={() => setShowSort(!showSort)}
+                className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-[12px] font-medium text-ink-muted ring-1 ring-edge transition-colors hover:bg-elevated hover:text-ink"
+              >
+                {sort}
+                <ChevronDown size={12} />
+              </button>
+              {showSort && (
+                <div className="absolute right-0 top-full z-50 mt-1 min-w-[100px] overflow-hidden rounded-xl bg-elevated ring-1 ring-edge shadow-lg">
+                  {SORTS.map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => { setSort(s); setShowSort(false); }}
+                      className={`block w-full px-3 py-2 text-left text-[12px] transition-colors hover:bg-raised ${
+                        s === sort ? "font-semibold text-ink" : "text-ink-muted"
+                      }`}
+                    >
+                      {t(s.charAt(0).toUpperCase() + s.slice(1))}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <button
-              onClick={() => setShowSort(!showSort)}
+              onClick={handleOpenTrakt}
               className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-[12px] font-medium text-ink-muted ring-1 ring-edge transition-colors hover:bg-elevated hover:text-ink"
             >
-              {sort}
-              <ChevronDown size={12} />
+              {t("Open on Trakt")}
             </button>
-            {showSort && (
-              <div className="absolute right-0 top-full z-50 mt-1 min-w-[100px] overflow-hidden rounded-xl bg-elevated ring-1 ring-edge shadow-lg">
-                {SORTS.map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => { setSort(s); setShowSort(false); }}
-                    className={`block w-full px-3 py-2 text-left text-[12px] transition-colors hover:bg-raised ${
-                      s === sort ? "font-semibold text-ink" : "text-ink-muted"
-                    }`}
-                  >
-                    {t(s.charAt(0).toUpperCase() + s.slice(1))}
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
-          <button
-            onClick={handleOpenTrakt}
-            className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-[12px] font-medium text-ink-muted ring-1 ring-edge transition-colors hover:bg-elevated hover:text-ink"
-          >
-            {t("Open on Trakt")}
-          </button>
-        </div>
+        )}
       </div>
 
-      {loading ? (
+      {resolution && !resolution.ok && (
+        <p className="rounded-xl bg-elevated p-4 text-[13px] text-ink-muted ring-1 ring-edge">
+          {resolution.reason === "anime"
+            ? t("Trakt comments are not available for anime titles.")
+            : t("Could not identify this title on Trakt.")}
+        </p>
+      )}
+
+      {target && !connected && (
+        <div className="rounded-xl border border-edge-soft bg-elevated/60 p-5 text-center">
+          <p className="text-[14px] text-ink-muted">
+            {t("Connect your Trakt account to see comments and reviews.")}
+          </p>
+          <p className="mt-3">
+            <button
+              onClick={() => openUrl("harbor://settings/account")}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-ink px-4 py-2 text-[13px] font-semibold text-canvas transition-transform hover:scale-[1.02]"
+            >
+              {t("Connect Trakt")}
+              <ExternalLink size={13} strokeWidth={2.2} />
+            </button>
+          </p>
+        </div>
+      )}
+
+      {connected && target && loading && (
         <div className="flex flex-col gap-3">
           {[1, 2, 3].map((i) => (
             <div key={i} className="flex gap-3 rounded-xl bg-elevated p-4 ring-1 ring-edge">
@@ -184,9 +209,13 @@ export function TraktComments({ target }: { target: TraktTarget }) {
             </div>
           ))}
         </div>
-      ) : comments.length === 0 ? (
+      )}
+
+      {connected && target && !loading && comments.length === 0 && (
         <p className="text-[14px] text-ink-muted">{t("No comments yet")}</p>
-      ) : (
+      )}
+
+      {connected && target && !loading && comments.length > 0 && (
         <div className="flex flex-col gap-3">
           {comments.map((c) => (
             <CommentCard key={c.id} comment={c} />
