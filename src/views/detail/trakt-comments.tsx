@@ -26,6 +26,32 @@ function timeAgo(dateStr: string): string {
   return `${months}mo ago`;
 }
 
+function UserAvatar({ username, size = "md" }: { username: string; size?: "sm" | "md" }) {
+  const [error, setError] = useState(false);
+  const dim = size === "sm" ? "h-8 w-8" : "h-9 w-9";
+  const font = size === "sm" ? "text-[12px]" : "text-[14px]";
+  const url = `https://walter.trakt.tv/users/${username}/avatars/medium`;
+  const initial = username.charAt(0).toUpperCase();
+
+  return (
+    <div className={`shrink-0 ${dim}`}>
+      {error ? (
+        <div className={`flex ${dim} items-center justify-center rounded-full bg-ink-muted/20 ${font} font-semibold text-ink-muted`}>
+          {initial}
+        </div>
+      ) : (
+        <img
+          src={url}
+          alt={username}
+          className={`${dim} rounded-full object-cover`}
+          loading="lazy"
+          onError={() => setError(true)}
+        />
+      )}
+    </div>
+  );
+}
+
 function CommentCard({
   comment,
   connected,
@@ -140,10 +166,14 @@ export function TraktComments({ resolution }: { resolution: IdResolution | null 
   const [text, setText] = useState("");
   const sortRef = useRef<HTMLDivElement>(null);
   const { openSettings } = useView();
-  const [connected, setConnected] = useState(() => !!getSession());
+  const [session, setSessionState] = useState(() => getSession());
+  const connected = !!session;
+  const username = session?.username ?? null;
 
   useEffect(() => {
-    return subscribeSession(() => setConnected(!!getSession()));
+    return subscribeSession(() => {
+      setSessionState(getSession());
+    });
   }, []);
 
   const target = resolution?.ok ? resolution.target : null;
@@ -265,6 +295,41 @@ export function TraktComments({ resolution }: { resolution: IdResolution | null 
         </div>
       )}
 
+      {target && connected && (
+        <div className="mb-5 flex items-start gap-3">
+          {username && <UserAvatar username={username} size="sm" />}
+          <div className="flex flex-1 items-start gap-2">
+            <textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder={t("Write a comment...")}
+              rows={1}
+              className="min-h-[36px] max-h-32 flex-1 resize-none overflow-y-auto rounded-xl bg-elevated px-3.5 py-2 text-[13px] text-ink outline-none ring-1 ring-edge placeholder:text-ink-muted/50 focus:ring-2 focus:ring-ink/20"
+              onInput={(e) => {
+                const el = e.currentTarget;
+                el.style.height = "auto";
+                el.style.height = `${Math.min(el.scrollHeight, 128)}px`;
+              }}
+            />
+            <button
+              onClick={handlePost}
+              disabled={!text.trim() || posting}
+              className={`flex h-9 shrink-0 items-center gap-1.5 rounded-xl px-3.5 text-[13px] font-semibold transition-all ${
+                !text.trim() || posting
+                  ? "bg-ink-muted/20 text-ink-muted/50 cursor-not-allowed"
+                  : "bg-ink text-canvas hover:scale-[1.02]"
+              }`}
+            >
+              {posting ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <Send size={14} />
+              )}
+            </button>
+          </div>
+        </div>
+      )}
+
       {target && loading && (
         <div className="flex flex-col gap-3">
           {[1, 2, 3].map((i) => (
@@ -280,7 +345,7 @@ export function TraktComments({ resolution }: { resolution: IdResolution | null 
         </div>
       )}
 
-      {target && !loading && comments.length === 0 && !connected && (
+      {target && !loading && comments.length === 0 && (
         <p className="text-[14px] text-ink-muted">{t("No comments yet")}</p>
       )}
 
@@ -289,34 +354,6 @@ export function TraktComments({ resolution }: { resolution: IdResolution | null 
           {comments.map((c) => (
             <CommentCard key={c.id} comment={c} connected={connected} />
           ))}
-        </div>
-      )}
-
-      {target && connected && (
-        <div className="mt-5 flex gap-3">
-          <textarea
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder={t("Write a comment...")}
-            rows={3}
-            className="min-h-0 flex-1 resize-none rounded-xl bg-elevated p-3 text-[13px] text-ink outline-none ring-1 ring-edge placeholder:text-ink-muted/50 focus:ring-2 focus:ring-ink/20"
-          />
-          <button
-            onClick={handlePost}
-            disabled={!text.trim() || posting}
-            className={`flex h-fit shrink-0 items-center gap-1.5 rounded-xl px-4 py-2.5 text-[13px] font-semibold transition-all ${
-              !text.trim() || posting
-                ? "bg-ink-muted/20 text-ink-muted/50 cursor-not-allowed"
-                : "bg-ink text-canvas hover:scale-[1.02]"
-            }`}
-          >
-            {posting ? (
-              <Loader2 size={14} className="animate-spin" />
-            ) : (
-              <Send size={14} />
-            )}
-            {posting ? t("Posting...") : t("Post")}
-          </button>
         </div>
       )}
     </section>
