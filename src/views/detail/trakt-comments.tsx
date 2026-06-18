@@ -5,6 +5,7 @@ import { getSession } from "@/lib/trakt/session";
 import { fetchComments, type TraktComment } from "@/lib/trakt/comments";
 import type { TraktTarget } from "@/lib/trakt/types";
 import { openUrl } from "@/lib/window";
+import { useSettings } from "@/lib/settings";
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -122,7 +123,8 @@ export function TraktComments({ target }: { target: TraktTarget }) {
   }, [target]);
 
   const session = getSession();
-  if (!session) return null;
+  const { settings } = useSettings();
+  if (!session && !settings.traktAccessToken) return null;
 
   return (
     <section>

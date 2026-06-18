@@ -21,7 +21,6 @@ import { Pill } from "@/views/detail/pill";
 import { PlayModeHint } from "@/views/detail/play-mode-hint";
 import { TraktComments } from "@/views/detail/trakt-comments";
 import { stremioIdToTraktTarget } from "@/lib/trakt/ids";
-import { getSession } from "@/lib/trakt/session";
 
 export interface EpisodeDetailViewProps {
   seriesId: string;
@@ -119,8 +118,7 @@ export function EpisodeDetailView({
 
   const seriesRating = omdbScores?.imdbRating ?? (imdbId ? seriesMeta?.imdbRating : undefined) ?? undefined;
 
-  const traktSession = getSession();
-  const traktResolution = traktSession
+  const traktResolution = settings.traktAccessToken
     ? stremioIdToTraktTarget(seriesId, { season, episode })
     : null;
 
