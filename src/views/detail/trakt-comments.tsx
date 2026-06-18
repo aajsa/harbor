@@ -3,7 +3,7 @@ import { Heart, MessageCircle, ChevronDown, Settings } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import { fetchComments, type TraktComment } from "@/lib/trakt/comments";
 import type { IdResolution } from "@/lib/trakt/ids";
-import { useSettings } from "@/lib/settings";
+import { getSession, subscribeSession } from "@/lib/trakt/session";
 import { useView } from "@/lib/view";
 import { openUrl } from "@/lib/window";
 
@@ -21,18 +21,25 @@ function timeAgo(dateStr: string): string {
 }
 
 function CommentCard({ comment }: { comment: TraktComment }) {
-  const avatar = comment.user.avatar ?? (comment.user.slug ? `https://walter.trakt.tv/users/${comment.user.slug}/avatars/medium.jpg` : null);
+  const [imgError, setImgError] = useState(false);
+  const avatar = (() => {
+    if (comment.user.avatar) return comment.user.avatar;
+    if (comment.user.slug) return `https://walter.trakt.tv/users/${comment.user.slug}/avatars/medium`;
+    return null;
+  })();
   const initial = (comment.user.name ?? comment.user.username).charAt(0).toUpperCase();
+  const showImg = avatar && !imgError;
 
   return (
     <div className="flex gap-3 rounded-xl bg-elevated p-4 ring-1 ring-edge">
       <div className="shrink-0">
-        {avatar ? (
+        {showImg ? (
           <img
-            src={avatar}
+            src={avatar!}
             alt={comment.user.username}
             className="h-9 w-9 rounded-full object-cover"
             loading="lazy"
+            onError={() => setImgError(true)}
           />
         ) : (
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-ink-muted/20 text-[14px] font-semibold text-ink-muted">
@@ -82,21 +89,12 @@ export function TraktComments({ resolution }: { resolution: IdResolution | null 
   const [sort, setSort] = useState<string>("likes");
   const [showSort, setShowSort] = useState(false);
   const sortRef = useRef<HTMLDivElement>(null);
-  const { settings } = useSettings();
   const { openSettings } = useView();
+  const [connected, setConnected] = useState(() => !!getSession());
 
-  const connected = !!(
-    settings.traktAccessToken ||
-    settings.traktRefreshToken ||
-    (() => {
-      try {
-        const raw = localStorage.getItem("harbor.settings");
-        if (!raw) return false;
-        const s = JSON.parse(raw);
-        return !!(s.traktAccessToken || s.traktRefreshToken);
-      } catch { return false; }
-    })()
-  );
+  useEffect(() => {
+    return subscribeSession(() => setConnected(!!getSession()));
+  }, []);
 
   const target = resolution?.ok ? resolution.target : null;
 
