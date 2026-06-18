@@ -242,19 +242,17 @@ export function TraktComments({ resolution }: { resolution: IdResolution | null 
       setComments((prev) => [created, ...prev]);
       setText("");
     } catch (e) {
+      console.error("Post comment error:", e);
       if (e instanceof TraktApiError) {
         try {
           const parsed = JSON.parse(e.body);
-          const msg = parsed.error_description ?? parsed.error ?? `Trakt HTTP ${e.status}`;
+          const msg = parsed.error_description ?? parsed.error ?? `HTTP ${e.status}`;
           setPostError(msg.replace(/^\w+\s*-\s*/, ""));
         } catch {
-          setPostError(e.body ? e.body.slice(0, 200) : `Trakt HTTP ${e.status}`);
+          setPostError(`HTTP ${e.status}: ${e.body.slice(0, 100) || "(empty body)"}`);
         }
       } else {
-        const msg = e instanceof TypeError
-          ? "Network error — CORS blocked or connection lost"
-          : "Failed to post comment";
-        setPostError(msg);
+        setPostError(e instanceof TypeError ? "Network error" : "Failed to post comment");
       }
     }
     setPosting(false);
