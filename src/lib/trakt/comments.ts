@@ -1,4 +1,6 @@
 import { traktRequest } from "./client";
+import { TRAKT_API_BASE, TRAKT_CLIENT_ID } from "./config";
+import { getSession } from "./session";
 import type { TraktTarget, TraktIds } from "./types";
 
 export type TraktComment = {
@@ -148,15 +150,32 @@ export async function removeRating(target: TraktTarget): Promise<void> {
 }
 
 export async function getUserRating(target: TraktTarget): Promise<number | null> {
+  const session = getSession();
+  if (!session?.accessToken) return null;
+
   const epIds = (target as { ids?: TraktIds }).ids;
   const itemId = target.kind === "episode" ? (epIds?.tmdb ?? epIds?.imdb) : (target.ids?.tmdb ?? target.ids?.imdb);
   if (!itemId) return null;
 
   const param = typeof itemId === "number" ? `tmdb=${itemId}` : `imdb=${itemId}`;
   const type = target.kind === "movie" ? "movies" : target.kind === "episode" ? "episodes" : "shows";
-  const raw = await traktRequest<{ rating: number }[]>(
-    `/sync/ratings/${type}?${param}`,
-    { authed: true },
-  ).catch(() => [] as { rating: number }[]);
-  return raw[0]?.rating ?? null;
+
+  try {
+    const res = await fetch(`${TRAKT_API_BASE}/sync/ratings/${type}?${param}`, {
+      headers: {
+        "Content-Type": "application/json",
+        "trakt-api-version": "2",
+        "trakt-api-key": TRAKT_CLIENT_ID,
+        Authorization: `Bearer ${session.accessToken}`,
+      },
+      redirect: "manual",
+    });
+    if (res.status >= 200 && res.status < 300) {
+      const data = (await res.json()) as { rating: number }[];
+      return data[0]?.rating ?? null;
+    }
+    return null;
+  } catch {
+    return null;
+  }
 }
