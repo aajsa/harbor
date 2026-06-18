@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, useId } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useId } from "react";
 import { Heart, MessageCircle, ChevronDown, Settings, Loader2, Send, AlertCircle } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import {
@@ -8,7 +8,6 @@ import {
   postComment,
   rateContent,
   removeRating,
-  getUserRating,
   type TraktComment,
 } from "@/lib/trakt/comments";
 import { traktRequest, TraktApiError } from "@/lib/trakt/client";
@@ -247,6 +246,16 @@ export function TraktComments({ resolution }: { resolution: IdResolution | null 
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
   const target = resolution?.ok ? resolution.target : null;
 
+  const ratingCacheKey = useMemo(() => {
+    if (!target) return null;
+    if (target.kind === "episode") {
+      const id = target.show.ids.imdb ?? target.show.ids.tmdb;
+      return `trakt-rating:episode:${id}:s${target.season}e${target.number}`;
+    }
+    const id = target.ids.imdb ?? target.ids.tmdb;
+    return `trakt-rating:${target.kind}:${id}`;
+  }, [target]);
+
   useEffect(() => {
     return subscribeSession(() => {
       setSessionState(getSession());
@@ -267,15 +276,15 @@ export function TraktComments({ resolution }: { resolution: IdResolution | null 
     return () => { cancelled = true; };
   }, [connected]);
 
+  // Restore cached rating from localStorage
   useEffect(() => {
-    if (!connected || !target) return;
-    let cancelled = false;
-    getUserRating(target).then((r) => {
-      if (cancelled) return;
-      if (r != null) setUserRating(r);
-    });
-    return () => { cancelled = true; };
-  }, [connected, target]);
+    if (!ratingCacheKey) return;
+    const cached = localStorage.getItem(ratingCacheKey);
+    if (cached) {
+      const n = Number(cached);
+      if (n > 0) setUserRating(n);
+    }
+  }, [ratingCacheKey]);
 
   useEffect(() => {
     if (!target) {
@@ -353,13 +362,15 @@ export function TraktComments({ resolution }: { resolution: IdResolution | null 
       if (rating === userRating) {
         await removeRating(target);
         setUserRating(0);
+        if (ratingCacheKey) localStorage.removeItem(ratingCacheKey);
       } else {
         await rateContent(target, rating);
         setUserRating(rating);
+        if (ratingCacheKey) localStorage.setItem(ratingCacheKey, String(rating));
       }
     } catch {}
     setRatinging(false);
-  }, [target, ratinging, userRating]);
+  }, [target, ratinging, userRating, ratingCacheKey]);
 
   return (
     <section>
