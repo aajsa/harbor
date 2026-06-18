@@ -122,7 +122,7 @@ export async function postComment(
     share: false,
     ...subjectBody(target),
   };
-  const raw = await traktRequest<RawComment>("/comments", {
+  const raw = await traktRequest<RawComment>("/comments?extended=images", {
     method: "POST",
     authed: true,
     body,

@@ -47,6 +47,7 @@ function UserAvatar({ username, size = "sm" }: { username?: string | null; size?
           alt={username}
           className={`${dim} rounded-full object-cover`}
           loading="lazy"
+          referrerPolicy="no-referrer"
           onError={() => setError(true)}
         />
       )}
@@ -169,6 +170,7 @@ function CommentCard({
             alt={comment.user.username}
             className="h-9 w-9 rounded-full object-cover"
             loading="lazy"
+            referrerPolicy="no-referrer"
             onError={() => setImgError(true)}
           />
         ) : (
@@ -466,6 +468,7 @@ export function TraktComments({ resolution }: { resolution: IdResolution | null 
                 src={userAvatar}
                 alt={username ?? ""}
                 className="h-8 w-8 shrink-0 rounded-full object-cover"
+                referrerPolicy="no-referrer"
               />
             ) : (
               <UserAvatar username={username} size="sm" />
