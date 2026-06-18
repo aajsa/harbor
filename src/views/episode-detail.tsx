@@ -122,8 +122,14 @@ export function EpisodeDetailView({
 
   // Inject IMDB ID into target if resolution succeeded but only has TMDB ID
   // (Trakt comments API only accepts IMDB/Trakt/slug IDs, not TMDB)
-  if (traktResolution.ok && imdbId && traktResolution.target.kind === "episode" && !traktResolution.target.show.ids.imdb) {
-    traktResolution.target.show.ids.imdb = imdbId;
+  if (traktResolution.ok && traktResolution.target.kind === "episode") {
+    const target = traktResolution.target;
+    if (imdbId && !target.show.ids.imdb) target.show.ids.imdb = imdbId;
+    // Add episode-level ids for comment posting
+    const epIds: { tmdb?: number; imdb?: string } = {};
+    if (episodeData?.id) epIds.tmdb = episodeData.id;
+    if (imdbId) epIds.imdb = imdbId;
+    (target as { ids?: { tmdb?: number; imdb?: string } }).ids = epIds;
   }
 
   const handlePlay = useCallback(() => {

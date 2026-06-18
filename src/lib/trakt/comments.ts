@@ -85,7 +85,45 @@ export async function fetchComments(
   target: TraktTarget,
   sort: string = "likes",
 ): Promise<TraktComment[]> {
-  const path = commentsPath(target, sort);
+  const path = commentsPath(target, sort) + "?extended=images";
   const raw = await traktRequest<RawComment[]>(path).catch(() => [] as RawComment[]);
   return raw.filter((c) => !c.spoiler).map(mapComment);
+}
+
+export async function likeComment(id: number): Promise<void> {
+  await traktRequest(`/comments/${id}/like`, { method: "POST", authed: true });
+}
+
+export async function unlikeComment(id: number): Promise<void> {
+  await traktRequest(`/comments/${id}/like`, { method: "DELETE", authed: true });
+}
+
+function subjectBody(target: TraktTarget) {
+  const ids: Record<string, string | number> = {};
+  const src = target.kind === "episode"
+    ? (target as { ids?: { tmdb?: number; imdb?: string } }).ids ?? (target as { show: { ids: { tmdb?: number; imdb?: string } } }).show.ids
+    : target.ids;
+  if (src.tmdb) ids.tmdb = src.tmdb;
+  if (src.imdb) ids.imdb = src.imdb;
+  const key = target.kind === "episode" ? "episode" : target.kind;
+  return { [key]: { ids } };
+}
+
+export async function postComment(
+  target: TraktTarget,
+  comment: string,
+): Promise<TraktComment> {
+  const body = {
+    comment,
+    spoiler: false,
+    review: false,
+    share: false,
+    ...subjectBody(target),
+  };
+  const raw = await traktRequest<RawComment>("/comments", {
+    method: "POST",
+    authed: true,
+    body,
+  });
+  return mapComment(raw);
 }

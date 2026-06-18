@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Heart, MessageCircle, ChevronDown, Settings } from "lucide-react";
+import { Heart, MessageCircle, ChevronDown, Settings, Loader2, Send } from "lucide-react";
 import { useT } from "@/lib/i18n";
-import { fetchComments, type TraktComment } from "@/lib/trakt/comments";
+import {
+  fetchComments,
+  likeComment,
+  unlikeComment,
+  postComment,
+  type TraktComment,
+} from "@/lib/trakt/comments";
 import type { IdResolution } from "@/lib/trakt/ids";
 import { getSession, subscribeSession } from "@/lib/trakt/session";
 import { useView } from "@/lib/view";
@@ -20,8 +26,17 @@ function timeAgo(dateStr: string): string {
   return `${months}mo ago`;
 }
 
-function CommentCard({ comment }: { comment: TraktComment }) {
+function CommentCard({
+  comment,
+  connected,
+}: {
+  comment: TraktComment;
+  connected: boolean;
+}) {
   const [imgError, setImgError] = useState(false);
+  const [liking, setLiking] = useState(false);
+  const [likes, setLikes] = useState(comment.likes);
+
   const avatar = (() => {
     if (comment.user.avatar) return comment.user.avatar;
     if (comment.user.slug) return `https://walter.trakt.tv/users/${comment.user.slug}/avatars/medium`;
@@ -29,6 +44,24 @@ function CommentCard({ comment }: { comment: TraktComment }) {
   })();
   const initial = (comment.user.name ?? comment.user.username).charAt(0).toUpperCase();
   const showImg = avatar && !imgError;
+
+  const handleLike = useCallback(async () => {
+    if (liking || !connected) return;
+    setLiking(true);
+    const wasLiked = likes !== comment.likes;
+    if (wasLiked) {
+      setLikes((l) => l - 1);
+      await unlikeComment(comment.id);
+    } else {
+      setLikes((l) => l + 1);
+      try {
+        await likeComment(comment.id);
+      } catch {
+        setLikes((l) => l - 1);
+      }
+    }
+    setLiking(false);
+  }, [liking, connected, likes, comment.id, comment.likes]);
 
   return (
     <div className="flex gap-3 rounded-xl bg-elevated p-4 ring-1 ring-edge">
@@ -64,10 +97,25 @@ function CommentCard({ comment }: { comment: TraktComment }) {
           {comment.comment}
         </p>
         <div className="mt-2 flex items-center gap-3 text-[12px] text-ink-muted">
-          <span className="flex items-center gap-1">
-            <Heart size={12} />
-            {comment.likes}
-          </span>
+          <button
+            onClick={handleLike}
+            disabled={liking || !connected}
+            className={`flex items-center gap-1 transition-colors ${
+              likes !== comment.likes
+                ? "text-red-400"
+                : "text-ink-muted hover:text-red-400"
+            } ${!connected ? "cursor-not-allowed opacity-50" : ""}`}
+          >
+            {liking ? (
+              <Loader2 size={12} className="animate-spin" />
+            ) : (
+              <Heart
+                size={12}
+                fill={likes !== comment.likes ? "currentColor" : "none"}
+              />
+            )}
+            {likes}
+          </button>
           {comment.replies > 0 && (
             <span className="flex items-center gap-1">
               <MessageCircle size={12} />
@@ -88,6 +136,8 @@ export function TraktComments({ resolution }: { resolution: IdResolution | null 
   const [loading, setLoading] = useState(true);
   const [sort, setSort] = useState<string>("likes");
   const [showSort, setShowSort] = useState(false);
+  const [posting, setPosting] = useState(false);
+  const [text, setText] = useState("");
   const sortRef = useRef<HTMLDivElement>(null);
   const { openSettings } = useView();
   const [connected, setConnected] = useState(() => !!getSession());
@@ -136,6 +186,19 @@ export function TraktComments({ resolution }: { resolution: IdResolution | null 
       openUrl(`https://trakt.tv/search/${provider}/${val}`);
     }
   }, [target]);
+
+  const handlePost = useCallback(async () => {
+    if (!target || !text.trim() || posting) return;
+    setPosting(true);
+    try {
+      const created = await postComment(target, text.trim());
+      setComments((prev) => [created, ...prev]);
+      setText("");
+    } catch (e) {
+      console.error("Failed to post comment:", e);
+    }
+    setPosting(false);
+  }, [target, text, posting]);
 
   return (
     <section>
@@ -217,15 +280,43 @@ export function TraktComments({ resolution }: { resolution: IdResolution | null 
         </div>
       )}
 
-      {target && !loading && comments.length === 0 && (
+      {target && !loading && comments.length === 0 && !connected && (
         <p className="text-[14px] text-ink-muted">{t("No comments yet")}</p>
       )}
 
       {target && !loading && comments.length > 0 && (
         <div className="flex flex-col gap-3">
           {comments.map((c) => (
-            <CommentCard key={c.id} comment={c} />
+            <CommentCard key={c.id} comment={c} connected={connected} />
           ))}
+        </div>
+      )}
+
+      {target && connected && (
+        <div className="mt-5 flex gap-3">
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder={t("Write a comment...")}
+            rows={3}
+            className="min-h-0 flex-1 resize-none rounded-xl bg-elevated p-3 text-[13px] text-ink outline-none ring-1 ring-edge placeholder:text-ink-muted/50 focus:ring-2 focus:ring-ink/20"
+          />
+          <button
+            onClick={handlePost}
+            disabled={!text.trim() || posting}
+            className={`flex h-fit shrink-0 items-center gap-1.5 rounded-xl px-4 py-2.5 text-[13px] font-semibold transition-all ${
+              !text.trim() || posting
+                ? "bg-ink-muted/20 text-ink-muted/50 cursor-not-allowed"
+                : "bg-ink text-canvas hover:scale-[1.02]"
+            }`}
+          >
+            {posting ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Send size={14} />
+            )}
+            {posting ? t("Posting...") : t("Post")}
+          </button>
         </div>
       )}
     </section>
