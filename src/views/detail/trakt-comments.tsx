@@ -63,26 +63,28 @@ function StarRow({ value, interactive, onRate, onHover }: { value: number; inter
       {[1, 2, 3, 4, 5].map((star) => {
         const even = star * 2;
         const odd = star * 2 - 1;
-        let fill: "full" | "half" | "none";
-        if (display >= even) fill = "full";
-        else if (display >= odd) fill = "half";
-        else fill = "none";
+        let pct = 0;
+        if (display >= even) pct = 100;
+        else if (display >= odd) pct = 50;
 
         return (
           <span
             key={star}
             className="relative inline-flex items-center justify-center"
-            style={{ width: "0.9em", height: "1em" }}
+            style={{ width: "1em", height: "1.1em" }}
           >
             <span
-              className={`absolute inset-0 flex items-center justify-center text-[18px] leading-none ${
-                fill === "full" || fill === "half" ? "text-yellow-400" : "text-ink-muted/20"
-              }`}
+              className="absolute inset-0 flex items-center justify-center text-[20px] leading-none text-ink-muted/20 select-none"
             >★</span>
-            {fill === "half" && (
+            {pct > 0 && (
               <span
-                className="absolute inset-0 flex items-center justify-center overflow-hidden text-[18px] leading-none text-yellow-400"
-                style={{ width: "50%" }}
+                className="absolute inset-0 flex items-center justify-center text-[20px] leading-none select-none"
+                style={{
+                  color: "transparent",
+                  background: `linear-gradient(90deg, #facc15 ${pct}%, transparent ${pct}%)`,
+                  WebkitBackgroundClip: "text",
+                  backgroundClip: "text",
+                }}
               >★</span>
             )}
             {interactive && (
@@ -110,7 +112,7 @@ function StarRow({ value, interactive, onRate, onHover }: { value: number; inter
         );
       })}
       {!interactive && value > 0 && (
-        <span className="ml-1 text-[12px] font-medium text-ink-muted">
+        <span className="ml-1 text-[12px] font-medium text-ink-muted whitespace-nowrap">
           {value % 2 === 0 ? value / 2 : (value / 2).toFixed(1)}
         </span>
       )}
