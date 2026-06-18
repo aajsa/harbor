@@ -325,10 +325,12 @@ export function TraktComments({ resolution }: { resolution: IdResolution | null 
 
       {target && connected && (
         <div className="mb-4 flex items-center gap-2">
-          <span className="text-[12px] font-medium text-ink-muted">{t("Your Rating")}:</span>
+          <span className="text-[12px] font-medium text-ink-muted">{t("Rating")}:</span>
           <div className="flex items-center gap-0.5">
-            {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
-              const active = hoverRating ? n <= hoverRating : n <= userRating;
+            {[2, 4, 6, 8, 10].map((n) => {
+              const starIndex = n / 2;
+              const display = hoverRating || userRating;
+              const filled = starIndex <= (display / 2);
               return (
                 <button
                   key={n}
@@ -336,10 +338,10 @@ export function TraktComments({ resolution }: { resolution: IdResolution | null 
                   onMouseEnter={() => setHoverRating(n)}
                   onMouseLeave={() => setHoverRating(0)}
                   disabled={ratinging}
-                  className={`h-5 w-5 text-[14px] transition-colors ${
+                  className={`text-[18px] leading-none transition-colors ${
                     ratinging ? "cursor-wait opacity-50" : "cursor-pointer"
                   } ${
-                    active ? "text-yellow-400" : "text-ink-muted/30"
+                    filled ? "text-yellow-400" : "text-ink-muted/20"
                   }`}
                 >
                   ★
@@ -347,17 +349,19 @@ export function TraktComments({ resolution }: { resolution: IdResolution | null 
               );
             })}
           </div>
-          {userRating > 0 && (
-            <>
-              <span className="text-[12px] font-medium text-ink-muted">{userRating}/10</span>
-              <button
-                onClick={() => handleRate(userRating)}
-                disabled={ratinging}
-                className="text-[11px] text-ink-muted/50 underline transition-colors hover:text-ink-muted"
-              >
-                {t("Remove")}
-              </button>
-            </>
+          {(hoverRating || userRating) > 0 && (
+            <span className="text-[12px] font-medium text-ink-muted">
+              {hoverRating || userRating}/10
+            </span>
+          )}
+          {userRating > 0 && !hoverRating && (
+            <button
+              onClick={() => handleRate(userRating)}
+              disabled={ratinging}
+              className="text-[11px] text-ink-muted/50 underline transition-colors hover:text-ink-muted"
+            >
+              {t("Remove")}
+            </button>
           )}
         </div>
       )}
