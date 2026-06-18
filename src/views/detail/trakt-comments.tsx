@@ -245,9 +245,10 @@ export function TraktComments({ resolution }: { resolution: IdResolution | null 
       if (e instanceof TraktApiError) {
         try {
           const parsed = JSON.parse(e.body);
-          setPostError(parsed.error_description ?? parsed.error ?? "Failed to post comment");
+          const msg = parsed.error_description ?? parsed.error ?? `Trakt error (${e.status})`;
+          setPostError(msg.replace(/^\w+\s*-\s*/, ""));
         } catch {
-          setPostError("Failed to post comment");
+          setPostError(e.body ? e.body.slice(0, 200) : `Trakt error (${e.status})`);
         }
       } else {
         setPostError("Failed to post comment");
