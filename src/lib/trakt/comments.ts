@@ -14,6 +14,7 @@ export type TraktComment = {
     username: string;
     name: string | null;
     avatar: string | null;
+    slug: string | null;
   };
 };
 
@@ -75,6 +76,7 @@ function mapComment(raw: RawComment): TraktComment {
       username: raw.user.username,
       name: raw.user.name,
       avatar: raw.user.images?.avatar?.full ?? null,
+      slug: raw.user.ids.slug,
     },
   };
 }

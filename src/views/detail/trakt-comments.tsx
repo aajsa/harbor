@@ -3,6 +3,7 @@ import { Heart, MessageCircle, ChevronDown, Settings } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import { fetchComments, type TraktComment } from "@/lib/trakt/comments";
 import type { IdResolution } from "@/lib/trakt/ids";
+import { useSettings } from "@/lib/settings";
 import { useView } from "@/lib/view";
 import { openUrl } from "@/lib/window";
 
@@ -20,7 +21,7 @@ function timeAgo(dateStr: string): string {
 }
 
 function CommentCard({ comment }: { comment: TraktComment }) {
-  const avatar = comment.user.avatar;
+  const avatar = comment.user.avatar ?? (comment.user.slug ? `https://walter.trakt.tv/users/${comment.user.slug}/avatars/medium.jpg` : null);
   const initial = (comment.user.name ?? comment.user.username).charAt(0).toUpperCase();
 
   return (
@@ -52,7 +53,7 @@ function CommentCard({ comment }: { comment: TraktComment }) {
             </span>
           )}
         </div>
-        <p className="mt-1.5 whitespace-pre-wrap break-words text-[13px] leading-relaxed text-ink">
+        <p className="mt-1.5 whitespace-pre-wrap break-words text-[13px] leading-relaxed text-ink" dir="auto">
           {comment.comment}
         </p>
         <div className="mt-2 flex items-center gap-3 text-[12px] text-ink-muted">
@@ -81,16 +82,21 @@ export function TraktComments({ resolution }: { resolution: IdResolution | null 
   const [sort, setSort] = useState<string>("likes");
   const [showSort, setShowSort] = useState(false);
   const sortRef = useRef<HTMLDivElement>(null);
+  const { settings } = useSettings();
   const { openSettings } = useView();
 
-  const connected = (() => {
-    try {
-      const raw = localStorage.getItem("harbor.settings");
-      if (!raw) return false;
-      const s = JSON.parse(raw);
-      return !!(s.traktAccessToken || s.traktRefreshToken);
-    } catch { return false; }
-  })();
+  const connected = !!(
+    settings.traktAccessToken ||
+    settings.traktRefreshToken ||
+    (() => {
+      try {
+        const raw = localStorage.getItem("harbor.settings");
+        if (!raw) return false;
+        const s = JSON.parse(raw);
+        return !!(s.traktAccessToken || s.traktRefreshToken);
+      } catch { return false; }
+    })()
+  );
 
   const target = resolution?.ok ? resolution.target : null;
 
