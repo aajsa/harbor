@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useId } from "react";
-import { Heart, MessageCircle, ChevronDown, Settings, Loader2, Send, AlertCircle } from "lucide-react";
+import { Heart, MessageCircle, ChevronDown, Settings, Loader2, Send, AlertCircle, Trash2 } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import {
   fetchComments,
   fetchReplies,
   likeComment,
   unlikeComment,
+  deleteComment,
   postComment,
   rateContent,
   removeRating,
@@ -128,9 +129,13 @@ function StarRow({ value, interactive, onRate, onHover }: { value: number; inter
 function CommentCard({
   comment,
   connected,
+  username,
+  onDelete,
 }: {
   comment: TraktComment;
   connected: boolean;
+  username: string | null;
+  onDelete: (id: number) => void;
 }) {
   const [imgError, setImgError] = useState(false);
   const [liking, setLiking] = useState(false);
@@ -138,6 +143,7 @@ function CommentCard({
   const [revealed, setRevealed] = useState(!comment.spoiler);
   const [replies, setReplies] = useState<TraktComment[] | null>(null);
   const [loadingReplies, setLoadingReplies] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const avatar = (() => {
     if (comment.user.avatar) return comment.user.avatar;
@@ -250,6 +256,28 @@ function CommentCard({
                 <MessageCircle size={12} />
               )}
               {replies ? `${comment.replies}` : `${comment.replies}`}
+            </button>
+          )}
+          {comment.user.username === username && (
+            <button
+              onClick={async () => {
+                if (deleting) return;
+                setDeleting(true);
+                try {
+                  await deleteComment(comment.id);
+                  onDelete(comment.id);
+                } catch {
+                  setDeleting(false);
+                }
+              }}
+              disabled={deleting}
+              className="flex items-center gap-1 text-ink-muted transition-colors hover:text-red-400 disabled:opacity-50"
+            >
+              {deleting ? (
+                <Loader2 size={12} className="animate-spin" />
+              ) : (
+                <Trash2 size={12} />
+              )}
             </button>
           )}
         </div>
@@ -442,6 +470,14 @@ export function TraktComments({ resolution }: { resolution: IdResolution | null 
     }
     setPosting(false);
   }, [target, text, posting, commentsCacheKey, spoiler]);
+
+  const handleDelete = useCallback((id: number) => {
+    setComments((prev) => prev.filter((c) => c.id !== id));
+    if (commentsCacheKey) {
+      const existing = JSON.parse(localStorage.getItem(commentsCacheKey) ?? "[]") as TraktComment[];
+      localStorage.setItem(commentsCacheKey, JSON.stringify(existing.filter((c) => c.id !== id)));
+    }
+  }, [commentsCacheKey]);
 
   const handleRate = useCallback(async (rating: number) => {
     if (!target || ratinging) return;
@@ -646,7 +682,7 @@ export function TraktComments({ resolution }: { resolution: IdResolution | null 
       {target && !loading && (
         <div className="flex flex-col gap-3">
           {(myComments ? comments.filter((c) => c.user.username === username) : comments).map((c) => (
-            <CommentCard key={c.id} comment={c} connected={connected} />
+            <CommentCard key={c.id} comment={c} connected={connected} username={username} onDelete={handleDelete} />
           ))}
         </div>
       )}
