@@ -54,6 +54,70 @@ function UserAvatar({ username, size = "sm" }: { username?: string | null; size?
   );
 }
 
+function StarRow({ value, interactive, onRate, onHover }: { value: number; interactive: boolean; onRate?: (v: number) => void; onHover?: (v: number) => void }) {
+  const [localHover, setLocalHover] = useState(0);
+  const display = interactive ? (localHover || value) : value;
+
+  return (
+    <div className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((star) => {
+        const even = star * 2;
+        const odd = star * 2 - 1;
+        let fill: "full" | "half" | "none";
+        if (display >= even) fill = "full";
+        else if (display >= odd) fill = "half";
+        else fill = "none";
+
+        return (
+          <span
+            key={star}
+            className="relative inline-flex items-center justify-center"
+            style={{ width: "0.9em", height: "1em" }}
+          >
+            <span
+              className={`absolute inset-0 flex items-center justify-center text-[18px] leading-none ${
+                fill === "full" || fill === "half" ? "text-yellow-400" : "text-ink-muted/20"
+              }`}
+            >★</span>
+            {fill === "half" && (
+              <span
+                className="absolute inset-0 flex items-center justify-center overflow-hidden text-[18px] leading-none text-yellow-400"
+                style={{ width: "50%" }}
+              >★</span>
+            )}
+            {interactive && (
+              <span
+                className="absolute inset-0 z-10 flex cursor-pointer"
+                onClick={(e) => {
+                  const r = e.currentTarget.getBoundingClientRect();
+                  const x = e.clientX - r.left;
+                  onRate?.(x < r.width / 2 ? odd : even);
+                }}
+                onMouseEnter={(e) => {
+                  const r = e.currentTarget.getBoundingClientRect();
+                  const x = e.clientX - r.left;
+                  const v = x < r.width / 2 ? odd : even;
+                  setLocalHover(v);
+                  onHover?.(v);
+                }}
+                onMouseLeave={() => { setLocalHover(0); onHover?.(0); }}
+              >
+                <span className="h-full w-1/2" />
+                <span className="h-full w-1/2" />
+              </span>
+            )}
+          </span>
+        );
+      })}
+      {!interactive && value > 0 && (
+        <span className="ml-1 text-[12px] font-medium text-ink-muted">
+          {value % 2 === 0 ? value / 2 : (value / 2).toFixed(1)}
+        </span>
+      )}
+    </div>
+  );
+}
+
 function CommentCard({
   comment,
   connected,
@@ -115,10 +179,9 @@ function CommentCard({
           </span>
           <span className="text-[11px] text-ink-muted">{timeAgo(comment.createdAt)}</span>
           {comment.userRating != null && (
-              <span className="ml-auto flex items-center gap-1 text-[12px] font-medium text-accent">
-                <span className="text-[10px]">★</span>
-                {Math.round(comment.userRating / 2)}
-              </span>
+            <span className="ml-auto">
+              <StarRow value={comment.userRating} interactive={false} />
+            </span>
           )}
         </div>
         <p className="mt-1.5 whitespace-pre-wrap break-words text-[13px] leading-relaxed text-ink" dir="auto">
@@ -326,32 +389,10 @@ export function TraktComments({ resolution }: { resolution: IdResolution | null 
       {target && connected && (
         <div className="mb-4 flex items-center gap-2">
           <span className="text-[12px] font-medium text-ink-muted">{t("Rating")}:</span>
-          <div className="flex items-center gap-0.5">
-            {[2, 4, 6, 8, 10].map((n) => {
-              const starIndex = n / 2;
-              const display = hoverRating || userRating;
-              const filled = starIndex <= (display / 2);
-              return (
-                <button
-                  key={n}
-                  onClick={() => handleRate(n)}
-                  onMouseEnter={() => setHoverRating(n)}
-                  onMouseLeave={() => setHoverRating(0)}
-                  disabled={ratinging}
-                  className={`text-[18px] leading-none transition-colors ${
-                    ratinging ? "cursor-wait opacity-50" : "cursor-pointer"
-                  } ${
-                    filled ? "text-yellow-400" : "text-ink-muted/20"
-                  }`}
-                >
-                  ★
-                </button>
-              );
-            })}
-          </div>
+          <StarRow value={userRating} interactive={true} onRate={handleRate} onHover={setHoverRating} />
           {(hoverRating || userRating) > 0 && (
             <span className="text-[12px] font-medium text-ink-muted">
-              {(hoverRating || userRating) / 2}
+              {((hoverRating || userRating) / 2).toFixed(1).replace(/\.0$/, "")}
             </span>
           )}
           {userRating > 0 && !hoverRating && (
