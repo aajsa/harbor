@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useId } from "react";
 import { Heart, MessageCircle, ChevronDown, Settings, Loader2, Send, AlertCircle } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import {
@@ -58,15 +58,15 @@ function StarRow({ value, interactive, onRate, onHover }: { value: number; inter
   const [localHover, setLocalHover] = useState(0);
   const display = interactive ? (localHover || value) : value;
   const starPath = "M8 .2a.9.9 0 0 0-.8.6L5.4 5.2.6 5.9a.9.9 0 0 0-.5 1.5l3.5 3.4-1 4.8a.9.9 0 0 0 1.3 1l4.1-2.6 4 2.6a.9.9 0 0 0 1.4-1l-1-4.8 3.4-3.4a.9.9 0 0 0-.5-1.5l-4.8-.7L8.8.8A.9.9 0 0 0 8 .2z";
+  const id = useId();
 
   return (
-    <div className="flex items-center gap-0.5">
+    <div className="flex items-center gap-0.5" dir="ltr">
       {[1, 2, 3, 4, 5].map((star) => {
         const even = star * 2;
         const odd = star * 2 - 1;
-        let pct = 0;
-        if (display >= even) pct = 100;
-        else if (display >= odd) pct = 50;
+        const clipW = display >= even ? 16 : display >= odd ? 8 : 0;
+        const cid = `${id}-${star}`;
 
         return (
           <span
@@ -75,18 +75,21 @@ function StarRow({ value, interactive, onRate, onHover }: { value: number; inter
             style={{ width: "1.1em", height: "1.1em" }}
           >
             <svg viewBox="0 0 16 16" className="h-full w-full">
+              {clipW > 0 && clipW < 16 && (
+                <defs>
+                  <clipPath id={cid}>
+                    <rect x="0" y="0" width={clipW} height="16" />
+                  </clipPath>
+                </defs>
+              )}
               <path d={starPath} fill="#4b5563" opacity="0.3" />
+              <path
+                d={starPath}
+                fill="#facc15"
+                clipPath={clipW > 0 && clipW < 16 ? `url(#${cid})` : undefined}
+                opacity={clipW > 0 ? 1 : 0}
+              />
             </svg>
-            {pct > 0 && (
-              <span
-                className="absolute inset-0"
-                style={{ clipPath: `inset(0 ${100 - pct}% 0 0)` }}
-              >
-                <svg viewBox="0 0 16 16" className="h-full w-full">
-                  <path d={starPath} fill="#facc15" />
-                </svg>
-              </span>
-            )}
             {interactive && (
               <span
                 className="absolute inset-0 z-10 flex cursor-pointer"
