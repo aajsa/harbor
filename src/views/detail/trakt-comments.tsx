@@ -57,6 +57,7 @@ function UserAvatar({ username, size = "sm" }: { username?: string | null; size?
 function StarRow({ value, interactive, onRate, onHover }: { value: number; interactive: boolean; onRate?: (v: number) => void; onHover?: (v: number) => void }) {
   const [localHover, setLocalHover] = useState(0);
   const display = interactive ? (localHover || value) : value;
+  const starPath = "M8 .2a.9.9 0 0 0-.8.6L5.4 5.2.6 5.9a.9.9 0 0 0-.5 1.5l3.5 3.4-1 4.8a.9.9 0 0 0 1.3 1l4.1-2.6 4 2.6a.9.9 0 0 0 1.4-1l-1-4.8 3.4-3.4a.9.9 0 0 0-.5-1.5l-4.8-.7L8.8.8A.9.9 0 0 0 8 .2z";
 
   return (
     <div className="flex items-center gap-0.5">
@@ -71,21 +72,20 @@ function StarRow({ value, interactive, onRate, onHover }: { value: number; inter
           <span
             key={star}
             className="relative inline-flex items-center justify-center"
-            style={{ width: "1em", height: "1.1em" }}
+            style={{ width: "1.1em", height: "1.1em" }}
           >
-            <span
-              className="absolute inset-0 flex items-center justify-center text-[20px] leading-none text-ink-muted/20 select-none"
-            >★</span>
+            <svg viewBox="0 0 16 16" className="h-full w-full">
+              <path d={starPath} fill="#4b5563" opacity="0.3" />
+            </svg>
             {pct > 0 && (
               <span
-                className="absolute inset-0 flex items-center justify-center text-[20px] leading-none select-none"
-                style={{
-                  color: "transparent",
-                  background: `linear-gradient(90deg, #facc15 ${pct}%, transparent ${pct}%)`,
-                  WebkitBackgroundClip: "text",
-                  backgroundClip: "text",
-                }}
-              >★</span>
+                className="absolute inset-0"
+                style={{ clipPath: `inset(0 ${100 - pct}% 0 0)` }}
+              >
+                <svg viewBox="0 0 16 16" className="h-full w-full">
+                  <path d={starPath} fill="#facc15" />
+                </svg>
+              </span>
             )}
             {interactive && (
               <span
