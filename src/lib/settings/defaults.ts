@@ -34,6 +34,7 @@ export const DEFAULT: Settings = {
   useTraktAvatar: false,
   useSimklAvatar: false,
   blurComments: false,
+  blurEpisodes: false,
   traktClientId: "",
   traktClientSecret: "",
   traktAccessToken: null,

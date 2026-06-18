@@ -58,6 +58,7 @@ export type Settings = {
   useTraktAvatar: boolean;
   useSimklAvatar: boolean;
   blurComments: boolean;
+  blurEpisodes: boolean;
   traktClientId: string;
   traktClientSecret: string;
   traktAccessToken: string | null;
