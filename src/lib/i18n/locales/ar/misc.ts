@@ -128,6 +128,9 @@ const misc: Record<string, string> = {
   "You haven't commented yet": "لم تعلق بعد",
   "Reveal image": "إظهار الصورة",
 
+  "Trakt Comments": "تعليقات Trakt",
+  "Open on Trakt": "فتح على Trakt",
+
   "My": "تعليقاتي",
 
   "Likes": "الإعجابات",

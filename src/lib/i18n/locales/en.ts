@@ -108,6 +108,8 @@ const en: Record<string, string> = {
   "Comments are hidden": "Comments are hidden",
   "You haven't commented yet": "You haven't commented yet",
   "Reveal image": "Reveal image",
+  "Trakt Comments": "Trakt Comments",
+  "Open on Trakt": "Open on Trakt",
 
   "Blur comments by default": "Blur comments by default",
   "Comments on episode/show pages are blurred until you reveal them, even if they are not tagged as spoilers.":

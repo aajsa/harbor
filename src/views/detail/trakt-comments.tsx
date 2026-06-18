@@ -521,7 +521,7 @@ export function TraktComments({ resolution }: { resolution: IdResolution | null 
                 onClick={() => setShowSort(!showSort)}
                 className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-[12px] font-medium text-ink-muted ring-1 ring-edge transition-colors hover:bg-elevated hover:text-ink"
               >
-                {sort}
+                {t(sort.charAt(0).toUpperCase() + sort.slice(1))}
                 <ChevronDown size={12} />
               </button>
               {showSort && (
