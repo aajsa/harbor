@@ -19,6 +19,9 @@ import { Synopsis } from "@/views/detail/synopsis";
 import { TitlePlate } from "@/views/detail/title-plate";
 import { Pill } from "@/views/detail/pill";
 import { PlayModeHint } from "@/views/detail/play-mode-hint";
+import { TraktComments } from "@/views/detail/trakt-comments";
+import { stremioIdToTraktTarget } from "@/lib/trakt/ids";
+import { getSession } from "@/lib/trakt/session";
 
 export interface EpisodeDetailViewProps {
   seriesId: string;
@@ -115,6 +118,11 @@ export function EpisodeDetailView({
       ? episodeData.voteAverage.toFixed(1) : undefined);
 
   const seriesRating = omdbScores?.imdbRating ?? (imdbId ? seriesMeta?.imdbRating : undefined) ?? undefined;
+
+  const traktSession = getSession();
+  const traktResolution = traktSession
+    ? stremioIdToTraktTarget(seriesId, { season, episode })
+    : null;
 
   const handlePlay = useCallback(() => {
     if (!seriesMeta || !episodeData) return;
@@ -294,6 +302,10 @@ export function EpisodeDetailView({
               ))}
             </div>
           </section>
+        )}
+
+        {traktResolution?.ok && (
+          <TraktComments target={traktResolution.target} />
         )}
       </div>
 
