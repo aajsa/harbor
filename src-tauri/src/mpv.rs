@@ -629,6 +629,24 @@ pub async fn mpv_set_property(
 }
 
 #[tauri::command]
+pub async fn mpv_get_property(
+    state: State<'_, MpvState>,
+    name: String,
+) -> Result<Value, String> {
+    let mpv = {
+        let g = state.inner.lock().await;
+        g.as_ref().map(|s| s.mpv.clone()).ok_or_else(|| "mpv not started".to_string())?
+    };
+    let s = mpv
+        .get_property::<String>(&name)
+        .map_err(|e| format!("get {}: {}", name, e))?;
+    Ok(match s.parse::<f64>() {
+        Ok(n) if n.is_finite() => serde_json::json!(n),
+        _ => Value::String(s),
+    })
+}
+
+#[tauri::command]
 pub async fn mpv_set_geometry(
     app: AppHandle,
     state: State<'_, MpvState>,
