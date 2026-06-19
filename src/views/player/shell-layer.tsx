@@ -25,6 +25,7 @@ export function ShellLayer({
   onSeek,
   onSeekStep,
   rememberSubChoice,
+  onEnterSync,
   onPiP,
   onFullscreen,
   openCastMenu,
@@ -69,6 +70,7 @@ export function ShellLayer({
   onSeek: (sec: number) => void;
   onSeekStep: (delta: number) => void;
   rememberSubChoice: (t: { lang?: string } | null | undefined) => void;
+  onEnterSync?: () => void;
   onPiP: () => void;
   onFullscreen: () => void;
   openCastMenu: (anchor: { right: number; bottom: number } | null) => void;
@@ -135,6 +137,7 @@ export function ShellLayer({
         bridgeRef.current?.setSubDelay(s);
         writePlayerPrefs(metaId, { subDelaySec: s });
       }}
+      onEnterSync={onEnterSync}
       onAudioDelay={(s) => bridgeRef.current?.setAudioDelay(s)}
       onAddSubtitle={(url, lang, title2) => {
         const p = bridgeRef.current?.addSubtitle(url, lang, title2) ?? Promise.resolve(false);

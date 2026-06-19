@@ -44,6 +44,8 @@ import { useLiveChannelOverlay } from "./player/hooks/use-live-channel-overlay";
 import { useStreamSwitcher } from "./player/hooks/use-stream-switcher";
 import { useMpvEmbed } from "./player/hooks/use-mpv-embed";
 import { usePlayerBridge } from "./player/hooks/use-player-bridge";
+import { Toaster } from "@/views/addons/toaster";
+import type { ToastInfo } from "@/views/addons/addons-types";
 import { useEpisodeNavigation } from "./player/hooks/use-episode-navigation";
 import { useAbLoop } from "./player/hooks/use-ab-loop";
 import { useAutoNextEpisode } from "./player/hooks/use-auto-next-episode";
@@ -53,6 +55,9 @@ import { useSleepTimer } from "./player/hooks/use-sleep-timer";
 import { useAutoEndExit } from "./player/hooks/use-auto-end-exit";
 import { usePipMode } from "./player/hooks/use-pip-mode";
 import { usePlaybackControls } from "./player/hooks/use-playback-controls";
+import { useTextSync } from "./player/hooks/use-text-sync";
+import { TextSyncOverlay } from "./player/text-sync-overlay";
+import { useT } from "@/lib/i18n";
 import { usePlaybackPresence } from "./player/hooks/use-playback-presence";
 import { usePlayerExit } from "./player/hooks/use-player-exit";
 import { usePendingSeekApply } from "./player/hooks/use-pending-seek-apply";
@@ -67,6 +72,7 @@ import { setSkipSegmentsView } from "@/lib/skip-intro/segment-store";
 export function PlayerView({ src }: { src: PlayerSrc }) {
   const { setChromeHidden, topPath, openPicker, exitPlayback, replacePlayerSrc } = useView();
   const { settings, update } = useSettings();
+  const t = useT();
   const chromeTheme = activeLayout(settings.theme) === "stremio" ? "stremio" : "default";
   const {
     avatarsCorner,
@@ -420,6 +426,28 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
     sendCommand,
   });
 
+  const textSync = useTextSync(bridgeRef.current, src.meta.id);
+  const [syncToast, setSyncToast] = useState<ToastInfo | null>(null);
+  const syncToastTimerRef = useRef<number | null>(null);
+  const showSyncToast = useCallback((kind: "ok" | "error", text: string) => {
+    if (syncToastTimerRef.current != null) window.clearTimeout(syncToastTimerRef.current);
+    setSyncToast({ kind, text });
+    syncToastTimerRef.current = window.setTimeout(() => setSyncToast(null), kind === "error" ? 5000 : 3000);
+  }, []);
+  const handleEnterSync = useCallback(async () => {
+    const res = await textSync.enterSync();
+    if (!res.ok) {
+      const reason = res.reason === "no-cues"
+        ? t("No subtitle cues available")
+        : res.reason === "local-path-unreadable"
+          ? t("Could not read the subtitle file")
+          : res.reason === "no-bridge"
+            ? t("Player not ready")
+            : t("Sync unavailable");
+      showSyncToast("error", reason);
+    }
+  }, [textSync.enterSync, showSyncToast, t]);
+
   const videoFill = useVideoFill(bridgeRef, src.url);
   const { holdSpeedActive, showStats } = usePlayerHotkeys({
     bridgeRef,
@@ -549,7 +577,12 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
         holdSpeedActive={holdSpeedActive}
         videoFillPill={videoFill.pill}
         subDropToast={subDropToast}
+        onSubDelay={(s) => {
+          bridgeRef.current?.setSubDelay(s);
+        }}
+        onEnterSync={handleEnterSync}
       />
+
       <CastLayer
         cast={cast}
         src={src}
@@ -620,7 +653,7 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
         gif={gif}
       />
 
-      {!loaderActive && (
+      {!loaderActive && textSync.syncMode !== "active" && (
         <ShellLayer
           shellId={settings.playerShellId}
           shellSnap={shellSnap}
@@ -640,6 +673,7 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
           onSeek={seekTo}
           onSeekStep={seekStep}
           rememberSubChoice={rememberSubChoice}
+          onEnterSync={handleEnterSync}
           onPiP={() => togglePipMode()}
           onFullscreen={toggleFullscreen}
           openCastMenu={cast.openCastMenu}
@@ -674,6 +708,16 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
           sleep={sleep}
         />
       )}
+
+      {!loaderActive && textSync.syncMode === "active" && (
+        <TextSyncOverlay
+          api={textSync}
+          playing={snap.status === "playing"}
+          onPlayPause={playPauseToggle}
+        />
+      )}
+
+      <Toaster toast={syncToast} />
 
       <RoomLayer
         inRoom={inRoom}

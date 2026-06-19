@@ -34,6 +34,7 @@ export type TransportStremioProps = {
   onSubtitle: (id: string | null) => void;
   onSubDelay: (sec: number) => void;
   onAudioDelay: (sec: number) => void;
+  onEnterSync?: () => void;
   onAddSubtitle: (url: string, lang?: string, title?: string) => void;
   onRate: (r: number) => void;
   onPiP: () => void;
@@ -86,6 +87,7 @@ export function TransportStremio(p: TransportStremioProps) {
     onSubtitle,
     onSubDelay,
     onAudioDelay,
+    onEnterSync,
     onAddSubtitle,
     onRate,
     onPiP,
@@ -195,6 +197,7 @@ export function TransportStremio(p: TransportStremioProps) {
     onSubtitle,
     onSubDelay,
     onAudioDelay,
+    onEnterSync,
     onAddSubtitle,
     onRate,
     onPiP,

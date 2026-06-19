@@ -1,5 +1,6 @@
 import { StatsOverlay } from "@/components/player/stats-overlay";
 import { SubStyleBar } from "@/components/player/sub-style-bar";
+import { SubSyncBar } from "@/components/player/sub-sync-bar";
 import { SubtitleOverlay } from "@/components/player/subtitle-overlay";
 import type { PlayerSnapshot } from "@/lib/player/bridge";
 import { useT } from "@/lib/i18n";
@@ -14,6 +15,8 @@ export function StageOverlays({
   holdSpeedActive,
   videoFillPill,
   subDropToast,
+  onSubDelay,
+  onEnterSync,
 }: {
   snap: PlayerSnapshot;
   engine: "html5" | "mpv";
@@ -24,6 +27,8 @@ export function StageOverlays({
   holdSpeedActive: boolean;
   videoFillPill: string | null;
   subDropToast: string | null;
+  onSubDelay: (sec: number) => void;
+  onEnterSync?: () => void;
 }) {
   const t = useT();
   return (
@@ -49,6 +54,14 @@ export function StageOverlays({
         </div>
       )}
       {!pipMode && <SubStyleBar />}
+      {!pipMode && (
+        <SubSyncBar
+          delaySec={snap.subDelaySec}
+          onDelay={onSubDelay}
+          onEnterSync={onEnterSync}
+          syncAvailable={snap.subtitleTracks.some((t) => t.selected && (t.external || !!(t as { url?: string }).url))}
+        />
+      )}
     </>
   );
 }

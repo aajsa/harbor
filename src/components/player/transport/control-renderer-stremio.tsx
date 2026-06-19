@@ -76,6 +76,7 @@ export type StremioRenderCtx = {
   onSubtitle: (id: string | null) => void;
   onSubDelay: (sec: number) => void;
   onAudioDelay: (sec: number) => void;
+  onEnterSync?: () => void;
   onAddSubtitle: (url: string, lang?: string, title?: string) => void;
   onRate: (r: number) => void;
   onPiP: () => void;
@@ -266,6 +267,7 @@ export function RenderedStremioControl({
           delaySec={ctx.snap.subDelaySec}
           onSelect={ctx.onSubtitle}
           onDelay={ctx.onSubDelay}
+          onEnterSync={ctx.onEnterSync}
           onAddSubtitle={ctx.onAddSubtitle}
           metaImdbId={ctx.metaImdbId}
           metaTitle={ctx.metaTitle}
