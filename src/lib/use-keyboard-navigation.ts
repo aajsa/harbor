@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 type Dir = 'up' | 'down' | 'left' | 'right';
 
@@ -60,7 +60,8 @@ function isVisible(el: HTMLElement) {
 }
 
 function isInNav(el: HTMLElement): boolean {
-  return !!el.closest('[data-harbor-nav]');
+  // Zone wrapper — do NOT use [data-harbor-nav] (that's a per-item theme hook).
+  return !!el.closest("[data-tv-nav-zone], [data-harbor-sidebar]");
 }
 
 function isInHero(el: HTMLElement): boolean {
@@ -80,8 +81,18 @@ function zoneOf(el: HTMLElement): 'nav' | 'hero' | 'content' {
 // exactly what causes "it moves between elements but doesn't understand
 // left/right" — it's often hopping between a card and its own child.
 // Rule: only the OUTERMOST matching element per DOM branch is kept.
+/** Topmost fullscreen overlay/modal that should trap TV/remote focus. */
+function getTopFocusScope(): HTMLElement | null {
+  const scopes = document.querySelectorAll<HTMLElement>(
+    "[data-tv-focus-scope], [data-search-overlay]",
+  );
+  return scopes.length ? scopes[scopes.length - 1]! : null;
+}
+
 function getFocusable(): HTMLElement[] {
-  const all = Array.from(document.querySelectorAll<HTMLElement>(SELECTOR)).filter(isVisible);
+  // While a scoped overlay/modal is open, ignore page chrome behind it.
+  const root: ParentNode = getTopFocusScope() ?? document;
+  const all = Array.from(root.querySelectorAll<HTMLElement>(SELECTOR)).filter(isVisible);
   return all.filter((el) => !all.some((other) => other !== el && other.contains(el)));
 }
 
@@ -102,6 +113,28 @@ function overlap(aStart: number, aEnd: number, bStart: number, bEnd: number) {
   return Math.max(0, Math.min(aEnd, bEnd) - Math.max(aStart, bStart));
 }
 
+/** Same-row (or same-column) neighbor — rejects diagonal "left" hits that steal edge→sidebar. */
+function isAxisAligned(a: HTMLElement, b: HTMLElement, dir: Dir): boolean {
+  const ra = getRect(a);
+  const rb = getRect(b);
+  if (dir === "left" || dir === "right") {
+    const ov = overlap(ra.top, ra.bottom, rb.top, rb.bottom);
+    const minH = Math.min(ra.height, rb.height);
+    return ov >= Math.max(12, minH * 0.25);
+  }
+  const ov = overlap(ra.left, ra.right, rb.left, rb.right);
+  const minW = Math.min(ra.width, rb.width);
+  return ov >= Math.max(12, minW * 0.25);
+}
+
+function pickNavTarget(navItems: HTMLElement[]): HTMLElement | null {
+  return (
+    navItems.find((el) => el.matches("[data-harbor-nav][data-active]")) ??
+    navItems.find((el) => el.hasAttribute("data-harbor-nav")) ??
+    getInitialFocus(navItems)
+  );
+}
+
 function getDirection(e: KeyboardEvent): Dir | null {
   if (KEY_TO_DIR[e.key]) return KEY_TO_DIR[e.key];
   if (CODE_TO_DIR[e.code]) return CODE_TO_DIR[e.code];
@@ -116,6 +149,44 @@ function isBackKey(e: KeyboardEvent): boolean {
 
 function getInitialFocus(list: HTMLElement[]) {
   return list.find((el) => el.hasAttribute('data-tv-initial-focus')) ?? list[0] ?? null;
+}
+
+const NAV_FOCUS_SELECTOR =
+  "[data-harbor-nav][data-active], [data-harbor-nav], [data-tv-nav-zone] button, [data-harbor-sidebar] button, [data-tv-nav-zone] a[href], [data-tv-nav-zone] [data-focusable='true']";
+
+function focusNavChrome() {
+  const nav = document.querySelector<HTMLElement>(NAV_FOCUS_SELECTOR);
+  if (nav) focusElement(nav);
+}
+
+/** Focus the page's primary control (Play, etc.) or first content focusable. */
+export function focusTvPageDefault(): void {
+  ensureFocusStyles();
+  const scope = getTopFocusScope();
+  if (scope) {
+    const scoped = getFocusable();
+    const first = getInitialFocus(scoped);
+    if (first) focusElement(first);
+    return;
+  }
+  const marked = document.querySelector<HTMLElement>("[data-tv-initial-focus]");
+  if (marked && isVisible(marked)) {
+    focusElement(marked);
+    return;
+  }
+  const content = getFocusableInZone("content");
+  const first = getInitialFocus(content);
+  if (first) focusElement(first);
+}
+
+/** Close the top TV focus-scoped modal via its close control, if any. */
+function closeTopFocusScope(): boolean {
+  const scope = getTopFocusScope();
+  if (!scope || scope.hasAttribute("data-search-overlay")) return false;
+  const closer = scope.querySelector<HTMLElement>("[data-tv-modal-close]");
+  if (!closer) return false;
+  closer.click();
+  return true;
 }
 
 let focusStylesInjected = false;
@@ -135,9 +206,8 @@ function ensureFocusStyles() {
   // affect layout or the geometry box used for hit-testing.
   style.textContent = `
     [data-tv-focused="true"] {
-      outline: none !important;
-      box-shadow: 0 0 0 4px var(--tv-focus-ring, #ffffff), 0 0 0 8px rgba(0,0,0,0.35) !important;
-      transition: box-shadow 120ms ease;
+      outline: 2px solid var(--color-accent) !important;
+      outline-offset: 2px;
       z-index: 20;
       position: relative;
     }
@@ -223,8 +293,33 @@ type TVNavigationOptions = {
 
 export function useKeyboardNavigation(options: TVNavigationOptions = {}) {
   const { wrap = true, onBack, onBackToNav } = options;
+  const onBackRef = useRef(onBack);
+  const onBackToNavRef = useRef(onBackToNav);
+  const wrapRef = useRef(wrap);
+  onBackRef.current = onBack;
+  onBackToNavRef.current = onBackToNav;
+  wrapRef.current = wrap;
 
   useEffect(() => {
+    const runBack = () => {
+      // Fullscreen modals (local episode picker, etc.) — close before view stack.
+      if (closeTopFocusScope()) return;
+      const handled = onBackRef.current ? onBackRef.current() : false;
+      if (!handled) {
+        if (onBackToNavRef.current) onBackToNavRef.current();
+        else focusNavChrome();
+      }
+    };
+
+    // Phone remote Menu/Back calls these imperatively (synthetic Esc is ignored).
+    remoteBackFns = {
+      onBack: () => {
+        if (closeTopFocusScope()) return true;
+        return onBackRef.current?.() ?? false;
+      },
+      onBackToNav: () => onBackToNavRef.current?.(),
+    };
+
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.defaultPrevented) return;
       if (e.altKey || e.ctrlKey || e.metaKey) return;
@@ -234,21 +329,20 @@ export function useKeyboardNavigation(options: TVNavigationOptions = {}) {
       if (isBackKey(e)) {
         e.preventDefault();
         e.stopPropagation();
-        const handled = onBack ? onBack() : false;
-        if (!handled) {
-          if (onBackToNav) {
-            onBackToNav();
-          } else {
-            const nav = document.querySelector<HTMLElement>(
-              '[data-harbor-nav] [data-focusable="true"], [data-harbor-nav] a[href], [data-harbor-nav] button'
-            );
-            if (nav) focusElement(nav);
-          }
-        }
+        runBack();
         return;
       }
 
-      if (isEditable(target)) return;
+      if (isEditable(target)) {
+        // Keep Left/Right for caret; allow Up/Down to leave the search field into results.
+        const leaveDir = getDirection(e);
+        if (
+          (leaveDir !== "up" && leaveDir !== "down") ||
+          !target?.closest("[data-tv-focus-scope], [data-search-overlay]")
+        ) {
+          return;
+        }
+      }
 
       const dir = getDirection(e);
 
@@ -259,19 +353,27 @@ export function useKeyboardNavigation(options: TVNavigationOptions = {}) {
         const active =
           document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
-        const zone = active ? zoneOf(active) : 'content';
+        const zone = active ? zoneOf(active) : "content";
         const all = getFocusableInZone(zone);
         if (!all.length) return;
 
         if (!active || !all.includes(active)) {
+          // Prefer page primary CTA over DOM-order (avoids sidebar collapse).
+          if (zone === "content") {
+            const marked = document.querySelector<HTMLElement>("[data-tv-initial-focus]");
+            if (marked && isVisible(marked) && all.includes(marked)) {
+              focusElement(marked);
+              return;
+            }
+          }
           const first = getInitialFocus(all);
           if (first) focusElement(first);
           return;
         }
 
-        if (zone === 'hero' && (dir === 'up' || dir === 'down')) {
-          if (dir === 'down') {
-            const contentItems = getFocusableInZone('content');
+        if (zone === "hero" && (dir === "up" || dir === "down")) {
+          if (dir === "down") {
+            const contentItems = getFocusableInZone("content");
             const first = getInitialFocus(contentItems);
             if (first) focusElement(first);
           }
@@ -279,26 +381,55 @@ export function useKeyboardNavigation(options: TVNavigationOptions = {}) {
         }
 
         const best = findBest(active, all, dir);
+
+        // Edge Left from page content → sidebar when nothing is truly to the left
+        // (same row). Without this, diagonal hits (floating back, other rows) win
+        // ~half the time and sidebar feels random.
+        if (dir === "left" && (zone === "content" || zone === "hero")) {
+          if (!best || !isAxisAligned(active, best, "left")) {
+            const navItems = getFocusableInZone("nav");
+            const target = pickNavTarget(navItems);
+            if (target) {
+              focusElement(target);
+              return;
+            }
+          }
+        }
+
         if (best) {
           focusElement(best);
           return;
         }
 
-        if (wrap) {
+        // Cross zone: nav → page (Right).
+        if (dir === "right" && zone === "nav") {
+          const contentItems = getFocusableInZone("content");
+          const marked = document.querySelector<HTMLElement>("[data-tv-initial-focus]");
+          const target =
+            marked && isVisible(marked) && contentItems.includes(marked)
+              ? marked
+              : getInitialFocus(contentItems);
+          if (target) {
+            focusElement(target);
+            return;
+          }
+        }
+
+        if (wrapRef.current) {
           const ordered = getSpatialOrder(all);
           const idx = ordered.indexOf(active);
           if (idx >= 0) {
             const next =
-              dir === 'down' || dir === 'right'
-                ? ordered[idx + 1] ?? ordered[0]
-                : ordered[idx - 1] ?? ordered[ordered.length - 1];
+              dir === "down" || dir === "right"
+                ? (ordered[idx + 1] ?? ordered[0])
+                : (ordered[idx - 1] ?? ordered[ordered.length - 1]);
             if (next) focusElement(next);
           }
         }
         return;
       }
 
-      const isCenter = CENTER_KEYCODES.has(e.keyCode) || e.key === 'Enter' || e.code === 'Enter';
+      const isCenter = CENTER_KEYCODES.has(e.keyCode) || e.key === "Enter" || e.code === "Enter";
       if (!isCenter) return;
 
       const active =
@@ -307,18 +438,64 @@ export function useKeyboardNavigation(options: TVNavigationOptions = {}) {
       if (!active || isEditable(active)) return;
 
       const nativeClickable = active.matches(
-        'button, a[href], input[type="button"], input[type="submit"], input[type="checkbox"], input[type="radio"]'
+        'button, a[href], input[type="button"], input[type="submit"], input[type="checkbox"], input[type="radio"]',
       );
 
-      if (e.key === ' ' && nativeClickable) return;
-      if (e.key === 'Enter' && nativeClickable) return;
+      if (e.key === " " && nativeClickable) return;
+      if (e.key === "Enter" && nativeClickable) return;
 
       e.preventDefault();
       e.stopPropagation();
       active.click();
     };
 
-    window.addEventListener('keydown', onKeyDown, true);
-    return () => window.removeEventListener('keydown', onKeyDown, true);
-  }, [wrap, onBack, onBackToNav]);
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown, true);
+    };
+  }, []);
+}
+
+type RemoteBackFns = {
+  onBack?: () => boolean;
+  onBackToNav?: () => void;
+};
+
+let remoteBackFns: RemoteBackFns = {};
+
+/**
+ * Phone touchpad entry point. Keeps keyboard handling untouched:
+ * - arrows reuse the existing keydown path
+ * - select/back call DOM click / App back handlers (synthetic Enter/Esc are ignored by Chromium)
+ */
+export function dispatchTvNav(action: Dir | "select" | "back"): void {
+  if (action === "select") {
+    const active =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    if (active && !isEditable(active)) active.click();
+    return;
+  }
+
+  if (action === "back") {
+    const handled = remoteBackFns.onBack?.() ?? false;
+    if (handled) return;
+    if (remoteBackFns.onBackToNav) {
+      remoteBackFns.onBackToNav();
+      return;
+    }
+    focusNavChrome();
+    return;
+  }
+
+  const key =
+    action === "up"
+      ? "ArrowUp"
+      : action === "down"
+        ? "ArrowDown"
+        : action === "left"
+          ? "ArrowLeft"
+          : "ArrowRight";
+  window.dispatchEvent(
+    new KeyboardEvent("keydown", { key, code: key, bubbles: true, cancelable: true }),
+  );
 }

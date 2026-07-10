@@ -1149,6 +1149,7 @@ export function DetailView({
                 ) : (
                   <PlayModeHint>
                   <button
+                    data-tv-initial-focus
                     onClick={() => smartPlay(false)}
                     onContextMenu={(e) => {
                       e.preventDefault();

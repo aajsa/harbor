@@ -85,7 +85,7 @@ import { AnilistProvider } from "@/lib/anilist/provider";
 import { MalProvider } from "@/lib/mal/provider";
 import { SimklProvider } from "@/lib/simkl/provider";
 import { LetterboxdProvider } from "@/lib/stremboxd/provider";
-import { useKeyboardNavigation } from './useKeyboardNavigation';
+import { focusTvPageDefault, useKeyboardNavigation } from "@/lib/use-keyboard-navigation";
 
 const importAnime = () => import("@/views/anime");
 const importCalendar = () => import("@/views/calendar");
@@ -426,7 +426,7 @@ function parseDeepLinkEpisode(videoId?: string): { season: number; episode: numb
 function Shell() {
   const { topKind, service, meta, metaLiveContext, metaEpisodeHint, episodeDetail, personId, collectionId, filter, grid, awardType, animeAwardSource, picker, player, setView, canGoBack, goBack, canGoForward, goForward, openMeta, openPlayer, stackKinds, chromeHidden } = useView();
   const { settings, update } = useSettings();
-  const { setOpen: setSearchOpen } = useSearch();
+  const { setOpen: setSearchOpen, open: searchOpen } = useSearch();
   const uiScaleRef = useRef(settings.uiScale);
   const { activeProfile } = useProfiles();
   const kid = activeProfile?.kid ?? null;
@@ -447,7 +447,13 @@ function Shell() {
   useKeyboardNavigation({
     wrap: false,
     onBack: () => {
-      if (stackKinds.length > 1 || topKind !== "home") {
+      if (searchOpen) {
+        setSearchOpen(false);
+        return true;
+      }
+      // Only claim Back when the view stack can actually pop — otherwise Esc
+      // looked like a no-op (we returned true after a no-op goBack).
+      if (canGoBack) {
         goBack();
         return true;
       }
@@ -456,11 +462,17 @@ function Shell() {
     onBackToNav: () => {
       window.scrollTo({ top: 111, left: 111, behavior: "smooth" });
       const nav = document.querySelector<HTMLElement>(
-        '[data-harbor-nav] a[href], [data-harbor-nav] button, [data-harbor-nav] [data-focusable="true"]'
+        "[data-harbor-nav][data-active], [data-harbor-nav], [data-tv-nav-zone] button, [data-harbor-sidebar] button",
       );
       nav?.focus({ preventScroll: true });
     },
   });
+
+  useEffect(() => {
+    if (searchOpen || topKind === "player") return;
+    const id = window.requestAnimationFrame(() => focusTvPageDefault());
+    return () => window.cancelAnimationFrame(id);
+  }, [topKind, meta?.id, searchOpen]);
   
   useEffect(() => startMaintenance(), []);
 

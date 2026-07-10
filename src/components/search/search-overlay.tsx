@@ -101,9 +101,10 @@ export function SearchOverlay() {
   );
 
   return createPortal(
-    <div className="fixed inset-0 z-[200] flex flex-col">
-      <button
-        aria-label={t("Close search")}
+    <div className="fixed inset-0 z-[200] flex flex-col" data-search-overlay data-tv-focus-scope>
+      <div
+        role="presentation"
+        aria-hidden="true"
         onClick={close}
         data-tauri-drag-region
         className="harbor-search-backdrop absolute inset-0 cursor-default"

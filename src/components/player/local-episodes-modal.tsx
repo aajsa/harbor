@@ -181,6 +181,7 @@ function GridModal({ payload }: { payload: LocalEpisodesPayload }) {
 
   return createPortal(
     <div
+      data-tv-focus-scope
       className="animate-fade-in fixed inset-0 z-[210] flex items-center justify-center bg-canvas/80 p-4 backdrop-blur-sm"
       onClick={(e) => {
         if (e.target === e.currentTarget) closeLocalEpisodes();
@@ -205,6 +206,7 @@ function GridModal({ payload }: { payload: LocalEpisodesPayload }) {
           </div>
           <button
             type="button"
+            data-tv-modal-close
             onClick={() => closeLocalEpisodes()}
             aria-label={t("Close")}
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-ink-subtle transition-colors hover:bg-raised hover:text-ink"

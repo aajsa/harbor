@@ -44,6 +44,7 @@ export function DraculaSidebar() {
     <>
       <aside
         aria-hidden={chromeHidden}
+        data-tv-nav-zone
         className={`relative z-[60] flex w-[78px] shrink-0 flex-col transition-[opacity,transform,width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[width] ${
           collapsed ? "" : "lg:w-64"
         } ${
