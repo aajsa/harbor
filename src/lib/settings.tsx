@@ -16,6 +16,7 @@ import {
   sourceKeyFor,
 } from "./settings/profile-store";
 import type { Settings, StreamingService } from "./settings/types";
+import { onceUnlisten, safeUnlisten } from "./tauri-listener";
 
 export type {
   ContentCategory,
@@ -269,8 +270,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     const unlisteners: Array<() => void> = [];
     const track = (u: () => void) => {
-      if (cancelled) u();
-      else unlisteners.push(u);
+      if (cancelled) safeUnlisten(u);
+      else unlisteners.push(onceUnlisten(u));
     };
     void import("@tauri-apps/api/event").then(({ listen }) => {
       void listen<{ closeToTray: boolean; alwaysOnTop: boolean; pauseMinimized: boolean; pauseUnfocused: boolean }>(
@@ -297,7 +298,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     });
     return () => {
       cancelled = true;
-      unlisteners.forEach((u) => u());
+      unlisteners.forEach(safeUnlisten);
     };
   }, []);
 
