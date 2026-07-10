@@ -86,6 +86,7 @@ import { MalProvider } from "@/lib/mal/provider";
 import { SimklProvider } from "@/lib/simkl/provider";
 import { LetterboxdProvider } from "@/lib/stremboxd/provider";
 import { useKeyboardNavigation } from './useKeyboardNavigation';
+import { onceUnlisten, safeUnlisten } from "@/lib/tauri-listener";
 
 const importAnime = () => import("@/views/anime");
 const importCalendar = () => import("@/views/calendar");
@@ -569,13 +570,13 @@ function Shell() {
         const { invoke } = await import("@tauri-apps/api/core");
         await invoke("harbor_flush_done").catch(() => {});
       }).then((u) => {
-        if (cancelled) u();
-        else unlisten = u;
+        if (cancelled) safeUnlisten(u);
+        else unlisten = onceUnlisten(u);
       }),
     );
     return () => {
       cancelled = true;
-      unlisten?.();
+      safeUnlisten(unlisten);
     };
   }, []);
 
@@ -605,6 +606,7 @@ function Shell() {
 
   useEffect(() => {
     let dispose: (() => void) | null = null;
+    let cancelled = false;
     void import("@/lib/deep-link").then(({ startDeepLinkBridge, onDeepLinkInstall, onDeepLinkOpen, onOpenLocalFile }) => {
       void startDeepLinkBridge().then((stopBridge) => {
         const stopListener = onDeepLinkInstall(() => {
@@ -619,16 +621,19 @@ function Shell() {
           const name = (path.replace(/\\/g, "/").split("/").pop() || "Video").replace(/\.[^.]+$/, "");
           openPlayer({ meta: { id: `local:${path}`, type: "movie", name }, url: path, title: name, notWebReady: true });
         });
-        dispose = () => {
-          stopBridge();
+        const stop = onceUnlisten(() => {
+          safeUnlisten(stopBridge);
           stopListener();
           stopOpen();
           stopFile();
-        };
+        });
+        if (cancelled) stop();
+        else dispose = stop;
       });
     });
     return () => {
-      dispose?.();
+      cancelled = true;
+      safeUnlisten(dispose);
     };
   }, [setView, openMeta, openPlayer]);
 

@@ -1,3 +1,5 @@
+import { safeUnlisten } from "@/lib/tauri-listener";
+
 const EVENT = "harbor:deeplink-install";
 const OPEN_EVENT = "harbor:deeplink-open";
 
@@ -158,18 +160,10 @@ export async function startDeepLinkBridge(): Promise<() => void> {
       if (initial && initial.length > 0) handle(initial);
     } catch {}
     return () => {
-      try {
-        unlisten();
-      } catch {}
-      try {
-        unlistenNative();
-      } catch {}
-      try {
-        unlistenBrowserCap();
-      } catch {}
-      try {
-        unlistenOpenFile();
-      } catch {}
+      safeUnlisten(unlisten);
+      safeUnlisten(unlistenNative);
+      safeUnlisten(unlistenBrowserCap);
+      safeUnlisten(unlistenOpenFile);
     };
   } catch (e) {
     console.warn("[harbor] deep-link bridge failed", e);

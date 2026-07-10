@@ -3,6 +3,7 @@ import { getCurrentWindow, type Window } from "@tauri-apps/api/window";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
 import { getWindowFullscreen } from "@/lib/fullscreen-state";
+import { safeUnlisten } from "@/lib/tauri-listener";
 
 const win: Window | null = isTauri() ? getCurrentWindow() : null;
 
@@ -65,7 +66,7 @@ export function useMaximized(): boolean {
     return () => {
       cancelled = true;
       if (timer != null) window.clearTimeout(timer);
-      unlisten.then((fn) => fn());
+      void unlisten.then(safeUnlisten).catch(() => {});
     };
   }, []);
   return maxed;

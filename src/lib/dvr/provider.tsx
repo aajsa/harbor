@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import type { DvrSession, DvrStartArgs } from "./types";
+import { onceUnlisten, safeUnlisten } from "../tauri-listener";
 
 const IS_TAURI = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
@@ -31,7 +32,12 @@ export function DvrProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!IS_TAURI) return;
+    let cancelled = false;
     const unlisteners: UnlistenFn[] = [];
+    const track = (u: UnlistenFn) => {
+      if (cancelled) safeUnlisten(u);
+      else unlisteners.push(onceUnlisten(u));
+    };
     listen<DvrSession>("dvr://progress", (e) => {
       setSessions((prev) => {
         const idx = prev.findIndex((s) => s.id === e.payload.id);
@@ -40,16 +46,19 @@ export function DvrProvider({ children }: { children: ReactNode }) {
         next[idx] = e.payload;
         return next;
       });
-    }).then((u) => unlisteners.push(u)).catch(() => {});
+    }).then(track).catch(() => {});
     listen<DvrSession>("dvr://done", (e) => {
       setSessions((prev) => prev.filter((s) => s.id !== e.payload.id));
       setTerminal((prev) => [...prev.filter((s) => s.id !== e.payload.id), e.payload]);
-    }).then((u) => unlisteners.push(u)).catch(() => {});
+    }).then(track).catch(() => {});
     listen<DvrSession>("dvr://error", (e) => {
       setSessions((prev) => prev.filter((s) => s.id !== e.payload.id));
       setTerminal((prev) => [...prev.filter((s) => s.id !== e.payload.id), e.payload]);
-    }).then((u) => unlisteners.push(u)).catch(() => {});
-    return () => { unlisteners.forEach((u) => u()); };
+    }).then(track).catch(() => {});
+    return () => {
+      cancelled = true;
+      unlisteners.forEach(safeUnlisten);
+    };
   }, []);
 
   const start = useCallback(async (args: DvrStartArgs) => {
