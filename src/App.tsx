@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FloatingBack } from "@/chrome/floating-back";
 import { WindowControls } from "@/chrome/window-controls";
 import { WindowResizeEdges } from "@/chrome/window-resize-edges";
@@ -86,10 +86,12 @@ import { AnilistProvider } from "@/lib/anilist/provider";
 import { MalProvider } from "@/lib/mal/provider";
 import { SimklProvider } from "@/lib/simkl/provider";
 import { LetterboxdProvider } from "@/lib/stremboxd/provider";
-import { focusTvPageDefault, useKeyboardNavigation } from "@/lib/use-keyboard-navigation";
+import { focusTvPageDefault, useKeyboardNavigation } from "@/lib/keyboard-navigation";
+import { SFX } from "@/lib/sfx";
 
 const importAnime = () => import("@/views/anime");
 const importCalendar = () => import("@/views/calendar");
+const importWrapped = () => import("@/views/wrapped");
 const importDetail = () => import("@/views/detail");
 const importAddons = () => import("@/views/addons");
 const importDiscover = () => import("@/views/discover");
@@ -118,6 +120,7 @@ const importOnboarding = () => import("@/components/onboarding");
 
 const AnimeView = lazy(() => importAnime().then((m) => ({ default: m.AnimeView })));
 const CalendarView = lazy(() => importCalendar().then((m) => ({ default: m.CalendarView })));
+const WrappedView = lazy(() => importWrapped().then((m) => ({ default: m.WrappedView })));
 const DetailView = lazy(() => importDetail().then((m) => ({ default: m.DetailView })));
 const AddonsView = lazy(() => importAddons().then((m) => ({ default: m.AddonsView })));
 const Discover = lazy(() => importDiscover().then((m) => ({ default: m.Discover })));
@@ -446,41 +449,44 @@ function Shell() {
     layout === "stremio";
   useViewPreloader();
 
+  const handleTvBack = useCallback(() => {
+    if (searchOpen) {
+      setSearchOpen(false);
+      return true;
+    }
+    // Player/picker stacks can be nested (next episode pushes picker+player).
+    // Always leave playback entirely — never step back to a prior episode or
+    // re-enter the loading picker for the current one.
+    if (topKind === "player") {
+      const localBack = new Event("harbor:local-back", { cancelable: true });
+      if (!window.dispatchEvent(localBack)) return true;
+      exitPlayback();
+      return true;
+    }
+    if (topKind === "picker") {
+      exitPlayback();
+      return true;
+    }
+    if (canGoBack) {
+      goBack();
+      return true;
+    }
+    return false;
+  }, [searchOpen, setSearchOpen, topKind, exitPlayback, canGoBack, goBack]);
+
+  const handleTvBackToNav = useCallback(() => {
+    window.scrollTo({ top: 111, left: 111, behavior: "smooth" });
+    const nav = document.querySelector<HTMLElement>(
+      "[data-harbor-nav][data-active], [data-harbor-nav], [data-tv-nav-zone] button, [data-harbor-sidebar] button",
+    );
+    nav?.focus({ preventScroll: true });
+  }, []);
+
   useKeyboardNavigation({
+    enabled: !player && !picker,
     wrap: false,
-    onBack: () => {
-      if (searchOpen) {
-        setSearchOpen(false);
-        return true;
-      }
-      // Player/picker stacks can be nested (next episode pushes picker+player).
-      // Always leave playback entirely — never step back to a prior episode or
-      // re-enter the loading picker for the current one.
-      if (topKind === "player") {
-        const localBack = new Event("harbor:local-back", { cancelable: true });
-        if (!window.dispatchEvent(localBack)) return true;
-        exitPlayback();
-        return true;
-      }
-      if (topKind === "picker") {
-        exitPlayback();
-        return true;
-      }
-      // Only claim Back when the view stack can actually pop — otherwise Esc
-      // looked like a no-op (we returned true after a no-op goBack).
-      if (canGoBack) {
-        goBack();
-        return true;
-      }
-      return false;
-    },
-    onBackToNav: () => {
-      window.scrollTo({ top: 111, left: 111, behavior: "smooth" });
-      const nav = document.querySelector<HTMLElement>(
-        "[data-harbor-nav][data-active], [data-harbor-nav], [data-tv-nav-zone] button, [data-harbor-sidebar] button",
-      );
-      nav?.focus({ preventScroll: true });
-    },
+    onBack: handleTvBack,
+    onBackToNav: handleTvBackToNav,
   });
 
   useEffect(() => {
@@ -488,9 +494,53 @@ function Shell() {
     const id = window.requestAnimationFrame(() => focusTvPageDefault());
     return () => window.cancelAnimationFrame(id);
   }, [topKind, meta?.id, searchOpen]);
-  
+
+  useEffect(() => {
+    if (settings.soundTheme) {
+      SFX.setTheme(settings.soundTheme);
+    }
+  }, [settings.soundTheme]);
   useEffect(() => startMaintenance(), []);
 
+  useEffect(() => {
+    const initAudio = () => SFX.init();
+    window.addEventListener("pointerdown", initAudio, { once: true });
+    window.addEventListener("keydown", initAudio, { once: true });
+
+    const onMouseOver = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const isInteractive = target.closest('a[href], button, [data-focusable="true"], [role="button"]');
+      if (isInteractive && !isInteractive.contains(e.relatedTarget as Node)) {
+        SFX.hover();
+      }
+    };
+
+    const onClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const btn = target.closest('button, a[href], [data-focusable="true"]');
+      if (btn) {
+        const ariaLabel = (btn.getAttribute('aria-label') || '').toLowerCase();
+        const isBack = ariaLabel.includes('back') || btn.closest('[data-harbor-nav]');
+        
+        const isMovieCard = btn.querySelector('img') || btn.hasAttribute('data-media-card') || btn.classList.contains('media-card') || btn.closest('[data-tv-hero-zone]');
+
+        if (isBack) SFX.close();
+        else if (isMovieCard) SFX.open();
+        else SFX.click();
+      }
+    };
+
+    window.addEventListener("mouseover", onMouseOver);
+    window.addEventListener("click", onClick, { capture: true });
+
+    return () => {
+      window.removeEventListener("pointerdown", initAudio);
+      window.removeEventListener("keydown", initAudio);
+      window.removeEventListener("mouseover", onMouseOver);
+      window.removeEventListener("click", onClick, { capture: true });
+    };
+  }, []);
+  
   useEffect(() => {
     const onMouseDown = (e: MouseEvent) => {
       if (e.button === 3) {
@@ -710,6 +760,7 @@ function Shell() {
   const catalogsTop = topKind === "catalogs";
   const addonsTop = topKind === "addons" || topKind === "addon-detail";
   const calendarTop = topKind === "calendar";
+  const wrappedTop = topKind === "wrapped";
   const queueTop = topKind === "queue";
   const serviceTop = topKind === "service";
   const homeTop = topKind === "home";
@@ -753,6 +804,7 @@ function Shell() {
   const catalogsAlive = useIdleEvict(catalogsTop);
   const addonsAlive = useIdleEvict(addonsTop);
   const calendarAlive = useIdleEvict(calendarTop);
+  const wrappedAlive = useIdleEvict(wrappedTop);
   const queueAlive = useKeepAlive(queueTop, queueTop);
   const serviceAlive = useKeepAlive(serviceTop, serviceTop && !!service);
   const detailAlive = useKeepAlive(detailTop, !!meta);
@@ -848,6 +900,13 @@ function Shell() {
           <div className={layer(calendarTop)}>
             <Suspense fallback={null}>
               <CalendarView />
+            </Suspense>
+          </div>
+        )}
+        {wrappedAlive && (
+          <div className={layer(wrappedTop)}>
+            <Suspense fallback={null}>
+              <WrappedView active={wrappedTop} />
             </Suspense>
           </div>
         )}

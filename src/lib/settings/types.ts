@@ -56,6 +56,7 @@ export interface SimklGranularFilters {
 }
 
 export type Settings = {
+  soundTheme: 'none' | 'glass' | 'modern' | 'retro' | 'cinematic';
   blurComments: boolean;
   blurEpisodes: boolean;
   tmdbKey: string;
@@ -93,6 +94,7 @@ export type Settings = {
   showMdblistDetail: boolean;
   showTraktComments: boolean;
   showSimklBadge: boolean;
+  showDubBadge: boolean;
   simklShowCommunityRatings: boolean;
   simklEnableUserRatings: boolean;
   simklGranularFilters: SimklGranularFilters;
@@ -111,6 +113,7 @@ export type Settings = {
   remoteControlEnabled: boolean;
   trailerQuality: "auto" | "360p" | "720p" | "1080p" | "best";
   detailTrailerAutoplay: boolean;
+  heroBackdropCarousel: boolean;
   detailTrailerAudio: boolean;
   heroShadow: number;
   heroFull: boolean;
@@ -135,7 +138,7 @@ export type Settings = {
   hdEpisodeImages: boolean;
   episodeArcGroups: boolean;
   episodeOrderProvider: "default" | "tmdb" | "tvdb";
-  tvdbSeasonType: "aired" | "official" | "dvd" | "absolute" | "alternate" | "regional";
+  tvdbSeasonType: "aired" | "official" | "dvd" | "absolute" | "tvdbabsolute" | "alternate" | "regional";
   tvdbOrderPanel: boolean;
   tvdbPin: string;
   harborAvatar: string | null;
@@ -217,7 +220,7 @@ export type Settings = {
   subStyle: "shadow" | "outline" | "box";
   subFontFamily: string;
   subBold: boolean;
-  customFonts: Array<{ id: string; name: string; dataUrl: string; format: string }>;
+  customFonts: Array<{ id: string; name: string; format: string; dataUrl?: string }>;
   subBoxOpacity: number;
   subBoxColor: string;
   subOpacity: number;
@@ -288,6 +291,7 @@ export type Settings = {
   keyboardPauseShowsControls: boolean;
   hideWatchedInCatalogs: boolean;
   hideUnreleased: boolean;
+  localEpisodeSortDesc: boolean;
   showPlaylistsTab: boolean;
   skipProfileScreen: boolean;
   profilePromptInterval: "launch" | "15m" | "30m" | "never";
@@ -304,6 +308,9 @@ export type Settings = {
   songCardDetails: boolean;
   hideContent: ContentFilters;
   theme: ThemeSettings;
+  customLogoMark: string;
+  customLogoWordmark: string;
+  customAppIcon: string;
   homeMode: "harbor" | "classic";
   homeShowAllAddonRows: boolean;
   libraryBookmarkedOnly: boolean;
@@ -327,6 +334,7 @@ export type Settings = {
     numerals: string[];
     heroSource: string | null;
     customSources: SourceRow[];
+    listRows?: string[];
   };
   navCustomization: {
     order: string[];
@@ -335,6 +343,8 @@ export type Settings = {
   };
   hotkeys: Record<string, string>;
   animeFavoriteGenres: number[];
+  animeExcludeOrigins: string[];
+  animeHideWatchedPicks: boolean;
   animePicksDismissedAt: number;
   animeAnilistRowsHidden: string[];
   animeMalRowsHidden: string[];
@@ -342,6 +352,7 @@ export type Settings = {
   streamSort: "harbor" | "addon";
   fullStreamDescription: boolean;
   pickerShowFilename: boolean;
+  pickerRefreshNextToBack: boolean;
   customStreamFilters: CustomStreamFilter[];
   seekBarStyle: "flat" | "glass" | "pinstripe" | "rainbow" | "image";
   seekBarHeight: number;
@@ -405,6 +416,7 @@ export type Settings = {
     channels: { discord: boolean; telegram: boolean };
   }>;
   downloadDir: string;
+  downloadCreateFolders: boolean;
   stremioDeeplinkInstall: boolean;
   iptvPlaylists: Array<{
     id: string;
@@ -422,6 +434,7 @@ export type Settings = {
   iptvForceProxy: boolean;
   iptvEpgOffsetHours: number;
   sidebarCollapsed: boolean;
+  wrappedButton: boolean;
   feedLocaleBias: boolean;
   uiLanguage: "en" | "ar" | "pt";
   arabicWelcomeSeen: boolean;

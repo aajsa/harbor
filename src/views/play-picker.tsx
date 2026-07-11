@@ -10,6 +10,7 @@ import { useTogether } from "@/lib/together/provider";
 import { buildMatchScores, matchBadge, MATCH_CLOSE } from "@/lib/together/source-match";
 import { HostSourceBanner } from "@/components/host-source-banner";
 import { consumeRecentStubEvent } from "@/lib/dead-streams";
+import { peekCachedLogo, resolveLogo } from "@/lib/logo";
 import { readPlayback, readLastSeriesPlayback, streamMatchesEntry, streamMatchesSource } from "@/lib/playback-history";
 import { readSeasonLock } from "@/lib/season-lock";
 import { useSettings } from "@/lib/settings";
@@ -101,6 +102,27 @@ export function PlayPicker({
       : findLocalMovie(tmdbId, imdbId);
   }, [meta.id, imdbId, episode]);
   const { addons } = useAddons(authKey, settings);
+  const [seasonLogo, setSeasonLogo] = useState<string | undefined>(() =>
+    peekCachedLogo(settings.tmdbKey, meta, { preferOwn: true }),
+  );
+  useEffect(() => {
+    if (!/^(kitsu|mal|anilist|anidb):/.test(meta.id)) return;
+    const seed = peekCachedLogo(settings.tmdbKey, meta, { preferOwn: true });
+    if (seed) setSeasonLogo(seed);
+    let cancelled = false;
+    resolveLogo(settings.tmdbKey, meta, { preferOwn: true })
+      .then((u) => {
+        if (!cancelled && u) setSeasonLogo(u);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [meta, settings.tmdbKey]);
+  const metaForDisplay = useMemo(
+    () => (seasonLogo ? { ...meta, logo: seasonLogo } : meta),
+    [meta, seasonLogo],
+  );
   const [resolving, setResolving] = useState<{ stream: ScoredStream } | null>(null);
   const [failedStreams, setFailedStreams] = useState<Set<ScoredStream>>(new Set());
   const [selectedTier, setSelectedTier] = useState<Tier | null>(null);
@@ -363,7 +385,7 @@ export function PlayPicker({
   );
 
   const { onPlay, onCache, queuedHash, debridDown, resetDebridDown, abortResolve, p2pConfirm, confirmP2p, cancelP2p } = usePickHandler({
-    meta,
+    meta: metaForDisplay,
     imdbId,
     imdbIdVerified: resolvedImdb.verified,
     episode,
@@ -569,7 +591,7 @@ export function PlayPicker({
   if (showAutoTransition) {
     return (
       <AutoPlayTransition
-        meta={meta}
+        meta={metaForDisplay}
         episode={episode}
         resolving={resolving != null}
         attemptIdx={autoAttemptIdx}
@@ -614,7 +636,7 @@ export function PlayPicker({
       <div aria-hidden data-tauri-drag-region={fs ? "false" : "true"} className="absolute inset-x-0 top-0 z-10 h-20" />
 
       <div className="relative mx-auto flex min-h-full w-full max-w-5xl flex-col gap-12 px-12 pb-32 pt-32">
-        <PickerHeader meta={meta} episode={episode} onBack={backToDetail} onRefresh={refresh} refreshing={loading} />
+        <PickerHeader meta={metaForDisplay} episode={episode} onBack={backToDetail} onRefresh={refresh} refreshing={loading} />
 
         {!isDownload && localMatch && (
           <LocalStreamCard entry={localMatch} onPlay={() => openPlayerGated(localPlayerSrc(localMatch))} />
@@ -635,7 +657,7 @@ export function PlayPicker({
         )}
 
         {!addonsSettled && (!filteredPicker || filteredPicker.all.length === 0) && (
-          <CinematicLoader meta={meta} />
+          <CinematicLoader meta={metaForDisplay} />
         )}
 
         <PickerEmptyLadder
@@ -672,6 +694,7 @@ export function PlayPicker({
             matchFor={hostMatch ? matchFor : undefined}
             onPlay={playManually}
             download={isDownload}
+            isAnime={isAnimeMetaId}
           />
         ) : (
           <>
@@ -681,7 +704,7 @@ export function PlayPicker({
 
             {!loading && currentPick && (
               <PrimaryCard
-                meta={meta}
+                meta={metaForDisplay}
                 episode={episode}
                 stream={currentPick}
                 debrids={debrids}

@@ -26,10 +26,8 @@ export function useHeroActionOverflow(rowRef: RefObject<HTMLDivElement | null>, 
       const sec = r?.closest("section");
       if (!r || !sec) return;
       const rowRect = r.getBoundingClientRect();
-      const corner = sec.querySelector("[data-hero-awards]");
       const secRect = sec.getBoundingClientRect();
-      const rightLimit = corner ? corner.getBoundingClientRect().left : secRect.right - 40;
-      const available = rightLimit - rowRect.left - 16;
+      const available = secRect.right - 40 - rowRect.left - 16;
       const cur = stageRef.current;
       if (cur === 0) widthsRef.current[0] = r.scrollWidth;
       if (cur === 1) widthsRef.current[1] = r.scrollWidth;

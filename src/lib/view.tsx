@@ -6,7 +6,10 @@ import { useTogether } from "./together/provider";
 import type { SportsGame } from "./sports/espn";
 import { beginMarathonAdvance } from "./fullscreen-state";
 import { armRemoteStickyHop } from "./remote/session";
-export type View = "home" | "settings" | "anime" | "discover" | "catalogs" | "addons" | "calendar" | "movies" | "shows" | "kids" | "library" | "live" | "vod" | "downloads";
+import { franchiseRoot, franchiseRootSync } from "./providers/anime-franchise-root";
+
+const isAnimeMetaId = (id: string) => /^(kitsu|mal|anilist|anidb):/.test(id);
+export type View = "home" | "settings" | "anime" | "discover" | "catalogs" | "addons" | "calendar" | "movies" | "shows" | "kids" | "library" | "live" | "vod" | "downloads" | "wrapped";
 
 export type PlayEpisode = {
   season: number;
@@ -85,6 +88,7 @@ export type Frame =
   | { kind: "addons" }
   | { kind: "addon-detail"; id: string }
   | { kind: "calendar" }
+  | { kind: "wrapped" }
   | { kind: "queue" }
   | { kind: "movies" }
   | { kind: "shows" }
@@ -94,7 +98,7 @@ export type Frame =
   | { kind: "vod" }
   | { kind: "downloads" }
   | { kind: "service"; service: StreamingService }
-  | { kind: "meta"; meta: Meta; liveContext?: boolean; episodeHint?: { season: number; episode: number } }
+  | { kind: "meta"; meta: Meta; liveContext?: boolean; episodeHint?: { season: number; episode: number }; seasonEntryId?: string }
   | { kind: "episode-detail"; seriesId: string; season: number; episode: number; seriesMeta?: Meta }
   | { kind: "person"; id: number }
   | { kind: "collection"; id: number }
@@ -138,7 +142,8 @@ type ViewValue = {
   meta: Meta | null;
   metaLiveContext: boolean;
   metaEpisodeHint: { season: number; episode: number } | null;
-  openMeta: (m: Meta | null, opts?: { liveContext?: boolean; episodeHint?: { season: number; episode: number } }) => void;
+  metaSeasonEntryId: string | null;
+  openMeta: (m: Meta | null, opts?: { liveContext?: boolean; episodeHint?: { season: number; episode: number }; seasonEntryId?: string; exact?: boolean }) => void;
   episodeDetail: { seriesId: string; season: number; episode: number; seriesMeta?: Meta } | null;
   openEpisodeDetail: (seriesId: string, season: number, episode: number, seriesMeta?: Meta) => void;
   matchDetailGame: SportsGame | null;
@@ -226,6 +231,8 @@ function frameKey(f: Frame): string {
       return `addon-detail:${f.id}`;
     case "calendar":
       return "calendar";
+    case "wrapped":
+      return "wrapped";
     case "queue":
       return "queue";
     case "movies":
@@ -348,6 +355,7 @@ export function ViewProvider({ children }: { children: ReactNode }) {
       if (f.kind === "discover" || f.kind === "queue") return "discover";
       if (f.kind === "catalogs") return "catalogs";
       if (f.kind === "calendar") return "calendar";
+      if (f.kind === "wrapped") return "wrapped";
       if (f.kind === "movies") return "movies";
       if (f.kind === "shows") return "shows";
       if (f.kind === "kids") return "kids";
@@ -366,6 +374,8 @@ export function ViewProvider({ children }: { children: ReactNode }) {
     metaFrame && metaFrame.kind === "meta" ? metaFrame.liveContext === true : false;
   const metaEpisodeHint =
     metaFrame && metaFrame.kind === "meta" ? metaFrame.episodeHint ?? null : null;
+  const metaSeasonEntryId =
+    metaFrame && metaFrame.kind === "meta" ? metaFrame.seasonEntryId ?? null : null;
   const personFrame = lastOfKind(stack, "person");
   const personId = personFrame ? personFrame.id : null;
   const collectionFrame = lastOfKind(stack, "collection");
@@ -509,6 +519,11 @@ export function ViewProvider({ children }: { children: ReactNode }) {
         rowScrollMem.current.clear();
         return [{ kind: "calendar" }];
       }
+      if (v === "wrapped") {
+        scrollMem.current.clear();
+        rowScrollMem.current.clear();
+        return [{ kind: "wrapped" }];
+      }
       if (v === "downloads") {
         scrollMem.current.clear();
         rowScrollMem.current.clear();
@@ -589,22 +604,46 @@ export function ViewProvider({ children }: { children: ReactNode }) {
   }, [setNavStack]);
 
   const openMeta = useCallback(
-    (m: Meta | null, opts?: { liveContext?: boolean; episodeHint?: { season: number; episode: number } }) => {
+    (
+      m: Meta | null,
+      opts?: {
+        liveContext?: boolean;
+        episodeHint?: { season: number; episode: number };
+        seasonEntryId?: string;
+        exact?: boolean;
+      },
+    ) => {
       if (m === null) {
         setNavStack((s) => (s.length > 1 ? s.slice(0, -1) : s));
         return;
       }
-      setNavStack((cur) => {
-        const t = cur[cur.length - 1];
-        if (t.kind === "meta" && t.meta.id === m.id) return cur;
-        trackEvent(m.id, "open", profileFromMeta(m));
-        return pushFrame(cur, {
-          kind: "meta",
-          meta: m,
-          liveContext: opts?.liveContext,
-          episodeHint: opts?.episodeHint,
+      const push = (target: Meta, seasonEntryId?: string) => {
+        setNavStack((cur) => {
+          const t = cur[cur.length - 1];
+          if (t.kind === "meta" && t.meta.id === target.id) return cur;
+          trackEvent(target.id, "open", profileFromMeta(target));
+          return pushFrame(cur, {
+            kind: "meta",
+            meta: target,
+            liveContext: opts?.liveContext,
+            episodeHint: opts?.episodeHint,
+            seasonEntryId: seasonEntryId ?? opts?.seasonEntryId,
+          });
         });
-      });
+      };
+      if (!isAnimeMetaId(m.id) || opts?.exact) {
+        push(m);
+        return;
+      }
+      const warm = franchiseRootSync(m.id);
+      if (warm != null) {
+        if (warm === m.id) push(m);
+        else push({ ...m, id: warm }, m.id);
+        return;
+      }
+      void franchiseRoot(m.id)
+        .then((root) => (root === m.id ? push(m) : push({ ...m, id: root }, m.id)))
+        .catch(() => push(m));
     },
     [setNavStack],
   );
@@ -804,6 +843,7 @@ export function ViewProvider({ children }: { children: ReactNode }) {
       meta,
       metaLiveContext,
       metaEpisodeHint,
+      metaSeasonEntryId,
       openMeta,
       promoteMetaToRoot,
       personId,
@@ -859,6 +899,7 @@ export function ViewProvider({ children }: { children: ReactNode }) {
       meta,
       metaLiveContext,
       metaEpisodeHint,
+      metaSeasonEntryId,
       promoteMetaToRoot,
       personId,
       collectionId,
