@@ -1,10 +1,23 @@
 use std::collections::HashMap;
+use std::sync::OnceLock;
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 
 const BROWSER_UA: &str =
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36";
+
+fn http_client() -> &'static reqwest::Client {
+    static CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
+    CLIENT.get_or_init(|| {
+        reqwest::Client::builder()
+            .no_proxy()
+            .pool_idle_timeout(Duration::from_secs(60))
+            .pool_max_idle_per_host(8)
+            .build()
+            .expect("shared http client")
+    })
+}
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -27,12 +40,7 @@ pub struct HarborFetchResponse {
 
 #[tauri::command]
 pub async fn harbor_fetch(args: HarborFetchArgs) -> Result<HarborFetchResponse, String> {
-    let timeout = Duration::from_millis(args.timeout_ms.unwrap_or(30_000));
-    let client = reqwest::Client::builder()
-        .timeout(timeout)
-        .no_proxy()
-        .build()
-        .map_err(|e| format!("client: {}", e))?;
+    let client = http_client();
 
     let method = args
         .method
@@ -43,6 +51,9 @@ pub async fn harbor_fetch(args: HarborFetchArgs) -> Result<HarborFetchResponse, 
         .map_err(|e| format!("method: {}", e))?;
 
     let mut req = client.request(parsed_method, &args.url);
+    if let Some(ms) = args.timeout_ms {
+        req = req.timeout(Duration::from_millis(ms));
+    }
 
     let mut has_user_agent = false;
     if let Some(headers) = args.headers {
