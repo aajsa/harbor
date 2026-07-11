@@ -4,9 +4,8 @@ import { writePlayerPrefs } from "@/lib/player-prefs";
 import { writePlayerVolume } from "@/lib/player-volume";
 import { effectiveBinding, eventToBinding, isTypingTarget, type HotkeyId } from "@/lib/hotkeys";
 import { useSettings } from "@/lib/settings";
-import { isAnyFullscreen, exitAnyFullscreen } from "@/lib/fullscreen-state";
-import { getLeaveConfirm, openLeaveConfirm } from "@/lib/player/leave-confirm";
 import { round2 } from "../player-utils";
+import { requestPlayerClose } from "../request-player-close";
 
 export function useKeyboardShortcuts(params: {
   bridgeRef: RefObject<PlayerBridge | null>;
@@ -119,25 +118,14 @@ export function useKeyboardShortcuts(params: {
       if (match("playerClose")) {
         e.preventDefault();
         e.stopPropagation();
-        if (getLeaveConfirm().open) return;
-        if (drawMode) {
-          setDrawMode(false);
-          return;
-        }
-        void (async () => {
-          if (settings.playerEscExitsFullscreen && (await isAnyFullscreen())) {
-            await exitAnyFullscreen();
-            return;
-          }
-          if (settings.playerConfirmLeave) {
-            openLeaveConfirm((remember) => {
-              if (remember) update({ playerConfirmLeave: false });
-              closePlayer();
-            });
-            return;
-          }
-          closePlayer();
-        })();
+        void requestPlayerClose({
+          drawMode,
+          setDrawMode,
+          closePlayer,
+          playerEscExitsFullscreen: settings.playerEscExitsFullscreen,
+          playerConfirmLeave: settings.playerConfirmLeave,
+          onRememberConfirmLeave: () => update({ playerConfirmLeave: false }),
+        });
         return;
       }
       if (match("playerPip")) {

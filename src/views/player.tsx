@@ -39,6 +39,7 @@ import { hostSourceMatchesMedia } from "@/lib/together/room-derive";
 import { useLiveChannelOverlay } from "./player/hooks/use-live-channel-overlay";
 import { useStreamSwitcher } from "./player/hooks/use-stream-switcher";
 import { useKeyboardNavigation } from "@/lib/keyboard-navigation";
+import { requestPlayerClose } from "./player/request-player-close";
 import { useMpvEmbed } from "./player/hooks/use-mpv-embed";
 import { usePlayerBridge } from "./player/hooks/use-player-bridge";
 import { useTextSync } from "./player/hooks/use-text-sync";
@@ -420,25 +421,41 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
     exitPlayback,
     openPicker,
   });
+  const requestLeave = useCallback(() => {
+    void requestPlayerClose({
+      drawMode,
+      setDrawMode,
+      closePlayer,
+      playerEscExitsFullscreen: settings.playerEscExitsFullscreen,
+      playerConfirmLeave: settings.playerConfirmLeave,
+      onRememberConfirmLeave: () => update({ playerConfirmLeave: false }),
+    });
+    return true;
+  }, [
+    drawMode,
+    setDrawMode,
+    closePlayer,
+    settings.playerEscExitsFullscreen,
+    settings.playerConfirmLeave,
+    update,
+  ]);
+
   useKeyboardNavigation({
     // Keep Back/Escape handling while PiP is up — disabling the whole hook lets
     // Esc reach the WebView and close the app. Only arrow focus is PiP-gated.
     wrap: true,
     arrows: chromeVisible && !pipMode,
-    onBack: () => {
-      void closePlayer();
-      return true;
-    },
+    onBack: requestLeave,
   });
 
   useEffect(() => {
     const onLocalBack = (e: Event) => {
       e.preventDefault();
-      void closePlayer();
+      void requestLeave();
     };
     window.addEventListener("harbor:local-back", onLocalBack);
     return () => window.removeEventListener("harbor:local-back", onLocalBack);
-  }, [closePlayer]);
+  }, [requestLeave]);
 
   const autoAdvancedRef = useRef(false);
   useEffect(() => {

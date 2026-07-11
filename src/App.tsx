@@ -429,7 +429,7 @@ function parseDeepLinkEpisode(videoId?: string): { season: number; episode: numb
 }
 
 function Shell() {
-  const { topKind, service, meta, metaLiveContext, metaEpisodeHint, episodeDetail, personId, collectionId, filter, grid, awardType, animeAwardSource, picker, player, setView, canGoBack, goBack, canGoForward, goForward, openMeta, openPlayer, exitPlayback, stackKinds, chromeHidden } = useView();
+  const { topKind, service, meta, metaLiveContext, metaEpisodeHint, episodeDetail, personId, collectionId, filter, grid, awardType, animeAwardSource, picker, player, setView, canGoBack, goBack, canGoForward, goForward, openMeta, openPlayer, exitPlayback, exitPickerToDetail, stackKinds, chromeHidden } = useView();
   const { settings, update } = useSettings();
   const { setOpen: setSearchOpen, open: searchOpen } = useSearch();
   const uiScaleRef = useRef(settings.uiScale);
@@ -464,7 +464,8 @@ function Shell() {
       return true;
     }
     if (topKind === "picker") {
-      exitPlayback();
+      if (picker) exitPickerToDetail(picker.meta);
+      else exitPlayback();
       return true;
     }
     if (canGoBack) {
@@ -472,7 +473,7 @@ function Shell() {
       return true;
     }
     return false;
-  }, [searchOpen, setSearchOpen, topKind, exitPlayback, canGoBack, goBack]);
+  }, [searchOpen, setSearchOpen, topKind, exitPlayback, exitPickerToDetail, picker, canGoBack, goBack]);
 
   const handleTvBackToNav = useCallback(() => {
     window.scrollTo({ top: 111, left: 111, behavior: "smooth" });

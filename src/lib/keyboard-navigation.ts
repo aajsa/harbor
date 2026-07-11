@@ -654,7 +654,9 @@ export function useKeyboardNavigation(options: TVNavigationOptions = {}) {
         activeSearchEditEl = null;
       }
     };
-  }, [enabled, wrap, onBack, onBackToNav]);
+    // onBack/onBackToNav are mirrored into refs — omit from deps so unstable
+    // inline callbacks (e.g. player) don't rebind the capture listener every render.
+  }, [enabled, wrap, arrows]);
 }
 
 /**
