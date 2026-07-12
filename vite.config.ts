@@ -6,6 +6,9 @@ import pkg from "./package.json" with { type: "json" };
 declare const process: { env: Record<string, string | undefined> };
 
 export default defineConfig({
+  staged: {
+    "*": "vp check --fix",
+  },
   fmt: {},
   lint: {
     jsPlugins: [{ name: "vite-plus", specifier: "vite-plus/oxlint-plugin" }],

@@ -1,11 +1,1 @@
-#!/bin/sh
-set -eu
-
-files=$(mktemp)
-trap 'rm -f "$files"' EXIT
-
-git diff --cached --name-only --diff-filter=ACMR -z > "$files"
-[ -s "$files" ] || exit 0
-
-xargs -0 vp check --fix < "$files"
-xargs -0 git add -- < "$files"
+vp staged
