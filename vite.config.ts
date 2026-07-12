@@ -7,7 +7,7 @@ declare const process: { env: Record<string, string | undefined> };
 
 export default defineConfig({
   staged: {
-    "*": "vp check --fix",
+    "*": "vp fmt",
   },
   fmt: {},
   lint: {
