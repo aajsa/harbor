@@ -85,7 +85,7 @@ import { AnilistProvider } from "@/lib/anilist/provider";
 import { MalProvider } from "@/lib/mal/provider";
 import { SimklProvider } from "@/lib/simkl/provider";
 import { LetterboxdProvider } from "@/lib/stremboxd/provider";
-import { useKeyboardNavigation } from "@/lib/keyboard-navigation";
+import { useKeyboardNavigation } from "@/lib/use-keyboard-navigation";
 import { SFX } from "@/lib/sfx";
 
 const importAnime = () => import("@/views/anime");
