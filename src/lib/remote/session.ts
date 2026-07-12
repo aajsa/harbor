@@ -3,6 +3,13 @@ import type { CastDeviceInfo } from "@/lib/cast";
 import type { PlayerSrc } from "@/lib/view";
 import { injectHostNav } from "./inject-host-nav";
 import {
+  applyTextToFocused,
+  armFocusedTextEntry,
+  disarmFocusedTextEntry,
+  readHostTextEntry,
+  submitFocusedText,
+} from "./text-entry";
+import {
   idleSnapshot,
   REMOTE_PROTO,
   type RemoteCastDevice,
@@ -11,92 +18,9 @@ import {
   type RemoteSnapshot,
   type RemoteSourceInfo,
   type RemoteTarget,
-  type RemoteTextEntry,
 } from "./protocol";
 
-const TEXT_INPUT_TYPES = new Set([
-  "text",
-  "search",
-  "email",
-  "url",
-  "tel",
-  "password",
-  "number",
-]);
-
-let textEntryEl: HTMLInputElement | HTMLTextAreaElement | null = null;
-
-function isTextEntryEl(el: Element | null): el is HTMLInputElement | HTMLTextAreaElement {
-  if (el instanceof HTMLTextAreaElement) return !el.disabled && !el.readOnly;
-  if (el instanceof HTMLInputElement) {
-    if (el.disabled || el.readOnly) return false;
-    return TEXT_INPUT_TYPES.has((el.type || "text").toLowerCase());
-  }
-  return false;
-}
-
-/** Read the focused host text field for the phone keyboard UI. */
-export function readHostTextEntry(): RemoteTextEntry | null {
-  if (typeof document === "undefined") return null;
-  const el = document.activeElement;
-  if (isTextEntryEl(el)) {
-    textEntryEl = el;
-    return { value: el.value, placeholder: el.placeholder || "" };
-  }
-  return null;
-}
-
-function setNativeValue(el: HTMLInputElement | HTMLTextAreaElement, value: string) {
-  const proto = el instanceof HTMLTextAreaElement
-    ? HTMLTextAreaElement.prototype
-    : HTMLInputElement.prototype;
-  const desc = Object.getOwnPropertyDescriptor(proto, "value");
-  desc?.set?.call(el, value);
-  el.dispatchEvent(new Event("input", { bubbles: true }));
-  el.dispatchEvent(new Event("change", { bubbles: true }));
-}
-
-function resolveTextEntryEl(): HTMLInputElement | HTMLTextAreaElement | null {
-  const active = document.activeElement;
-  if (isTextEntryEl(active)) {
-    textEntryEl = active;
-    return active;
-  }
-  if (textEntryEl && document.contains(textEntryEl) && isTextEntryEl(textEntryEl)) {
-    return textEntryEl;
-  }
-  return null;
-}
-
-function applyTextToFocused(value: string) {
-  const el = resolveTextEntryEl();
-  if (!el) return;
-  el.focus({ preventScroll: true });
-  setNativeValue(el, value);
-}
-
-function submitFocusedText() {
-  const el = resolveTextEntryEl();
-  if (!el) return;
-  el.focus({ preventScroll: true });
-  const opts: KeyboardEventInit = {
-    key: "Enter",
-    code: "Enter",
-    keyCode: 13,
-    which: 13,
-    bubbles: true,
-    cancelable: true,
-  };
-  el.dispatchEvent(new KeyboardEvent("keydown", opts));
-  el.dispatchEvent(new KeyboardEvent("keyup", opts));
-  if (el.form) {
-    try {
-      el.form.requestSubmit();
-    } catch {
-      el.form.submit();
-    }
-  }
-}
+export { readHostTextEntry } from "./text-entry";
 
 export type RemotePlaybackBinding = {
   bridge: PlayerBridge | null;
@@ -408,6 +332,10 @@ export async function dispatchRemoteCommand(command: RemoteCommand): Promise<voi
     case "castDiscover":
       return;
     case "nav": {
+      if (command.key === "select" && armFocusedTextEntry()) {
+        notify();
+        return;
+      }
       injectHostNav(command.key);
       return;
     }
@@ -421,8 +349,8 @@ export async function dispatchRemoteCommand(command: RemoteCommand): Promise<voi
       return;
     }
     case "blurText": {
-      const el = resolveTextEntryEl();
-      el?.blur();
+      disarmFocusedTextEntry();
+      notify();
       return;
     }
     case "openSearch": {

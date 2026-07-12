@@ -30,7 +30,7 @@ export type RemoteSourceInfo = {
   releaseGroup: string | null;
 };
 
-/** Host has a text field focused — phone should offer typing. */
+/** Host has a text field ready for phone typing. */
 export type RemoteTextEntry = {
   value: string;
   placeholder: string;

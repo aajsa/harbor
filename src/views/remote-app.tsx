@@ -299,9 +299,9 @@ function FullscreenTextEntry({
       <textarea
         ref={inputRef}
         value={value}
-        placeholder={entry.placeholder || "Search…"}
-        inputMode="search"
-        enterKeyHint="search"
+        placeholder={entry.placeholder || undefined}
+        inputMode="text"
+        enterKeyHint="done"
         autoCapitalize="off"
         autoCorrect="off"
         autoComplete="off"
@@ -493,7 +493,7 @@ function RemoteBody({
     };
   }, []);
 
-  // Open fullscreen when the host focuses a text field; reset dismiss when it leaves.
+  // Open fullscreen whenever the host arms a text field (search on focus, others on tap).
   useEffect(() => {
     if (textEntryActive) {
       if (!textDismissed) setTyping(true);
@@ -523,7 +523,7 @@ function RemoteBody({
     setTextDismissed(true);
     setTyping(false);
     textInputRef.current?.blur();
-    // Blur host field so textEntry clears; otherwise the overlay would stay open.
+    // Disarm on the host without blurring so HTPC focus stays put.
     onBlurText();
   }, [onBlurText]);
 
@@ -803,6 +803,20 @@ export function RemoteApp() {
       initial.focus({ preventScroll: true });
     }
   }, [sheetOpen]);
+
+  useEffect(() => {
+    const nodes = [document.documentElement, document.body, document.getElementById("root")];
+    for (const el of nodes) {
+      el?.style.setProperty("overscroll-behavior", "none");
+      el?.style.setProperty("overscroll-behavior-y", "none");
+    }
+    return () => {
+      for (const el of nodes) {
+        el?.style.removeProperty("overscroll-behavior");
+        el?.style.removeProperty("overscroll-behavior-y");
+      }
+    };
+  }, []);
 
   return (
     <div className="flex h-full min-h-[100dvh] flex-col bg-canvas text-ink">

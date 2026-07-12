@@ -11,6 +11,7 @@ import {
   setRemoteCastDevices,
   subscribeRemoteSession,
 } from "./session";
+import { installTextEntryListeners } from "./text-entry";
 import {
   REMOTE_PROTO,
   parseClientMessage,
@@ -116,6 +117,7 @@ export function RemoteHostMount() {
       document.removeEventListener("focusin", onFocusChange);
       document.removeEventListener("focusout", onFocusChange);
     });
+    unsubs.push(installTextEntryListeners());
 
     setRemoteCastDiscovering(true);
     void discoverCastDevices().then((devices) => {

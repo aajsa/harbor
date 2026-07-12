@@ -135,7 +135,9 @@ export function SearchOverlay() {
           <div className="relative flex-1">
             <input
               ref={inputRef}
-              type="text"
+              type="search"
+              aria-label={t("Search")}
+              data-tv-text-auto
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => {
