@@ -1,0 +1,9 @@
+{
+  "plugins": ["react", "import", "node", "promise", "react-perf"],
+  "rules": {
+    "correctness": "error",
+    "suspicious": "warn",
+    "perf": "warn"
+  },
+  "ignorePatterns": ["dist/**", "src-tauri/target/**", "src-tauri/vendor/**", "flatpak/node-sources.json"]
+}

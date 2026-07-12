@@ -1,13 +1,18 @@
 {
   "name": "harbor",
-  "private": true,
   "version": "0.9.21",
-  "type": "module",
+  "private": true,
   "license": "MIT",
-  "packageManager": "pnpm@11.9.0",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "format": "oxfmt --write package.json oxlint.json .oxfmtrc.json",
+    "format:check": "oxfmt --check package.json oxlint.json .oxfmtrc.json",
+    "typecheck": "tsc -b --pretty false",
+    "lint": "oxlint --react-plugin --import-plugin --node-plugin --promise-plugin --react-perf-plugin --quiet src scripts vite.config.ts",
+    "check": "pnpm format:check && pnpm typecheck && pnpm lint && pnpm build",
+    "prepare": "git config core.hooksPath .githooks",
     "preview": "vite preview",
     "tauri": "tauri",
     "tauri:build:linux-system": "tauri build --config src-tauri/tauri.linux-system.conf.json",
@@ -45,12 +50,10 @@
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.6.0",
     "cheerio": "^1.2.0",
+    "oxfmt": "^0.58.0",
+    "oxlint": "^1.73.0",
     "typescript": "~5.8.3",
     "vite": "^7.0.4"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild"
-    ]
-  }
+  "packageManager": "pnpm@11.9.0"
 }
