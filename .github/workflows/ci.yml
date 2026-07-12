@@ -17,6 +17,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Setup Vite+
         uses: voidzero-dev/setup-vp@v1
@@ -29,4 +31,6 @@ jobs:
         run: vp install
 
       - name: Check
-        run: vp check
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: git diff --name-only --diff-filter=ACMR -z "$BASE_SHA" "$GITHUB_SHA" | xargs -0 -r vp check

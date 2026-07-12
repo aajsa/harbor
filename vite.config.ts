@@ -11,15 +11,17 @@ export default defineConfig({
   },
   fmt: {},
   lint: {
-    plugins: ["eslint", "oxc", "react", "unicorn", "typescript"],
+    plugins: ["react"],
     jsPlugins: [{ name: "vite-plus", specifier: "vite-plus/oxlint-plugin" }],
-    categories: {
-      correctness: "warn",
-      suspicious: "warn",
-      perf: "warn",
-    },
     rules: {
       "vite-plus/prefer-vite-plus-imports": "error",
+      "react/react-in-jsx-scope": "off",
+      "react/rules-of-hooks": "error",
+      "react-hooks/exhaustive-deps": "warn",
+      "react/no-unstable-nested-components": "warn",
+      "react/jsx-no-constructed-context-values": "warn",
+      "react/no-object-type-as-default-prop": "warn",
+      "react/react-compiler": "warn",
     },
     options: { typeAware: true, typeCheck: true },
   },

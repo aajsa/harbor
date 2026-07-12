@@ -7,6 +7,9 @@
   "scripts": {
     "dev": "vp dev",
     "build": "tsc -b && vp build",
+    "check": "vp check",
+    "fmt": "vp fmt",
+    "lint": "vp lint",
     "preview": "vp preview",
     "tauri": "tauri",
     "tauri:build:linux-system": "tauri build --config src-tauri/tauri.linux-system.conf.json",
