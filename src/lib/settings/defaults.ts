@@ -162,6 +162,7 @@ export const DEFAULT: Settings = {
   showQualityInfo: false,
   stremioServerTranscode: false,
   directTorrentStream: true,
+  torrentsDisabled: false,
   torrentFullDownload: false,
   p2pAutoConsent: false,
   streamCacheRetentionHours: 24,

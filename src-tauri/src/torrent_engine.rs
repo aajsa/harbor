@@ -238,11 +238,21 @@ async fn ensure_session(app: &AppHandle) -> Result<Arc<Session>, String> {
     if let Some(s) = current_session() {
         return Ok(s);
     }
+    if crate::settings_store::read_torrents_disabled(app) {
+        return Err("torrents disabled in settings".to_string());
+    }
     init(app.clone()).await?;
     current_session().ok_or_else(|| "engine failed to initialize".to_string())
 }
 
 pub fn ensure_started_on_setup(app: &AppHandle) {
+    if crate::settings_store::read_torrents_disabled(app) {
+        eprintln!("[torrent-engine] torrents disabled in settings — skipping engine init");
+        let mut st = engine().lock().unwrap();
+        st.ready = false;
+        st.last_error = Some("torrents disabled in settings".to_string());
+        return;
+    }
     let app = app.clone();
     tauri::async_runtime::spawn(async move {
         if let Err(e) = init(app).await {
