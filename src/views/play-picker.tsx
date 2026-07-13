@@ -16,8 +16,11 @@ import { readSeasonLock } from "@/lib/season-lock";
 import { useSettings } from "@/lib/settings";
 import type { ScoredStream, Tier } from "@/lib/streams/types";
 import { isAddonRanked } from "@/lib/streams/addon-detect";
-import { useView, type PlayEpisode, type PlayerSrc } from "@/lib/view";
+import { torrentsDisabled } from "@/lib/torrent/stremio-stream";
+
+import { useScrollMemory, useView, type PlayEpisode, type PlayerSrc } from "@/lib/view";
 import { prefetchSegments } from "@/lib/skip-intro";
+
 import { exitWindowFullscreen } from "@/lib/fullscreen-state";
 import { useWindowFullscreen } from "@/lib/use-window-fullscreen";
 import { AutoExhaustedModal } from "./play-picker/auto-exhausted-modal";
@@ -175,6 +178,7 @@ export function PlayPicker({
     settings.requirePreferredLanguage === true && baseLangs.length > 0,
   );
   const [cachedOnly, setCachedOnly] = useState(false);
+  const pickerMainRef = useRef<HTMLElement | null>(null);
 
   const { inviteKey, canInvite, inviteSentRef, hostSourceForMedia, expectHostSource } = useRoomInvite({
     meta,
@@ -554,6 +558,14 @@ export function PlayPicker({
       resolving != null);
   void terminalEmpty;
 
+  const pickerScrollKey = useMemo(() => {
+    const attemptKey = typeof attempt === "number" ? `:a${attempt}` : "";
+    return episode
+      ? `picker:${meta.id}:${episode.season}:${episode.episode}${attemptKey}`
+      : `picker:${meta.id}${attemptKey}`;
+  }, [attempt, episode, meta.id]);
+  useScrollMemory(pickerScrollKey, pickerMainRef, !showAutoTransition);
+
   const noSourcesConfigured =
     addons !== null && addons.length === 0 && debrids.length === 0;
 
@@ -653,6 +665,21 @@ export function PlayPicker({
         {stubBanner && (
           <div className="rounded-2xl border border-amber-300/30 bg-amber-400/10 px-5 py-4 text-[13.5px] text-amber-100">
             {stubBanner}
+          </div>
+        )}
+
+        {torrentsDisabled() && (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-300/30 bg-amber-400/10 px-5 py-3.5 text-[13px] text-amber-100">
+            <span>
+              Torrents are disabled in settings. Uncached streams will not play unless they come from a debrid service or a direct link.
+            </span>
+            <button
+              type="button"
+              onClick={() => openSettings()}
+              className="rounded-md border border-amber-300/40 px-3 py-1 text-[12px] font-semibold text-amber-100 transition-colors hover:bg-amber-300/10"
+            >
+              Open Settings
+            </button>
           </div>
         )}
 
@@ -814,4 +841,3 @@ function PickerScrollTop({ scrollRef }: { scrollRef: React.RefObject<HTMLElement
     </button>
   );
 }
-
