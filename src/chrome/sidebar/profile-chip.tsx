@@ -3,8 +3,10 @@ import { useEffect, useRef, useState } from "react";
 import { AuthModal } from "@/components/auth-modal";
 import { CatAvatar } from "@/components/icons/cat-avatar";
 import { ParentalPinModal } from "@/components/parental-pin-modal";
+import { TvModalClose } from "@/components/tv-modal-close";
 import { useT } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
+import { useTvFocusScope } from "@/lib/keyboard-navigation";
 import { verifyProfilePassword } from "@/lib/profile-password";
 import { useProfiles, type Profile } from "@/lib/profiles";
 import { useSettings } from "@/lib/settings";
@@ -22,6 +24,7 @@ export function ProfileChip({ collapsed = false }: { collapsed?: boolean } = {})
   const [authOpen, setAuthOpen] = useState(false);
   const [pendingSwitch, setPendingSwitch] = useState<Profile | null>(null);
   const ref = useRef<HTMLDivElement>(null);
+  useTvFocusScope(menuOpen, ref);
 
   const doSwitch = (p: Profile) => {
     if (p.passwordHash) openPicker({ kind: "unlock", profileId: p.id });
@@ -73,10 +76,12 @@ export function ProfileChip({ collapsed = false }: { collapsed?: boolean } = {})
 
       {menuOpen && (
         <div
+          data-tv-focus-scope
           className={`absolute bottom-full mb-1.5 overflow-hidden rounded-xl border border-edge bg-elevated shadow-[0_20px_40px_-10px_rgba(0,0,0,0.6)] ${
             collapsed ? "start-0 w-64" : "start-2 end-2 lg:start-4 lg:end-4"
           }`}
         >
+          <TvModalClose onClose={() => setMenuOpen(false)} label={t("common.close")} />
           {otherProfiles.length > 0 && (
             <div className="flex flex-col gap-0.5 border-b border-edge-soft p-1.5">
               <span className="px-2.5 pb-1 pt-1 text-[10.5px] font-bold uppercase tracking-[0.16em] text-ink-subtle">

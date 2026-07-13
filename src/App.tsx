@@ -65,6 +65,7 @@ import { TopRankModalProvider } from "@/lib/top-rank-modal";
 import { OnboardingProvider } from "@/lib/onboarding";
 import { RankingsProvider } from "@/lib/rankings";
 import { SettingsProvider } from "@/lib/settings";
+import { RemoteHostMount } from "@/lib/remote/host-mount";
 import { SearchProvider, useSearch } from "@/lib/search-context";
 import { SearchOverlay } from "@/components/search/search-overlay";
 import { SearchHotkey } from "@/components/search/search-hotkey";
@@ -85,7 +86,7 @@ import { AnilistProvider } from "@/lib/anilist/provider";
 import { MalProvider } from "@/lib/mal/provider";
 import { SimklProvider } from "@/lib/simkl/provider";
 import { LetterboxdProvider } from "@/lib/stremboxd/provider";
-import { useKeyboardNavigation } from "@/lib/keyboard-navigation";
+import { focusTvPageDefault, useKeyboardNavigation } from "@/lib/keyboard-navigation";
 import { SFX } from "@/lib/sfx";
 
 const importAnime = () => import("@/views/anime");
@@ -260,6 +261,7 @@ export function App() {
                 <ContextMenuProvider>
                   <TopRankModalProvider>
                     <HarborErrorBoundary>
+                      <RemoteHostMount />
                       <ProfileIdentitySync />
                       <SettingsProfileBridge />
                       <TrackerProfileBridge />
@@ -427,9 +429,9 @@ function parseDeepLinkEpisode(videoId?: string): { season: number; episode: numb
 }
 
 function Shell() {
-  const { topKind, service, meta, metaLiveContext, metaEpisodeHint, episodeDetail, personId, collectionId, filter, grid, awardType, animeAwardSource, picker, player, setView, canGoBack, goBack, canGoForward, goForward, openMeta, openPlayer, stackKinds, chromeHidden } = useView();
+  const { topKind, service, meta, metaLiveContext, metaEpisodeHint, episodeDetail, personId, collectionId, filter, grid, awardType, animeAwardSource, picker, player, setView, canGoBack, goBack, canGoForward, goForward, openMeta, openPlayer, exitPlayback, exitPickerToDetail, stackKinds, chromeHidden } = useView();
   const { settings, update } = useSettings();
-  const { setOpen: setSearchOpen } = useSearch();
+  const { setOpen: setSearchOpen, open: searchOpen } = useSearch();
   const uiScaleRef = useRef(settings.uiScale);
   const { activeProfile } = useProfiles();
   const kid = activeProfile?.kid ?? null;
@@ -448,28 +450,54 @@ function Shell() {
   useViewPreloader();
 
   const handleTvBack = useCallback(() => {
-    if (stackKinds.length > 1 || topKind !== "home") {
+    if (searchOpen) {
+      setSearchOpen(false);
+      return true;
+    }
+    // Player/picker stacks can be nested (next episode pushes picker+player).
+    // Always leave playback entirely — never step back to a prior episode or
+    // re-enter the loading picker for the current one.
+    if (topKind === "player") {
+      const localBack = new Event("harbor:local-back", { cancelable: true });
+      if (!window.dispatchEvent(localBack)) return true;
+      exitPlayback();
+      return true;
+    }
+    if (topKind === "picker") {
+      if (picker) exitPickerToDetail(picker.meta);
+      else exitPlayback();
+      return true;
+    }
+    if (canGoBack) {
       goBack();
       return true;
     }
     return false;
-  }, [goBack, stackKinds.length, topKind]);
+  }, [searchOpen, setSearchOpen, topKind, exitPlayback, exitPickerToDetail, picker, canGoBack, goBack]);
 
   const handleTvBackToNav = useCallback(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
     const nav = document.querySelector<HTMLElement>(
-      '[data-harbor-nav] a[href], [data-harbor-nav] button, [data-harbor-nav] [data-focusable="true"]',
+      "[data-harbor-nav][data-active], [data-harbor-nav], [data-tv-nav-zone] button, [data-harbor-sidebar] button",
     );
     nav?.focus({ preventScroll: true });
   }, []);
 
   useKeyboardNavigation({
-    enabled: !player && !picker,
+    // Player mounts its own hook; picker stays on App so Back/arrows keep working.
+    enabled: !player,
     wrap: false,
     onBack: handleTvBack,
     onBackToNav: handleTvBackToNav,
   });
-useEffect(() => {
+
+  useEffect(() => {
+    if (searchOpen || topKind === "player") return;
+    const id = window.requestAnimationFrame(() => focusTvPageDefault());
+    return () => window.cancelAnimationFrame(id);
+  }, [topKind, meta?.id, searchOpen]);
+
+  useEffect(() => {
     if (settings.soundTheme) {
       SFX.setTheme(settings.soundTheme);
     }
@@ -523,6 +551,11 @@ useEffect(() => {
           e.preventDefault();
           return;
         }
+        if (topKind === "player" || topKind === "picker") {
+          e.preventDefault();
+          exitPlayback();
+          return;
+        }
         if (canGoBack) {
           e.preventDefault();
           goBack();
@@ -534,7 +567,7 @@ useEffect(() => {
     };
     window.addEventListener("mousedown", onMouseDown, true);
     return () => window.removeEventListener("mousedown", onMouseDown, true);
-  }, [canGoBack, goBack, canGoForward, goForward]);
+  }, [canGoBack, goBack, canGoForward, goForward, topKind, exitPlayback]);
 
   useEffect(() => {
     uiScaleRef.current = settings.uiScale;
