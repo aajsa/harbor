@@ -1,15 +1,23 @@
 import { apiUrl, xtreamFetch, type XtreamCreds } from "./xtream";
 import type { IptvChannel } from "./types";
+import { processInBatches, type BatchProgress } from "./xtream-batches";
 
 type CategoryRow = { category_id: string; category_name?: string };
 type VodRow = {
   stream_id: number;
   name?: string;
+  stream_type?: string;
   stream_icon?: string;
   category_id?: string;
   container_extension?: string;
 };
-type SeriesRow = { series_id: number; name?: string; cover?: string; category_id?: string };
+type SeriesRow = {
+  series_id: number;
+  name?: string;
+  stream_type?: string;
+  cover?: string;
+  category_id?: string;
+};
 type EpisodeRow = {
   id: string | number;
   episode_num?: string | number;
@@ -19,8 +27,16 @@ type EpisodeRow = {
   info?: { movie_image?: string };
 };
 type SeriesInfo = { episodes?: Record<string, EpisodeRow[]> };
+type XtreamSeries = Pick<SeriesRow, "series_id" | "name" | "cover" | "category_id">;
+
+export type XtreamCatalogBatchOptions = {
+  batchSize?: number;
+  onStart?: (total: number) => void;
+  onBatch?: (batch: readonly IptvChannel[], progress: BatchProgress) => boolean | void;
+};
 
 const seriesInfoCache = new Map<string, SeriesInfo>();
+const CATALOG_BATCH_SIZE = 256;
 
 export function clearSeriesInfoCache(baseId?: string): void {
   if (!baseId) {
@@ -55,110 +71,111 @@ function buildSeriesUrl(creds: XtreamCreds, episodeId: number | string, ext?: st
   return e ? `${base}.${e}` : base;
 }
 
-async function mapLimit<T, R>(items: T[], limit: number, fn: (t: T) => Promise<R>): Promise<R[]> {
-  const out: R[] = new Array(items.length);
-  let cursor = 0;
-  const worker = async () => {
-    while (cursor < items.length) {
-      const idx = cursor;
-      cursor += 1;
-      out[idx] = await fn(items[idx]);
-    }
-  };
-  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
-  return out;
-}
-
-export async function fetchXtreamVod(creds: XtreamCreds, baseId: string): Promise<IptvChannel[]> {
+export async function fetchXtreamVod(
+  creds: XtreamCreds,
+  baseId: string,
+  options?: XtreamCatalogBatchOptions,
+): Promise<IptvChannel[]> {
   const [catsRaw, streamsRaw] = await Promise.all([
     xtreamFetch(apiUrl(creds, "get_vod_categories")),
     xtreamFetch(apiUrl(creds, "get_vod_streams")),
   ]);
   const cats = catMap(catsRaw);
   const rows: VodRow[] = Array.isArray(streamsRaw) ? (streamsRaw as VodRow[]) : [];
-  const out: IptvChannel[] = [];
-  for (const r of rows) {
-    if (!r || r.stream_id == null) continue;
-    out.push({
-      id: `${baseId}::xtvod::${r.stream_id}`,
-      tvgId: null,
-      name: r.name?.trim() || `Movie ${r.stream_id}`,
-      logo: r.stream_icon?.trim() || null,
-      group: r.category_id ? cats.get(String(r.category_id)) ?? null : null,
-      url: buildVodUrl(creds, r.stream_id, r.container_extension),
-      catchupSource: null,
-      durationSec: null,
-      attrs: { "tvg-type": "movie" },
-    });
-  }
-  return out;
+  options?.onStart?.(rows.length);
+  return processInBatches(rows, {
+    batchSize: options?.batchSize ?? CATALOG_BATCH_SIZE,
+    map: (row) => {
+      if (!row || row.stream_id == null) return null;
+      const type = row.stream_type?.trim().toLowerCase();
+      if (type && type !== "movie" && type !== "vod") return null;
+      return {
+        id: `${baseId}::xtvod::${row.stream_id}`,
+        tvgId: null,
+        name: row.name?.trim() || `Movie ${row.stream_id}`,
+        logo: row.stream_icon?.trim() || null,
+        group: row.category_id ? (cats.get(String(row.category_id)) ?? null) : null,
+        url: buildVodUrl(creds, row.stream_id, row.container_extension),
+        catchupSource: null,
+        durationSec: null,
+        attrs: { "tvg-type": "movie" },
+      } satisfies IptvChannel;
+    },
+    onBatch: options?.onBatch,
+  });
 }
 
-const MAX_SERIES_EXPANDED = 1200;
-
-export async function fetchXtreamSeries(creds: XtreamCreds, baseId: string): Promise<IptvChannel[]> {
+export async function fetchXtreamSeries(
+  creds: XtreamCreds,
+  baseId: string,
+  options?: XtreamCatalogBatchOptions,
+): Promise<IptvChannel[]> {
   const [catsRaw, seriesRaw] = await Promise.all([
     xtreamFetch(apiUrl(creds, "get_series_categories")),
     xtreamFetch(apiUrl(creds, "get_series")),
   ]);
   const cats = catMap(catsRaw);
-  const all: SeriesRow[] = Array.isArray(seriesRaw) ? (seriesRaw as SeriesRow[]) : [];
-  const series = all.slice(0, MAX_SERIES_EXPANDED);
-  let throttled = false;
-  const perSeries = await mapLimit(series, 6, async (s): Promise<IptvChannel[]> => {
-    if (!s || s.series_id == null) return [];
-    const seriesName = s.name?.trim() || `Series ${s.series_id}`;
-    const group = s.category_id ? cats.get(String(s.category_id)) ?? null : null;
-    const cover = s.cover?.trim() || null;
-    const cacheKey = `${baseId}::${s.series_id}`;
-    let info = seriesInfoCache.get(cacheKey);
-    if (!info) {
-      if (throttled) return [];
-      try {
-        info = (await xtreamFetch(
-          apiUrl(creds, "get_series_info", { series_id: String(s.series_id) }),
-        )) as SeriesInfo;
-      } catch (e) {
-        if (/HTTP (?:429|403)/.test(String(e))) throttled = true;
-        return [];
-      }
-      seriesInfoCache.set(cacheKey, info);
-    }
-    const episodes = info?.episodes;
-    if (!episodes || typeof episodes !== "object") return [];
-    const eps: IptvChannel[] = [];
-    for (const seasonKey of Object.keys(episodes)) {
-      const list = episodes[seasonKey];
-      if (!Array.isArray(list)) continue;
-      for (const ep of list) {
-        if (!ep || ep.id == null) continue;
-        const season = Number(ep.season) || Number(seasonKey) || 1;
-        const epNum = Number(ep.episode_num) || 0;
-        eps.push({
-          id: `${baseId}::xtep::${ep.id}`,
-          tvgId: null,
-          name: `${seriesName} S${season}E${epNum}`,
-          logo: ep.info?.movie_image?.trim() || cover,
-          group,
-          url: buildSeriesUrl(creds, ep.id, ep.container_extension),
-          catchupSource: null,
-          durationSec: null,
-          attrs: { "tvg-type": "series" },
-        });
-      }
-    }
-    return eps;
+  const series: SeriesRow[] = Array.isArray(seriesRaw) ? (seriesRaw as SeriesRow[]) : [];
+  options?.onStart?.(series.length);
+  return processInBatches(series, {
+    batchSize: options?.batchSize ?? CATALOG_BATCH_SIZE,
+    map: (item) => {
+      if (!item || item.series_id == null) return null;
+      const type = item.stream_type?.trim().toLowerCase();
+      if (type && type !== "series") return null;
+      return {
+        id: `${baseId}::xtseries::${item.series_id}`,
+        tvgId: null,
+        name: item.name?.trim() || `Series ${item.series_id}`,
+        logo: item.cover?.trim() || null,
+        group: item.category_id ? (cats.get(String(item.category_id)) ?? null) : null,
+        url: "",
+        catchupSource: null,
+        durationSec: null,
+        attrs: { "tvg-type": "series", "xtream-series-id": String(item.series_id) },
+      } satisfies IptvChannel;
+    },
+    onBatch: options?.onBatch,
   });
-  return perSeries.flat();
 }
 
-export async function fetchXtreamVodAndSeries(
+export async function fetchXtreamSeriesEpisodes(
   creds: XtreamCreds,
   baseId: string,
+  series: XtreamSeries,
 ): Promise<IptvChannel[]> {
-  const [vod, series] = await Promise.all([
-    fetchXtreamVod(creds, baseId).catch(() => [] as IptvChannel[]),
-    fetchXtreamSeries(creds, baseId).catch(() => [] as IptvChannel[]),
-  ]);
-  return [...vod, ...series];
+  const seriesName = series.name?.trim() || `Series ${series.series_id}`;
+  const cacheKey = `${baseId}::${series.series_id}`;
+  let info = seriesInfoCache.get(cacheKey);
+  if (!info) {
+    info = (await xtreamFetch(
+      apiUrl(creds, "get_series_info", { series_id: String(series.series_id) }),
+    )) as SeriesInfo;
+    seriesInfoCache.set(cacheKey, info);
+  }
+  const episodes = info?.episodes;
+  if (!episodes || typeof episodes !== "object") return [];
+
+  const out: IptvChannel[] = [];
+  for (const seasonKey of Object.keys(episodes)) {
+    const list = episodes[seasonKey];
+    if (!Array.isArray(list)) continue;
+    for (const ep of list) {
+      if (!ep || ep.id == null) continue;
+      const season = Number(ep.season) || Number(seasonKey) || 1;
+      const epNum = Number(ep.episode_num) || 0;
+      out.push({
+        id: `${baseId}::xtep::${ep.id}`,
+        tvgId: null,
+        name: `${seriesName} S${season}E${epNum}`,
+        logo: ep.info?.movie_image?.trim() || series.cover?.trim() || null,
+        group: series.category_id ?? null,
+        url: buildSeriesUrl(creds, ep.id, ep.container_extension),
+        catchupSource: null,
+        durationSec: null,
+        attrs: { "tvg-type": "series" },
+      });
+    }
+  }
+  return out;
 }
