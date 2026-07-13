@@ -1,13 +1,19 @@
 import { filterChannelsForDisplay } from "./divider-filter";
 import { loadFromShape } from "./ingest/load";
 import { detectProviderShape } from "./ingest/detect";
+import {
+  deleteIptvCache,
+  iptvSourceSignature,
+  isPersistentCacheFresh,
+  readIptvCache,
+  writeIptvCache,
+} from "./persistent-cache";
 import type { IptvChannel, IptvPlaylist, IptvPlaylistSource } from "./types";
 import { clearSeriesInfoCache } from "./xtream-vod";
 
-const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
-
 const cache = new Map<string, IptvPlaylist>();
 const inflight = new Map<string, Promise<IptvPlaylist>>();
+const restoring = new Map<string, Promise<IptvPlaylist | null>>();
 const listeners = new Set<() => void>();
 const vodHydrated = new Set<string>();
 
@@ -35,11 +41,14 @@ export function getCachedPlaylist(id: string): IptvPlaylist | null {
 export function clearPlaylistCache(id?: string) {
   if (id) {
     cache.delete(id);
+    restoring.delete(id);
     vodHydrated.delete(id);
     inflight.delete(id);
     clearSeriesInfoCache(id);
+    void deleteIptvCache("playlist", id);
   } else {
     cache.clear();
+    restoring.clear();
     vodHydrated.clear();
     inflight.clear();
     clearSeriesInfoCache();
@@ -51,24 +60,74 @@ export async function loadPlaylist(
   src: IptvPlaylistSource,
   opts?: { force?: boolean },
 ): Promise<IptvPlaylist> {
-  const existing = cache.get(src.id);
-  if (!opts?.force && existing && Date.now() - existing.fetchedAt < CACHE_TTL_MS) {
+  if (opts?.force) return fetchPlaylist(src, true);
+
+  const existing = cache.get(src.id) ?? (await restorePlaylist(src));
+  if (existing) {
+    if (!isPersistentCacheFresh(existing.fetchedAt)) {
+      void fetchPlaylist(src).catch(() => {});
+    }
     return existing;
   }
+  return fetchPlaylist(src);
+}
+
+async function restorePlaylist(src: IptvPlaylistSource): Promise<IptvPlaylist | null> {
+  const existing = cache.get(src.id);
+  if (existing) return existing;
+  const pending = restoring.get(src.id);
+  if (pending) return pending;
+
+  const promise = readIptvCache<IptvPlaylist>("playlist", src.id)
+    .then((entry) => {
+      if (!entry) return null;
+      if (entry.sourceSignature !== iptvSourceSignature(src) || !isPlaylist(entry.value)) {
+        void deleteIptvCache("playlist", src.id);
+        return null;
+      }
+      cache.set(src.id, entry.value);
+      notify();
+      return entry.value;
+    })
+    .finally(() => {
+      if (restoring.get(src.id) === promise) restoring.delete(src.id);
+    });
+  restoring.set(src.id, promise);
+  return promise;
+}
+
+function fetchPlaylist(src: IptvPlaylistSource, force = false): Promise<IptvPlaylist> {
   const pending = inflight.get(src.id);
-  if (pending && !opts?.force) return pending;
+  if (pending && !force) return pending;
   const promise = loadFromShape(src, detectProviderShape(src));
   inflight.set(src.id, promise);
-  try {
-    const result = await promise;
-    if (inflight.get(src.id) === promise) {
-      cache.set(src.id, result);
-      notify();
-    }
-    return result;
-  } finally {
-    if (inflight.get(src.id) === promise) inflight.delete(src.id);
-  }
+  return promise
+    .then((result) => {
+      if (inflight.get(src.id) === promise) {
+        cache.set(src.id, result);
+        notify();
+        void writeIptvCache("playlist", src.id, {
+          sourceSignature: iptvSourceSignature(src),
+          savedAt: result.fetchedAt,
+          value: result,
+        });
+      }
+      return result;
+    })
+    .finally(() => {
+      if (inflight.get(src.id) === promise) inflight.delete(src.id);
+    });
+}
+
+function isPlaylist(value: unknown): value is IptvPlaylist {
+  if (!value || typeof value !== "object") return false;
+  const playlist = value as Partial<IptvPlaylist>;
+  return (
+    typeof playlist.id === "string" &&
+    Array.isArray(playlist.channels) &&
+    Array.isArray(playlist.groups) &&
+    typeof playlist.fetchedAt === "number"
+  );
 }
 
 export function markVodHydrated(id: string): boolean {

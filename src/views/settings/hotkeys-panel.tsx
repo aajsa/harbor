@@ -93,6 +93,23 @@ export function HotkeysPanel() {
           value={settings.playerConfirmLeave}
           onChange={(v) => update({ playerConfirmLeave: v })}
         />
+        <ToggleRow
+          label={t("TV navigation")}
+          sub={t("Use arrow keys and Select/Enter to move focus through Harbor. Turn this off to disable TV-style focus navigation everywhere.")}
+          value={settings.tvNavigation}
+          onChange={(v) => update({ tvNavigation: v })}
+        />
+        <ToggleRow
+          label={t("TV navigation in player")}
+          sub={t("Use arrows and Select/Space to move focus between player controls. Turn this off to keep arrows for seeking and Space for play/pause.")}
+          value={settings.playerTvNavigation}
+          onChange={(v) => update({ playerTvNavigation: v })}
+          lockReason={
+            !settings.tvNavigation
+              ? t("Enable TV navigation above to use focus navigation in the player.")
+              : undefined
+          }
+        />
         <SeekStepRow
           back={settings.seekBackStepSec}
           forward={settings.seekForwardStepSec}

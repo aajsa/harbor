@@ -1,8 +1,10 @@
 import { LogOut, Pencil, Settings as SettingsIcon, Users } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { CatAvatar } from "@/components/icons/cat-avatar";
+import { TvModalClose } from "@/components/tv-modal-close";
 import { useAuth } from "@/lib/auth";
 import { useT } from "@/lib/i18n";
+import { useTvFocusScope } from "@/lib/keyboard-navigation";
 import { useProfiles } from "@/lib/profiles";
 import { useSettings } from "@/lib/settings";
 
@@ -13,6 +15,7 @@ export function ProfileBlock({ onOpenSettings }: { onOpenSettings: () => void })
   const t = useT();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  useTvFocusScope(open, ref);
 
   useEffect(() => {
     if (!open) return;
@@ -54,7 +57,11 @@ export function ProfileBlock({ onOpenSettings }: { onOpenSettings: () => void })
         <span className="truncate text-[13px] text-ink">{name}</span>
       </button>
       {open && (
-        <div className="absolute bottom-full start-0 end-0 mb-2 overflow-hidden rounded-xl border border-edge bg-[#1a1d28] shadow-[0_20px_50px_-15px_rgba(0,0,0,0.8)]">
+        <div
+          data-tv-focus-scope
+          className="absolute bottom-full start-0 end-0 mb-2 overflow-hidden rounded-xl border border-edge bg-[#1a1d28] shadow-[0_20px_50px_-15px_rgba(0,0,0,0.8)]"
+        >
+          <TvModalClose onClose={() => setOpen(false)} label={t("common.close")} />
           <div className="border-b border-white/10 px-4 py-3">
             <div className="text-[13px] font-semibold text-ink">{name}</div>
             {user?.email && (

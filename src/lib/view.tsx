@@ -5,6 +5,7 @@ import type { StreamingService } from "./settings";
 import { useTogether } from "./together/provider";
 import type { SportsGame } from "./sports/espn";
 import { beginMarathonAdvance } from "./fullscreen-state";
+import { armRemoteStickyHop } from "./remote/session";
 import { franchiseRoot, franchiseRootSync } from "./providers/anime-franchise-root";
 
 const isAnimeMetaId = (id: string) => /^(kitsu|mal|anilist|anidb):/.test(id);
@@ -203,6 +204,13 @@ function pushFrame(cur: Frame[], next: Frame): Frame[] {
   const out = [...cur, next];
   if (out.length <= STACK_MAX) return out;
   return [out[0], ...out.slice(out.length - STACK_MAX + 1)];
+}
+
+/** Drop trailing player/picker frames (used by exitPlayback and next-episode autoplay). */
+function stripPlaybackFrames(cur: Frame[]): Frame[] {
+  let i = cur.length - 1;
+  while (i > 0 && (cur[i].kind === "player" || cur[i].kind === "picker")) i--;
+  return cur.slice(0, i + 1);
 }
 
 function frameKey(f: Frame): string {
@@ -434,18 +442,12 @@ export function ViewProvider({ children }: { children: ReactNode }) {
   }, [clearForwardStack]);
 
   const exitPlayback = useCallback(() => {
-    setNavStack((s) => {
-      let i = s.length - 1;
-      while (i > 0 && (s[i].kind === "player" || s[i].kind === "picker")) i--;
-      return s.slice(0, i + 1);
-    });
+    setNavStack((s) => stripPlaybackFrames(s));
   }, [setNavStack]);
 
   const exitPickerToDetail = useCallback((m: Meta) => {
     setNavStack((s) => {
-      let i = s.length - 1;
-      while (i > 0 && (s[i].kind === "player" || s[i].kind === "picker")) i--;
-      const base = s.slice(0, i + 1);
+      const base = stripPlaybackFrames(s);
       const top = base[base.length - 1];
       if (top && top.kind === "meta") return base;
       return [...base, { kind: "meta", meta: m }];
@@ -749,7 +751,10 @@ export function ViewProvider({ children }: { children: ReactNode }) {
 
   const openPicker = useCallback(
     (m: Meta, ep?: PlayEpisode, opts?: { autoPlay?: boolean; attempt?: number; intent?: "play" | "download"; resume?: boolean }) => {
-      if (opts?.autoPlay) beginMarathonAdvance();
+      if (opts?.autoPlay) {
+        beginMarathonAdvance();
+        armRemoteStickyHop();
+      }
       setNavStack((cur) => {
         const t = cur[cur.length - 1];
         if (
@@ -760,7 +765,10 @@ export function ViewProvider({ children }: { children: ReactNode }) {
         ) {
           return cur;
         }
-        return pushFrame(cur, {
+        // Next-episode / autoplay replaces in-flight player+picker frames so the
+        // stack doesn't nest prior episodes under the new load.
+        const base = opts?.autoPlay ? stripPlaybackFrames(cur) : cur;
+        return pushFrame(base, {
           kind: "picker",
           meta: m,
           episode: ep,

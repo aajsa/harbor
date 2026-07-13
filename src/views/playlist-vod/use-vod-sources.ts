@@ -6,6 +6,7 @@ import { purgePlaylistState } from "@/lib/iptv/source-cleanup";
 import { useFavorites } from "@/lib/iptv/favorites";
 import type { IptvPlaylistSource } from "@/lib/iptv/types";
 import { buildXtreamUrls, type PlaylistFormValue } from "@/views/live/source-picker/playlist-form";
+import { clearXtreamVodLibraryCache } from "./use-xtream-vod-library";
 
 const ACTIVE_KEY = "harbor.vod.active";
 
@@ -28,7 +29,11 @@ function writeActive(id: string | null) {
 
 function materialize(id: string, entry: PlaylistFormValue) {
   if (entry.kind === "xtream") {
-    const { m3u, epg } = buildXtreamUrls(entry.xtream.server, entry.xtream.username, entry.xtream.password);
+    const { m3u, epg } = buildXtreamUrls(
+      entry.xtream.server,
+      entry.xtream.username,
+      entry.xtream.password,
+    );
     return {
       id,
       name: entry.name,
@@ -59,7 +64,14 @@ export function useVodSources() {
     () =>
       settings.iptvPlaylists
         .filter((p) => (p.kind ?? "m3u") !== "epg")
-        .map((p) => ({ id: p.id, name: p.name, url: p.url, epgUrl: p.epgUrl, kind: p.kind, xtream: p.xtream })),
+        .map((p) => ({
+          id: p.id,
+          name: p.name,
+          url: p.url,
+          epgUrl: p.epgUrl,
+          kind: p.kind,
+          xtream: p.xtream,
+        })),
     [settings.iptvPlaylists],
   );
 
@@ -101,6 +113,7 @@ export function useVodSources() {
       const next = settings.iptvPlaylists.map((s) => (s.id === id ? materialize(id, entry) : s));
       update({ iptvPlaylists: next });
       clearPlaylistCache(id);
+      clearXtreamVodLibraryCache(id);
       clearEpg(id);
     },
     [settings.iptvPlaylists, update],
@@ -115,6 +128,7 @@ export function useVodSources() {
         writeActive(fallback);
       }
       update({ iptvPlaylists: next });
+      clearXtreamVodLibraryCache(id);
       purgePlaylistState(id, favorites.removeForSource);
     },
     [settings.iptvPlaylists, update, activeId, favorites.removeForSource],

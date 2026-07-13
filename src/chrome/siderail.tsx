@@ -51,6 +51,7 @@ export function SideRail() {
     <>
       <aside
         aria-hidden={chromeHidden}
+        data-tv-nav-zone
         className={`relative z-[60] flex shrink-0 flex-col border-e border-edge-soft bg-canvas/40 transition-[opacity,width] duration-300 ${
           collapsed ? "w-[68px]" : "w-[200px]"
         } ${chromeHidden ? "pointer-events-none opacity-0" : "opacity-100"}`}

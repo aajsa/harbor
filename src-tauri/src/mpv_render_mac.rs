@@ -10,10 +10,10 @@ use libmpv2_sys::mpv_handle;
 use objc2::rc::Retained;
 use objc2::runtime::AnyObject;
 use objc2::{msg_send, AnyThread, ClassType, MainThreadOnly, Message};
-use objc2_app_kit::{
-    NSOpenGLContext, NSOpenGLPixelFormat, NSOpenGLView, NSView, NSWindow, NSWindowOrderingMode,
-};
+use objc2_app_kit::{NSOpenGLPixelFormat, NSOpenGLView, NSView, NSWindow, NSWindowOrderingMode};
 use objc2_foundation::{MainThreadMarker, NSNumber, NSString};
+
+use crate::mpv::{map_css_geometry, MpvGeometry};
 
 const NSOPENGLPFA_OPENGL_PROFILE: u32 = 99;
 const NSOPENGLPFA_DOUBLEBUFFER: u32 = 5;
@@ -50,10 +50,6 @@ const RTLD_DEFAULT: *mut c_void = -2isize as *mut c_void;
 fn main_queue() -> *mut c_void {
     unsafe { (&_dispatch_main_q as *const c_void) as *mut c_void }
 }
-
-#[derive(Copy, Clone)]
-struct MpvHandlePtr(NonNull<mpv_handle>);
-unsafe impl Send for MpvHandlePtr {}
 
 pub struct Embed {
     view: Retained<NSOpenGLView>,
@@ -314,7 +310,7 @@ pub fn make_resizable(ns_window_ptr: i64) -> Result<(), String> {
     Ok(())
 }
 
-pub fn resize_to(x: f64, y: f64, w: f64, h: f64) -> Result<(), String> {
+pub fn resize_to(css: MpvGeometry) -> Result<(), String> {
     let _mtm = MainThreadMarker::new()
         .ok_or_else(|| "resize_to must run on main thread".to_string())?;
     let guard = slot().lock().map_err(|e| format!("slot lock: {}", e))?;
@@ -326,11 +322,23 @@ pub fn resize_to(x: f64, y: f64, w: f64, h: f64) -> Result<(), String> {
         let parent = view_as_view
             .superview()
             .ok_or_else(|| "GL view has no superview".to_string())?;
-        let parent_h = parent.bounds().size.height;
-        let flipped_y = parent_h - y - h;
+        let parent_bounds = parent.bounds();
+        let native = map_css_geometry(
+            &css,
+            parent_bounds.size.width,
+            parent_bounds.size.height,
+        );
+        let native_y = if parent.isFlipped() {
+            native.y
+        } else {
+            parent_bounds.size.height - native.y - native.height
+        };
         let frame = objc2_foundation::NSRect {
-            origin: objc2_foundation::NSPoint { x, y: flipped_y },
-            size: objc2_foundation::NSSize { width: w, height: h },
+            origin: objc2_foundation::NSPoint { x: native.x, y: native_y },
+            size: objc2_foundation::NSSize {
+                width: native.width,
+                height: native.height,
+            },
         };
         view_as_view.setFrame(frame);
         let mask: usize = 0;

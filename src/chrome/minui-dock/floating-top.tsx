@@ -2,10 +2,12 @@ import { ArrowLeft, LogOut, Pencil, Search, Settings as SettingsIcon, Users } fr
 import { useEffect, useRef, useState } from "react";
 import { CatAvatar } from "@/components/icons/cat-avatar";
 import { HarborMark } from "@/components/icons/harbor-mark";
+import { TvModalClose } from "@/components/tv-modal-close";
 import { RecordingPill } from "@/chrome/recording-pill";
 import { TogetherButton } from "@/chrome/topbar";
 import { useAuth } from "@/lib/auth";
 import { useT } from "@/lib/i18n";
+import { useTvFocusScope } from "@/lib/keyboard-navigation";
 import { useProfiles } from "@/lib/profiles";
 import { useSearch } from "@/lib/search-context";
 import { useSettings } from "@/lib/settings";
@@ -145,6 +147,7 @@ function ProfilePill({
   const t = useT();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  useTvFocusScope(open, ref);
 
   useEffect(() => {
     if (!open) return;
@@ -181,7 +184,11 @@ function ProfilePill({
         <span className="hidden max-w-[9rem] truncate sm:inline">{name}</span>
       </button>
       {open && (
-        <div className="absolute end-0 top-[calc(100%+10px)] z-50 w-64 overflow-hidden rounded-2xl border border-edge bg-surface shadow-[0_24px_60px_-20px_rgba(15,15,18,0.35)]">
+        <div
+          data-tv-focus-scope
+          className="absolute end-0 top-[calc(100%+10px)] z-50 w-64 overflow-hidden rounded-2xl border border-edge bg-surface shadow-[0_24px_60px_-20px_rgba(15,15,18,0.35)]"
+        >
+          <TvModalClose onClose={() => setOpen(false)} label={t("common.close")} />
           <div className="border-b border-edge-soft px-4 py-3">
             <div className="text-[13.5px] font-semibold text-ink">{name}</div>
             {user?.email && (

@@ -4,9 +4,11 @@ import { HarborMark } from "@/components/icons/harbor-mark";
 import { CatAvatar } from "@/components/icons/cat-avatar";
 import { AuthModal } from "@/components/auth-modal";
 import { ParentalPinModal } from "@/components/parental-pin-modal";
+import { TvModalClose } from "@/components/tv-modal-close";
 import { TogetherButton } from "@/chrome/topbar";
 import { useAuth } from "@/lib/auth";
 import { useT } from "@/lib/i18n";
+import { useTvFocusScope } from "@/lib/keyboard-navigation";
 import { useProfiles } from "@/lib/profiles";
 import { useSearch } from "@/lib/search-context";
 import { effectiveBinding, eventToBinding, formatBindingForDisplay, isTypingTarget } from "@/lib/hotkeys";
@@ -57,16 +59,17 @@ export function RoyalTopbar() {
       label,
       active,
       onSelect: () => navigate(item),
-      node: (
-        <button
-          type="button"
-          onClick={() => navigate(item)}
-          aria-label={label}
-          title={label}
-          className={`relative flex h-9 items-center gap-2 whitespace-nowrap rounded-md px-2.5 text-[13.5px] font-medium leading-none transition-colors duration-150 ${
-            active ? "text-accent" : "text-ink-muted hover:text-ink"
-          }`}
-        >
+        node: (
+          <button
+            type="button"
+            data-harbor-nav={item.view}
+            onClick={() => navigate(item)}
+            aria-label={label}
+            title={label}
+            className={`relative flex h-9 items-center gap-2 whitespace-nowrap rounded-md px-2.5 text-[13.5px] font-medium leading-none transition-colors duration-150 ${
+              active ? "text-accent" : "text-ink-muted hover:text-ink"
+            }`}
+          >
           {active && (
             <span
               aria-hidden
@@ -92,6 +95,7 @@ export function RoyalTopbar() {
       >
         <div
           data-tauri-drag-region
+          data-tv-top-chrome
           className="harbor-royal-bar pointer-events-auto grid h-14 w-full grid-cols-[1fr_auto] items-center gap-3 rounded-[10px] border border-[color-mix(in_srgb,var(--color-accent)_22%,var(--color-edge))] bg-canvas/85 ps-3.5 pe-2 shadow-[inset_0_1px_0_color-mix(in_srgb,var(--color-accent)_14%,transparent),0_22px_60px_-26px_rgba(0,0,0,0.85)] backdrop-blur-xl"
         >
           <div className="flex min-w-0 items-center gap-2.5">
@@ -262,6 +266,7 @@ function RoyalProfileMenu({
   const [open, setOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  useTvFocusScope(open, ref);
 
   useEffect(() => {
     if (!open) return;
@@ -304,7 +309,11 @@ function RoyalProfileMenu({
         <span className="hidden max-w-[8rem] truncate md:inline">{name}</span>
       </button>
       {open && (
-        <div className="harbor-royal-menu absolute end-0 top-[calc(100%+10px)] z-40 w-60 overflow-hidden rounded-[10px] border border-[color-mix(in_srgb,var(--color-accent)_24%,var(--color-edge))] bg-canvas/95 shadow-[0_24px_60px_-18px_rgba(0,0,0,0.85)] backdrop-blur-2xl">
+        <div
+          data-tv-focus-scope
+          className="harbor-royal-menu absolute end-0 top-[calc(100%+10px)] z-40 w-60 overflow-hidden rounded-[10px] border border-[color-mix(in_srgb,var(--color-accent)_24%,var(--color-edge))] bg-canvas/95 shadow-[0_24px_60px_-18px_rgba(0,0,0,0.85)] backdrop-blur-2xl"
+        >
+          <TvModalClose onClose={() => setOpen(false)} label={t("common.close")} />
           <div className="border-b border-edge-soft px-4 py-3">
             <div
               className="text-[14px] leading-tight text-ink"

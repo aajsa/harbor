@@ -36,6 +36,7 @@ export function StremioRail() {
     <>
       <aside
         aria-hidden={chromeHidden}
+        data-tv-nav-zone
         className={`relative z-[60] flex w-20 shrink-0 flex-col transition-[opacity,transform] duration-[320ms] ease-[cubic-bezier(0.32,0.72,0.24,1)] ${
           chromeHidden
             ? "pointer-events-none -translate-x-2 rtl:translate-x-2 opacity-0"

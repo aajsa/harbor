@@ -6,6 +6,7 @@ import { RecordingPill } from "@/chrome/recording-pill";
 import { TogetherButton } from "@/chrome/topbar";
 import { useAuth } from "@/lib/auth";
 import { useT } from "@/lib/i18n";
+import { useTvFocusScope } from "@/lib/keyboard-navigation";
 import { useProfiles } from "@/lib/profiles";
 import { useSearch } from "@/lib/search-context";
 import { useSettings } from "@/lib/settings";
@@ -13,6 +14,7 @@ import { getThemeById } from "@/lib/theme";
 import { useParental } from "@/lib/parental";
 import { useView, type View } from "@/lib/view";
 import { ParentalPinModal } from "@/components/parental-pin-modal";
+import { TvModalClose } from "@/components/tv-modal-close";
 import { close, minimize, toggleMaximize, useMaximized } from "@/lib/window";
 import { OverflowNav, type NavEntry } from "@/chrome/nav-overflow";
 import { NAV_ITEMS, applyNavCustomization, type NavItem } from "@/chrome/nav-items";
@@ -60,6 +62,7 @@ export function TopDock() {
         node: (
           <button
             type="button"
+            data-harbor-nav={item.view}
             onClick={() => navigate(item)}
             className={`relative h-9 whitespace-nowrap rounded-full px-3 text-[12.5px] font-medium transition-colors ${
               active ? "text-ink" : "text-ink-muted hover:text-ink"
@@ -87,6 +90,7 @@ export function TopDock() {
       >
         <div
           data-tauri-drag-region
+          data-tv-top-chrome
           className="pointer-events-auto flex h-14 w-full items-center gap-2 rounded-full border border-white/20 bg-black/55 ps-4 pe-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.22),0_18px_60px_-20px_rgba(0,0,0,0.75)] backdrop-blur-md"
         >
           <button
@@ -233,6 +237,7 @@ function ProfileChipCompact({
   const t = useT();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  useTvFocusScope(open, ref);
 
   useEffect(() => {
     if (!open) return;
@@ -272,7 +277,11 @@ function ProfileChipCompact({
         <span className="hidden max-w-[8rem] truncate sm:inline">{name}</span>
       </button>
       {open && (
-        <div className="harbor-profile-dropdown absolute end-0 top-[calc(100%+8px)] z-40 w-60 overflow-hidden rounded-2xl border border-white/15 bg-canvas/95 shadow-[0_20px_50px_-15px_rgba(0,0,0,0.8)] backdrop-blur-2xl">
+        <div
+          data-tv-focus-scope
+          className="harbor-profile-dropdown absolute end-0 top-[calc(100%+8px)] z-40 w-60 overflow-hidden rounded-2xl border border-white/15 bg-canvas/95 shadow-[0_20px_50px_-15px_rgba(0,0,0,0.8)] backdrop-blur-2xl"
+        >
+          <TvModalClose onClose={() => setOpen(false)} label={t("common.close")} />
           <div className="border-b border-white/10 px-4 py-3">
             <div className="text-[13.5px] font-semibold text-ink">{name}</div>
             {user?.email && (

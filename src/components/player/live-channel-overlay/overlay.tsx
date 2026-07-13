@@ -188,20 +188,24 @@ export function LiveChannelOverlay({
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key !== "Escape") return;
+      e.preventDefault();
+      e.stopPropagation();
+      onClose();
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
   }, [onClose]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   useScrollMemory(`live-overlay:${source.id}`, scrollRef, true);
 
   return (
-    <div className="pointer-events-auto absolute inset-0 z-[60] flex flex-col bg-canvas/95 text-ink">
+    <div data-tv-focus-scope className="pointer-events-auto absolute inset-0 z-[60] flex flex-col bg-canvas/95 text-ink">
       <div className="flex shrink-0 items-start gap-3 px-6 pt-6">
         <button
           onClick={onClose}
+          data-tv-modal-close
           aria-label={t("Close guide")}
           className="flex h-11 shrink-0 items-center gap-2 rounded-full border border-edge-soft/60 bg-canvas/80 ps-3 pe-4 text-[13.5px] font-medium text-ink-muted backdrop-blur transition-colors hover:bg-canvas hover:text-ink"
         >

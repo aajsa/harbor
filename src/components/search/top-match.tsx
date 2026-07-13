@@ -38,11 +38,7 @@ export function TopMatch({
       )}
       <div className="absolute inset-0 -z-10 bg-gradient-to-r from-canvas/95 via-canvas/85 to-canvas/55 rtl:bg-gradient-to-l" />
 
-      <button
-        type="button"
-        onClick={handleOpen}
-        className="group flex w-full items-stretch gap-7 p-7 text-start transition-transform duration-200 hover:scale-[1.005] active:scale-[0.995]"
-      >
+      <div className="flex w-full items-stretch gap-7 p-7">
         <div className="relative w-[180px] shrink-0 overflow-hidden rounded-2xl shadow-[0_20px_60px_-20px_rgba(0,0,0,0.7)] ring-1 ring-edge-soft">
           <ResultPoster
             id={match.meta.id}
@@ -84,12 +80,16 @@ export function TopMatch({
               {synopsis}
             </p>
           )}
-          <div className="mt-6 inline-flex h-12 max-w-max items-center gap-2 self-start rounded-full bg-ink px-6 text-[14.5px] font-semibold text-canvas shadow-[0_8px_24px_-8px_rgba(255,255,255,0.25)] transition-all group-hover:bg-ink group-hover:shadow-[0_10px_28px_-6px_rgba(255,255,255,0.4)]">
+          <button
+            type="button"
+            onClick={handleOpen}
+            className="mt-6 inline-flex h-12 max-w-max items-center gap-2 self-start rounded-full bg-ink px-6 text-[14.5px] font-semibold text-canvas shadow-[0_8px_24px_-8px_rgba(255,255,255,0.25)] transition-all hover:shadow-[0_10px_28px_-6px_rgba(255,255,255,0.4)] active:scale-[0.98]"
+          >
             <Play size={15} className="fill-current" strokeWidth={0} />
             Open
-          </div>
+          </button>
         </div>
-      </button>
+      </div>
     </section>
   );
 }
