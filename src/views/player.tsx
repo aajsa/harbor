@@ -423,8 +423,9 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
   ]);
 
   useKeyboardNavigation({
-    // Keep Back/Escape handling while PiP is up — disabling the whole hook lets
-    // Esc reach the WebView and close the app. Only arrow focus is PiP-gated.
+    // TV focus navigation intentionally owns arrows and Space while enabled.
+    // Keep it opt-in so standard player hotkeys remain the default.
+    enabled: settings.tvNavigation && settings.playerTvNavigation,
     wrap: true,
     arrows: chromeVisible && !pipMode,
     onBack: requestLeave,

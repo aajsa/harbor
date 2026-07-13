@@ -485,17 +485,17 @@ function Shell() {
 
   useKeyboardNavigation({
     // Player mounts its own hook; picker stays on App so Back/arrows keep working.
-    enabled: !player,
+    enabled: settings.tvNavigation && !player,
     wrap: false,
     onBack: handleTvBack,
     onBackToNav: handleTvBackToNav,
   });
 
   useEffect(() => {
-    if (searchOpen || topKind === "player") return;
+    if (!settings.tvNavigation || searchOpen || topKind === "player") return;
     const id = window.requestAnimationFrame(() => focusTvPageDefault());
     return () => window.cancelAnimationFrame(id);
-  }, [topKind, meta?.id, searchOpen]);
+  }, [settings.tvNavigation, topKind, meta?.id, searchOpen]);
 
   useEffect(() => {
     if (settings.soundTheme) {

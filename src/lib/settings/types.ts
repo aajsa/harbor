@@ -280,6 +280,8 @@ export type Settings = {
   playerHdrOpaqueWindow: boolean;
   playerEscExitsFullscreen: boolean;
   playerConfirmLeave: boolean;
+  tvNavigation: boolean;
+  playerTvNavigation: boolean;
   playerHdrStage: "auto" | "off" | "always";
   opensubtitlesApiKey: string;
   jimakuToken: string;
