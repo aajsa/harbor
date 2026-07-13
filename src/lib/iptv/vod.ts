@@ -30,6 +30,7 @@ export type VodSeries = {
   playlistName: string;
   episodes: VodEpisode[];
   seasons: number[];
+  xtreamSeriesId?: string;
 };
 
 export type VodLibrary = { movies: VodMovie[]; series: VodSeries[] };
@@ -39,7 +40,10 @@ export function isExternalPlaylistId(id: string): boolean {
 }
 
 function norm(s: string): string {
-  return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
 function numberFallbackEpisodes(episodes: VodEpisode[]): void {
@@ -85,11 +89,14 @@ export function buildVodLibrary(
       }
 
       const show = showTitleFromEpisode(ch.name) || cleanTitle(ch.name);
-      const key = `${pl.id}|${norm(show)}`;
+      const xtreamSeriesId = ch.attrs["xtream-series-id"]?.trim();
+      const key = xtreamSeriesId ? `${pl.id}|xtream:${xtreamSeriesId}` : `${pl.id}|${norm(show)}`;
       let series = seriesMap.get(key);
       if (!series) {
         series = {
-          id: `vod:series:${pl.id}:${norm(show)}`,
+          id: xtreamSeriesId
+            ? `vod:series:${pl.id}:${xtreamSeriesId}`
+            : `vod:series:${pl.id}:${norm(show)}`,
           title: show,
           logo: ch.logo,
           group: ch.group,
@@ -97,10 +104,15 @@ export function buildVodLibrary(
           playlistName: plName,
           episodes: [],
           seasons: [],
+          xtreamSeriesId: xtreamSeriesId || undefined,
         };
         seriesMap.set(key, series);
       }
       if (!series.logo && ch.logo) series.logo = ch.logo;
+      if (xtreamSeriesId) {
+        series.xtreamSeriesId = xtreamSeriesId;
+        continue;
+      }
       const se = parseSeriesEpisode(ch.name);
       series.episodes.push({
         season: se?.season ?? 1,
