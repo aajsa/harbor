@@ -38,6 +38,8 @@ import { useLobbyGate } from "./player/hooks/use-lobby-gate";
 import { hostSourceMatchesMedia } from "@/lib/together/room-derive";
 import { useLiveChannelOverlay } from "./player/hooks/use-live-channel-overlay";
 import { useStreamSwitcher } from "./player/hooks/use-stream-switcher";
+import { useKeyboardNavigation } from "@/lib/keyboard-navigation";
+import { requestPlayerClose } from "./player/request-player-close";
 import { useMpvEmbed } from "./player/hooks/use-mpv-embed";
 import { usePlayerBridge } from "./player/hooks/use-player-bridge";
 import { useTextSync } from "./player/hooks/use-text-sync";
@@ -54,6 +56,7 @@ import { useAutoEndExit } from "./player/hooks/use-auto-end-exit";
 import { useQueueAdvance } from "./player/hooks/use-queue-advance";
 import { usePipMode } from "./player/hooks/use-pip-mode";
 import { usePlaybackControls } from "./player/hooks/use-playback-controls";
+import { useRemotePlaybackBinding } from "@/lib/remote/use-remote-playback-binding";
 import { usePlaybackPresence } from "./player/hooks/use-playback-presence";
 import { usePlayerExit } from "./player/hooks/use-player-exit";
 import { usePendingSeekApply } from "./player/hooks/use-pending-seek-apply";
@@ -252,6 +255,11 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
   });
 
   const canChangeEpisode = src.meta.type === "series" && (!inRoom || isHost);
+  const adjacentRef = useRef(adjacent);
+  adjacentRef.current = adjacent;
+  const onPrevEpisode = useCallback(() => goToEpisode(adjacentRef.current.prev), [goToEpisode]);
+  const onNextEpisode = useCallback(() => goToEpisode(adjacentRef.current.next), [goToEpisode]);
+
   const roomGuest = inRoom && !isHost;
   const broadcastEpisode = useCallback(
     (ep: PlayEpisode) => {
@@ -395,14 +403,42 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
     exitPlayback,
     openPicker,
   });
+  const requestLeave = useCallback(() => {
+    void requestPlayerClose({
+      drawMode,
+      setDrawMode,
+      closePlayer,
+      playerEscExitsFullscreen: settings.playerEscExitsFullscreen,
+      playerConfirmLeave: settings.playerConfirmLeave,
+      onRememberConfirmLeave: () => update({ playerConfirmLeave: false }),
+    });
+    return true;
+  }, [
+    drawMode,
+    setDrawMode,
+    closePlayer,
+    settings.playerEscExitsFullscreen,
+    settings.playerConfirmLeave,
+    update,
+  ]);
+
+  useKeyboardNavigation({
+    // TV focus navigation intentionally owns arrows and Space while enabled.
+    // Keep it opt-in so standard player hotkeys remain the default.
+    enabled: settings.tvNavigation && settings.playerTvNavigation,
+    wrap: true,
+    arrows: chromeVisible && !pipMode,
+    onBack: requestLeave,
+  });
+
   useEffect(() => {
     const onLocalBack = (e: Event) => {
       e.preventDefault();
-      void closePlayer();
+      void requestLeave();
     };
     window.addEventListener("harbor:local-back", onLocalBack);
     return () => window.removeEventListener("harbor:local-back", onLocalBack);
-  }, [closePlayer]);
+  }, [requestLeave]);
 
   const autoAdvancedRef = useRef(false);
   useEffect(() => {
@@ -546,6 +582,26 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
       }
     };
   }, []);
+
+  useRemotePlaybackBinding({
+    bridgeRef,
+    bridgeReady,
+    snap,
+    src,
+    castDevice: cast.castDevice,
+    castPlaying: cast.castPlaying,
+    castPositionSec: cast.castPositionSec,
+    playCast: cast.playCast,
+    pauseCast: cast.pauseCast,
+    seekCast: cast.seekCast,
+    stopCast: cast.stopCast,
+    onPickDevice: cast.onPickDevice,
+    onPrevEpisode,
+    onNextEpisode,
+    hasPrevEpisode: canChangeEpisode && !!adjacent.prev,
+    hasNextEpisode: canChangeEpisode && !!adjacent.next,
+    onVolumeFeedback: showVolumeFeedback,
+  });
 
   const videoFill = useVideoFill(bridgeRef, src.url, playing);
   useLivePictureEq(bridgeRef, src.url);
@@ -923,11 +979,16 @@ export function PlayerView({ src }: { src: PlayerSrc }) {
     <main
       ref={stageRef}
       data-harbor-player
+      data-tv-focus-scope
       dir="ltr"
       className={`fixed inset-0 z-[100] overflow-hidden ${stageBg}`}
       style={cursorStyle}
       onMouseMove={wakeChrome}
       onMouseEnter={wakeChrome}
+      onScroll={(e) => {
+        e.currentTarget.scrollLeft = 0;
+        e.currentTarget.scrollTop = 0;
+      }}
     >
       <div
         ref={videoMountRef}

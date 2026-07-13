@@ -33,7 +33,10 @@ export function AutoPlayTransition({
     return () => window.clearTimeout(t);
   }, []);
   return (
-    <main className={`fixed inset-0 z-[120] overflow-hidden ${kid ? "bg-[#0c4a6e]" : "bg-black"}`}>
+    <main
+      data-tv-focus-scope
+      className={`fixed inset-0 z-[120] overflow-hidden ${kid ? "bg-[#0c4a6e]" : "bg-black"}`}
+    >
       <div data-tauri-drag-region className="absolute inset-x-0 top-0 z-20 h-16" />
       {backdrop && (
         <img
@@ -121,6 +124,7 @@ export function AutoPlayTransition({
       </div>
       <button
         onClick={onCancel}
+        data-tv-modal-close
         className="absolute bottom-10 left-1/2 z-10 flex h-11 -translate-x-1/2 cursor-pointer items-center gap-2 rounded-full border border-white/15 bg-black/45 px-6 text-[13.5px] font-medium text-white/75 backdrop-blur-md transition-colors hover:border-white/30 hover:bg-black/60 hover:text-white"
       >
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>

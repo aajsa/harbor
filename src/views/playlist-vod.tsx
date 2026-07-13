@@ -1,57 +1,103 @@
 import { Film, Search, Tv } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import type { Meta } from "@/lib/cinemeta";
 import { useT } from "@/lib/i18n";
 import { getCachedPlaylist } from "@/lib/iptv/store";
 import type { IptvPlaylistSource } from "@/lib/iptv/types";
 import { buildVodLibrary, type VodEpisode, type VodMovie, type VodSeries } from "@/lib/iptv/vod";
+import { credsFromServer } from "@/lib/iptv/xtream";
+import { fetchXtreamSeriesEpisodes } from "@/lib/iptv/xtream-vod";
 import { useSettings } from "@/lib/settings";
 import { useScrollMemory, useView } from "@/lib/view";
 import { SourcePicker } from "./live/source-picker";
 import { PlaylistEmpty } from "./live/playlist-empty";
 import { useIptvPlaylist } from "./live/hooks/use-iptv-playlist";
 import { SeriesDetail } from "./playlist-vod/series-detail";
+import { useXtreamVodLibrary } from "./playlist-vod/use-xtream-vod-library";
 import { useVodSources } from "./playlist-vod/use-vod-sources";
 import { VodCard } from "./playlist-vod/vod-card";
 
 type Tab = "movies" | "series";
 
-const RENDER_CAP = 500;
+const PAGE_SIZE = 60;
+const SCROLL_SETTLE_DELAY_MS = 250;
 
 export function PlaylistVodView({ active }: { active: boolean }) {
   const t = useT();
   const { settings } = useSettings();
   const { openPlayer } = useView();
-  const { sources, activeId, selectId, addPlaylist, editPlaylist, removePlaylist } = useVodSources();
+  const { sources, activeId, selectId, addPlaylist, editPlaylist, removePlaylist } =
+    useVodSources();
 
   const activeSource = useMemo<IptvPlaylistSource | null>(
     () => sources.find((s) => s.id === activeId) ?? null,
     [sources, activeId],
   );
 
-  const { state, refresh } = useIptvPlaylist(active ? activeSource : null);
-  const playlist = state.kind === "ready" ? state.playlist : getCachedPlaylist(activeSource?.id ?? "");
+  const isXtream = activeSource?.kind === "xtream";
+  const { state, refresh: refreshPlaylist } = useIptvPlaylist(
+    active && !isXtream ? activeSource : null,
+  );
+  const xtream = useXtreamVodLibrary(active && isXtream ? activeSource : null);
+  const refresh = isXtream ? xtream.refresh : refreshPlaylist;
+  const playlist =
+    state.kind === "ready" ? state.playlist : getCachedPlaylist(activeSource?.id ?? "");
 
   const names = useMemo(() => new Map(sources.map((s) => [s.id, s.name] as const)), [sources]);
-  const library = useMemo(
-    () => (playlist ? buildVodLibrary([playlist], names) : { movies: [], series: [] }),
-    [playlist, names],
-  );
+  const library = useMemo(() => {
+    if (isXtream) return xtream.library;
+    return playlist ? buildVodLibrary([playlist], names) : { movies: [], series: [] };
+  }, [isXtream, names, playlist, xtream.library]);
+  const loading = isXtream ? xtream.loading : state.kind === "loading";
+  const error = isXtream ? xtream.error : state.kind === "error" ? state.message : null;
+  const fetchedAt = isXtream ? xtream.fetchedAt : (playlist?.fetchedAt ?? null);
 
   const [tab, setTab] = useState<Tab>("movies");
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<VodSeries | null>(null);
+  const [loadingSeriesId, setLoadingSeriesId] = useState<string | null>(null);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const loadMoreTimer = useRef<number | null>(null);
 
   const chooseTab = useCallback((t: Tab) => {
     setTab(t);
     setSelected(null);
   }, []);
+  const viewError = isXtream
+    ? tab === "movies"
+      ? xtream.movieError
+      : xtream.seriesError
+    : error;
+  const tabLoading = isXtream
+    ? tab === "movies"
+      ? xtream.moviesLoading
+      : xtream.seriesLoading
+    : loading;
+  const providerTotal = isXtream
+    ? tab === "movies"
+      ? xtream.movieTotal
+      : xtream.seriesTotal
+    : null;
+  const tabItemCount = tab === "movies" ? library.movies.length : library.series.length;
 
   useEffect(() => {
     setSelected(null);
+    setVisibleCount(PAGE_SIZE);
   }, [activeId]);
 
-  const q = query.trim().toLowerCase();
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [query, tab]);
+
+  useEffect(
+    () => () => {
+      if (loadMoreTimer.current != null) window.clearTimeout(loadMoreTimer.current);
+    },
+    [],
+  );
+
+  const deferredQuery = useDeferredValue(query);
+  const q = deferredQuery.trim().toLowerCase();
   const movies = useMemo(
     () => (q ? library.movies.filter((m) => m.title.toLowerCase().includes(q)) : library.movies),
     [library.movies, q],
@@ -60,6 +106,8 @@ export function PlaylistVodView({ active }: { active: boolean }) {
     () => (q ? library.series.filter((s) => s.title.toLowerCase().includes(q)) : library.series),
     [library.series, q],
   );
+  const visibleMovies = movies.slice(0, visibleCount);
+  const visibleSeries = series.slice(0, visibleCount);
 
   const playMovie = useCallback(
     (m: VodMovie) => {
@@ -88,6 +136,48 @@ export function PlaylistVodView({ active }: { active: boolean }) {
     [openPlayer],
   );
 
+  const openSeries = useCallback(
+    (series: VodSeries) => {
+      setSelected(series);
+      if (!series.xtreamSeriesId || activeSource?.kind !== "xtream" || !activeSource.xtream) return;
+      const creds = credsFromServer(
+        activeSource.xtream.server,
+        activeSource.xtream.username,
+        activeSource.xtream.password,
+      );
+      if (!creds) return;
+
+      setLoadingSeriesId(series.id);
+      void fetchXtreamSeriesEpisodes(creds, activeSource.id, {
+        series_id: Number(series.xtreamSeriesId),
+        name: series.title,
+        cover: series.logo ?? undefined,
+        category_id: series.group ?? undefined,
+      })
+        .then((channels) => {
+          const episodes = channels.map((channel) => {
+            const match = /S(\d+)E(\d+)$/i.exec(channel.name);
+            return {
+              season: Number(match?.[1]) || 1,
+              episode: Number(match?.[2]) || 0,
+              title: channel.name,
+              url: channel.url,
+              logo: channel.logo,
+            };
+          });
+          const seasons = [...new Set(episodes.map((episode) => episode.season))].sort(
+            (a, b) => a - b,
+          );
+          setSelected((current) =>
+            current?.id === series.id ? { ...current, episodes, seasons } : current,
+          );
+        })
+        .catch(() => {})
+        .finally(() => setLoadingSeriesId((current) => (current === series.id ? null : current)));
+    },
+    [activeSource],
+  );
+
   const scrollRef = useRef<HTMLDivElement>(null);
   useScrollMemory("vod", scrollRef, active);
 
@@ -102,10 +192,21 @@ export function PlaylistVodView({ active }: { active: boolean }) {
   const gridStyle = {
     gridTemplateColumns: `repeat(auto-fill, minmax(${Math.round(150 * (settings.posterScale ?? 1))}px, 1fr))`,
   };
+  const total = tab === "movies" ? movies.length : series.length;
+  const loadMore = () => setVisibleCount((count) => Math.min(count + PAGE_SIZE, total));
+  const onScroll = (event: React.UIEvent<HTMLDivElement>) => {
+    const el = event.currentTarget;
+    if (el.scrollHeight - el.scrollTop - el.clientHeight >= 420) return;
+    if (loadMoreTimer.current != null) window.clearTimeout(loadMoreTimer.current);
+    loadMoreTimer.current = window.setTimeout(() => {
+      loadMoreTimer.current = null;
+      loadMore();
+    }, SCROLL_SETTLE_DELAY_MS);
+  };
 
   return (
     <main data-rail-flush className="relative flex min-h-0 flex-1 flex-col pt-20">
-      <header className="relative z-[40] flex shrink-0 flex-wrap items-center gap-2.5 border-b border-edge-soft/40 bg-surface px-6 py-2.5">
+      <header className="relative z-40 flex shrink-0 flex-wrap items-center gap-2.5 border-b border-edge-soft/40 bg-surface px-6 py-2.5">
         <SourcePicker
           sources={sources}
           activeId={activeId}
@@ -116,13 +217,25 @@ export function PlaylistVodView({ active }: { active: boolean }) {
           onRemove={removePlaylist}
           onRefresh={refresh}
           onExport={() => {}}
-          fetchedAt={playlist?.fetchedAt ?? null}
+          fetchedAt={fetchedAt}
           channelCount={null}
-          loading={state.kind === "loading"}
+          loading={loading}
         />
         <div className="flex h-11 items-center gap-0.5 rounded-xl border border-edge-soft/55 bg-elevated p-1">
-          <TabButton active={tab === "movies"} onClick={() => chooseTab("movies")} icon={<Film size={14} strokeWidth={2} />} label={t("Movies")} count={library.movies.length} />
-          <TabButton active={tab === "series"} onClick={() => chooseTab("series")} icon={<Tv size={14} strokeWidth={2} />} label={t("Shows")} count={library.series.length} />
+          <TabButton
+            active={tab === "movies"}
+            onClick={() => chooseTab("movies")}
+            icon={<Film size={14} strokeWidth={2} />}
+            label={t("Movies")}
+            count={library.movies.length}
+          />
+          <TabButton
+            active={tab === "series"}
+            onClick={() => chooseTab("series")}
+            icon={<Tv size={14} strokeWidth={2} />}
+            label={t("Shows")}
+            count={library.series.length}
+          />
         </div>
         <div className="flex h-11 flex-1 min-w-[220px] items-center gap-2.5 rounded-xl border border-edge-soft/55 bg-elevated px-3.5">
           <Search size={15} strokeWidth={2} className="text-ink-subtle" />
@@ -134,29 +247,53 @@ export function PlaylistVodView({ active }: { active: boolean }) {
             className="flex-1 bg-transparent text-[14px] text-ink placeholder:text-ink-subtle focus:outline-none"
           />
           {query && (
-            <button onClick={() => setQuery("")} className="text-[12.5px] font-medium text-ink-subtle transition-colors hover:text-ink">
+            <button
+              onClick={() => setQuery("")}
+              className="text-[12.5px] font-medium text-ink-subtle transition-colors hover:text-ink"
+            >
               {t("Clear")}
             </button>
           )}
         </div>
       </header>
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 pt-6 pb-16">
-        {state.kind === "error" ? (
-          <Notice text={state.message} onRetry={refresh} />
-        ) : state.kind === "loading" && !playlist ? (
+      <div ref={scrollRef} onScroll={onScroll} className="flex-1 overflow-y-auto px-6 pt-6 pb-16">
+        {viewError && tabItemCount === 0 ? (
+          <Notice text={viewError} onRetry={refresh} />
+        ) : tabLoading && (tab === "movies" ? movies.length === 0 : series.length === 0) ? (
           <Notice text={t("Loading playlist...")} />
         ) : selected ? (
-          <SeriesDetail series={selected} onBack={() => setSelected(null)} onPlay={(ep) => playEpisode(selected, ep)} />
+          <SeriesDetail
+            key={`${selected.id}:${selected.seasons.join(",")}`}
+            series={selected}
+            loading={loadingSeriesId === selected.id}
+            onBack={() => setSelected(null)}
+            onPlay={(ep) => playEpisode(selected, ep)}
+          />
         ) : tab === "movies" ? (
           movies.length === 0 ? (
             <Notice text={emptyMoviesText(t, library.movies.length, q)} />
           ) : (
             <>
-              <CapNote shown={Math.min(movies.length, RENDER_CAP)} total={movies.length} kind="movies" />
+              {viewError && <CatalogWarning text={viewError} onRetry={refresh} />}
+              <CatalogProgress
+                loading={tabLoading}
+                loaded={library.movies.length}
+                total={providerTotal}
+                kind="movies"
+              />
+              <CapNote shown={visibleMovies.length} total={movies.length} kind="movies" />
               <div className="grid gap-x-4 gap-y-6" style={gridStyle}>
-                {movies.slice(0, RENDER_CAP).map((m) => (
-                  <VodCard key={m.id} kind="movie" title={m.title} year={m.year} logo={m.logo} seed={m.title} onClick={() => playMovie(m)} />
+                {visibleMovies.map((m) => (
+                  <VodCard
+                    key={m.id}
+                    kind="movie"
+                    title={m.title}
+                    year={m.year}
+                    logo={m.logo}
+                    seed={m.title}
+                    onClick={() => playMovie(m)}
+                  />
                 ))}
               </div>
             </>
@@ -165,9 +302,16 @@ export function PlaylistVodView({ active }: { active: boolean }) {
           <Notice text={emptyShowsText(t, library.series.length, q)} />
         ) : (
           <>
-            <CapNote shown={Math.min(series.length, RENDER_CAP)} total={series.length} kind="shows" />
+            {viewError && <CatalogWarning text={viewError} onRetry={refresh} />}
+            <CatalogProgress
+              loading={tabLoading}
+              loaded={library.series.length}
+              total={providerTotal}
+              kind="shows"
+            />
+            <CapNote shown={visibleSeries.length} total={series.length} kind="shows" />
             <div className="grid gap-x-4 gap-y-6" style={gridStyle}>
-              {series.slice(0, RENDER_CAP).map((s) => (
+              {visibleSeries.map((s) => (
                 <VodCard
                   key={s.id}
                   kind="series"
@@ -176,11 +320,13 @@ export function PlaylistVodView({ active }: { active: boolean }) {
                   logo={s.logo}
                   seed={s.title}
                   subtitle={
-                    s.episodes.length === 1
-                      ? t("{n} episode", { n: 1 })
-                      : t("{n} episodes", { n: s.episodes.length })
+                    s.xtreamSeriesId
+                      ? (s.group ?? t("Open to load episodes"))
+                      : s.episodes.length === 1
+                        ? t("{n} episode", { n: 1 })
+                        : t("{n} episodes", { n: s.episodes.length })
                   }
-                  onClick={() => setSelected(s)}
+                  onClick={() => openSeries(s)}
                 />
               ))}
             </div>
@@ -211,7 +357,13 @@ function emptyShowsText(t: Translate, total: number, query: string): string {
   return t("No shows here.");
 }
 
-function vodMeta(id: string, type: "movie" | "series", name: string, logo: string | null, year: number | null): Meta {
+function vodMeta(
+  id: string,
+  type: "movie" | "series",
+  name: string,
+  logo: string | null,
+  year: number | null,
+): Meta {
   return {
     id,
     type,
@@ -222,7 +374,19 @@ function vodMeta(id: string, type: "movie" | "series", name: string, logo: strin
   };
 }
 
-function TabButton({ active, onClick, icon, label, count }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string; count: number }) {
+function TabButton({
+  active,
+  onClick,
+  icon,
+  label,
+  count,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+  count: number;
+}) {
   return (
     <button
       onClick={onClick}
@@ -233,7 +397,9 @@ function TabButton({ active, onClick, icon, label, count }: { active: boolean; o
       {icon}
       {label}
       {count > 0 && (
-        <span className={`rounded-full px-1.5 text-[10.5px] tabular-nums ${active ? "bg-canvas/25" : "bg-canvas/70 text-ink-subtle"}`}>
+        <span
+          className={`rounded-full px-1.5 text-[10.5px] tabular-nums ${active ? "bg-canvas/25" : "bg-canvas/70 text-ink-subtle"}`}
+        >
           {count.toLocaleString()}
         </span>
       )}
@@ -241,16 +407,69 @@ function TabButton({ active, onClick, icon, label, count }: { active: boolean; o
   );
 }
 
-function CapNote({ shown, total, kind }: { shown: number; total: number; kind: "movies" | "shows" }) {
+function CatalogProgress({
+  loading,
+  loaded,
+  total,
+  kind,
+}: {
+  loading: boolean;
+  loaded: number;
+  total: number | null;
+  kind: "movies" | "shows";
+}) {
+  const t = useT();
+  if (!loading) return null;
+  const label =
+    total == null
+      ? kind === "movies"
+        ? t("Loading movies...")
+        : t("Loading shows...")
+      : kind === "movies"
+        ? t("Loaded {loaded} of {total} movies...", {
+            loaded: loaded.toLocaleString(),
+            total: Math.max(total, loaded).toLocaleString(),
+          })
+        : t("Loaded {loaded} of {total} shows...", {
+            loaded: loaded.toLocaleString(),
+            total: Math.max(total, loaded).toLocaleString(),
+          });
+  return <p className="mb-4 text-[12.5px] tabular-nums text-ink-subtle">{label}</p>;
+}
+
+function CatalogWarning({ text, onRetry }: { text: string; onRetry: () => void }) {
+  const t = useT();
+  return (
+    <div className="mb-4 flex items-center justify-between gap-4 rounded-xl border border-edge-soft bg-elevated px-4 py-3">
+      <p className="min-w-0 text-[12.5px] text-ink-muted">{text}</p>
+      <button
+        onClick={onRetry}
+        className="shrink-0 text-[12.5px] font-semibold text-ink transition-colors hover:text-accent"
+      >
+        {t("Try again")}
+      </button>
+    </div>
+  );
+}
+
+function CapNote({
+  shown,
+  total,
+  kind,
+}: {
+  shown: number;
+  total: number;
+  kind: "movies" | "shows";
+}) {
   const t = useT();
   if (total <= shown) return null;
   const text =
     kind === "movies"
-      ? t("Showing {shown} of {total} movies. Search to find the rest.", {
+      ? t("Showing {shown} of {total} movies. Scroll to load more.", {
           shown: shown.toLocaleString(),
           total: total.toLocaleString(),
         })
-      : t("Showing {shown} of {total} shows. Search to find the rest.", {
+      : t("Showing {shown} of {total} shows. Scroll to load more.", {
           shown: shown.toLocaleString(),
           total: total.toLocaleString(),
         });
@@ -263,7 +482,10 @@ function Notice({ text, onRetry }: { text: string; onRetry?: () => void }) {
     <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-edge px-6 py-16 text-center">
       <p className="max-w-[520px] text-[14.5px] leading-relaxed text-ink-muted">{text}</p>
       {onRetry && (
-        <button onClick={onRetry} className="h-9 rounded-lg bg-elevated px-4 text-[13px] font-semibold text-ink transition-colors hover:bg-raised">
+        <button
+          onClick={onRetry}
+          className="h-9 rounded-lg bg-elevated px-4 text-[13px] font-semibold text-ink transition-colors hover:bg-raised"
+        >
           {t("Try again")}
         </button>
       )}

@@ -1,11 +1,5 @@
 import { parseM3u } from "../m3u";
-import {
-  commitHydratedPlaylist,
-  fetchM3uText,
-  markVodHydrated,
-  shapePlaylist,
-  unmarkVodHydrated,
-} from "../store";
+import { fetchM3uText, shapePlaylist } from "../store";
 import { liveContainerPref } from "../settings-bridge";
 import type { IptvPlaylist, IptvPlaylistSource } from "../types";
 import {
@@ -15,7 +9,6 @@ import {
   XtreamEmptyError,
   type XtreamCreds,
 } from "../xtream";
-import { fetchXtreamVodAndSeries } from "../xtream-vod";
 import type { ProviderShape } from "./detect";
 
 const MIDDLEWARE_CANDIDATES = ["/iptv/m3u", "/m3u", "/playlist.m3u", "/get.php?type=m3u_plus"];
@@ -39,23 +32,7 @@ async function loadXtream(src: IptvPlaylistSource, creds: XtreamCreds): Promise<
       "Logged in to the Xtream server, but it returned no live channels. The account may have no active package.",
     );
   }
-  void hydrateXtreamVod(src, creds, live);
   return shapePlaylist(src, live);
-}
-
-async function hydrateXtreamVod(
-  src: IptvPlaylistSource,
-  creds: XtreamCreds,
-  live: IptvPlaylist["channels"],
-): Promise<void> {
-  if (!markVodHydrated(src.id)) return;
-  try {
-    const vod = await fetchXtreamVodAndSeries(creds, src.id);
-    if (vod.length === 0) return;
-    commitHydratedPlaylist(src, [...live, ...vod]);
-  } catch {
-    unmarkVodHydrated(src.id);
-  }
 }
 
 async function loadM3u(

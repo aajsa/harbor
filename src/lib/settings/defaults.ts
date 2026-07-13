@@ -4,7 +4,7 @@ import type { Settings } from "./types";
 export const STORAGE_KEY = "harbor.settings";
 
 export const DEFAULT: Settings = {
-  soundTheme: 'glass',
+  soundTheme: 'none',
   blurComments: false,
   blurEpisodes: false,
   tmdbKey: "",
@@ -70,6 +70,7 @@ export const DEFAULT: Settings = {
   playerTitleSeriesFirst: false,
   uiScale: 1,
   serveWebUi: false,
+  remoteControlEnabled: false,
   trailerQuality: "auto",
   detailTrailerAutoplay: false,
   heroBackdropCarousel: false,
@@ -249,6 +250,8 @@ export const DEFAULT: Settings = {
   playerHdrOpaqueWindow: false,
   playerEscExitsFullscreen: true,
   playerConfirmLeave: true,
+  tvNavigation: true,
+  playerTvNavigation: false,
   playerHdrStage: "auto",
   opensubtitlesApiKey: "",
   jimakuToken: "",

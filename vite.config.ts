@@ -34,6 +34,7 @@ export default defineConfig({
   server: {
     port: 1420,
     strictPort: true,
+    host: true,
     watch: { ignored: ["**/src-tauri/**"] },
   },
   resolve: {

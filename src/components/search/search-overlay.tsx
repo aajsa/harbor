@@ -1,6 +1,7 @@
 import { Search, X, Loader2, CornerDownLeft, CalendarRange, Tag } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { TvModalClose } from "@/components/tv-modal-close";
 import { useT } from "@/lib/i18n";
 import { useSearch } from "@/lib/search-context";
 import { useView } from "@/lib/view";
@@ -105,9 +106,13 @@ export function SearchOverlay() {
       role="dialog"
       aria-modal="true"
       aria-label={t("Search")}
+      data-search-overlay
+      data-tv-focus-scope
     >
-      <button
-        aria-label={t("Close search")}
+      <TvModalClose onClose={close} label={t("common.close")} />
+      <div
+        role="presentation"
+        aria-hidden="true"
         onClick={close}
         data-tauri-drag-region
         className="harbor-search-backdrop absolute inset-0 cursor-default"
@@ -130,7 +135,9 @@ export function SearchOverlay() {
           <div className="relative flex-1">
             <input
               ref={inputRef}
-              type="text"
+              type="search"
+              aria-label={t("Search")}
+              data-tv-text-auto
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => {

@@ -4,6 +4,7 @@ import { clearEpg } from "./epg-store";
 import { removeEpgOverridesForSource } from "./epg-map";
 import { removeGroupPrefs } from "./group-order";
 import { removePinsForSource } from "./pins";
+import { deleteIptvCache } from "./persistent-cache";
 import { clearPlaylistCache } from "./store";
 
 export function purgePlaylistState(
@@ -12,6 +13,7 @@ export function purgePlaylistState(
 ): void {
   if (!id) return;
   clearPlaylistCache(id);
+  void deleteIptvCache("xtream-vod", id);
   clearEpg(id);
   removeStatsForSource(id);
   removePinsForSource(id);

@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { useSettings, type Settings } from "@/lib/settings";
 import { clearPlaylistCache } from "@/lib/iptv/store";
 import { clearEpg } from "@/lib/iptv/epg-store";
+import { deleteIptvCache } from "@/lib/iptv/persistent-cache";
 import { purgePlaylistState } from "@/lib/iptv/source-cleanup";
 import { useFavorites } from "@/lib/iptv/favorites";
 import { buildXtreamUrls, type PlaylistFormValue } from "../source-picker/playlist-form";
@@ -65,6 +66,7 @@ export function usePlaylistMutations(params: {
       const next = playlists.map((s) => (s.id === id ? materializePlaylistEntry(id, entry) : s));
       update({ iptvPlaylists: next });
       clearPlaylistCache(id);
+      void deleteIptvCache("xtream-vod", id);
       clearEpg(id);
       if (activeId === id) refresh();
     },
