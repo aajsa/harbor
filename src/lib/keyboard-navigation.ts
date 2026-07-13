@@ -4,26 +4,59 @@ import { SFX } from '@/lib/sfx';
 type Dir = 'up' | 'down' | 'left' | 'right';
 
 const SELECTOR = [
-  'a[href]', 'button:not([disabled])', 'input:not([disabled]):not([type="hidden"])',
-  'select:not([disabled])', 'textarea:not([disabled])', '[tabindex]:not([tabindex="-1"])',
-  '[contenteditable="true"]', '[data-focusable="true"]',
+  'a[href]',
+  'button:not([disabled])',
+  'input:not([disabled]):not([type="hidden"])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+  '[contenteditable="true"]',
+  '[data-focusable="true"]',
 ].join(', ');
 
 const KEY_TO_DIR: Record<string, Dir> = {
-  ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
-  Up: 'up', Down: 'down', Left: 'left', Right: 'right',
-  w: 'up', W: 'up', s: 'down', S: 'down', a: 'left', A: 'left', d: 'right', D: 'right',
+  ArrowUp: 'up',
+  ArrowDown: 'down',
+  ArrowLeft: 'left',
+  ArrowRight: 'right',
+  Up: 'up',
+  Down: 'down',
+  Left: 'left',
+  Right: 'right',
+  w: 'up',
+  W: 'up',
+  s: 'down',
+  S: 'down',
+  a: 'left',
+  A: 'left',
+  d: 'right',
+  D: 'right',
 };
 
 const CODE_TO_DIR: Record<string, Dir> = {
-  ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
-  KeyW: 'up', KeyS: 'down', KeyA: 'left', KeyD: 'right',
+  ArrowUp: 'up',
+  ArrowDown: 'down',
+  ArrowLeft: 'left',
+  ArrowRight: 'right',
+  KeyW: 'up',
+  KeyS: 'down',
+  KeyA: 'left',
+  KeyD: 'right',
 };
 
 const KEYCODE_TO_DIR: Record<number, Dir> = {
-  38: 'up', 40: 'down', 37: 'left', 39: 'right',
-  19: 'up', 20: 'down', 21: 'left', 22: 'right',
-  87: 'up', 83: 'down', 65: 'left', 68: 'right',
+  38: 'up',
+  40: 'down',
+  37: 'left',
+  39: 'right',
+  19: 'up',
+  20: 'down',
+  21: 'left',
+  22: 'right',
+  87: 'up',
+  83: 'down',
+  65: 'left',
+  68: 'right',
 };
 
 const CENTER_KEYCODES = new Set([13, 23, 32]);
@@ -31,7 +64,14 @@ const BACK_KEYCODES = new Set([27, 4, 461, 10009, 166]);
 const BACK_KEYS = new Set(['Escape', 'Esc', 'BrowserBack', 'GoBack', 'Back']);
 
 const MODAL_SELECTOR = '[role="dialog"], [aria-modal="true"]';
-const LOCAL_KEYBOARD_SELECTOR = ['[role="listbox"]', '[role="menu"]', '[role="grid"]', '[role="tree"]', '[role="tablist"]'].join(', ');
+
+const LOCAL_KEYBOARD_SELECTOR = [
+  '[role="listbox"]',
+  '[role="menu"]',
+  '[role="grid"]',
+  '[role="tree"]',
+  '[role="tablist"]',
+].join(', ');
 
 const AXIS_TOLERANCE = 24;
 
@@ -41,13 +81,21 @@ let focusStylesInjected = false;
 
 function isEditable(el: HTMLElement | null) {
   if (!el) return false;
-  const tag = el.tagName;
-  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.isContentEditable;
+
+  return (
+    el.tagName === 'INPUT' ||
+    el.tagName === 'TEXTAREA' ||
+    el.tagName === 'SELECT' ||
+    el.isContentEditable
+  );
 }
 
 function isSearchLikeField(el: HTMLElement | null) {
   if (!el) return false;
-  if (!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) return false;
+
+  if (!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) {
+    return false;
+  }
 
   const type = (el.getAttribute('type') || '').toLowerCase();
   const role = (el.getAttribute('role') || '').toLowerCase();
@@ -56,7 +104,20 @@ function isSearchLikeField(el: HTMLElement | null) {
   const placeholder = (el.getAttribute('placeholder') || '').toLowerCase();
   const name = (el.getAttribute('name') || '').toLowerCase();
 
-  return (type === 'search' || role === 'searchbox' || inputMode === 'search' || ariaLabel.includes('search') || placeholder.includes('search') || placeholder.includes('بحث') || name.includes('search') || name.includes('query'));
+  return (
+    type === 'search' ||
+    role === 'searchbox' ||
+    inputMode === 'search' ||
+    ariaLabel.includes('search') ||
+    placeholder.includes('search') ||
+    placeholder.includes('بحث') ||
+    name.includes('search') ||
+    name.includes('query')
+  );
+}
+
+function isHomeSearch(el: HTMLElement | null) {
+  return !!el?.closest('[data-tv-direct-edit="true"]');
 }
 
 function isVisible(el: HTMLElement) {
@@ -64,281 +125,608 @@ function isVisible(el: HTMLElement) {
   if (el.closest('[hidden], [inert], [aria-hidden="true"]')) return false;
 
   const style = window.getComputedStyle(el);
-  if (style.display === 'none' || style.visibility === 'hidden' || parseFloat(style.opacity) === 0) return false;
+
+  if (
+    style.display === 'none' ||
+    style.visibility === 'hidden' ||
+    parseFloat(style.opacity) === 0
+  ) {
+    return false;
+  }
 
   const rect = el.getBoundingClientRect();
-  if (rect.width <= 0 || rect.height <= 0) return false;
-  if (el.getClientRects().length === 0) return false;
-  return true;
+
+  return rect.width > 0 && rect.height > 0 && el.getClientRects().length > 0;
 }
 
-function isInNav(el: HTMLElement): boolean { return !!el.closest('[data-harbor-nav]'); }
+function isInNav(el: HTMLElement) {
+  return !!el.closest('[data-harbor-nav]');
+}
+
 function zoneOf(el: HTMLElement): 'nav' | 'hero' | 'content' {
   if (isInNav(el)) return 'nav';
-  if (!!el.closest('[data-tv-hero-zone]')) return 'hero';
+  if (el.closest('[data-tv-hero-zone]')) return 'hero';
+
   return 'content';
 }
 
-function getSoundType(el: HTMLElement): 'light' | 'movie' {
-  if (isInNav(el)) return 'light';
-  if (el.closest('[role="dialog"], [role="menu"], [role="tablist"], [role="switch"], form, .settings-panel')) return 'light';
-  
-  const href = el.getAttribute('href') || '';
-  if (href.includes('/detail') || href.includes('/player') || href.includes('/movie') || href.includes('/series')) return 'movie';
-  
-  const isMovieContainer = el.closest('[data-media-card], [data-movie-card], .media-card, [data-tv-hero-zone], .poster');
-  if (isMovieContainer || el.querySelector('img') || el.hasAttribute('data-media-card')) return 'movie';
-  
-  return 'light';
+function getFocusable(root: ParentNode = document) {
+  const all = Array.from(root.querySelectorAll<HTMLElement>(SELECTOR)).filter(
+    isVisible,
+  );
+
+  return all.filter(
+    (el) => !all.some((other) => other !== el && other.contains(el)),
+  );
 }
 
-function getFocusable(root: ParentNode = document): HTMLElement[] {
-  const all = Array.from(root.querySelectorAll<HTMLElement>(SELECTOR)).filter(isVisible);
-  return all.filter((el) => !all.some((other) => other !== el && other.contains(el)));
-}
-
-function getFocusableInZone(zone: 'nav' | 'hero' | 'content', root: ParentNode = document): HTMLElement[] {
+function getFocusableInZone(
+  zone: 'nav' | 'hero' | 'content',
+  root: ParentNode = document,
+) {
   return getFocusable(root).filter((el) => zoneOf(el) === zone);
 }
 
-function getNavCandidates(root: ParentNode = document): HTMLElement[] {
+function getNavCandidates(root: ParentNode = document) {
   return getFocusable(root).filter(isInNav);
 }
 
 function getRect(el: HTMLElement) {
   const r = el.getBoundingClientRect();
-  return { left: r.left, right: r.right, top: r.top, bottom: r.bottom, width: r.width, height: r.height, cx: r.left + r.width / 2, cy: r.top + r.height / 2 };
+
+  return {
+    left: r.left,
+    right: r.right,
+    top: r.top,
+    bottom: r.bottom,
+    width: r.width,
+    height: r.height,
+    cx: r.left + r.width / 2,
+    cy: r.top + r.height / 2,
+  };
 }
 
-function overlap(aStart: number, aEnd: number, bStart: number, bEnd: number) {
+function overlap(
+  aStart: number,
+  aEnd: number,
+  bStart: number,
+  bEnd: number,
+) {
   return Math.max(0, Math.min(aEnd, bEnd) - Math.max(aStart, bStart));
 }
 
-function findClosestByY(from: HTMLElement, candidates: HTMLElement[]): HTMLElement | null {
+function findClosestByY(
+  from: HTMLElement,
+  candidates: HTMLElement[],
+): HTMLElement | null {
   const src = getRect(from);
+
   let best: HTMLElement | null = null;
   let bestScore = Number.POSITIVE_INFINITY;
+
   for (const el of candidates) {
     if (el === from) continue;
+
     const dst = getRect(el);
-    const dy = Math.abs(dst.cy - src.cy);
-    const dx = Math.abs(dst.cx - src.cx);
-    const score = dy * 10 + dx;
-    if (score < bestScore) { bestScore = score; best = el; }
+    const score = Math.abs(dst.cy - src.cy) * 10 + Math.abs(dst.cx - src.cx);
+
+    if (score < bestScore) {
+      best = el;
+      bestScore = score;
+    }
   }
+
   return best;
 }
 
-function hasLeftNeighborInRow(active: HTMLElement, root: ParentNode = document): boolean {
+function hasLeftNeighborInRow(
+  active: HTMLElement,
+  root: ParentNode = document,
+) {
   const src = getRect(active);
-  const all = getFocusable(root).filter((el) => el !== active && !isInNav(el));
-  return all.some((el) => {
-    const dst = getRect(el);
-    const sameRow = Math.abs(dst.cy - src.cy) < Math.max(24, src.height * 0.6);
-    return sameRow && dst.cx < src.cx - 8;
-  });
+
+  return getFocusable(root)
+    .filter((el) => el !== active && !isInNav(el))
+    .some((el) => {
+      const dst = getRect(el);
+      const sameRow =
+        Math.abs(dst.cy - src.cy) < Math.max(24, src.height * 0.6);
+
+      return sameRow && dst.cx < src.cx - 8;
+    });
 }
 
-function getActiveModal(target: HTMLElement | null): HTMLElement | null {
+function getActiveModal(target: HTMLElement | null) {
   const owned = target?.closest<HTMLElement>(MODAL_SELECTOR);
+
   if (owned && isVisible(owned)) return owned;
-  const visible = Array.from(document.querySelectorAll<HTMLElement>(MODAL_SELECTOR)).filter(isVisible);
-  return visible[visible.length - 1] ?? null;
+
+  const modals = Array.from(
+    document.querySelectorAll<HTMLElement>(MODAL_SELECTOR),
+  ).filter(isVisible);
+
+  return modals[modals.length - 1] ?? null;
 }
 
 function ensureFocusStyles() {
   if (focusStylesInjected || typeof document === 'undefined') return;
+
   focusStylesInjected = true;
+
   const style = document.createElement('style');
   style.setAttribute('data-tv-focus-styles', 'true');
+
   style.textContent = `
-    [data-tv-focused="true"] { outline: none !important; box-shadow: 0 0 0 4px var(--tv-focus-ring, #ffffff), 0 0 0 8px rgba(0,0,0,0.35) !important; transition: box-shadow 120ms ease; z-index: 20; position: relative; }
-    [data-search-editing="true"] { outline: none !important; border-color: #ff8a00 !important; box-shadow: 0 0 0 3px #ffffff, 0 0 0 7px #ff8a00, 0 0 18px rgba(255, 138, 0, 0.45) !important; background-color: rgba(255, 138, 0, 0.06) !important; }
+    [data-tv-focused="true"]:not([data-search-editing="true"]) {
+      outline: none !important;
+      box-shadow:
+        0 0 0 4px var(--tv-focus-ring, #ff8a00),
+        0 0 0 8px rgba(255, 138, 0, 0.30) !important;
+      transition: box-shadow 120ms ease;
+      z-index: 20;
+      position: relative;
+    }
+
+    [data-search-editing="true"] {
+      outline: none !important;
+      border-color: #ffffff !important;
+      box-shadow:
+        0 0 0 3px #ffffff,
+        0 0 0 7px rgba(255, 255, 255, 0.45),
+        0 0 18px rgba(255, 255, 255, 0.35) !important;
+      background-color: rgba(255, 255, 255, 0.08) !important;
+      transition: box-shadow 120ms ease, border-color 120ms ease !important;
+    }
   `;
+
   document.head.appendChild(style);
 }
 
-function isLocallyManaged(target: HTMLElement | null): boolean { return !!target?.closest(LOCAL_KEYBOARD_SELECTOR); }
+function isLocallyManaged(target: HTMLElement | null) {
+  return !!target?.closest(LOCAL_KEYBOARD_SELECTOR);
+}
+
 function getDirection(e: KeyboardEvent): Dir | null {
   if (KEY_TO_DIR[e.key]) return KEY_TO_DIR[e.key];
   if (CODE_TO_DIR[e.code]) return CODE_TO_DIR[e.code];
+
   return KEYCODE_TO_DIR[e.keyCode] ?? null;
 }
-function isBackKey(e: KeyboardEvent): boolean { return BACK_KEYS.has(e.key) || BACK_KEYCODES.has(e.keyCode); }
-function getInitialFocus(list: HTMLElement[]) { return list.find((el) => el.hasAttribute('data-tv-initial-focus')) ?? list[0] ?? null; }
 
-function focusElement(el: HTMLElement) {
-  ensureFocusStyles();
-  if (lastFocusedEl && lastFocusedEl !== el) lastFocusedEl.removeAttribute('data-tv-focused');
-  el.setAttribute('data-tv-focused', 'true');
-  lastFocusedEl = el;
-  el.focus({ preventScroll: true });
-  el.scrollIntoView({ block: 'center', inline: 'center', behavior: 'smooth' });
+function isBackKey(e: KeyboardEvent) {
+  return BACK_KEYS.has(e.key) || BACK_KEYCODES.has(e.keyCode);
+}
+
+function getInitialFocus(list: HTMLElement[]) {
+  return (
+    list.find((el) => el.hasAttribute('data-tv-initial-focus')) ??
+    list[0] ??
+    null
+  );
 }
 
 function enterSearchEditMode(el: HTMLElement) {
+  ensureFocusStyles();
+
+  if (activeSearchEditEl && activeSearchEditEl !== el) {
+    activeSearchEditEl.removeAttribute('data-search-editing');
+  }
+
+  if (lastFocusedEl && lastFocusedEl !== el) {
+    lastFocusedEl.removeAttribute('data-tv-focused');
+  }
+
   activeSearchEditEl = el;
+  lastFocusedEl = el;
+
+  el.setAttribute('data-tv-focused', 'true');
   el.setAttribute('data-search-editing', 'true');
   el.focus({ preventScroll: true });
 }
 
+function focusElement(el: HTMLElement) {
+  ensureFocusStyles();
+
+  if (lastFocusedEl && lastFocusedEl !== el) {
+    lastFocusedEl.removeAttribute('data-tv-focused');
+  }
+
+  if (activeSearchEditEl && activeSearchEditEl !== el) {
+    activeSearchEditEl.removeAttribute('data-search-editing');
+    activeSearchEditEl = null;
+  }
+
+  el.setAttribute('data-tv-focused', 'true');
+  lastFocusedEl = el;
+
+  el.focus({ preventScroll: true });
+
+  el.scrollIntoView({
+    block: 'center',
+    inline: 'center',
+    behavior: 'smooth',
+  });
+
+  if (isSearchLikeField(el) && isHomeSearch(el)) {
+    enterSearchEditMode(el);
+  }
+}
+
 function exitSearchEditMode() {
   if (!activeSearchEditEl) return;
+
   const el = activeSearchEditEl;
   activeSearchEditEl = null;
+
   el.removeAttribute('data-search-editing');
-  if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) el.blur();
+
+  if (isHomeSearch(el)) {
+    el.removeAttribute('data-tv-focused');
+
+    if (lastFocusedEl === el) {
+      lastFocusedEl = null;
+    }
+
+    el.blur();
+    return;
+  }
+
   focusElement(el);
 }
 
-function findBest(focused: HTMLElement, candidates: HTMLElement[], dir: Dir): HTMLElement | null {
+function exitNavigationMode() {
+  if (activeSearchEditEl) {
+    activeSearchEditEl.removeAttribute('data-search-editing');
+    activeSearchEditEl = null;
+  }
+
+  if (lastFocusedEl) {
+    lastFocusedEl.removeAttribute('data-tv-focused');
+    lastFocusedEl = null;
+  }
+
+  const active =
+    document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
+
+  active?.blur();
+}
+
+function findBest(
+  focused: HTMLElement,
+  candidates: HTMLElement[],
+  dir: Dir,
+) {
   const src = getRect(focused);
+
   let best: HTMLElement | null = null;
   let bestScore = Number.POSITIVE_INFINITY;
+
   for (const el of candidates) {
     if (el === focused) continue;
+
     const dst = getRect(el);
+
     if (dir === 'right' && dst.cx <= src.cx + AXIS_TOLERANCE) continue;
     if (dir === 'left' && dst.cx >= src.cx - AXIS_TOLERANCE) continue;
     if (dir === 'down' && dst.cy <= src.cy + AXIS_TOLERANCE) continue;
     if (dir === 'up' && dst.cy >= src.cy - AXIS_TOLERANCE) continue;
+
     const horizontal = dir === 'left' || dir === 'right';
-    const primary = dir === 'right' ? Math.max(0, dst.left - src.right) : dir === 'left' ? Math.max(0, src.left - dst.right) : dir === 'down' ? Math.max(0, dst.top - src.bottom) : Math.max(0, src.top - dst.bottom);
-    const secondary = horizontal ? Math.abs(dst.cy - src.cy) : Math.abs(dst.cx - src.cx);
-    const axisOverlap = horizontal ? overlap(src.top, src.bottom, dst.top, dst.bottom) : overlap(src.left, src.right, dst.left, dst.right);
-    const overlapBonus = axisOverlap > 0 ? axisOverlap * 10 : 0;
-    const score = primary * 10 + secondary * 3 - overlapBonus;
-    if (score < bestScore) { bestScore = score; best = el; }
+
+    const primary =
+      dir === 'right'
+        ? Math.max(0, dst.left - src.right)
+        : dir === 'left'
+          ? Math.max(0, src.left - dst.right)
+          : dir === 'down'
+            ? Math.max(0, dst.top - src.bottom)
+            : Math.max(0, src.top - dst.bottom);
+
+    const secondary = horizontal
+      ? Math.abs(dst.cy - src.cy)
+      : Math.abs(dst.cx - src.cx);
+
+    const axisOverlap = horizontal
+      ? overlap(src.top, src.bottom, dst.top, dst.bottom)
+      : overlap(src.left, src.right, dst.left, dst.right);
+
+    const score =
+      primary * 10 +
+      secondary * 3 -
+      (axisOverlap > 0 ? axisOverlap * 10 : 0);
+
+    if (score < bestScore) {
+      best = el;
+      bestScore = score;
+    }
   }
+
   return best;
 }
 
 function getSpatialOrder(list: HTMLElement[]) {
   return [...list].sort((a, b) => {
-    const ra = getRect(a), rb = getRect(b);
-    if (Math.abs(ra.top - rb.top) > 8) return ra.top - rb.top;
+    const ra = getRect(a);
+    const rb = getRect(b);
+
+    if (Math.abs(ra.top - rb.top) > 8) {
+      return ra.top - rb.top;
+    }
+
     return ra.left - rb.left;
   });
 }
 
-type TVNavigationOptions = { enabled?: boolean; wrap?: boolean; onBack?: () => boolean; onBackToNav?: () => void; };
+type TVNavigationOptions = {
+  enabled?: boolean;
+  wrap?: boolean;
+  onBack?: () => boolean;
+  onBackToNav?: () => void;
+};
 
 export function useKeyboardNavigation(options: TVNavigationOptions = {}) {
-  const { enabled = true, wrap = true, onBack, onBackToNav } = options;
+  const {
+    enabled = true,
+    wrap = true,
+    onBack,
+    onBackToNav,
+  } = options;
 
   useEffect(() => {
     if (!enabled) return;
+
+    const onPointerDown = (e: PointerEvent) => {
+      const target = e.target instanceof HTMLElement ? e.target : null;
+      
+      if (isSearchLikeField(target)) {
+        enterSearchEditMode(target);
+        return;
+      }
+
+      exitNavigationMode();
+    };
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
 
       const target = e.target instanceof HTMLElement ? e.target : null;
-      const active = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-      const activeModal = getActiveModal(target);
-      const isEditingSearch = !!activeSearchEditEl && activeSearchEditEl === active;
 
-      if (e.key === 'Escape' && isEditingSearch) {
-        e.preventDefault(); e.stopPropagation();
-        SFX.close(); exitSearchEditMode();
+      const active =
+        document.activeElement instanceof HTMLElement
+          ? document.activeElement
+          : null;
+
+      const activeModal = getActiveModal(target);
+
+      const isEditingSearch =
+        activeSearchEditEl !== null &&
+        activeSearchEditEl === active;
+
+        if (isBackKey(e) && isEditingSearch) {
+          e.preventDefault();
+          e.stopPropagation();
+        
+          SFX.close();
+        
+          const isHomeSearch = !!activeSearchEditEl?.closest(
+            '.harbor-search-overlay',
+          );
+        
+          if (isHomeSearch) {
+            window.dispatchEvent(new Event('harbor:close-search'));
+          } else {
+            exitSearchEditMode();
+          }
+        
+          return;
+        }
+
+      if (isLocallyManaged(target) || isEditingSearch) return;
+
+      const dir = getDirection(e);
+      const navigationIsActive = lastFocusedEl !== null;
+
+      if (!navigationIsActive && !activeSearchEditEl) {
+        if (!dir) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        const root = activeModal ?? document;
+        const first = getInitialFocus(getFocusableInZone('content', root));
+
+        if (first) {
+          SFX.navigate(dir);
+          focusElement(first);
+        }
+
         return;
       }
 
       if (isBackKey(e)) {
-        SFX.close(); 
+        SFX.close();
 
         if (activeModal) return;
 
-        const backBtn = document.querySelector<HTMLElement>('button[aria-label*="back" i], button[aria-label*="رجوع" i], a[aria-label*="back" i], button[class*="back" i], [data-harbor-back]');
+        const backBtn = document.querySelector<HTMLElement>(
+          [
+            'button[aria-label*="back" i]',
+            'button[aria-label*="رجوع" i]',
+            'a[aria-label*="back" i]',
+            'button[class*="back" i]',
+            '[data-harbor-back]',
+          ].join(', '),
+        );
+
         if (backBtn && isVisible(backBtn)) {
-          e.preventDefault(); e.stopPropagation();
+          e.preventDefault();
+          e.stopPropagation();
           backBtn.click();
           return;
         }
 
-        e.preventDefault(); e.stopPropagation();
+        e.preventDefault();
+        e.stopPropagation();
+
         const handled = onBack ? onBack() : false;
+
         if (!handled) {
-          if (onBackToNav) onBackToNav();
-          else {
-            const nav = document.querySelector<HTMLElement>('[data-harbor-nav] [data-focusable="true"], [data-harbor-nav] a[href], [data-harbor-nav] button');
-            if (nav && document.activeElement !== nav) focusElement(nav);
+          if (onBackToNav) {
+            onBackToNav();
+          } else {
+            const nav = document.querySelector<HTMLElement>(
+              [
+                '[data-harbor-nav] [data-focusable="true"]',
+                '[data-harbor-nav] a[href]',
+                '[data-harbor-nav] button',
+              ].join(', '),
+            );
+
+            if (nav && document.activeElement !== nav) {
+              focusElement(nav);
+            }
           }
         }
+
         return;
       }
 
-      if (isLocallyManaged(target) || (isEditingSearch) || (isEditable(target) && !isSearchLikeField(target))) return;
+      if (isEditable(target) && !isSearchLikeField(target)) return;
 
-      const dir = getDirection(e);
       if (dir) {
-        e.preventDefault(); e.stopPropagation();
+        e.preventDefault();
+        e.stopPropagation();
+
         const root = activeModal ?? document;
 
         if (active && dir === 'left' && !isInNav(active)) {
           if (!hasLeftNeighborInRow(active, root)) {
             const navItems = getNavCandidates(root);
             const targetNav = findClosestByY(active, navItems);
-            if (targetNav) { SFX.navigate(dir); focusElement(targetNav); return; }
+
+            if (targetNav) {
+              SFX.navigate(dir);
+              focusElement(targetNav);
+              return;
+            }
           }
         }
 
         if (active && dir === 'right' && isInNav(active)) {
-          const contentItems = getFocusable(root).filter((el) => !isInNav(el));
+          const contentItems = getFocusable(root).filter(
+            (el) => !isInNav(el),
+          );
+
           const targetContent = findClosestByY(active, contentItems);
-          if (targetContent) { SFX.navigate(dir); focusElement(targetContent); return; }
+
+          if (targetContent) {
+            SFX.navigate(dir);
+            focusElement(targetContent);
+            return;
+          }
         }
 
         const zone = active ? zoneOf(active) : 'content';
         const all = getFocusableInZone(zone, root);
+
         if (!all.length) return;
 
         if (!active || !all.includes(active)) {
           const first = getInitialFocus(all);
-          if (first) { SFX.navigate(dir); focusElement(first); }
+
+          if (first) {
+            SFX.navigate(dir);
+            focusElement(first);
+          }
+
           return;
         }
 
         if (zone === 'hero' && (dir === 'up' || dir === 'down')) {
           if (dir === 'down') {
-            const contentItems = getFocusableInZone('content', root);
-            const first = getInitialFocus(contentItems);
-            if (first) { SFX.navigate(dir); focusElement(first); }
+            const first = getInitialFocus(
+              getFocusableInZone('content', root),
+            );
+
+            if (first) {
+              SFX.navigate(dir);
+              focusElement(first);
+            }
           }
+
           return;
         }
 
         const best = findBest(active, all, dir);
-        if (best) { SFX.navigate(dir); focusElement(best); return; }
+
+        if (best) {
+          SFX.navigate(dir);
+          focusElement(best);
+          return;
+        }
 
         if (wrap) {
           const ordered = getSpatialOrder(all);
-          const idx = ordered.indexOf(active);
-          if (idx >= 0) {
-            const next = dir === 'down' || dir === 'right' ? ordered[idx + 1] ?? ordered[0] : ordered[idx - 1] ?? ordered[ordered.length - 1];
-            if (next) { SFX.navigate(dir); focusElement(next); }
+          const index = ordered.indexOf(active);
+
+          if (index >= 0) {
+            const next =
+              dir === 'down' || dir === 'right'
+                ? ordered[index + 1] ?? ordered[0]
+                : ordered[index - 1] ?? ordered[ordered.length - 1];
+
+            if (next) {
+              SFX.navigate(dir);
+              focusElement(next);
+            }
           }
         }
+
         return;
       }
 
-      const isCenter = CENTER_KEYCODES.has(e.keyCode) || e.key === 'Enter' || e.code === 'Enter';
+      const isCenter =
+        CENTER_KEYCODES.has(e.keyCode) ||
+        e.key === 'Enter' ||
+        e.code === 'Enter' ||
+        e.key === ' ' ||
+        e.code === 'Space';
+
       if (!isCenter) return;
-      
-      const currentActive = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+      const currentActive =
+        document.activeElement instanceof HTMLElement
+          ? document.activeElement
+          : null;
+
       if (!currentActive) return;
 
       if (isSearchLikeField(currentActive)) {
-        e.preventDefault(); e.stopPropagation();
-        SFX.open(); enterSearchEditMode(currentActive);
+        e.preventDefault();
+        e.stopPropagation();
+
+        SFX.open();
+        enterSearchEditMode(currentActive);
+
         return;
       }
 
       if (isEditable(currentActive)) return;
-      e.preventDefault(); e.stopPropagation();
+
+      e.preventDefault();
+      e.stopPropagation();
+
       currentActive.click();
     };
 
     window.addEventListener('keydown', onKeyDown, true);
-    return () => window.removeEventListener('keydown', onKeyDown, true);
+    window.addEventListener('pointerdown', onPointerDown, true);
+
+    return () => {
+      window.removeEventListener('keydown', onKeyDown, true);
+      window.removeEventListener('pointerdown', onPointerDown, true);
+    };
   }, [enabled, wrap, onBack, onBackToNav]);
 }

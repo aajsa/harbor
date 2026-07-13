@@ -33,6 +33,19 @@ export function SearchOverlay() {
   const [aiRunSignal, setAiRunSignal] = useState(0);
   const { settings, update } = useSettings();
 
+
+  useEffect(() => {
+    const closeSearch = () => {
+      setOpen(false);
+    };
+  
+    window.addEventListener('harbor:close-search', closeSearch);
+  
+    return () => {
+      window.removeEventListener('harbor:close-search', closeSearch);
+    };
+  }, [setOpen]);
+
   useEffect(() => {
     if (!open) return;
     const id = window.setTimeout(() => inputRef.current?.focus(), 30);
