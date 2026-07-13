@@ -150,6 +150,7 @@ function zoneOf(el: HTMLElement): 'nav' | 'hero' | 'content' {
   return 'content';
 }
 
+<<<<<<< HEAD
 function getFocusable(root: ParentNode = document) {
   const all = Array.from(root.querySelectorAll<HTMLElement>(SELECTOR)).filter(
     isVisible,
@@ -159,6 +160,9 @@ function getFocusable(root: ParentNode = document) {
     (el) => !all.some((other) => other !== el && other.contains(el)),
   );
 }
+=======
+
+>>>>>>> bfb5aefe96526d064ddab8410fa2d0f40606b1d0
 
 function getFocusableInZone(
   zone: 'nav' | 'hero' | 'content',
@@ -479,12 +483,12 @@ export function useKeyboardNavigation(options: TVNavigationOptions = {}) {
 
     const onPointerDown = (e: PointerEvent) => {
       const target = e.target instanceof HTMLElement ? e.target : null;
-      
-      if (isSearchLikeField(target)) {
+    
+      if (target && isSearchLikeField(target)) {
         enterSearchEditMode(target);
         return;
       }
-
+    
       exitNavigationMode();
     };
 
