@@ -530,51 +530,106 @@ function Shell() {
     SFX.setVolume(volume / 100); 
     
   }, [settings.soundTheme, settings.sfxVolume]);
+  
   useEffect(() => {
     const initAudio = () => SFX.init();
+  
     window.addEventListener("pointerdown", initAudio, { once: true });
     window.addEventListener("keydown", initAudio, { once: true });
-
+  
+    const normalizeText = (value: string) =>
+      value
+        .toLocaleLowerCase("es")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+  
     const onMouseOver = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      const isInteractive = target.closest('a[href], button, [data-focusable="true"], [role="button"]');
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+  
+      const isInteractive = target.closest(
+        'a[href], button, [data-focusable="true"], [role="button"]'
+      );
+  
       if (isInteractive && !isInteractive.contains(e.relatedTarget as Node)) {
         SFX.hover();
       }
     };
-
+  
     const onClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      const btn = target.closest('button, a[href], [data-focusable="true"]');
-      if (btn) {
-        const ariaLabel = (btn.getAttribute('aria-label') || '').toLowerCase();
-        
-        const isBack = ariaLabel.includes('back') || ariaLabel.includes('close') || ariaLabel.includes('إغلاق') || ariaLabel.includes('رجوع') || btn.closest('.close-btn, [data-harbor-back]');
-        
-        const isMovieCard = btn.querySelector('img') || btn.hasAttribute('data-media-card') || btn.classList.contains('media-card') || btn.closest('[data-tv-hero-zone]');
-        const isMenuOrSettings = btn.closest('.settings-panel, [role="menu"], [role="dialog"]') || ariaLabel.includes('settings') || ariaLabel.includes('إعدادات');
-
-        if (isBack) {
-          SFX.close();
-        } else if (isMovieCard || isMenuOrSettings) {
-          SFX.open(); 
-        } else {
-          SFX.click();
-        }
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+  
+      const btn = target.closest(
+        'button, a[href], [data-focusable="true"], [role="button"]'
+      ) as HTMLElement | null;
+  
+      if (!btn) return;
+  
+      const label = normalizeText(
+        [
+          btn.getAttribute("aria-label") || "",
+          btn.getAttribute("title") || "",
+          btn.textContent || "",
+          btn.getAttribute("data-action") || "",
+        ].join(" ")
+      );
+  
+      const isBack =
+        label.includes("back") ||
+        label.includes("close") ||
+        label.includes("dismiss") ||
+        label.includes("رجوع") ||
+        label.includes("إغلاق") ||
+        label.includes("اغلاق") ||
+        label.includes("voltar") ||
+        label.includes("cerrar") ||
+        label.includes("atras") ||
+        !!btn.closest(
+          ".close-btn, .back-btn, [data-harbor-back], [data-back], [data-close]"
+        );
+  
+      const isMovieCard =
+        !!btn.querySelector("img") ||
+        btn.hasAttribute("data-media-card") ||
+        btn.classList.contains("media-card") ||
+        !!btn.closest("[data-tv-hero-zone]");
+  
+      const isMenuOrSettings =
+        !!btn.closest('.settings-panel, [role="menu"], [role="dialog"]') ||
+        label.includes("settings") ||
+        label.includes("إعدادات") ||
+        label.includes("Configurações") ||
+        label.includes("ajustes");
+  
+      if (isBack) {
+        SFX.close();
+      } else if (isMovieCard || isMenuOrSettings) {
+        SFX.open();
+      } else {
+        SFX.click();
       }
     };
-
+  
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        SFX.close();
+      }
+    };
+  
     window.addEventListener("mouseover", onMouseOver);
-    window.addEventListener("click", onClick, { capture: true });
-
+    window.addEventListener("click", onClick, true);
+    window.addEventListener("keydown", onKeyDown);
+  
     return () => {
       window.removeEventListener("pointerdown", initAudio);
       window.removeEventListener("keydown", initAudio);
       window.removeEventListener("mouseover", onMouseOver);
-      window.removeEventListener("click", onClick, { capture: true });
+      window.removeEventListener("click", onClick, true);
+      window.removeEventListener("keydown", onKeyDown);
     };
   }, []);
-
+  
   useEffect(() => startMaintenance(), []);
 
   useEffect(() => {
