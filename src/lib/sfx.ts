@@ -194,7 +194,39 @@ class SoundEffects {
     );
   }
 
-
+  private playTick(
+    freq: number,
+    dur = 0.025,
+    vol = 0.012,
+    type: OscillatorType = "square",
+  ) {
+    if (this.muted) return;
+  
+    const c = this.getCtx();
+  
+    if (!c || !this.masterGain) return;
+  
+    const t = c.currentTime;
+    const osc = c.createOscillator();
+    const filter = c.createBiquadFilter();
+    const gain = c.createGain();
+  
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t);
+  
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(2200, t);
+    filter.Q.setValueAtTime(0.7, t);
+  
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(vol, t + 0.002);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  
+    osc.connect(filter).connect(gain).connect(this.masterGain);
+  
+    osc.start(t);
+    osc.stop(t + dur + 0.01);
+  }
 
 
   private playGlass({
@@ -315,15 +347,14 @@ class SoundEffects {
 
 
     if (this.activeTheme === "cloudy") {
-
       this.playTone(
-        isDown ? 1300 : isUp ? 1700 : 1500,
+        isDown ? 880 : isUp ? 1060 : 970,
         "sine",
-        0.04,
-        0.012,
-        isDown ? 1500 : 1800
+        0.045,
+        0.007,
+        isDown ? 820 : 1020,
       );
-
+    
       return;
     }
 
@@ -344,14 +375,7 @@ class SoundEffects {
 
 
     if (this.activeTheme === "retro") {
-
-      this.playTone(
-        isDown ? 600 : isUp ? 780 : 700,
-        "triangle",
-        0.035,
-        0.007
-      );
-    
+      this.playTick(760, 0.03, 0.014);
       return;
     }
 
@@ -700,29 +724,14 @@ class SoundEffects {
 
 
     if (this.activeTheme === "cloudy") {
-
-      this.playTone(
-        1800,
-        "sine",
-        0.02,
-        0.008
-      );
-
+      this.playTone(980, "sine", 0.055, 0.004, 900);
       return;
     }
 
 
 
     if (this.activeTheme === "retro") {
-
-      this.playTone(
-        850,
-        "triangle",
-        0.025,
-        0.006,
-        950
-      );
-    
+      this.playTick(920, 0.012, 0.005);
       return;
     }
 
@@ -745,16 +754,7 @@ class SoundEffects {
 
 
     if (this.activeTheme === "modern") {
-
-      
-      this.playTone(
-        780,
-        "sine",
-        0.016,
-        0.007,
-        840
-      );
-
+      this.playTone(1180, "sine", 0.018, 0.004, 1250);
       return;
     }
 
@@ -852,15 +852,7 @@ class SoundEffects {
 
 
     if (this.activeTheme === "retro") {
-
-      this.playTone(
-        520,
-        "triangle",
-        0.05,
-        0.01,
-        650
-      );
-
+      this.playTick(680, 0.025, 0.013);
       return;
     }
 
@@ -882,14 +874,7 @@ class SoundEffects {
 
 
     if (this.activeTheme === "modern") {
-
-      this.playTone(
-        400,
-        "sine",
-        0.05,
-        0.025
-      );
-
+      this.playTone(620, "sine", 0.035, 0.014, 560);
       return;
     }
 
@@ -1000,14 +985,8 @@ class SoundEffects {
       
       this.playTone(isUp ? 1200 : 800, 'sine', 0.04, 0.015, isUp ? 1400 : 600);
     } 
-    else if (this.activeTheme === 'retro') {
-      
-      this.playTone(
-        isUp ? 820 : 620,
-        'triangle',
-        0.04,
-        0.008
-      );
+    else if (this.activeTheme === "retro") {
+      this.playTick(isUp ? 820 : 570, 0.018, 0.009);
     } 
     else if (this.activeTheme === 'cinematic') {
       this.playTone(
@@ -1035,10 +1014,9 @@ class SoundEffects {
     if (this.activeTheme === 'cloudy') {
       this.playTone(isPlay ? 600 : 800, 'sine', 0.08, 0.02, isPlay ? 1200 : 400);
     } 
-    else if (this.activeTheme === 'retro') {
-      this.playTone(isPlay ? 440 : 660, 'triangle', 0.06, 0.015);
-      setTimeout(() => this.playTone(isPlay ? 660 : 440, 'triangle', 0.08, 0.015), 60);
-    } 
+    else if (this.activeTheme === "retro") {
+      this.playTick(isPlay ? 700 : 480, 0.03, 0.014);
+    }
     else if (this.activeTheme === 'cinematic') {
       this.playTone(isPlay ? 180 : 100, 'sine', 0.15, 0.04);
     } 

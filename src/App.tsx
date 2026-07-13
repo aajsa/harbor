@@ -429,7 +429,7 @@ function parseDeepLinkEpisode(videoId?: string): { season: number; episode: numb
 function Shell() {
   const { topKind, service, meta, metaLiveContext, metaEpisodeHint, episodeDetail, personId, collectionId, filter, grid, awardType, animeAwardSource, picker, player, setView, canGoBack, goBack, canGoForward, goForward, openMeta, openPlayer, stackKinds, chromeHidden } = useView();
   const { settings, update } = useSettings();
-  const { setOpen: setSearchOpen } = useSearch();
+  const {open: searchOpen, setOpen: setSearchOpen } = useSearch();
   const uiScaleRef = useRef(settings.uiScale);
   const { activeProfile } = useProfiles();
   const kid = activeProfile?.kid ?? null;
@@ -464,11 +464,62 @@ function Shell() {
   }, []);
 
   useKeyboardNavigation({
-    enabled: !player && !picker,
+    enabled: !player && !picker&& !searchOpen,
     wrap: false,
     onBack: handleTvBack,
     onBackToNav: handleTvBackToNav,
   });
+  useEffect(() => {
+    const onEscape = (event: KeyboardEvent) => {
+      if (
+        event.defaultPrevented ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey
+      ) {
+        return;
+      }
+  
+      if (event.key !== 'Escape' && event.key !== 'Esc') {
+        return;
+      }
+  
+      const target =
+        event.target instanceof HTMLElement ? event.target : null;
+  
+      const isTyping =
+        target?.matches(
+          'input, textarea, select, [contenteditable="true"]',
+        ) ?? false;
+  
+      if (isTyping) {
+        return;
+      }
+  
+      const localBack = new Event('harbor:local-back', {
+        cancelable: true,
+      });
+  
+      if (!window.dispatchEvent(localBack)) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+  
+      if (!canGoBack) return;
+  
+      event.preventDefault();
+      event.stopPropagation();
+  
+      goBack();
+    };
+  
+    window.addEventListener('keydown', onEscape, true);
+  
+    return () => {
+      window.removeEventListener('keydown', onEscape, true);
+    };
+  }, [canGoBack, goBack]);
   useEffect(() => {
     if (settings.soundTheme) {
       SFX.setTheme(settings.soundTheme);
