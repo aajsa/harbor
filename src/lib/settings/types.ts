@@ -195,6 +195,7 @@ export type Settings = {
   showQualityInfo: boolean;
   stremioServerTranscode: boolean;
   directTorrentStream: boolean;
+  torrentsDisabled: boolean;
   torrentFullDownload: boolean;
   p2pAutoConsent: boolean;
   streamCacheRetentionHours: number;
