@@ -2,7 +2,6 @@ import { ChevronDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import rehypeRaw from "rehype-raw";
 import { getAddon } from "@/lib/providers/stremio-addons";
 import { openUrl } from "@/lib/window";
 import { useT } from "@/lib/i18n";
@@ -63,8 +62,7 @@ export function AddonDocumentation({ slug }: { slug: string }) {
       >
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
-            rehypePlugins={[rehypeRaw]}
-            skipHtml={false}
+            skipHtml={true}
             components={{
               h1: (p) => (
                 <h3 className="mt-6 mb-2 font-display text-[20px] font-medium tracking-tight text-ink first:mt-0">
