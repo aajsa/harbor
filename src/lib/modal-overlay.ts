@@ -17,6 +17,7 @@ if (typeof window !== "undefined") {
   });
 }
 
+
 export function isModalOverlayOpen(): boolean {
   return overlayOpen;
 }

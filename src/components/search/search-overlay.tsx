@@ -34,6 +34,7 @@ export function SearchOverlay() {
   const [aiRunSignal, setAiRunSignal] = useState(0);
   const { settings, update } = useSettings();
 
+
   useEffect(() => {
     if (!open) return;
     const id = window.setTimeout(() => inputRef.current?.focus(), 30);
