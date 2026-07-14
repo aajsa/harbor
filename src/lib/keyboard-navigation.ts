@@ -16,20 +16,48 @@ const SELECTOR = [
 ].join(', ');
 
 const KEY_TO_DIR: Record<string, Dir> = {
-  ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
-  Up: 'up', Down: 'down', Left: 'left', Right: 'right',
-  w: 'up', W: 'up', s: 'down', S: 'down', a: 'left', A: 'left', d: 'right', D: 'right',
+  ArrowUp: 'up',
+  ArrowDown: 'down',
+  ArrowLeft: 'left',
+  ArrowRight: 'right',
+  Up: 'up',
+  Down: 'down',
+  Left: 'left',
+  Right: 'right',
+  w: 'up',
+  W: 'up',
+  s: 'down',
+  S: 'down',
+  a: 'left',
+  A: 'left',
+  d: 'right',
+  D: 'right',
 };
 
 const CODE_TO_DIR: Record<string, Dir> = {
-  ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
-  KeyW: 'up', KeyS: 'down', KeyA: 'left', KeyD: 'right',
+  ArrowUp: 'up',
+  ArrowDown: 'down',
+  ArrowLeft: 'left',
+  ArrowRight: 'right',
+  KeyW: 'up',
+  KeyS: 'down',
+  KeyA: 'left',
+  KeyD: 'right',
 };
 
 const KEYCODE_TO_DIR: Record<number, Dir> = {
-  38: 'up', 40: 'down', 37: 'left', 39: 'right',
-  19: 'up', 20: 'down', 21: 'left', 22: 'right',
-  87: 'up', 83: 'down', 65: 'left', 68: 'right',
+  38: 'up',
+  40: 'down',
+  37: 'left',
+  39: 'right',
+  19: 'up',
+  20: 'down',
+  21: 'left',
+  22: 'right',
+  87: 'up',
+  83: 'down',
+  65: 'left',
+  68: 'right',
 };
 
 const CENTER_KEYCODES = new Set([13, 23, 32]);
@@ -288,7 +316,7 @@ function focusElement(el: HTMLElement, scroll: "center" | "nearest" | "none" = "
 
   if (lastFocusedEl && lastFocusedEl !== el) clearTvFocusRing();
 
-  el.setAttribute('data-tv-focused', 'true');
+  el.focus({ preventScroll: true });
   lastFocusedEl = el;
   el.focus({ preventScroll: true });
 
@@ -628,6 +656,8 @@ export function useKeyboardNavigation(options: TVNavigationOptions = {}) {
       if (!currentActive) return;
 
       if (isSearchLikeField(currentActive)) {
+        const isSettingsSearch = !!currentActive.closest('[data-settings-search]');
+        if (isSettingsSearch) return;
         e.preventDefault();
         e.stopPropagation();
         SFX.open();
@@ -658,9 +688,8 @@ export function useKeyboardNavigation(options: TVNavigationOptions = {}) {
         activeSearchEditEl = null;
       }
     };
-    // onBack/onBackToNav are mirrored into refs — omit from deps so unstable
-    // inline callbacks (e.g. player) don't rebind the capture listener every render.
-  }, [enabled, wrap, arrows]);
+  }, [enabled]);
+
 }
 
 /**
