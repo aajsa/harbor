@@ -324,7 +324,7 @@ function focusElement(el: HTMLElement) {
     lastFocusedEl.removeAttribute('data-tv-focused');
   }
 
-  el.setAttribute('data-tv-focused', 'true');
+  el.focus({ preventScroll: true });
   lastFocusedEl = el;
   el.focus({ preventScroll: true });
   el.scrollIntoView({ block: 'center', inline: 'center', behavior: 'smooth' });
@@ -548,6 +548,8 @@ export function useKeyboardNavigation(options: TVNavigationOptions = {}) {
       const active = document.activeElement instanceof HTMLElement ? document.activeElement : null;
       const activeModal = getActiveModal(target);
       const isEditingSearch = !!activeSearchEditEl && activeSearchEditEl === active;
+      
+      
 
       if (isBackKey(e)) {
         e.preventDefault();
@@ -604,6 +606,7 @@ export function useKeyboardNavigation(options: TVNavigationOptions = {}) {
       if (!currentActive) return;
 
       if (isSearchLikeField(currentActive)) {
+        
         e.preventDefault();
         e.stopPropagation();
         SFX.open();
