@@ -23,14 +23,6 @@ const KEY_TO_DIR: Record<string, Dir> = {
   Down: 'down',
   Left: 'left',
   Right: 'right',
-  w: 'up',
-  W: 'up',
-  s: 'down',
-  S: 'down',
-  a: 'left',
-  A: 'left',
-  d: 'right',
-  D: 'right',
 };
 
 const CODE_TO_DIR: Record<string, Dir> = {
@@ -38,10 +30,6 @@ const CODE_TO_DIR: Record<string, Dir> = {
   ArrowDown: 'down',
   ArrowLeft: 'left',
   ArrowRight: 'right',
-  KeyW: 'up',
-  KeyS: 'down',
-  KeyA: 'left',
-  KeyD: 'right',
 };
 
 const KEYCODE_TO_DIR: Record<number, Dir> = {
@@ -53,10 +41,6 @@ const KEYCODE_TO_DIR: Record<number, Dir> = {
   20: 'down',
   21: 'left',
   22: 'right',
-  87: 'up',
-  83: 'down',
-  65: 'left',
-  68: 'right',
 };
 
 const CENTER_KEYCODES = new Set([13, 23, 32]);
@@ -291,10 +275,10 @@ function getInitialFocus(list: HTMLElement[]) {
 const NAV_FOCUS_SELECTOR =
   "[data-tv-top-chrome] button, [data-tv-top-chrome] a[href], [data-harbor-nav][data-active], [data-harbor-nav], [data-tv-nav-zone] button, [data-harbor-sidebar] button, [data-tv-nav-zone] a[href], [data-tv-nav-zone] [data-focusable='true']";
 
-  function focusNavChrome() {
-    const nav = document.querySelector<HTMLElement>(NAV_FOCUS_SELECTOR);
-    if (nav) focusElement(nav);
-  }
+function focusNavChrome() {
+  const nav = document.querySelector<HTMLElement>(NAV_FOCUS_SELECTOR);
+  if (nav) focusElement(nav);
+}
 
 function focusNavDefault() {
   const nav = document.querySelector<HTMLElement>(
@@ -548,8 +532,6 @@ export function useKeyboardNavigation(options: TVNavigationOptions = {}) {
       const active = document.activeElement instanceof HTMLElement ? document.activeElement : null;
       const activeModal = getActiveModal(target);
       const isEditingSearch = !!activeSearchEditEl && activeSearchEditEl === active;
-      
-      
 
       if (isBackKey(e)) {
         e.preventDefault();
@@ -562,6 +544,7 @@ export function useKeyboardNavigation(options: TVNavigationOptions = {}) {
       if (isLocallyManaged(target) || isEditingSearch) return;
 
       const dir = getDirection(e);
+
       if (dir) {
         e.preventDefault();
         e.stopPropagation();
@@ -606,7 +589,8 @@ export function useKeyboardNavigation(options: TVNavigationOptions = {}) {
       if (!currentActive) return;
 
       if (isSearchLikeField(currentActive)) {
-        
+        const isSettingsSearch = !!currentActive.closest('[data-settings-search]');
+        if (isSettingsSearch) return;
         e.preventDefault();
         e.stopPropagation();
         SFX.open();
@@ -646,7 +630,6 @@ export function useKeyboardNavigation(options: TVNavigationOptions = {}) {
       }
     };
   }, [enabled]);
-
 }
 
 export function dispatchTvNav(action: Dir | 'select' | 'back'): void {
