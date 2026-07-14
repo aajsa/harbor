@@ -77,6 +77,7 @@ const YTDLP = "https://github.com/yt-dlp/yt-dlp/releases/latest/download";
 const JVS = "https://johnvansickle.com/ffmpeg/releases";
 const EVERMEET = "https://evermeet.cx/ffmpeg/getrelease";
 const GYAN = "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip";
+const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
 
 const SOURCES = {
   "yt-dlp": {
@@ -118,7 +119,7 @@ const dlCache = new Map();
 async function download(url) {
   if (dlCache.has(url)) return dlCache.get(url);
   console.log(`[binaries] fetching ${url}`);
-  const res = await fetch(url, { redirect: "follow" });
+  const res = await fetch(url, { redirect: "follow", headers: { "user-agent": UA, accept: "*/*" } });
   if (!res.ok) throw new Error(`download failed (${res.status} ${res.statusText})`);
   const buf = Buffer.from(await res.arrayBuffer());
   dlCache.set(url, buf);
