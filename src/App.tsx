@@ -449,6 +449,7 @@ function Shell() {
     layout === "stremio";
   useViewPreloader();
 
+
   const handleTvBack = useCallback(() => {
     if (searchOpen) {
       setSearchOpen(false);
@@ -484,65 +485,105 @@ function Shell() {
   }, []);
 
   useKeyboardNavigation({
-    // Player mounts its own hook; picker stays on App so Back/arrows keep working.
     enabled: settings.tvNavigation && !player,
     wrap: false,
     onBack: handleTvBack,
     onBackToNav: handleTvBackToNav,
   });
-
   useEffect(() => {
     if (!settings.tvNavigation || searchOpen || topKind === "player") return;
     const id = window.requestAnimationFrame(() => focusTvPageDefault());
     return () => window.cancelAnimationFrame(id);
   }, [settings.tvNavigation, topKind, meta?.id, searchOpen]);
-
   useEffect(() => {
     if (settings.soundTheme) {
       SFX.setTheme(settings.soundTheme);
     }
-  }, [settings.soundTheme]);
-  useEffect(() => startMaintenance(), []);
+
+    const volume = settings.sfxVolume ?? 50;
+
+    SFX.setVolume(volume / 100);
+
+  }, [settings.soundTheme, settings.sfxVolume]);
 
   useEffect(() => {
     const initAudio = () => SFX.init();
+
     window.addEventListener("pointerdown", initAudio, { once: true });
     window.addEventListener("keydown", initAudio, { once: true });
 
     const onMouseOver = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      const isInteractive = target.closest('a[href], button, [data-focusable="true"], [role="button"]');
-      if (isInteractive && !isInteractive.contains(e.relatedTarget as Node)) {
-        SFX.hover();
-      }
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+
+      const interactive = target.closest(
+        'a[href], button, [data-focusable="true"], [role="button"]'
+      ) as HTMLElement | null;
+
+      if (!interactive) return;
+
+      const related = e.relatedTarget as Node | null;
+      if (related && interactive.contains(related)) return;
+
+      SFX.hover();
     };
 
     const onClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      const btn = target.closest('button, a[href], [data-focusable="true"]');
-      if (btn) {
-        const ariaLabel = (btn.getAttribute('aria-label') || '').toLowerCase();
-        const isBack = ariaLabel.includes('back') || btn.closest('[data-harbor-nav]');
-        
-        const isMovieCard = btn.querySelector('img') || btn.hasAttribute('data-media-card') || btn.classList.contains('media-card') || btn.closest('[data-tv-hero-zone]');
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
 
-        if (isBack) SFX.close();
-        else if (isMovieCard) SFX.open();
-        else SFX.click();
+      const btn = target.closest(
+        'button, a[href], [data-focusable="true"], [role="button"]'
+      ) as HTMLElement | null;
+
+      if (!btn) return;
+
+      const isCloseAction =
+        btn.matches(
+          '[data-harbor-back], [data-back], [data-close], [data-tv-modal-close], .close-btn, .back-btn'
+        ) ||
+        !!btn.closest(
+          '[data-harbor-back], [data-back], [data-close], [data-tv-modal-close], .close-btn, .back-btn'
+        );
+
+      const isMovieCard =
+        btn.hasAttribute("data-media-card") ||
+        btn.hasAttribute("data-movie-card") ||
+        btn.classList.contains("media-card") ||
+        !!btn.querySelector("img") ||
+        !!btn.closest("[data-tv-hero-zone]");
+
+      const isMenuOrSettings =
+        !!btn.closest(
+          '.settings-panel, [role="menu"], [role="dialog"], [data-settings-root], [data-settings-panel]'
+        );
+
+      if (isCloseAction) {
+        SFX.close();
+        return;
       }
+
+      if (isMovieCard || isMenuOrSettings) {
+        SFX.open();
+        return;
+      }
+
+      SFX.click();
     };
 
     window.addEventListener("mouseover", onMouseOver);
-    window.addEventListener("click", onClick, { capture: true });
+    window.addEventListener("click", onClick, true);
 
     return () => {
       window.removeEventListener("pointerdown", initAudio);
       window.removeEventListener("keydown", initAudio);
       window.removeEventListener("mouseover", onMouseOver);
-      window.removeEventListener("click", onClick, { capture: true });
+      window.removeEventListener("click", onClick, true);
     };
-  }, []);
-  
+  }, [handleTvBack]);
+
+  useEffect(() => startMaintenance(), []);
+
   useEffect(() => {
     const onMouseDown = (e: MouseEvent) => {
       if (e.button === 3) {

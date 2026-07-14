@@ -5,6 +5,7 @@ import { writePlayerVolume } from "@/lib/player-volume";
 import { effectiveBinding, eventToBinding, isTypingTarget, type HotkeyId } from "@/lib/hotkeys";
 import { useSettings } from "@/lib/settings";
 import { round2 } from "../player-utils";
+import { SFX } from "@/lib/sfx";
 import { requestPlayerClose } from "../request-player-close";
 
 export function useKeyboardShortcuts(params: {
@@ -186,6 +187,7 @@ export function useKeyboardShortcuts(params: {
         bridgeRef.current?.setMuted(false);
         writePlayerVolume({ volume: next, muted: false });
         onVolumeFeedback?.(next, false);
+        if (settings.playerVolumeSfx) SFX.volumeChange(true);
         return;
       }
       if (match("playerVolumeDown")) {
@@ -197,6 +199,7 @@ export function useKeyboardShortcuts(params: {
         bridgeRef.current?.setMuted(false);
         writePlayerVolume({ volume: next, muted: false });
         onVolumeFeedback?.(next, false);
+        if (settings.playerVolumeSfx) SFX.volumeChange(false);
         return;
       }
       if (match("playerMute")) {
@@ -205,6 +208,7 @@ export function useKeyboardShortcuts(params: {
         bridgeRef.current?.setMuted(next);
         writePlayerVolume({ muted: next });
         onVolumeFeedback?.(snap.volume, next);
+        if (settings.playerVolumeSfx) SFX.volumeChange(true);
         return;
       }
       if (match("playerFullscreen")) {
@@ -398,7 +402,7 @@ export function useKeyboardShortcuts(params: {
       window.removeEventListener("blur", onBlur);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [closePlayer, togglePip, drawMode, snap.muted, snap.volume, snap.rate, snap.durationSec, snap.subDelaySec, overrides, seekBackStepSec, seekForwardStepSec, seekTo, toggleSwitcher, toggleEpisodePanel, toggleGuide, toggleDvr, toggleSleep, onScreenshot, onGifRecord, onClipRecord, onToggleCrop, onPanscanUp, onPanscanDown, onPrevChannel, onToggleAnime4k, onAnime4kOn, onAnime4kOff, onFrameStep, onVolumeFeedback, settings.playerEscExitsFullscreen, settings.playerConfirmLeave, update]);
+  }, [closePlayer, togglePip, drawMode, snap.muted, snap.volume, snap.rate, snap.durationSec, snap.subDelaySec, overrides, seekBackStepSec, seekForwardStepSec, seekTo, toggleSwitcher, toggleEpisodePanel, toggleGuide, toggleDvr, toggleSleep, onScreenshot, onGifRecord, onClipRecord, onToggleCrop, onPanscanUp, onPanscanDown, onPrevChannel, onToggleAnime4k, onAnime4kOn, onAnime4kOff, onFrameStep, onVolumeFeedback, settings.playerEscExitsFullscreen, settings.playerConfirmLeave, settings.playerVolumeSfx, update]);
 
   return { holdSpeedActive };
 }
