@@ -493,7 +493,7 @@ pub fn run() {
                 if let Ok(res) = app.path().resource_dir() {
                     let mpv = res.join("mpv.exe");
                     if mpv.exists() {
-                        thumbs::set_bundled_mpv(mpv);
+                        // thumbs::set_bundled_mpv(mpv);
                     }
                 }
             }
