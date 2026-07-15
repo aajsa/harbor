@@ -114,6 +114,12 @@ body:
       description: Paste only the relevant section. Remove tokens, credentials, private URLs, and personal data.
       render: shell
 
+  - type: textarea
+    id: workaround
+    attributes:
+      label: Workaround
+      description: If you found a safe temporary workaround, describe it here.
+
   - type: upload
     id: attachments
     attributes:
@@ -122,9 +128,3 @@ body:
     validations:
       required: false
       accept: ".png,.jpg,.jpeg,.gif,.webp,.svg,.mp4,.mov,.webm,.log,.txt,.json,.zip"
-
-  - type: textarea
-    id: workaround
-    attributes:
-      label: Workaround
-      description: If you found a safe temporary workaround, describe it here.
