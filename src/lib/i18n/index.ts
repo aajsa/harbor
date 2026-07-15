@@ -20,6 +20,15 @@ export const DEFAULT_LANGUAGE: UiLanguage = "en";
 
 const supportedLanguages = new Set<string>(LANGUAGES.map(({ code }) => code));
 const catalogs: Record<UiLanguage, Catalog> = { en, ar, pt };
+const sourceKeysByTranslation = Object.fromEntries(
+  (Object.keys(catalogs) as UiLanguage[]).map((language) => {
+    const reverse = new Map<string, string | null>();
+    for (const [key, value] of Object.entries(catalogs[language])) {
+      reverse.set(value, reverse.has(value) ? null : key);
+    }
+    return [language, reverse];
+  }),
+) as Record<UiLanguage, Map<string, string | null>>;
 const rtlLanguages = new Set([
   "ar",
   "arc",
@@ -126,6 +135,10 @@ function resolve(language: UiLanguage, key: string): string {
 
 export function t(key: string, vars?: Vars): string {
   return interpolate(resolve(getUiLanguage(), key), vars);
+}
+
+export function sourceTranslationKey(value: string): string {
+  return sourceKeysByTranslation[getUiLanguage()].get(value) ?? value;
 }
 
 export function useT(): (key: string, vars?: Vars) => string {
