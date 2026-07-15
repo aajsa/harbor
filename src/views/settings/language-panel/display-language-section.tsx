@@ -1,5 +1,5 @@
 import { useSettings } from "@/lib/settings";
-import { directionForLanguage, LANGUAGES, setUiLanguage, useT } from "@/lib/i18n";
+import { LANGUAGES, setUiLanguage, useT } from "@/lib/i18n";
 import { Section } from "../shared";
 
 export function DisplayLanguageSection() {
@@ -19,7 +19,6 @@ export function DisplayLanguageSection() {
             <button
               key={lang.code}
               type="button"
-              dir={directionForLanguage(lang.code)}
               onClick={() => {
                 setUiLanguage(lang.code);
                 update({ uiLanguage: lang.code });
