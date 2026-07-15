@@ -316,7 +316,7 @@ function focusElement(el: HTMLElement, scroll: "center" | "nearest" | "none" = "
 
   if (lastFocusedEl && lastFocusedEl !== el) clearTvFocusRing();
 
-  el.focus({ preventScroll: true });
+  el.setAttribute('data-tv-focused', 'true');
   lastFocusedEl = el;
   el.focus({ preventScroll: true });
 
@@ -656,8 +656,6 @@ export function useKeyboardNavigation(options: TVNavigationOptions = {}) {
       if (!currentActive) return;
 
       if (isSearchLikeField(currentActive)) {
-        const isSettingsSearch = !!currentActive.closest('[data-settings-search]');
-        if (isSettingsSearch) return;
         e.preventDefault();
         e.stopPropagation();
         SFX.open();
@@ -688,7 +686,9 @@ export function useKeyboardNavigation(options: TVNavigationOptions = {}) {
         activeSearchEditEl = null;
       }
     };
-  }, [enabled]);
+    // onBack/onBackToNav are mirrored into refs — omit them so unstable inline
+    // callbacks (for example, in the player) do not rebind the capture listener.
+  }, [enabled, wrap, arrows]);
 
 }
 
