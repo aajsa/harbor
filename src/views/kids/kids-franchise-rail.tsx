@@ -3,7 +3,7 @@ import { Row } from "@/components/row";
 import { useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
 import { useView } from "@/lib/view";
-import { dropUnreleased, dropUnsafeGenres } from "./kids-filter";
+import { dropAdultContent, dropUnreleased } from "./kids-filter";
 import { franchiseFetcher, KIDS_FRANCHISES, type Franchise } from "./kids-franchises";
 
 export function KidsFranchiseRail() {
@@ -27,7 +27,7 @@ function FranchiseTile({ franchise, tmdbKey }: { franchise: Franchise; tmdbKey: 
     const fetch = franchiseFetcher(tmdbKey, franchise);
     openGrid({
       title: franchise.name,
-      fetcher: (page) => fetch(page).then(dropUnreleased).then(dropUnsafeGenres),
+      fetcher: (page) => fetch(page).then(dropUnreleased).then(dropAdultContent),
       kidsHero: {
         grad: franchise.grad,
         art: `/kids/cta/${franchise.key}.webp`,
