@@ -2,6 +2,7 @@ import type { ThemeSettings } from "@/lib/theme";
 import type { CustomList } from "@/lib/lists/types";
 import type { SourceRow } from "@/lib/custom-sources";
 import type { CustomStreamFilter } from "@/lib/streams/custom-filters";
+import type { UiLanguage } from "@/lib/i18n";
 
 export type StreamingService =
   | "netflix"
@@ -441,8 +442,7 @@ export type Settings = {
   sidebarCollapsed: boolean;
   wrappedButton: boolean;
   feedLocaleBias: boolean;
-  uiLanguage: "en" | "ar" | "pt";
-  arabicWelcomeSeen: boolean;
+  uiLanguage: UiLanguage;
   cropMode: string;
   customLists: CustomList[];
   pauseListStatusOnPause: boolean;

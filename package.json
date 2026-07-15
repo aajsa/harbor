@@ -10,6 +10,7 @@
     "check": "vp check",
     "fmt": "vp fmt",
     "lint": "vp lint",
+    "i18n:check": "node scripts/check-i18n.mjs",
     "preview": "vp preview",
     "tauri": "tauri",
     "tauri:build:linux-system": "tauri build --config src-tauri/tauri.linux-system.conf.json",

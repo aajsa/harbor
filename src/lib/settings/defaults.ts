@@ -376,7 +376,6 @@ export const DEFAULT: Settings = {
   wrappedButton: true,
   feedLocaleBias: true,
   uiLanguage: "en",
-  arabicWelcomeSeen: false,
   cropMode: "fit",
   customLists: [],
   pauseListStatusOnPause: false,

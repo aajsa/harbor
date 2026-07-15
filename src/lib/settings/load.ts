@@ -8,6 +8,7 @@ import {
 import { languageName } from "@/lib/subtitles/language";
 import { sanitizeSeekStep } from "@/lib/seek-step";
 import { migrateModelId } from "@/lib/ai-models";
+import { resolveUiLanguage } from "@/lib/i18n";
 import { DEFAULT, STORAGE_KEY } from "./defaults";
 import type { Settings } from "./types";
 
@@ -78,6 +79,7 @@ export function loadStoredSettings(rawKey: string = STORAGE_KEY): Settings {
   if (!raw) {
     return {
       ...DEFAULT,
+      uiLanguage: resolveUiLanguage(undefined),
       seekBackStepSec: sanitizeSeekStep(legacySeekStep("back"), DEFAULT.seekBackStepSec),
       seekForwardStepSec: sanitizeSeekStep(legacySeekStep("forward"), DEFAULT.seekForwardStepSec),
     };
@@ -147,6 +149,7 @@ export function loadStoredSettings(rawKey: string = STORAGE_KEY): Settings {
     return {
       ...DEFAULT,
       ...parsed,
+      uiLanguage: resolveUiLanguage(parsed.uiLanguage),
       streaming: { ...DEFAULT.streaming, ...(parsed.streaming ?? {}) },
       subProvidersEnabled: {
         ...DEFAULT.subProvidersEnabled,
@@ -243,6 +246,6 @@ export function loadStoredSettings(rawKey: string = STORAGE_KEY): Settings {
         : DEFAULT.tmdbImageLangs,
     };
   } catch {
-    return DEFAULT;
+    return { ...DEFAULT, uiLanguage: resolveUiLanguage(undefined) };
   }
 }
