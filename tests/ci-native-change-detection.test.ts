@@ -28,3 +28,15 @@ test("native CI watches every file in both Rust projects", () => {
   );
   assert.ok(pathspecs.includes("harbor-core"), "harbor-core must be watched as a directory");
 });
+
+test("pull request checks diff from the synthetic merge base parent", () => {
+  const pullRequestBaseSelections = workflow.matchAll(
+    /if \[\[ "\$GITHUB_EVENT_NAME" == "pull_request" \]\]; then\s+BASE_SHA="\$\{GITHUB_SHA\}\^1"/g,
+  );
+
+  assert.equal(
+    [...pullRequestBaseSelections].length,
+    2,
+    "frontend and native checks must exclude unrelated commits added to main after the PR opened",
+  );
+});
