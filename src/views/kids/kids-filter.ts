@@ -11,13 +11,18 @@ export function dropUnreleased(metas: Meta[]): Meta[] {
   });
 }
 
-// Genres excluded from the kids catalogs (the `without_genres` used to build the
-// rows). Applied to cross-title recommendations, which — unlike the catalog rows
-// — are not certification-filtered upstream.
-const EXCLUDED_KID_GENRES = new Set(["horror", "thriller"]);
+const UNSAFE_CINEMETA_GENRE = /^(action|biography|crime|history|horror|romance|thriller|war)$/i;
 
 export function dropUnsafeGenres(metas: Meta[]): Meta[] {
-  return metas.filter(
-    (m) => !(m.genres ?? []).some((g) => EXCLUDED_KID_GENRES.has(g.trim().toLowerCase())),
-  );
+  return metas.filter((meta) => !meta.adult);
+}
+
+export function dropUnsafeCinemetaKids(metas: Meta[]): Meta[] {
+  return dropUnsafeGenres(metas).filter((meta) => {
+    const genres = meta.genres ?? [];
+    return (
+      !genres.some((genre) => UNSAFE_CINEMETA_GENRE.test(genre.trim())) &&
+      (genres.includes("Family") || (genres.includes("Animation") && genres.includes("Comedy")))
+    );
+  });
 }
