@@ -72,8 +72,8 @@ body:
     attributes:
       label: Installation source
       options:
-        - Downloaded from GitHub Releases
-        - Updated through Harbor's in-app updater
+        - GitHub Releases
+        - In-app updater
         - Built from source
         - Other or not sure
     validations:
