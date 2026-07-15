@@ -1,8 +1,11 @@
-import { readFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { readFile, readdir } from "node:fs/promises";
+import { extname, resolve } from "node:path";
 
 const localesDir = resolve("src/lib/i18n/locales");
-const languages = ["en", "ar", "pt"];
+const languages = (await readdir(localesDir))
+  .filter((file) => extname(file) === ".json")
+  .map((file) => file.slice(0, -".json".length))
+  .sort((a, b) => (a === "en" ? -1 : b === "en" ? 1 : a.localeCompare(b)));
 const catalogs = Object.fromEntries(
   await Promise.all(
     languages.map(async (language) => {
@@ -17,6 +20,7 @@ function placeholders(value) {
 }
 
 const errors = [];
+if (!("en" in catalogs)) errors.push("locales/en.json is required as the source catalog");
 for (const [language, catalog] of Object.entries(catalogs)) {
   if (!catalog || Array.isArray(catalog) || typeof catalog !== "object") {
     errors.push(`${language}.json must contain one object`);
@@ -28,6 +32,7 @@ for (const [language, catalog] of Object.entries(catalogs)) {
       continue;
     }
     if (language === "en") continue;
+    if (!catalogs.en) continue;
     if (!(key in catalogs.en)) {
       errors.push(`${language}.json: ${JSON.stringify(key)} is missing from en.json`);
       continue;
@@ -46,7 +51,8 @@ if (errors.length) {
   console.error(errors.join("\n"));
   process.exitCode = 1;
 } else {
-  console.log(
-    `Valid catalogs: ${Object.keys(catalogs.en).length} English, ${Object.keys(catalogs.ar).length} Arabic, ${Object.keys(catalogs.pt).length} Portuguese strings.`,
-  );
+  const counts = Object.entries(catalogs)
+    .map(([language, catalog]) => `${language} ${Object.keys(catalog).length}`)
+    .join(", ");
+  console.log(`Valid catalogs: ${counts} strings.`);
 }
