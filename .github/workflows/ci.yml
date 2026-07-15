@@ -29,7 +29,9 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: true
-          run-install: true
+          run-install: |
+            args:
+              - --frozen-lockfile
 
       - name: Check changed files
         env:

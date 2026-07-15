@@ -3,7 +3,17 @@ name: App build
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - .github/ISSUE_TEMPLATE/**
+      - .github/dependabot.yml
+      - docs/**
+      - "**/*.md"
   pull_request:
+    paths-ignore:
+      - .github/ISSUE_TEMPLATE/**
+      - .github/dependabot.yml
+      - docs/**
+      - "**/*.md"
 
 permissions:
   contents: read
@@ -16,6 +26,7 @@ jobs:
   build:
     name: ${{ matrix.platform.name }}
     runs-on: ${{ matrix.platform.runner }}
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -28,7 +39,8 @@ jobs:
             runner: ubuntu-22.04
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
       - name: Install Linux build dependencies
         if: matrix.platform.name == 'Linux'
@@ -49,24 +61,27 @@ jobs:
         if: matrix.platform.name == 'macOS'
         run: brew install mpv pkg-config
 
-      - uses: dtolnay/rust-toolchain@stable
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable
 
-      - uses: Swatinem/rust-cache@v2
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae # v2
         with:
-          workspaces: src-tauri
+          workspaces: |
+            harbor-core
+            src-tauri
 
-      - uses: pnpm/action-setup@v4
-
-      - uses: actions/setup-node@v4
+      - name: Setup Vite+
+        uses: voidzero-dev/setup-vp@8a7496fd44e8a1b0a88a7459e36213b2fefc1d15 # v1
         with:
           node-version-file: .nvmrc
-          cache: pnpm
-
-      - name: Install JavaScript dependencies
-        run: pnpm install --frozen-lockfile
+          cache: true
+          run-install: |
+            args:
+              - --frozen-lockfile
 
       - name: Prepare build assets
-        run: pnpm run setup
+        run: vp run setup
 
       - name: Build app without installers
-        run: pnpm tauri build --no-bundle
+        run: vp exec tauri build --no-bundle
