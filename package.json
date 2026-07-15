@@ -45,7 +45,8 @@
     "react-markdown": "^10.1.0",
     "rehype-raw": "^7.0.0",
     "remark-gfm": "^4.0.1",
-    "tailwindcss": "^4"
+    "tailwindcss": "^4",
+    "three": "^0.185.1"
   },
   "devDependencies": {
     "@resvg/resvg-js": "^2.6.2",
