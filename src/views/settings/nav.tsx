@@ -271,35 +271,6 @@ function IconLetterboxd(p: IconProps) {
   );
 }
 
-const LANG_ABBR: Record<string, string> = {
-  English: "EN",
-  Spanish: "ES",
-  French: "FR",
-  German: "DE",
-  Italian: "IT",
-  Portuguese: "PT",
-  Russian: "RU",
-  Japanese: "JA",
-  Korean: "KO",
-  Chinese: "ZH",
-  Hindi: "HI",
-  Arabic: "AR",
-  Turkish: "TR",
-  Dutch: "NL",
-  Polish: "PL",
-  Ukrainian: "UK",
-  Czech: "CS",
-  Hungarian: "HU",
-  Romanian: "RO",
-  Swedish: "SV",
-  Norwegian: "NO",
-  Danish: "DA",
-  Finnish: "FI",
-  Hebrew: "HE",
-  Thai: "TH",
-  Vietnamese: "VI",
-};
-
 type NavItem = {
   id: SectionId;
   label: string;
@@ -1129,14 +1100,6 @@ export function SettingsNav({
   const debridChip = libraryKeys > 0 ? `${libraryKeys}/5` : null;
 
   const relayLive = settings.togetherRelayUrl ? "live" : null;
-  const langChip =
-    settings.preferredLanguages.length === 0
-      ? null
-      : settings.preferredLanguages.length > 1
-      ? "MULTI"
-      : LANG_ABBR[settings.preferredLanguages[0]] ??
-        settings.preferredLanguages[0].slice(0, 3).toUpperCase();
-
   const webhookActive =
     (settings.webhooks.discordUrl || settings.webhooks.telegramUrl) &&
     Object.values(settings.webhooks.sources).some(Boolean);
@@ -1154,7 +1117,7 @@ export function SettingsNav({
     streaming: debridChip,
     streamFilters: settings.customStreamFilters?.length ? String(settings.customStreamFilters.length) : null,
     p2p: null,
-    language: langChip,
+    language: null,
     player: settings.playerEngine === "auto" ? null : settings.playerEngine,
     mpv: (settings.mpvQuality ?? "balanced") === "balanced" ? null : settings.mpvQuality === "performance" ? "lite" : "max",
     anime: settings.playerAnime4k ? "on" : null,
