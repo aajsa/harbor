@@ -3,6 +3,7 @@ import { useSettings } from "@/lib/settings";
 import { useT } from "@/lib/i18n";
 import { activeLayout } from "@/lib/theme";
 import { useView } from "@/lib/view";
+import { matchesSettingsSearch } from "./search-match";
 import { settingsAnchor, type SectionId } from "./shared";
 import { markSectionSeen, useSettingsNew } from "./settings-new";
 
@@ -5382,25 +5383,25 @@ export function SettingsNav({
     if (!trimmed) return null;
     const out: NavItem[] = [];
     for (const group of NAV_GROUPS) {
-      const groupHit = group.heading?.toLowerCase().includes(trimmed) ?? false;
+      const groupHit = group.heading ? matchesSettingsSearch(trimmed, [group.heading], t) : false;
       for (const item of group.items) {
         const hit =
           groupHit ||
-          item.label.toLowerCase().includes(trimmed) ||
+          matchesSettingsSearch(trimmed, [item.label], t) ||
           (item.keywords ?? []).some((k) => k.toLowerCase().includes(trimmed));
         if (hit) out.push(item);
       }
     }
     return out;
-  }, [trimmed]);
+  }, [t, trimmed]);
   const optionMatches = useMemo<SettingsOption[] | null>(() => {
     if (!trimmed) return null;
     return SETTINGS_OPTIONS.filter(
       (o) =>
-        o.label.toLowerCase().includes(trimmed) ||
+        matchesSettingsSearch(trimmed, [o.label], t) ||
         (o.keywords ?? []).some((k) => k.toLowerCase().includes(trimmed)),
     );
-  }, [trimmed]);
+  }, [t, trimmed]);
 
   const libraryKeys = [
     settings.tmdbKey,
