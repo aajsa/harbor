@@ -104,14 +104,8 @@ jobs:
           fi
 
           if git diff --quiet "$BASE_SHA" "$GITHUB_SHA" -- \
-            ':(glob)src-tauri/**/*.rs' \
-            src-tauri/Cargo.toml \
-            src-tauri/Cargo.lock \
-            src-tauri/build.rs \
-            ':(glob)src-tauri/vendor/**' \
-            ':(glob)harbor-core/**/*.rs' \
-            harbor-core/Cargo.toml \
-            harbor-core/Cargo.lock \
+            src-tauri \
+            harbor-core \
             .github/workflows/ci.yml; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
