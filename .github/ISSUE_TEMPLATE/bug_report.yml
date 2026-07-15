@@ -18,8 +18,6 @@ body:
       options:
         - label: I searched existing issues and did not find a duplicate.
           required: true
-        - label: I can reproduce this problem on a current Harbor release or recent commit.
-          required: true
 
   - type: dropdown
     id: area
@@ -81,57 +79,33 @@ body:
     validations:
       required: true
 
-  - type: textarea
-    id: environment
+  - type: input
+    id: system
     attributes:
-      label: Environment
-      description: Include OS version, CPU architecture, and relevant display, audio, input device, or desktop-session details.
-      placeholder: |
-        OS: Windows 11 24H2
-        Architecture: x86_64
-        Display/session: 4K HDR, 125% scaling
-        Input: Xbox controller
+      label: System
+      description: Enter your operating system and version. Add the CPU architecture only if you know it.
+      placeholder: Windows 11 24H2
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Describe what happened and what you expected instead.
+      placeholder: Harbor did ... instead of ...
     validations:
       required: true
 
   - type: textarea
     id: steps
     attributes:
-      label: Steps to reproduce
-      description: Provide the smallest deterministic sequence that reproduces the problem.
+      label: How to reproduce
+      description: List the actions that reliably trigger the problem.
       placeholder: |
         1. Open Harbor.
-        2. Select ...
-        3. Start playback with ...
-        4. Observe ...
-    validations:
-      required: true
-
-  - type: textarea
-    id: expected
-    attributes:
-      label: Expected behavior
-      placeholder: Playback should start and remain synchronized with the player controls.
-    validations:
-      required: true
-
-  - type: textarea
-    id: actual
-    attributes:
-      label: Actual behavior
-      placeholder: Playback starts, but the controls remain in a loading state.
-    validations:
-      required: true
-
-  - type: dropdown
-    id: impact
-    attributes:
-      label: Impact
-      options:
-        - Blocks playback or normal use
-        - Major degradation or frequent failure
-        - Minor or intermittent problem
-        - Cosmetic issue
+        2. Go to ...
+        3. Select ...
     validations:
       required: true
 
