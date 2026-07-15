@@ -1,0 +1,139 @@
+name: Bug report
+description: Report broken behavior, a regression, crash, or reliability problem in Harbor.
+title: "[Bug]: "
+labels:
+  - bug
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve Harbor. Search existing issues first and keep this report focused on one problem.
+        Do not include passwords, API keys, tokens, private stream URLs, or personal data.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and did not find a duplicate.
+          required: true
+        - label: I can reproduce this problem on a current Harbor release or recent commit.
+          required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      description: Which part of Harbor is affected?
+      options:
+        - Playback or mpv
+        - Addons, catalogs, or streams
+        - Library, metadata, or account
+        - Downloads or local media
+        - Casting or TV mode
+        - Navigation, keyboard, remote, or gamepad
+        - Interface or accessibility
+        - Native platform integration
+        - Build, packaging, or release
+        - Not sure
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Harbor version or commit
+      description: Find the version in Harbor's About or build information, or provide the commit SHA.
+      placeholder: 0.9.21 or main @ abc1234
+    validations:
+      required: true
+
+  - type: dropdown
+    id: installation
+    attributes:
+      label: Installation source
+      options:
+        - GitHub release
+        - Flatpak
+        - Built from source
+        - Development build
+        - Other or not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Include OS version, CPU architecture, and relevant display, audio, input device, or desktop-session details.
+      placeholder: |
+        OS: Windows 11 24H2
+        Architecture: x86_64
+        Display/session: 4K HDR, 125% scaling
+        Input: Xbox controller
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Provide the smallest deterministic sequence that reproduces the problem.
+      placeholder: |
+        1. Open Harbor.
+        2. Select ...
+        3. Start playback with ...
+        4. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      placeholder: Playback should start and remain synchronized with the player controls.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      placeholder: Playback starts, but the controls remain in a loading state.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: impact
+    attributes:
+      label: Impact
+      options:
+        - Blocks playback or normal use
+        - Major degradation or frequent failure
+        - Minor or intermittent problem
+        - Cosmetic issue
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Paste only the relevant section. Remove tokens, credentials, private URLs, and personal data.
+      render: shell
+
+  - type: upload
+    id: attachments
+    attributes:
+      label: Screenshots, recordings, or supporting files
+      description: Upload useful evidence after removing secrets, private URLs, and personal data.
+    validations:
+      required: false
+      accept: ".png,.jpg,.jpeg,.gif,.webp,.svg,.mp4,.mov,.webm,.log,.txt,.json,.zip"
+
+  - type: textarea
+    id: workaround
+    attributes:
+      label: Workaround
+      description: If you found a safe temporary workaround, describe it here.
