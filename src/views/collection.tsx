@@ -44,7 +44,11 @@ export function CollectionView({ collectionId }: { collectionId: number }) {
   const years = yearRange(parts);
 
   return (
-    <main ref={scrollRef} data-rail-flush className="relative flex min-h-0 flex-1 flex-col overflow-y-auto">
+    <main
+      ref={scrollRef}
+      data-rail-flush
+      className="relative flex min-h-0 flex-1 flex-col overflow-y-auto"
+    >
       {data?.backdrop && (
         <div
           aria-hidden
@@ -77,7 +81,9 @@ export function CollectionView({ collectionId }: { collectionId: number }) {
               />
             )}
             <div className="min-w-0 max-w-3xl">
-              <p className="text-[12px] font-semibold uppercase tracking-[0.22em] text-ink-subtle">{t("Collection")}</p>
+              <p className="text-[12px] font-semibold uppercase tracking-[0.22em] text-ink-subtle">
+                {t("Collection")}
+              </p>
               <h1 className="mt-2 font-display text-[clamp(34px,4.4vw,56px)] font-medium leading-[1.03] tracking-tight text-ink">
                 {data?.name ?? t("Collection")}
               </h1>
@@ -97,7 +103,9 @@ export function CollectionView({ collectionId }: { collectionId: number }) {
                 </div>
               )}
               {data?.overview && (
-                <p className="mt-4 line-clamp-3 text-[15px] leading-relaxed text-ink-muted">{data.overview}</p>
+                <p className="mt-4 line-clamp-3 text-[15px] leading-relaxed text-ink-muted">
+                  {data.overview}
+                </p>
               )}
             </div>
           </div>
@@ -106,7 +114,9 @@ export function CollectionView({ collectionId }: { collectionId: number }) {
 
       <div className="px-12 pb-16 pt-10">
         {parts.length > 0 && (
-          <h2 className="mb-4 text-[13px] font-bold uppercase tracking-[0.2em] text-ink-subtle">{t("Films")}</h2>
+          <h2 className="mb-4 text-[13px] font-bold uppercase tracking-[0.2em] text-ink-subtle">
+            {t("Films")}
+          </h2>
         )}
         {loading ? (
           <div className={grid}>
