@@ -344,7 +344,7 @@ export function LibraryPanel({
 
       <Section
         title={t("Region & language")}
-        subtitle={t("Used for streaming availability and the Now Playing release window. Pick a country and Harbor can match the interface, metadata, and subtitle languages to it.")}
+        subtitle={t("Used for streaming availability and the Now Playing release window. Pick a country and Harbor can match metadata and subtitle languages to it.")}
       >
         <RegionField />
       </Section>

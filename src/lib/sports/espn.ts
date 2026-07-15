@@ -1,5 +1,5 @@
 import { safeFetch } from "@/lib/safe-fetch";
-import { getUiLanguage } from "@/lib/i18n/store";
+import { getUiLanguage } from "@/lib/i18n";
 
 export type SportsSide = {
   name: string;

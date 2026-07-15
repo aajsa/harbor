@@ -91,7 +91,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       try {
         localStorage.setItem(STORAGE_KEY, raw);
         seedSharedFromLegacy();
-        setSettings(loadEffective(sourceRef.current.profileId, sourceRef.current.linked));
+        const restored = loadEffective(sourceRef.current.profileId, sourceRef.current.linked);
+        setUiLanguage(restored.uiLanguage);
+        setSettings(restored);
       } catch {}
     });
     return () => {
