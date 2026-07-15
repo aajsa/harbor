@@ -11,7 +11,7 @@ import { hasPageRowChanges, resetPageRows, usePageRows } from "@/lib/page-rows";
 import { useSettings } from "@/lib/settings";
 import { useScrollMemory } from "@/lib/view";
 import { KidsDoodles } from "./kids/kids-doodles";
-import { dropUnreleased, dropUnsafeCinemetaKids, dropUnsafeGenres } from "./kids/kids-filter";
+import { dropAdultContent, dropUnreleased, dropUnsafeCinemetaKids } from "./kids/kids-filter";
 import { KidsFranchiseRail } from "./kids/kids-franchise-rail";
 import { KidsHero } from "./kids/kids-hero";
 import { buildKidsHero, kidsSpecs } from "./kids/kids-specs";
@@ -55,7 +55,7 @@ export function Kids({ active = true }: { active?: boolean }) {
       if (settings.tmdbKey) {
         const heroPool = await buildKidsHero(settings.tmdbKey, seen).catch(() => [] as Meta[]);
         if (cancelled) return;
-        setHero(dropUnsafeGenres(dropUnreleased(heroPool)));
+        setHero(dropAdultContent(dropUnreleased(heroPool)));
         const specs = kidsSpecs(settings.tmdbKey);
         const firstPages = await Promise.all(
           specs.map((s) => s.fetcher(1).catch(() => [] as Meta[])),
@@ -137,7 +137,7 @@ export function Kids({ active = true }: { active?: boolean }) {
     for (const m of hero) seen.add(m.id);
     return rows
       .map((r) => {
-        const dedupedMetas = dropUnsafeGenres(dropUnreleased(r.metas)).filter((m) => {
+        const dedupedMetas = dropAdultContent(dropUnreleased(r.metas)).filter((m) => {
           if (seen.has(m.id)) return false;
           seen.add(m.id);
           return true;
