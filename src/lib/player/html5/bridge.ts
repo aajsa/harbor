@@ -588,7 +588,6 @@ export function createHtml5Bridge(): PlayerBridge {
         external: true,
         cues: null,
         loading: false,
-        metadata,
       };
       subTracks.push(track);
       if (select === true) {
