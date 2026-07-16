@@ -96,6 +96,7 @@ export function Home({ active = true }: { active?: boolean }) {
   const [localWatched, setLocalWatched] = useState<WatchedSet>(() => recentlyPlayed());
   useEffect(() => subscribePlayback(() => setLocalWatched(recentlyPlayed())), []);
   const [heroPool, setHeroPool] = useState<Meta[]>([]);
+  const [heroReady, setHeroReady] = useState(false);
   const [items, setItems] = useState<LibraryItem[]>([]);
   const cwVersion = useCwDismissVersion();
   const [tmdbProvidedByAddon, setTmdbProvidedByAddon] = useState(false);
@@ -165,6 +166,7 @@ export function Home({ active = true }: { active?: boolean }) {
       if (cancelled) return;
       setRows(mergeRows(built.rows, []));
       setHeroPool(built.hero);
+      setHeroReady(true);
 
       const dedupRows = isClassic ? false : !settings.homeShowAllAddonRows;
       const addons = await loadAddonRows(authKey, { dedup: dedupRows }).catch(
@@ -584,6 +586,10 @@ export function Home({ active = true }: { active?: boolean }) {
     }
     return out;
   }, [heroPool, heroSourceRow]);
+  const showHero = !heroReady || heroSlides.length > 0 || editMode;
+  const tmdbNudgePosition = showHero
+    ? "pointer-events-none absolute inset-x-0 top-0 z-30"
+    : "relative z-30";
 
   const scrollRef = useRef<HTMLElement>(null);
   const [scrollEl, setScrollEl] = useState<HTMLElement | null>(null);
@@ -776,7 +782,7 @@ export function Home({ active = true }: { active?: boolean }) {
     >
       <ScrollRootContext.Provider value={scrollEl}>
         <div data-tauri-drag-region className="relative flex flex-col gap-12">
-          <div className="pointer-events-none absolute inset-x-0 top-0 z-30">
+          <div className={tmdbNudgePosition}>
             <div className="pointer-events-auto">
               <TmdbNudge suppress={tmdbProvidedByAddon || settings.homeMode === "classic"} />
             </div>
@@ -796,7 +802,7 @@ export function Home({ active = true }: { active?: boolean }) {
               </div>
             </div>
           )}
-          {settings.homeMode !== "classic" && !homeRowsCustom.hidden.includes("hero") && (
+          {settings.homeMode !== "classic" && !homeRowsCustom.hidden.includes("hero") && showHero && (
             <div
               data-scroll-anchor="hero"
               className={`relative ${settings.heroFull ? "-mt-24 lg:-mt-28 -mb-12 harbor-hero-full" : ""}`}
