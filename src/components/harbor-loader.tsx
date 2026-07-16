@@ -53,12 +53,14 @@ export function HarborLoader({
   className = "",
   keyed = false,
   logos,
+  onReady,
 }: {
   size?: Size;
   caption?: string;
   className?: string;
   keyed?: boolean;
   logos?: string[];
+  onReady?: () => void;
 }) {
   const ref = useRef<HTMLDivElement | null>(null);
   const cargo = keyed || logos !== undefined;
@@ -94,9 +96,11 @@ export function HarborLoader({
   }, []);
 
   useEffect(() => {
-    if (!ref.current) return;
+    const container = ref.current;
+    if (!container) return;
+    container.replaceChildren();
     const anim: AnimationItem = lottie.loadAnimation({
-      container: ref.current,
+      container,
       renderer: "svg",
       loop: true,
       autoplay: true,
@@ -105,6 +109,7 @@ export function HarborLoader({
     const onLoaded = () => {
       cycleRef.current = 0;
       paint();
+      onReady?.();
     };
     const onLoop = () => {
       cycleRef.current += 3;
@@ -116,8 +121,9 @@ export function HarborLoader({
       anim.removeEventListener("DOMLoaded", onLoaded);
       anim.removeEventListener("loopComplete", onLoop);
       anim.destroy();
+      container.replaceChildren();
     };
-  }, [dark, paint, cargo]);
+  }, [dark, paint, cargo, onReady]);
 
   useEffect(() => {
     paint();
