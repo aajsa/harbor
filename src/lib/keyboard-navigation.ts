@@ -77,6 +77,7 @@ const AXIS_TOLERANCE = 24;
 
 let activeSearchEditEl: HTMLElement | null = null;
 let focusStylesInjected = false;
+let hasTvNavigationIntent = false;
 
 function isEditable(el: HTMLElement | null) {
   if (!el) return false;
@@ -317,6 +318,7 @@ function focusNavChrome() {
 
 /** Focus the page's primary control (Play, etc.) or first content focusable. */
 export function focusTvPageDefault(): void {
+  if (!hasTvNavigationIntent) return;
   ensureFocusStyles();
   const scope = getTopFocusScope();
   if (scope) {
@@ -641,6 +643,7 @@ function getSpatialOrder(list: HTMLElement[]) {
 }
 
 export function moveFocus(dir: Dir, wrap: boolean = true): void {
+  hasTvNavigationIntent = true;
   const active = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   const root = getActiveModal(active) ?? getTopFocusScope() ?? document;
   const scroll = dir === "left" || dir === "right" ? "nearest" : "center";
