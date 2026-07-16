@@ -375,6 +375,10 @@ fn apply_pre_init(
         opt("hdr-contrast-recovery", "0.30");
         opt("hdr-peak-percentile", "99.995");
         opt("dither-depth", "auto");
+        opt("target-trc", "bt.1886");
+        opt("target-prim", "bt.709");
+        #[cfg(any(windows, target_os = "macos"))]
+        opt("target-colorspace-hint", "yes");
     } else {
         #[cfg(windows)]
         {
