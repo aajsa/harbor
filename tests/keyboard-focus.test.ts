@@ -5,18 +5,15 @@ import { readFileSync } from "node:fs";
 // @ts-expect-error Node test types are intentionally outside the browser-only tsconfig.
 import test from "node:test";
 
-const appSource = readFileSync(new URL("../src/App.tsx", import.meta.url), "utf8");
 const navigationSource = readFileSync(
   new URL("../src/lib/keyboard-navigation.ts", import.meta.url),
   "utf8",
 );
 
-test("the app waits for navigation intent before applying TV focus", () => {
-  assert.doesNotMatch(
-    appSource,
-    /requestAnimationFrame\(\(\) => focusTvPageDefault\(\)\)/,
-    "page startup must not eagerly focus a control",
-  );
+test("TV focus waits for navigation intent before applying page defaults", () => {
+  assert.match(navigationSource, /let hasTvNavigationIntent = false/);
+  assert.match(navigationSource, /if \(!hasTvNavigationIntent\) return/);
+  assert.match(navigationSource, /export function moveFocus[\s\S]*?hasTvNavigationIntent = true;/);
 });
 
 test("TV focus styling uses one theme-aware ring without hard-coded white layers", () => {
