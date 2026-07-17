@@ -17,7 +17,7 @@ Navigation and data loading remain separate state machines:
 
 ```
 Route: idle -> loadingChunk -> mounted | routeError
-Data:  idle -> loading -> ready | error
+Data:  idle -> loading -> ready | error | canceled
 ```
 
 Route loading begins for every navigation entry point: direct navigation,
@@ -27,10 +27,17 @@ page shell has mounted. A failed chunk load renders a route-specific error with
 a retry action.
 
 The mounted page then starts its own data request and renders a layout-matched
-skeleton. Data always settles as ready or error. Requests are abortable where
-the underlying client supports it; otherwise stale results are ignored with a
-request generation. A slow request is not treated as failed: it surfaces a
-non-terminal “taking longer than expected” state with retry and cancel actions.
+skeleton. Data always settles as ready, error, or canceled; cancellation renders
+“Loading canceled” with an explicit resume action rather than a blank page.
+Requests are abortable where the underlying client supports it; otherwise stale
+results are ignored with a request generation. Retrying first aborts or
+invalidates the outstanding generation, then starts a fresh request. A slow
+request is not treated as failed: it surfaces a non-terminal “taking longer than
+expected” state with retry and cancel actions.
+
+A chunk failure first offers a normal retry. Since a failed dynamic import can
+remain cached as a rejected promise, the route error also offers a window/app
+reload as the recovery fallback when retry does not resolve it.
 
 ## Navigation concurrency and retention
 
@@ -41,11 +48,18 @@ request where possible, and makes its result ineligible to update the UI.
 Back, Forward, and deep-link navigations use the same transition coordinator.
 
 Top-level pages retain successfully loaded data and their scroll position while
-they remain in the navigation cache. Returning to one restores the saved scroll
-position and data. An explicit reload/retry replaces the retained data. Hidden
-cached pages are marked both `inert` and `aria-hidden`; they cannot receive
-focus or pointer interaction. Their active-only timers, subscriptions, and media
-work must pause or clean up when `active` becomes false.
+they remain in a bounded navigation cache. The cache retains the current page
+plus at most five inactive primary pages, evicting the least-recently-used
+inactive page when the limit is exceeded. Eviction runs complete cleanup of
+timers, subscriptions, media work, and portals. Returning to a retained page
+restores its data and scroll position. An explicit reload/retry replaces the
+retained data.
+
+Before a cached page becomes hidden, focus moves to the incoming page or safe
+application chrome, and any modal or portal owned by that page closes. The page
+is then marked both `inert` and `aria-hidden`; it cannot receive focus or pointer
+interaction. Its active-only timers, subscriptions, and media work pause or
+clean up when `active` becomes false.
 
 ## Keyboard event policy
 
@@ -64,12 +78,19 @@ to its local behavior.
 
 Route chunk failures and page-data failures are rendered differently. A final
 React error boundary catches unexpected rendering errors so no primary page can
-leave a white screen. The loading overlay uses `aria-busy`; errors are announced
-once through an appropriate live region without announcing fast transitions.
+leave a white screen. `aria-busy` belongs on the content region being updated,
+not the loader itself; errors are announced once through an appropriate live
+region without announcing fast transitions.
 
-After a successful transition, focus moves to the page heading or page-defined
-initial target. Back restores the prior logical focus when it remains valid,
-otherwise the page heading. Motion respects `prefers-reduced-motion`.
+After a successful transition, restoration follows a fixed order: mount the
+shell, restore saved scroll, then focus the page-defined initial target or
+heading using `focus({ preventScroll: true })`. Back restores the prior logical
+focus when it remains valid, otherwise the page heading. Motion respects
+`prefers-reduced-motion`.
+
+The loading layer blocks interaction with the changing content region but does
+not cover primary navigation. This preserves the ability to choose a different
+destination, which supersedes and cancels the current transition.
 
 ## Verification
 
