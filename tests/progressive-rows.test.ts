@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 // @ts-expect-error Node test types are intentionally outside the browser-only tsconfig.
 import test from "node:test";
-import { upsertOrdered } from "../src/lib/progressive-rows.ts";
+import { upsertOrdered, withTimeout } from "../src/lib/progressive-rows.ts";
 
 test("catalog rows render as requests settle while preserving configured order", () => {
   const order = ["hero", "popular", "new"];
@@ -25,4 +25,8 @@ test("catalog rows render as requests settle while preserving configured order",
     { key: "hero", value: 1 },
     { key: "new", value: 4 },
   ]);
+});
+
+test("a stalled catalog request settles as a timeout", async () => {
+  await assert.rejects(withTimeout(new Promise<never>(() => {}), 5), /timed out/i);
 });
