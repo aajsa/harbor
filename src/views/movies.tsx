@@ -104,20 +104,15 @@ export function Movies({ active = true }: { active?: boolean }) {
       if (settings.tmdbKey) {
         const specs = movieSpecs(settings.tmdbKey, settings.region);
         const order = specs.map((spec) => spec.key);
-        void buildMovieHero(settings.tmdbKey, seen)
-          .then((heroPool) => {
-            if (!cancelled) setHero(heroPool);
-          })
-          .catch(() => {});
+        void buildMovieHero(settings.tmdbKey, seen).then((heroPool) => {
+          if (!cancelled) setHero(heroPool);
+        }).catch(() => {});
         const results = await Promise.allSettled(
           specs.map(async (spec) => {
             const metas = await spec.fetcher(1);
             if (cancelled || metas.length === 0) return false;
             const row: MovieRow = {
-              key: spec.key,
-              title: spec.title,
-              metas,
-              page: 1,
+              key: spec.key, title: spec.title, metas, page: 1,
               hasMore: !spec.noPaginate && metas.length >= 14,
               fetcher: spec.noPaginate ? undefined : spec.fetcher,
             };
@@ -148,13 +143,7 @@ export function Movies({ active = true }: { active?: boolean }) {
         ...genreList.map((g) => topMovies(g).catch(() => [] as Meta[])),
       ]);
       if (cancelled) return;
-      setHero(
-        rotateDaily(
-          top.filter((m) => m.background),
-          HERO_POOL_TARGET,
-          seen,
-        ),
-      );
+      setHero(rotateDaily(top.filter((m) => m.background), HERO_POOL_TARGET, seen));
       const built: MovieRow[] = [
         {
           key: "cinemeta-top",
@@ -255,40 +244,39 @@ export function Movies({ active = true }: { active?: boolean }) {
           {letterboxdRows.map((row, i) => {
             const catalogId = row.key.replace("letterboxd-", "");
             return (
-              <Row
-                key={row.key}
-                title={
-                  <>
-                    {t(row.name)}
-                    <span className="ms-2 inline-flex items-center gap-1 rounded-full bg-amber-400/10 px-2 py-[2px] text-[10px] font-semibold uppercase tracking-wider text-amber-300/80">
-                      Letterboxd
-                    </span>
-                  </>
-                }
-                titleExtra={
-                  <LetterboxdRowMenu
-                    canMoveUp={i > 0}
-                    canMoveDown={i < letterboxdRows.length - 1}
-                    hidden={letterboxd.hiddenCatalogs.includes(catalogId)}
-                    onMoveUp={() => letterboxd.moveCatalog(catalogId, -1)}
-                    onMoveDown={() => letterboxd.moveCatalog(catalogId, 1)}
-                    onToggleHidden={() => letterboxd.toggleHidden(catalogId)}
-                  />
-                }
-                min={148}
-                shape="portrait"
-                scrollKey={`movies:${row.key}`}
-                onViewAll={
-                  row.fetcher
-                    ? () =>
-                        openGrid({ title: t(row.name), fetcher: row.fetcher!, initial: row.metas })
-                    : undefined
-                }
-              >
-                {row.metas.map((m) => (
-                  <PickCard key={m.id} meta={m} />
-                ))}
-              </Row>
+            <Row
+              key={row.key}
+              title={
+                <>
+                  {t(row.name)}
+                  <span className="ms-2 inline-flex items-center gap-1 rounded-full bg-amber-400/10 px-2 py-[2px] text-[10px] font-semibold uppercase tracking-wider text-amber-300/80">
+                    Letterboxd
+                  </span>
+                </>
+              }
+              titleExtra={
+                <LetterboxdRowMenu
+                  canMoveUp={i > 0}
+                  canMoveDown={i < letterboxdRows.length - 1}
+                  hidden={letterboxd.hiddenCatalogs.includes(catalogId)}
+                  onMoveUp={() => letterboxd.moveCatalog(catalogId, -1)}
+                  onMoveDown={() => letterboxd.moveCatalog(catalogId, 1)}
+                  onToggleHidden={() => letterboxd.toggleHidden(catalogId)}
+                />
+              }
+              min={148}
+              shape="portrait"
+              scrollKey={`movies:${row.key}`}
+              onViewAll={
+                row.fetcher
+                  ? () => openGrid({ title: t(row.name), fetcher: row.fetcher!, initial: row.metas })
+                  : undefined
+              }
+            >
+              {row.metas.map((m) => (
+                <PickCard key={m.id} meta={m} />
+              ))}
+            </Row>
             );
           })}
           {top10.length >= 10 && (
