@@ -10,55 +10,20 @@ import {
 export type LiquidGlassSurfaceProps = HTMLAttributes<HTMLDivElement> & {
   children: ReactNode;
 
-  /**
-   * نصف قطر الزوايا في CSS.
-   * أمثلة:
-   * "9999px" للدائرة
-   * "24px" للكروت
-   * "16px" للأزرار
-   */
   radius?: CSSProperties["borderRadius"];
 
-  /**
-   * استدارة الشكل داخل Shader:
-   * 1 = دائري
-   * 0.5 = زر مستطيل ناعم
-   * 0.25 = كرت
-   */
   shaderRadius?: number;
 
-  /**
-   * تشغيل تأثير WebGL عند الضغط أو التركيز.
-   * المرور بالماوس وحده لا يشغّل التأثير.
-   */
   interactive?: boolean;
 
-  /**
-   * إبقاء الحركة مفعّلة دائمًا.
-   * يفضّل استخدامه مع عنصر واحد فقط لأن المحرك مشترك.
-   */
   alwaysActive?: boolean;
 
-  /**
-   * قوة التأثير كاملة.
-   */
   intensity?: number;
 
-  /**
-   * قوة الانكسار السائل الداخلي.
-   */
   refractionStrength?: number;
 
-  /**
-   * قوة إحساس العدسة المحدبة والحلقة الداخلية.
-   * ملاحظة: هذا يحاكي العدسة بصريًا، لكنه لا يكبّر
-   * بكسلات DOM الخلفية تكبيرًا حقيقيًا.
-   */
   lensStrength?: number;
 
-  /**
-   * كلاس المحتوى الداخلي.
-   */
   contentClassName?: string;
 };
 
@@ -263,10 +228,6 @@ class SharedLiquidGlassEngine {
             discard;
           }
 
-          /*
-           * تموجات داخلية متعددة.
-           * لا يوجد مصدر ضوء يتبع مؤشر الماوس.
-           */
           float waveA = sin(
             shapePoint.x * 5.8 +
             shapePoint.y * 3.4 +
@@ -312,11 +273,6 @@ class SharedLiquidGlassEngine {
 
           float radialDistance = length(normalizedPoint);
 
-          /*
-           * بروفايل عدسة محدبة.
-           * يؤثر على أنماط الانكسار والطيف فقط، لأن الـShader
-           * لا يقرأ بكسلات DOM الموجودة خلف العنصر.
-           */
           float lensProfile = pow(
             saturateFloat(1.0 - radialDistance),
             1.35
@@ -348,9 +304,6 @@ class SharedLiquidGlassEngine {
             )
           );
 
-          /*
-           * Fresnel للحواف، بدون ملء الوسط باللون الأبيض.
-           */
           float edge = smoothstep(
             0.46,
             1.0,
@@ -359,9 +312,6 @@ class SharedLiquidGlassEngine {
 
           float fresnel = pow(edge, 2.35);
 
-          /*
-           * Caustics: تجمعات ضوء سائلة داخل الزجاج.
-           */
           float causticWave =
             sin(
               warpedPoint.x * 9.4 +
@@ -398,9 +348,6 @@ class SharedLiquidGlassEngine {
             (0.22 + uActive * 0.78) *
             uRefraction;
 
-          /*
-           * طيف رئيسي يمر قطريًا.
-           */
           vec2 spectrumAxisA =
             normalize(vec2(0.74, -0.67));
 
@@ -418,10 +365,6 @@ class SharedLiquidGlassEngine {
             0.18
           );
 
-          /*
-           * طيف ثانوي معاكس؛ يعطي إحساس انكسار فعلي
-           * بدل خط واحد مسطح.
-           */
           vec2 spectrumAxisB =
             normalize(vec2(-0.58, -0.82));
 
@@ -439,9 +382,6 @@ class SharedLiquidGlassEngine {
             0.19
           );
 
-          /*
-           * طيف ثالث منحني حول حلقة العدسة.
-           */
           float spectrumCoordinateC =
             radialDistance +
             waveA * 0.024 -
@@ -480,9 +420,6 @@ class SharedLiquidGlassEngine {
             0.48
           );
 
-          /*
-           * انفصال RGB على الحواف.
-           */
           float redEdge = smoothstep(
             0.54,
             1.0,
@@ -516,9 +453,6 @@ class SharedLiquidGlassEngine {
             0.18 *
             uSpectrum;
 
-          /*
-           * تموج طيفي دقيق داخل الـcaustics.
-           */
           vec3 causticSpectrum = spectralPalette(
             (
               waveA +
@@ -577,10 +511,6 @@ class SharedLiquidGlassEngine {
           color *= uIntensity;
           color *= 1.0 - uPressed * 0.10;
 
-          /*
-           * شفافية شديدة في المركز.
-           * اللون يظهر فقط في مناطق الانكسار والطيف والحواف.
-           */
           float alpha = 0.0;
 
           alpha += fresnel * 0.070;
@@ -680,9 +610,6 @@ class SharedLiquidGlassEngine {
   };
 
   attach(canvas: HTMLCanvasElement, options: AttachOptions): void {
-    /*
-     * امسح أثر العنصر السابق عند الانتقال بين عناصر متعددة.
-     */
     if (this.targetCanvas && this.targetCanvas !== canvas) {
       this.targetContext?.clearRect(0, 0, this.targetCanvas.width, this.targetCanvas.height);
     }
@@ -753,9 +680,6 @@ class SharedLiquidGlassEngine {
 
     const rawPixelRatio = window.devicePixelRatio || 1;
 
-    /*
-     * يمنع Canvas كبير من استهلاك GPU مبالغ فيه.
-     */
     const maximumPixels = 240_000;
     const area = Math.max(1, rect.width * rect.height);
 
@@ -928,20 +852,8 @@ export function LiquidGlassSurface({
     overflow: "hidden",
     borderRadius: radius,
 
-    /*
-     * رجعنا شكل الزجاج السابق:
-     * Blur خفيف وخلفية شبه شفافة تعطي سطحًا زجاجيًا واضحًا،
-     * مع بقاء الخلفية ظاهرة من خلال العنصر.
-     */
-    WebkitBackdropFilter: "blur(0.25px) saturate(1.42) brightness(1.014) contrast(1.04)",
+    background: "linear-gradient(145deg, rgba(255,255,255,0.035), rgba(255,255,255,0.008))",
 
-    backdropFilter: "blur(3.25px) saturate(1.42) brightness(1.014) contrast(1.04)",
-
-    background: "linear-gradient(145deg, rgba(255,255,255,0.007), rgba(255,255,255,0.0015))",
-
-    /*
-     * حافة داخلية خفيفة فقط، بدون ضوء أو ظل خارجي.
-     */
     boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), inset 0 -1px 0 rgba(0,0,0,0.034)",
 
     ...style,
@@ -952,16 +864,9 @@ export function LiquidGlassSurface({
       {...wrapperProps}
       style={glassStyle}
       onPointerEnter={(event) => {
-        /*
-         * لا نفعّل Three.js عند الـHover.
-         * نمرر الحدث فقط إذا كان المستعمل يحتاجه.
-         */
         onPointerEnter?.(event);
       }}
       onPointerMove={(event) => {
-        /*
-         * لا يوجد تتبع للمؤشر أو تحريك للضوء.
-         */
         onPointerMove?.(event);
       }}
       onPointerLeave={(event) => {
@@ -973,10 +878,6 @@ export function LiquidGlassSurface({
         onPointerLeave?.(event);
       }}
       onPointerDown={(event) => {
-        /*
-         * التأثير يعمل عند الضغط فقط،
-         * أو عند التركيز بالكيبورد/الريموت.
-         */
         if (interactive) {
           activate();
           sharedEngine?.setPressed(true);
