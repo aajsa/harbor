@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 // @ts-expect-error Node test types are intentionally outside the browser-only tsconfig.
 import test from "node:test";
-import type { Settings } from "../src/lib/settings/index.ts";
+import type { Settings } from "../src/lib/settings/types.ts";
 import { compileMpvOptions } from "../src/lib/player/mpv-tuning.ts";
 import { resolvePlaybackDownloadedFraction } from "../src/lib/player/playback-clock.ts";
 
@@ -43,7 +43,7 @@ test("bigger buffer mode increases Harbor defaults and waits for a useful reserv
     playerDisplayPanel: "standard",
     playerHdrToSdr: true,
     mpvTweaks: {},
-  } as Settings;
+  } as unknown as Settings;
 
   const options = compileMpvOptions(settings).split("\n");
   assert.ok(options.includes("cache=yes"));
