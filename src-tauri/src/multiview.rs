@@ -431,8 +431,8 @@ async fn connect_ipc(
             }
         }
     }?;
-    let (mut reader, mut writer) = tokio::io::split(stream);
-    let (tx, mut rx) = tokio::sync::mpsc::channel::<String>(16);
+    let (mut reader, writer) = tokio::io::split(stream);
+    let (tx, rx) = tokio::sync::mpsc::channel::<String>(16);
     let (event_tx, mut event_rx) =
         tokio::sync::mpsc::channel::<MultiviewIpcEvent>(IPC_QUEUE_CAPACITY);
     let (shutdown_tx, shutdown_rx) = tokio::sync::watch::channel(false);
