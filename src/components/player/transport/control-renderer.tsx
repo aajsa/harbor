@@ -319,7 +319,6 @@ export function renderControl(id: PlayerControlId, ctx: ControlContext): ReactNo
             shaderRadius={1}
             intensity={1.05}
             refractionStrength={1.18}
-            spectralStrength={0}
             className={`
               shrink-0 rounded-full
               border border-white/[0.10]

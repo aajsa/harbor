@@ -53,6 +53,5 @@ test("playback stalls use a distinct quiet buffering indicator", () => {
   assert.match(bufferingIndicatorSource, /\[data-player-play-pause\]/);
   assert.match(bufferingIndicatorSource, /motion-safe:animate-spin/);
   assert.match(controlRendererSource, /data-player-play-pause/);
-  assert.match(controlRendererSource, /spectralStrength=\{0\}/);
   assert.match(stremioButtonSource, /data-player-play-pause/);
 });

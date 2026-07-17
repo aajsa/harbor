@@ -31,3 +31,11 @@ test("liquid glass uses portable WebGL 1 with lifecycle and CSS fallback guards"
   assert.match(source, /return null/);
   assert.match(source, /backdropFilter/);
 });
+
+test("liquid glass keeps refraction neutral without chromatic separation", () => {
+  assert.match(source, /uSpectrum:\s*\{\s*value:\s*0\s*\}/);
+  assert.doesNotMatch(source, /spectralStrength/);
+  assert.match(source, /refractionStrength/);
+  assert.match(source, /lensStrength/);
+  assert.match(source, /backdropFilter/);
+});

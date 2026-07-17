@@ -50,11 +50,6 @@ export type LiquidGlassSurfaceProps = HTMLAttributes<HTMLDivElement> & {
   refractionStrength?: number;
 
   /**
-   * قوة الطيف اللوني والانفصال اللوني.
-   */
-  spectralStrength?: number;
-
-  /**
    * قوة إحساس العدسة المحدبة والحلقة الداخلية.
    * ملاحظة: هذا يحاكي العدسة بصريًا، لكنه لا يكبّر
    * بكسلات DOM الخلفية تكبيرًا حقيقيًا.
@@ -83,7 +78,6 @@ type AttachOptions = {
   radius: number;
   intensity: number;
   refractionStrength: number;
-  spectralStrength: number;
   lensStrength: number;
 };
 
@@ -187,7 +181,7 @@ class SharedLiquidGlassEngine {
       uRadius: { value: 1 },
       uIntensity: { value: 1.08 },
       uRefraction: { value: 1.42 },
-      uSpectrum: { value: 1.48 },
+      uSpectrum: { value: 0 },
       uLens: { value: 1.2 },
     };
 
@@ -705,8 +699,6 @@ class SharedLiquidGlassEngine {
 
     this.uniforms.uRefraction.value = clamp(options.refractionStrength, 0, 1.8);
 
-    this.uniforms.uSpectrum.value = clamp(options.spectralStrength, 0, 2.5);
-
     this.uniforms.uLens.value = clamp(options.lensStrength, 0, 2.5);
 
     this.resize(canvas);
@@ -878,7 +870,6 @@ export function LiquidGlassSurface({
   alwaysActive = false,
   intensity = 1.08,
   refractionStrength = 1.42,
-  spectralStrength = 1.48,
   lensStrength = 1.2,
   onPointerEnter,
   onPointerMove,
@@ -903,10 +894,9 @@ export function LiquidGlassSurface({
       radius: shaderRadius,
       intensity,
       refractionStrength,
-      spectralStrength,
       lensStrength,
     });
-  }, [intensity, lensStrength, refractionStrength, shaderRadius, spectralStrength]);
+  }, [intensity, lensStrength, refractionStrength, shaderRadius]);
 
   const deactivateWhenIdle = () => {
     const canvas = canvasRef.current;
