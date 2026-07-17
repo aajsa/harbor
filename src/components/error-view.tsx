@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import snip404 from "@/assets/snip404.svg";
 import { HarborMark } from "@/components/icons/harbor-mark";
 import { submitErrorReport } from "@/lib/bug-report";
+import { loadStartupCrashReport, startupCrashToHarborError } from "@/lib/startup-crash";
 import { isStaleTauriListenerError } from "@/lib/tauri-unlisten";
 
 export type HarborError = {
@@ -46,6 +47,7 @@ export function ErrorView() {
   const [report, setReport] = useState<ReportState>({ kind: "idle" });
 
   useEffect(() => {
+    let cancelled = false;
     const onError = (e: Event) => {
       const ce = e as CustomEvent<HarborError>;
       setError(ce.detail);
@@ -86,7 +88,11 @@ export function ErrorView() {
     window.addEventListener("harbor:error", onError);
     window.addEventListener("error", onWindowError);
     window.addEventListener("unhandledrejection", onUnhandledRejection);
+    void loadStartupCrashReport().then((startupReport) => {
+      if (!cancelled && startupReport) setError(startupCrashToHarborError(startupReport));
+    });
     return () => {
+      cancelled = true;
       window.removeEventListener("harbor:error", onError);
       window.removeEventListener("error", onWindowError);
       window.removeEventListener("unhandledrejection", onUnhandledRejection);
