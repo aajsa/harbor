@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { HarborLoader } from "@/components/harbor-loader";
 import { getPlaybackPosition } from "@/lib/player/playback-clock";
 import type { PlayerStatus } from "@/lib/player/bridge";
 import {
@@ -40,8 +39,11 @@ export function BufferingIndicator({
 
   if (!visible) return null;
   return (
-    <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center">
-      <HarborLoader size="sm" className="opacity-80" />
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center"
+    >
+      <div className="h-[4.5rem] w-[4.5rem] rounded-full border-2 border-white/15 border-r-white/35 border-t-white/70 motion-safe:animate-spin" />
     </div>
   );
 }
