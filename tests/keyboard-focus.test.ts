@@ -10,6 +10,15 @@ const navigationSource = readFileSync(
   new URL("../src/lib/keyboard-navigation.ts", import.meta.url),
   "utf8",
 );
+const searchHotkeySource = readFileSync(
+  new URL("../src/components/search/search-hotkey.tsx", import.meta.url),
+  "utf8",
+);
+const topbarSource = readFileSync(new URL("../src/chrome/topbar.tsx", import.meta.url), "utf8");
+const royalTopbarSource = readFileSync(
+  new URL("../src/chrome/royal-topbar.tsx", import.meta.url),
+  "utf8",
+);
 
 test("TV focus waits for navigation intent before applying page defaults", () => {
   assert.match(navigationSource, /let hasTvNavigationIntent = false/);
@@ -119,4 +128,10 @@ test("keyboard navigation handles Back before applying the global eligibility gu
 
   assert.ok(backHandler >= 0, "keyboard navigation must handle Back keys");
   assert.ok(globalGuard > backHandler, "Back handling must precede the global eligibility guard");
+});
+
+test("every global search listener uses the shared keyboard eligibility guard", () => {
+  for (const source of [searchHotkeySource, topbarSource, royalTopbarSource]) {
+    assert.match(source, /if \(!shouldHandleGlobalKeyboardEvent\(e\)\) return;/);
+  }
 });
