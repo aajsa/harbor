@@ -72,9 +72,7 @@ export function Shows({ active = true }: { active?: boolean }) {
       setItems([]);
       return;
     }
-    library(authKey)
-      .then(setItems)
-      .catch(() => {});
+    library(authKey).then(setItems).catch(() => {});
   }, [authKey]);
 
   useEffect(() => {
@@ -83,20 +81,15 @@ export function Shows({ active = true }: { active?: boolean }) {
       if (settings.tmdbKey) {
         const specs = showSpecs(settings.tmdbKey);
         const order = specs.map((spec) => spec.key);
-        void buildShowHero(settings.tmdbKey)
-          .then((heroPool) => {
-            if (!cancelled) setHero(heroPool);
-          })
-          .catch(() => {});
+        void buildShowHero(settings.tmdbKey).then((heroPool) => {
+          if (!cancelled) setHero(heroPool);
+        }).catch(() => {});
         const results = await Promise.allSettled(
           specs.map(async (spec) => {
             const metas = await spec.fetcher(1);
             if (cancelled || metas.length === 0) return false;
             const row: ShowRow = {
-              key: spec.key,
-              title: spec.title,
-              metas,
-              page: 1,
+              key: spec.key, title: spec.title, metas, page: 1,
               hasMore: !spec.noPaginate && metas.length >= 14,
               fetcher: spec.noPaginate ? undefined : spec.fetcher,
             };
@@ -260,12 +253,7 @@ export function Shows({ active = true }: { active?: boolean }) {
           </div>
           {!settings.tmdbKey && <TmdbNudge />}
           {cwItems.length > 0 && (
-            <Row
-              title={t("Pick up where you left off")}
-              min={260}
-              shape="landscape"
-              scrollKey="shows:cw"
-            >
+            <Row title={t("Pick up where you left off")} min={260} shape="landscape" scrollKey="shows:cw">
               {cwItems.map((it) => (
                 <ContinueCard
                   key={it._id}
@@ -330,7 +318,9 @@ function PageMast() {
       <h1 className="font-display text-[44px] font-medium leading-[1.05] tracking-tight text-ink">
         {t(copy.title)}
       </h1>
-      <p className="max-w-2xl text-[15px] leading-relaxed text-ink-muted">{t(copy.subtitle)}</p>
+      <p className="max-w-2xl text-[15px] leading-relaxed text-ink-muted">
+        {t(copy.subtitle)}
+      </p>
     </header>
   );
 }
