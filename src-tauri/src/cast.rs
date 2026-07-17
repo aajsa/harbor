@@ -128,6 +128,37 @@ enum ActiveSession {
 
 static ACTIVE: Mutex<Option<ActiveSession>> = Mutex::new(None);
 
+impl ActiveSession {
+    fn hls_session_id(&self) -> Option<String> {
+        match self {
+            Self::Chromecast { hls_session_id, .. }
+            | Self::Dlna { hls_session_id, .. }
+            | Self::Roku { hls_session_id, .. }
+            | Self::AirPlay { hls_session_id, .. } => hls_session_id.clone(),
+        }
+    }
+}
+
+async fn replace_active_session<Stop, StopFuture>(
+    next: ActiveSession,
+    stop_hls: Stop,
+) -> Result<(), String>
+where
+    Stop: FnOnce(String) -> StopFuture,
+    StopFuture: std::future::Future<Output = ()>,
+{
+    let previous_hls = {
+        let mut active = ACTIVE.lock().map_err(|e| format!("lock: {e}"))?;
+        active
+            .replace(next)
+            .and_then(|session| session.hls_session_id())
+    };
+    if let Some(id) = previous_hls {
+        stop_hls(id).await;
+    }
+    Ok(())
+}
+
 fn parse_friendly_name(properties: &HashMap<String, String>) -> Option<String> {
     properties
         .get("fn")
@@ -524,11 +555,16 @@ pub async fn cast_load(
             }
             return Err(error);
         }
-        let mut active = ACTIVE.lock().map_err(|e| format!("lock: {e}"))?;
-        *active = Some(ActiveSession::Dlna {
-            control_url: cu,
-            hls_session_id,
-        });
+        replace_active_session(
+            ActiveSession::Dlna {
+                control_url: cu,
+                hls_session_id,
+            },
+            |id| async move {
+                proxy_state.stop_hls_session(&id).await;
+            },
+        )
+        .await?;
         return Ok(());
     }
     if kind_str == "roku" {
@@ -544,11 +580,16 @@ pub async fn cast_load(
             }
             return Err(error);
         }
-        let mut active = ACTIVE.lock().map_err(|e| format!("lock: {e}"))?;
-        *active = Some(ActiveSession::Roku {
-            ecp_base: ecp,
-            hls_session_id,
-        });
+        replace_active_session(
+            ActiveSession::Roku {
+                ecp_base: ecp,
+                hls_session_id,
+            },
+            |id| async move {
+                proxy_state.stop_hls_session(&id).await;
+            },
+        )
+        .await?;
         return Ok(());
     }
     if kind_str == "airplay" {
@@ -558,12 +599,17 @@ pub async fn cast_load(
             }
             return Err(error);
         }
-        let mut active = ACTIVE.lock().map_err(|e| format!("lock: {e}"))?;
-        *active = Some(ActiveSession::AirPlay {
-            host,
-            port,
-            hls_session_id,
-        });
+        replace_active_session(
+            ActiveSession::AirPlay {
+                host,
+                port,
+                hls_session_id,
+            },
+            |id| async move {
+                proxy_state.stop_hls_session(&id).await;
+            },
+        )
+        .await?;
         return Ok(());
     }
     let result = cast_load_chromecast(
@@ -576,12 +622,20 @@ pub async fn cast_load(
         hls_session_id.clone(),
     )
     .await;
-    if result.is_err() {
-        if let Some(id) = hls_session_id.as_deref() {
-            proxy_state.stop_hls_session(id).await;
+    match result {
+        Ok(session) => {
+            replace_active_session(session, |id| async move {
+                proxy_state.stop_hls_session(&id).await;
+            })
+            .await
+        }
+        Err(error) => {
+            if let Some(id) = hls_session_id.as_deref() {
+                proxy_state.stop_hls_session(id).await;
+            }
+            Err(error)
         }
     }
-    result
 }
 
 async fn cast_load_chromecast(
@@ -592,7 +646,7 @@ async fn cast_load_chromecast(
     poster: Option<String>,
     start_time_sec: Option<f64>,
     hls_session_id: Option<String>,
-) -> Result<(), String> {
+) -> Result<ActiveSession, String> {
     // Tear down any prior session's receiver app before starting a new one.
     {
         let prior = {
@@ -740,8 +794,7 @@ async fn cast_load_chromecast(
         .await
         .map_err(|e| format!("cast result channel: {e}"))??;
 
-    let mut active = ACTIVE.lock().map_err(|e| format!("lock: {e}"))?;
-    *active = Some(ActiveSession::Chromecast {
+    Ok(ActiveSession::Chromecast {
         host,
         port,
         transport_id,
@@ -749,8 +802,7 @@ async fn cast_load_chromecast(
         media_session_id: msid,
         seek_start_sec: start,
         hls_session_id,
-    });
-    Ok(())
+    })
 }
 
 fn snapshot_chromecast() -> Result<(String, u16, String, Option<i32>, f64), String> {
@@ -1023,7 +1075,8 @@ fn drain_briefly(device: &CastDevice<'_>, ms: u64) {
 
 #[cfg(test)]
 mod cast_validation_tests {
-    use super::required_control_url;
+    use super::{replace_active_session, required_control_url, ActiveSession, ACTIVE};
+    use std::sync::{Arc, Mutex};
 
     #[test]
     fn control_url_is_required_before_starting_dlna_or_roku() {
@@ -1036,5 +1089,44 @@ mod cast_validation_tests {
             Err("Roku device missing ecp_base".to_string())
         );
         assert_eq!(required_control_url("chromecast", None), Ok(None));
+    }
+
+    #[tokio::test]
+    async fn replacing_an_active_cast_stops_its_hls_session() {
+        ACTIVE.lock().expect("lock active session").take();
+        let stopped = Arc::new(Mutex::new(Vec::new()));
+
+        replace_active_session(
+            ActiveSession::Dlna {
+                control_url: "first".to_string(),
+                hls_session_id: Some("first-hls".to_string()),
+            },
+            |_| async {},
+        )
+        .await
+        .expect("activate first cast");
+
+        let recorded = stopped.clone();
+        replace_active_session(
+            ActiveSession::Dlna {
+                control_url: "second".to_string(),
+                hls_session_id: Some("second-hls".to_string()),
+            },
+            move |id| async move {
+                assert!(
+                    ACTIVE.try_lock().is_ok(),
+                    "ACTIVE must be unlocked before HLS cleanup"
+                );
+                recorded.lock().expect("lock stopped sessions").push(id);
+            },
+        )
+        .await
+        .expect("activate second cast");
+
+        assert_eq!(
+            stopped.lock().expect("lock stopped sessions").as_slice(),
+            ["first-hls"]
+        );
+        ACTIVE.lock().expect("lock active session").take();
     }
 }
