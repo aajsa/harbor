@@ -374,7 +374,10 @@ async fn probe_source(url: &str, headers: &HashMap<String, String>) -> Result<Pr
         Ok(Err(e)) => return Err(format!("ffprobe spawn: {}", e)),
         Err(_) => return Err("ffprobe timed out".to_string()),
     };
-    let stdout = String::from_utf8_lossy(&output.stdout);
+    parse_probe_output(&String::from_utf8_lossy(&output.stdout))
+}
+
+fn parse_probe_output(stdout: &str) -> Result<Probe, String> {
     let mut probe = Probe {
         duration_sec: 0.0,
         video_codec: String::new(),
@@ -385,15 +388,23 @@ async fn probe_source(url: &str, headers: &HashMap<String, String>) -> Result<Pr
         video_bitrate: 4_000_000,
     };
     let mut current_type: Option<String> = None;
+    let mut pending_codec_name: Option<String> = None;
     for line in stdout.lines() {
         if let Some(v) = line.strip_prefix("codec_type=") {
             current_type = Some(v.trim().to_string());
+            if let Some(name) = pending_codec_name.take() {
+                match current_type.as_deref() {
+                    Some("video") if probe.video_codec.is_empty() => probe.video_codec = name,
+                    Some("audio") if probe.audio_codec.is_empty() => probe.audio_codec = name,
+                    _ => {}
+                }
+            }
         } else if let Some(v) = line.strip_prefix("codec_name=") {
             let name = v.trim().to_lowercase();
             match current_type.as_deref() {
                 Some("video") if probe.video_codec.is_empty() => probe.video_codec = name,
                 Some("audio") if probe.audio_codec.is_empty() => probe.audio_codec = name,
-                _ => {}
+                _ => pending_codec_name = Some(name),
             }
         } else if let Some(v) = line.strip_prefix("width=") {
             if current_type.as_deref() == Some("video") {
@@ -577,6 +588,48 @@ fn apply_headers(cmd: &mut tokio::process::Command, headers: &HashMap<String, St
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn parses_ffprobe_fields_emitted_before_stream_type() {
+        let output = "codec_name=h264\n\
+codec_type=video\n\
+width=1920\n\
+height=1080\n\
+r_frame_rate=24000/1001\n\
+bit_rate=4000000\n\
+codec_name=aac\n\
+codec_type=audio\n\
+bit_rate=192000\n\
+duration=120.5\n";
+
+        let probe = parse_probe_output(output).expect("parse ffprobe output");
+
+        assert_eq!(probe.video_codec, "h264");
+        assert_eq!(probe.audio_codec, "aac");
+        assert_eq!(probe.width, 1920);
+        assert_eq!(probe.height, 1080);
+        assert!((probe.fps - (24_000.0 / 1_001.0)).abs() < f64::EPSILON);
+        assert_eq!(probe.video_bitrate, 4_000_000);
+        assert_eq!(probe.duration_sec, 120.5);
+    }
+
+    #[test]
+    fn parses_ffprobe_stream_type_emitted_before_fields() {
+        let output = "codec_type=video\n\
+codec_name=h264\n\
+width=1920\n\
+height=1080\n\
+r_frame_rate=24/1\n\
+bit_rate=4000000\n\
+codec_type=audio\n\
+codec_name=aac\n\
+duration=120.5\n";
+
+        let probe = parse_probe_output(output).expect("parse ffprobe output");
+
+        assert_eq!(probe.video_codec, "h264");
+        assert_eq!(probe.audio_codec, "aac");
+    }
 
     #[tokio::test]
     async fn stop_session_removes_the_session_and_its_temp_dir() {
