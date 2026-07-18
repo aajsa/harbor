@@ -10,6 +10,7 @@ use serde::Serialize;
 use std::collections::HashMap;
 use std::net::IpAddr;
 use std::str::FromStr;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Mutex;
 use std::time::Duration;
 
@@ -127,6 +128,79 @@ enum ActiveSession {
 }
 
 static ACTIVE: Mutex<Option<ActiveSession>> = Mutex::new(None);
+static PENDING_PREPARE: Mutex<
+    Option<(
+        u64,
+        tokio_util::sync::CancellationToken,
+        std::sync::Arc<tokio::sync::Notify>,
+    )>,
+> = Mutex::new(None);
+static NEXT_PREPARE_ID: AtomicU64 = AtomicU64::new(1);
+
+fn begin_pending_prepare() -> Result<
+    (
+        u64,
+        tokio_util::sync::CancellationToken,
+        std::sync::Arc<tokio::sync::Notify>,
+    ),
+    String,
+> {
+    let id = NEXT_PREPARE_ID.fetch_add(1, Ordering::Relaxed);
+    let token = tokio_util::sync::CancellationToken::new();
+    let finished = std::sync::Arc::new(tokio::sync::Notify::new());
+    let previous = PENDING_PREPARE
+        .lock()
+        .map_err(|error| format!("subtitle preparation lock: {error}"))?
+        .replace((id, token.clone(), finished.clone()));
+    if let Some((_, previous_token, _)) = previous {
+        previous_token.cancel();
+    }
+    Ok((id, token, finished))
+}
+
+fn finish_pending_prepare(id: u64, finished: &tokio::sync::Notify) {
+    if let Ok(mut pending) = PENDING_PREPARE.lock() {
+        if pending
+            .as_ref()
+            .is_some_and(|(current, _, _)| *current == id)
+        {
+            pending.take();
+        }
+    }
+    finished.notify_one();
+}
+
+async fn cancel_pending_prepare() -> Result<(), String> {
+    let pending = PENDING_PREPARE
+        .lock()
+        .map_err(|error| format!("subtitle preparation lock: {error}"))?
+        .take();
+    if let Some((_, token, finished)) = pending {
+        token.cancel();
+        finished.notified().await;
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod pending_prepare_tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn stop_aborts_pending_subtitle_preparation() {
+        let (id, token, finished) = begin_pending_prepare().expect("register pending preparation");
+        let observer = token.clone();
+        let worker = tokio::spawn(async move {
+            observer.cancelled().await;
+            finish_pending_prepare(id, &finished);
+        });
+        cancel_pending_prepare()
+            .await
+            .expect("cancel pending preparation");
+        assert!(token.is_cancelled());
+        worker.await.expect("preparation worker exits");
+    }
+}
 
 impl ActiveSession {
     fn hls_session_id(&self) -> Option<String> {
@@ -461,7 +535,14 @@ pub async fn cast_load(
         Some(ref s) if !s.off => {
             let style = sub_style.unwrap_or_default();
             let seek = start_time_sec.unwrap_or(0.0).max(0.0);
-            cast_subs::prepare(s, &style, &url, &req_headers, seek).await
+            let (prepare_id, cancellation, preparation_finished) = begin_pending_prepare()?;
+            let result =
+                cast_subs::prepare(s, &style, &url, &req_headers, seek, &cancellation).await;
+            finish_pending_prepare(prepare_id, &preparation_finished);
+            if cancellation.is_cancelled() {
+                return Err("cast subtitle preparation cancelled".to_string());
+            }
+            result
         }
         _ => None,
     };
@@ -943,6 +1024,7 @@ pub async fn cast_seek(sec: f64) -> Result<(), String> {
 
 #[tauri::command]
 pub async fn cast_stop(proxy_state: tauri::State<'_, ProxyState>) -> Result<(), String> {
+    cancel_pending_prepare().await?;
     let session = {
         let mut active = ACTIVE.lock().map_err(|e| format!("lock: {e}"))?;
         active.take()
