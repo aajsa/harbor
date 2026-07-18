@@ -223,11 +223,9 @@ const TOPBAR_MAX_AVATARS = 3;
 export function TogetherButton({
   variant = "chip",
   popoverPlacement = "below-right",
-  connectStyle = "popover",
 }: {
   variant?: "chip" | "ghost";
   popoverPlacement?: "below-right" | "above-left";
-  connectStyle?: "tab" | "popover";
 } = {}) {
   const { snapshot, modalOwner, openModal, closeModal, clientId } = useTogether();
 
@@ -283,22 +281,11 @@ export function TogetherButton({
 
   const sizing = idleSize;
 
-  /*
-   * شكل الزجاج يتغير عند اتصاله بالـPopover.
-   */
-  const glassRadius = ownsModal
-    ? above
-      ? "0 0 8px 8px"
-      : "8px 8px 0 0"
-    : variant === "ghost"
-      ? "9999px"
-      : "12px";
+  const glassRadius = variant === "ghost" ? "9999px" : "var(--radius-md)";
 
   const glassChrome = ownsModal
-    ? `z-[51] harbor-together-surface border border-edge text-ink ${
-        above ? "border-t-0" : "border-b-0"
-      }`
-    : `border border-white/[0.10] ${live ? "text-ink" : "text-ink-muted hover:text-ink"}`;
+    ? "z-[51] border border-edge bg-surface text-ink"
+    : `border border-edge bg-surface ${live ? "text-ink" : "text-ink-muted hover:text-ink"}`;
 
   return (
     <div ref={wrapRef} className="relative">
@@ -306,15 +293,11 @@ export function TogetherButton({
         radius={glassRadius}
         shaderRadius={variant === "ghost" ? 1 : ownsModal ? 0.3 : 0.48}
         intensity={0.78}
-        style={{
-          background: "transparent",
-          boxShadow: "none",
-        }}
         className={`
+          harbor-together-surface
           relative inline-flex
           transition-colors duration-150
           ${glassChrome}
-          ${ownsModal && !above ? "harbor-wt-tab" : ""}
         `}
         contentClassName="h-full w-full"
       >
@@ -430,10 +413,10 @@ export function TogetherButton({
       {ownsModal && (
         <div
           className={`harbor-wt-modal absolute z-50 ${
-            above ? "bottom-[calc(100%-1px)] start-0" : "end-0 top-[calc(100%-1px)]"
+            above ? "bottom-[calc(100%+8px)] start-0" : "end-0 top-[calc(100%+8px)]"
           }`}
         >
-          <TogetherPopover placement={popoverPlacement} connectStyle={connectStyle} />
+          <TogetherPopover />
         </div>
       )}
     </div>
