@@ -233,7 +233,7 @@ function IdlePagePrefetch() {
 }
 
 const KEEP_ALIVE_MS = 1500;
-const IDLE_EVICT_MS = 60 * 1000;
+const IDLE_EVICT_MS = 10 * 1000;
 const PRESSURE_EVICT_MS = 1500;
 const UI_SCALE_MIN = 0.8;
 const UI_SCALE_MAX = 1.6;
