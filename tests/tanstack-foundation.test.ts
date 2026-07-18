@@ -25,10 +25,20 @@ test("app mounts query + router providers", () => {
   assert.match(appSource, /ViewRouterSync/);
 });
 
-test("row uses tanstack virtual for long tracks", () => {
-  assert.match(rowSource, /@tanstack\/react-virtual/);
-  assert.match(rowSource, /useVirtualizer/);
-  assert.match(rowSource, /VIRTUAL_THRESHOLD/);
+test("poster rows use native grid scroll, not horizontal virtualization", () => {
+  // Horizontal virtualization mis-positioned posters; keep LazyChild rails.
+  assert.doesNotMatch(rowSource, /useVirtualizer/);
+  assert.match(rowSource, /LazyChild/);
+  assert.match(rowSource, /grid-flow-col/);
+});
+
+test("virtual grid still uses tanstack virtual for tall grids", () => {
+  const gridSource = readFileSync(
+    new URL("../src/components/virtual-grid.tsx", import.meta.url),
+    "utf8",
+  );
+  assert.match(gridSource, /@tanstack\/react-virtual/);
+  assert.match(gridSource, /useVirtualizer/);
 });
 
 test("query and router modules export public API", () => {
