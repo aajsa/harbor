@@ -55,11 +55,7 @@ export type UseCatalogPageOptions = {
 export function useCatalogPage(options: UseCatalogPageOptions) {
   const { pageId, scope, specs, heroFetcher, enabled = true, maxPerRow = 30, mapMetas } = options;
   const queryClient = useQueryClient();
-  const mapMetasRef = useRef(mapMetas);
-  mapMetasRef.current = mapMetas;
   const loadingKeys = useRef(new Set<string>());
-  const specsRef = useRef(specs);
-  specsRef.current = specs;
   // Loaded page per row. The merged page-1 cache entry drives the UI, so real
   // page numbers live here — keyed by scope to stay correct across key changes.
   const [pages, setPages] = useState<Record<string, RowPageState>>({});
@@ -83,8 +79,7 @@ export function useCatalogPage(options: UseCatalogPageOptions) {
       queryKey: catalogRowKey(pageId, scope, spec.key, 1),
       queryFn: async () => {
         let metas = await withTimeout(spec.fetcher(1), CATALOG_REQUEST_TIMEOUT_MS);
-        const map = mapMetasRef.current;
-        if (map) metas = map(metas, spec.key);
+        if (mapMetas) metas = mapMetas(metas, spec.key);
         return metas;
       },
       enabled: live,
@@ -140,7 +135,7 @@ export function useCatalogPage(options: UseCatalogPageOptions) {
   const loadMore = useCallback(
     (rowKey: string) => {
       if (loadingKeys.current.has(rowKey)) return;
-      const spec = specsRef.current.find((s) => s.key === rowKey);
+      const spec = specs.find((s) => s.key === rowKey);
       const row = rows.find((r) => r.key === rowKey);
       if (!spec || !row?.fetcher || !row.hasMore || row.metas.length >= maxPerRow) return;
       loadingKeys.current.add(rowKey);
@@ -150,8 +145,7 @@ export function useCatalogPage(options: UseCatalogPageOptions) {
           queryKey: catalogRowKey(pageId, scope, rowKey, next),
           queryFn: async () => {
             let more = await withTimeout(spec.fetcher(next), CATALOG_REQUEST_TIMEOUT_MS);
-            const map = mapMetasRef.current;
-            if (map) more = map(more, rowKey);
+            if (mapMetas) more = mapMetas(more, rowKey);
             return more;
           },
           staleTime: STALE_MS,
@@ -178,7 +172,7 @@ export function useCatalogPage(options: UseCatalogPageOptions) {
           loadingKeys.current.delete(rowKey);
         });
     },
-    [maxPerRow, pageId, queryClient, rows, scope],
+    [mapMetas, maxPerRow, pageId, queryClient, rows, scope, specs],
   );
 
   return {
