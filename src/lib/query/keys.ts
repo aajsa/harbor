@@ -12,4 +12,8 @@ export const queryKeys = {
     directory: () => ["harbor", "addons", "directory"] as const,
     manifest: (transportUrl: string) => ["harbor", "addons", "manifest", transportUrl] as const,
   },
+  detail: {
+    data: (id: string, type: string, tmdbKey: string, language: string) =>
+      ["harbor", "detail", id, type, tmdbKey ? "tmdb" : "cinemeta", language] as const,
+  },
 } as const;
