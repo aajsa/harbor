@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { BackToTop } from "@/components/back-to-top";
 import { CatalogRows } from "@/components/catalog/catalog-rows";
@@ -14,6 +15,14 @@ import { useT } from "@/lib/i18n";
 import { publishResumeStates } from "@/lib/hover-preview/store";
 import { listPager } from "@/lib/list-pager";
 import { CATALOG_REQUEST_TIMEOUT_MS, upsertOrdered, withTimeout } from "@/lib/progressive-rows";
+import {
+  fetchPageHero,
+  fetchPageRow,
+  PAGE_ROW_BATCH,
+  peekPageHero,
+  peekPageRow,
+  runInBatches,
+} from "@/lib/query";
 import { hasPageRowChanges, resetPageRows, usePageRows } from "@/lib/page-rows";
 import { useSettings } from "@/lib/settings";
 import { cwSortKey, isAnimeCwItem, isCwMember, library, type LibraryItem } from "@/lib/stremio";
@@ -26,7 +35,7 @@ import {
 } from "@/lib/manual-watched";
 import { useCwAdvance } from "./home/hooks/use-cw-advance";
 import { useScrollMemory, useView } from "@/lib/view";
-import { buildShowHero, bucketCopy } from "./shows/hero-curation";
+import { bucketCopy } from "./shows/hero-curation";
 import { showSpecs } from "./shows/show-specs";
 
 const HERO_POOL_TARGET = 6;
@@ -43,6 +52,7 @@ type ShowRow = {
 
 export function Shows({ active = true }: { active?: boolean }) {
   const { settings } = useSettings();
+  const queryClient = useQueryClient();
   const { authKey } = useAuth();
   const cwVersion = useCwDismissVersion();
   const { openGrid } = useView();
@@ -79,61 +89,105 @@ export function Shows({ active = true }: { active?: boolean }) {
 
   useEffect(() => {
     let cancelled = false;
-    setHero([]);
-    setRows([]);
+    const isCancelled = () => cancelled;
+    const tmdbKey = settings.tmdbKey;
+    const region = settings.region;
+
     (async () => {
-      if (settings.tmdbKey) {
-        const specs = showSpecs(settings.tmdbKey);
+      if (tmdbKey) {
+        const specs = showSpecs(tmdbKey);
         const order = specs.map((spec) => spec.key);
-        void withTimeout(buildShowHero(settings.tmdbKey), CATALOG_REQUEST_TIMEOUT_MS)
+
+        const cachedHero = peekPageHero(queryClient, "shows", tmdbKey, region);
+        if (cachedHero?.length) setHero(cachedHero);
+        const cachedRows: ShowRow[] = [];
+        for (const spec of specs) {
+          const metas = peekPageRow(queryClient, "shows", tmdbKey, region, spec.key, 1);
+          if (!metas?.length) continue;
+          cachedRows.push({
+            key: spec.key,
+            title: spec.title,
+            metas,
+            page: 1,
+            hasMore: !spec.noPaginate && metas.length >= 14,
+            fetcher: spec.noPaginate ? undefined : spec.fetcher,
+          });
+        }
+        if (cachedRows.length > 0) {
+          let next: ShowRow[] = [];
+          for (const row of cachedRows) next = upsertOrdered(next, row, order);
+          setRows(next);
+        } else {
+          setHero([]);
+          setRows([]);
+        }
+
+        void fetchPageHero(queryClient, "shows", tmdbKey, region)
           .then((heroPool) => {
             if (!cancelled) setHero(heroPool);
           })
           .catch(() => {});
-        const results = await Promise.allSettled(
-          specs.map(async (spec) => {
-            const metas = await withTimeout(spec.fetcher(1), CATALOG_REQUEST_TIMEOUT_MS);
-            if (cancelled || metas.length === 0) return false;
-            const row: ShowRow = {
-              key: spec.key,
-              title: spec.title,
-              metas,
-              page: 1,
-              hasMore: !spec.noPaginate && metas.length >= 14,
-              fetcher: spec.noPaginate ? undefined : spec.fetcher,
-            };
-            setRows((current) => upsertOrdered(current, row, order));
-            return true;
-          }),
+
+        let anyOk = false;
+        await runInBatches(
+          specs,
+          PAGE_ROW_BATCH,
+          80,
+          async (spec) => {
+            try {
+              const metas = await fetchPageRow(
+                queryClient,
+                "shows",
+                tmdbKey,
+                region,
+                spec.key,
+                1,
+                () => spec.fetcher(1),
+              );
+              if (cancelled || metas.length === 0) return;
+              anyOk = true;
+              const row: ShowRow = {
+                key: spec.key,
+                title: spec.title,
+                metas,
+                page: 1,
+                hasMore: !spec.noPaginate && metas.length >= 14,
+                fetcher: spec.noPaginate ? undefined : spec.fetcher,
+              };
+              setRows((current) => upsertOrdered(current, row, order));
+            } catch {
+              /* ignore row failure */
+            }
+          },
+          isCancelled,
         );
-        if (cancelled) return;
-        if (results.some((result) => result.status === "fulfilled" && result.value)) return;
+        if (cancelled || anyOk) return;
       }
-      {
-        const genreList = [
-          "Drama",
-          "Comedy",
-          "Crime",
-          "Sci-Fi",
-          "Thriller",
-          "Mystery",
-          "Action",
-          "Animation",
-          "Adventure",
-          "Fantasy",
-          "Documentary",
-          "Romance",
-          "Horror",
-        ];
-        const [top, ...byGenre] = await Promise.all([
-          withTimeout(topSeries(), CATALOG_REQUEST_TIMEOUT_MS).catch(() => [] as Meta[]),
-          ...genreList.map((g) =>
-            withTimeout(topSeries(g), CATALOG_REQUEST_TIMEOUT_MS).catch(() => [] as Meta[]),
-          ),
-        ]);
-        if (cancelled) return;
-        setHero(top.filter((m) => m.background).slice(0, HERO_POOL_TARGET));
-        const built: ShowRow[] = [
+
+      setHero([]);
+      setRows([]);
+      const genreList = [
+        "Drama",
+        "Comedy",
+        "Crime",
+        "Sci-Fi",
+        "Thriller",
+        "Mystery",
+        "Action",
+        "Animation",
+        "Adventure",
+        "Fantasy",
+        "Documentary",
+        "Romance",
+        "Horror",
+      ];
+      const top = await withTimeout(topSeries(), CATALOG_REQUEST_TIMEOUT_MS).catch(
+        () => [] as Meta[],
+      );
+      if (cancelled) return;
+      setHero(top.filter((m) => m.background).slice(0, HERO_POOL_TARGET));
+      if (top.length > 0) {
+        setRows([
           {
             key: "cinemeta-top",
             title: "Top Series",
@@ -142,26 +196,43 @@ export function Shows({ active = true }: { active?: boolean }) {
             hasMore: false,
             fetcher: listPager(top),
           },
-        ];
-        for (let i = 0; i < genreList.length; i++) {
-          const list = byGenre[i] ?? [];
-          if (list.length === 0) continue;
-          built.push({
-            key: `cinemeta-genre-${genreList[i].toLowerCase().replace(/[^a-z]/g, "")}`,
-            title: `Top ${genreList[i]}`,
-            metas: list.slice(0, 30),
-            page: 1,
-            hasMore: false,
-            fetcher: listPager(list),
-          });
-        }
-        setRows(built);
+        ]);
       }
+      await runInBatches(
+        genreList,
+        PAGE_ROW_BATCH,
+        60,
+        async (g) => {
+          const list = await withTimeout(topSeries(g), CATALOG_REQUEST_TIMEOUT_MS).catch(
+            () => [] as Meta[],
+          );
+          if (cancelled || list.length === 0) return;
+          const key = `cinemeta-genre-${g.toLowerCase().replace(/[^a-z]/g, "")}`;
+          setRows((current) =>
+            upsertOrdered(
+              current,
+              {
+                key,
+                title: `Top ${g}`,
+                metas: list.slice(0, 30),
+                page: 1,
+                hasMore: false,
+                fetcher: listPager(list),
+              },
+              [
+                "cinemeta-top",
+                ...genreList.map((x) => `cinemeta-genre-${x.toLowerCase().replace(/[^a-z]/g, "")}`),
+              ],
+            ),
+          );
+        },
+        isCancelled,
+      );
     })().catch(console.error);
     return () => {
       cancelled = true;
     };
-  }, [settings.tmdbKey]);
+  }, [settings.tmdbKey, settings.region, queryClient]);
 
   const continueWatching = useMemo(
     () =>
