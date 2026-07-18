@@ -2135,8 +2135,8 @@ fn hide_embedded_mpv_children(app: &AppHandle) {
             Some(enum_proc),
             LPARAM(state_ptr as isize),
         );
-        for h in state.mpv_hwnds {
-            let target = HWND(h as *mut _);
+        for h in &state.mpv_hwnds {
+            let target = HWND(*h as *mut _);
             let _ = SetWindowPos(
                 target,
                 Some(HWND_BOTTOM),
