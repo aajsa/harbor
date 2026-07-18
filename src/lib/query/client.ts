@@ -18,10 +18,3 @@ export function createHarborQueryClient(): QueryClient {
     },
   });
 }
-
-let singleton: QueryClient | null = null;
-
-export function getHarborQueryClient(): QueryClient {
-  singleton ??= createHarborQueryClient();
-  return singleton;
-}
