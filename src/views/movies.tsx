@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BackToTop } from "@/components/back-to-top";
 import { CatalogRows } from "@/components/catalog/catalog-rows";
@@ -12,6 +13,14 @@ import { recentlyPlayed } from "@/lib/playback-history";
 import { useT } from "@/lib/i18n";
 import { listPager } from "@/lib/list-pager";
 import { CATALOG_REQUEST_TIMEOUT_MS, upsertOrdered, withTimeout } from "@/lib/progressive-rows";
+import {
+  fetchPageHero,
+  fetchPageRow,
+  PAGE_ROW_BATCH,
+  peekPageHero,
+  peekPageRow,
+  runInBatches,
+} from "@/lib/query";
 import { hasPageRowChanges, resetPageRows, usePageRows } from "@/lib/page-rows";
 import { useSettings } from "@/lib/settings";
 import { useScrollMemory, useView } from "@/lib/view";
@@ -19,7 +28,7 @@ import { useLetterboxd } from "@/lib/stremboxd/provider";
 import { buildLetterboxdHomeRows } from "@/lib/stremboxd/home-rails";
 import { LetterboxdRowMenu } from "@/components/letterboxd/letterboxd-row-menu";
 import type { HomeRow } from "./home/home-types";
-import { buildMovieHero, HERO_POOL_TARGET, movieSpecs, rotateDaily } from "./movies/movie-specs";
+import { HERO_POOL_TARGET, movieSpecs, rotateDaily } from "./movies/movie-specs";
 
 const MAX_PER_ROW = 30;
 
@@ -34,6 +43,7 @@ type MovieRow = {
 
 export function Movies({ active = true }: { active?: boolean }) {
   const { settings } = useSettings();
+  const queryClient = useQueryClient();
   const { openGrid } = useView();
   const t = useT();
   const letterboxd = useLetterboxd();
@@ -99,37 +109,87 @@ export function Movies({ active = true }: { active?: boolean }) {
 
   useEffect(() => {
     let cancelled = false;
-    setHero([]);
-    setRows([]);
+    const isCancelled = () => cancelled;
+    const tmdbKey = settings.tmdbKey;
+    const region = settings.region;
+
     (async () => {
       const seen = recentlyPlayed();
-      if (settings.tmdbKey) {
-        const specs = movieSpecs(settings.tmdbKey, settings.region);
+      if (tmdbKey) {
+        const specs = movieSpecs(tmdbKey, region);
         const order = specs.map((spec) => spec.key);
-        void withTimeout(buildMovieHero(settings.tmdbKey, seen), CATALOG_REQUEST_TIMEOUT_MS)
+
+        // Instant paint from TanStack Query cache (prefetched on idle / prior visit).
+        const cachedHero = peekPageHero(queryClient, "movies", tmdbKey, region);
+        if (cachedHero?.length) setHero(cachedHero);
+        const cachedRows: MovieRow[] = [];
+        for (const spec of specs) {
+          const metas = peekPageRow(queryClient, "movies", tmdbKey, region, spec.key, 1);
+          if (!metas?.length) continue;
+          cachedRows.push({
+            key: spec.key,
+            title: spec.title,
+            metas,
+            page: 1,
+            hasMore: !spec.noPaginate && metas.length >= 14,
+            fetcher: spec.noPaginate ? undefined : spec.fetcher,
+          });
+        }
+        if (cachedRows.length > 0) {
+          let next: MovieRow[] = [];
+          for (const row of cachedRows) next = upsertOrdered(next, row, order);
+          setRows(next);
+        } else {
+          setHero([]);
+          setRows([]);
+        }
+
+        void fetchPageHero(queryClient, "movies", tmdbKey, region)
           .then((heroPool) => {
             if (!cancelled) setHero(heroPool);
           })
           .catch(() => {});
-        const results = await Promise.allSettled(
-          specs.map(async (spec) => {
-            const metas = await withTimeout(spec.fetcher(1), CATALOG_REQUEST_TIMEOUT_MS);
-            if (cancelled || metas.length === 0) return false;
-            const row: MovieRow = {
-              key: spec.key,
-              title: spec.title,
-              metas,
-              page: 1,
-              hasMore: !spec.noPaginate && metas.length >= 14,
-              fetcher: spec.noPaginate ? undefined : spec.fetcher,
-            };
-            setRows((current) => upsertOrdered(current, row, order));
-            return true;
-          }),
+
+        // Progressive batches (same idea as Anime) so TMDB concurrency stays free.
+        let anyOk = false;
+        await runInBatches(
+          specs,
+          PAGE_ROW_BATCH,
+          80,
+          async (spec) => {
+            try {
+              const metas = await fetchPageRow(
+                queryClient,
+                "movies",
+                tmdbKey,
+                region,
+                spec.key,
+                1,
+                () => spec.fetcher(1),
+              );
+              if (cancelled || metas.length === 0) return;
+              anyOk = true;
+              const row: MovieRow = {
+                key: spec.key,
+                title: spec.title,
+                metas,
+                page: 1,
+                hasMore: !spec.noPaginate && metas.length >= 14,
+                fetcher: spec.noPaginate ? undefined : spec.fetcher,
+              };
+              setRows((current) => upsertOrdered(current, row, order));
+            } catch {
+              /* row-level failure is fine */
+            }
+          },
+          isCancelled,
         );
-        if (cancelled) return;
-        if (results.some((result) => result.status === "fulfilled" && result.value)) return;
+        if (cancelled || anyOk) return;
       }
+
+      // Cinemeta fallback — also progressive, not one giant Promise.all wall.
+      setHero([]);
+      setRows([]);
       const genreList = [
         "Action",
         "Drama",
@@ -145,12 +205,9 @@ export function Movies({ active = true }: { active?: boolean }) {
         "Fantasy",
         "Documentary",
       ];
-      const [top, ...byGenre] = await Promise.all([
-        withTimeout(topMovies(), CATALOG_REQUEST_TIMEOUT_MS).catch(() => [] as Meta[]),
-        ...genreList.map((g) =>
-          withTimeout(topMovies(g), CATALOG_REQUEST_TIMEOUT_MS).catch(() => [] as Meta[]),
-        ),
-      ]);
+      const top = await withTimeout(topMovies(), CATALOG_REQUEST_TIMEOUT_MS).catch(
+        () => [] as Meta[],
+      );
       if (cancelled) return;
       setHero(
         rotateDaily(
@@ -159,34 +216,53 @@ export function Movies({ active = true }: { active?: boolean }) {
           seen,
         ),
       );
-      const built: MovieRow[] = [
-        {
-          key: "cinemeta-top",
-          title: "Top Movies",
-          metas: top.slice(0, 30),
-          page: 1,
-          hasMore: false,
-          fetcher: listPager(top),
-        },
-      ];
-      for (let i = 0; i < genreList.length; i++) {
-        const list = byGenre[i] ?? [];
-        if (list.length === 0) continue;
-        built.push({
-          key: `cinemeta-genre-${genreList[i].toLowerCase().replace(/[^a-z]/g, "")}`,
-          title: `Top ${genreList[i]}`,
-          metas: list.slice(0, 30),
-          page: 1,
-          hasMore: false,
-          fetcher: listPager(list),
-        });
+      if (top.length > 0) {
+        setRows([
+          {
+            key: "cinemeta-top",
+            title: "Top Movies",
+            metas: top.slice(0, 30),
+            page: 1,
+            hasMore: false,
+            fetcher: listPager(top),
+          },
+        ]);
       }
-      setRows(built);
+      await runInBatches(
+        genreList,
+        PAGE_ROW_BATCH,
+        60,
+        async (g) => {
+          const list = await withTimeout(topMovies(g), CATALOG_REQUEST_TIMEOUT_MS).catch(
+            () => [] as Meta[],
+          );
+          if (cancelled || list.length === 0) return;
+          const key = `cinemeta-genre-${g.toLowerCase().replace(/[^a-z]/g, "")}`;
+          setRows((current) =>
+            upsertOrdered(
+              current,
+              {
+                key,
+                title: `Top ${g}`,
+                metas: list.slice(0, 30),
+                page: 1,
+                hasMore: false,
+                fetcher: listPager(list),
+              },
+              [
+                "cinemeta-top",
+                ...genreList.map((x) => `cinemeta-genre-${x.toLowerCase().replace(/[^a-z]/g, "")}`),
+              ],
+            ),
+          );
+        },
+        isCancelled,
+      );
     })().catch(console.error);
     return () => {
       cancelled = true;
     };
-  }, [settings.tmdbKey, settings.region]);
+  }, [settings.tmdbKey, settings.region, queryClient]);
 
   const loadMore = useCallback((rowKey: string) => {
     if (loadingRef.current.has(rowKey)) return;
