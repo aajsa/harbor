@@ -59,13 +59,9 @@ const routeTree = rootRoute.addChildren([
   }),
 ]);
 
-const memoryHistory = createMemoryHistory({
-  initialEntries: ["/"],
-});
-
-export const harborRouter = createRouter({
+const harborRouter = createRouter({
   routeTree,
-  history: memoryHistory,
+  history: createMemoryHistory({ initialEntries: ["/"] }),
   defaultPreload: "intent",
 });
 
@@ -82,5 +78,3 @@ export function HarborRouterProvider({ children }: { children: ReactNode }) {
     </AppSlotContext.Provider>
   );
 }
-
-export { memoryHistory as harborHistory };
