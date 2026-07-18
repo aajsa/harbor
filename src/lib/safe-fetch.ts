@@ -9,10 +9,7 @@ const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window
 // works) — proxying them through the VPS gets 403'd. EVERYTHING ELSE routes through the
 // VPS /api-proxy: it's required for addons that send no CORS header at all (OpenSubtitles)
 // and for the CORS-less debrid REST APIs, and it's fine for the rest (Cinemeta, Comet).
-const DIRECT_HOSTS = new Set([
-  "torrentio.strem.fun",
-  "stremio.torbox.app",
-]);
+const DIRECT_HOSTS = new Set(["torrentio.strem.fun", "stremio.torbox.app"]);
 
 const PROXY_HOSTS = new Set([
   "v3-cinemeta.strem.io",
@@ -74,7 +71,15 @@ type HarborFetchResponse = {
   contentType: string | null;
 };
 
+function abortError(): DOMException {
+  return new DOMException("The operation was aborted", "AbortError");
+}
+
 async function tauriHarborFetch(input: string, init?: RequestInit): Promise<Response> {
+  if (init?.signal?.aborted) {
+    throw abortError();
+  }
+  const requestId = crypto.randomUUID();
   const headers: Record<string, string> = {};
   if (init?.headers) {
     const h = new Headers(init.headers as HeadersInit);
@@ -90,15 +95,31 @@ async function tauriHarborFetch(input: string, init?: RequestInit): Promise<Resp
         : init?.body
           ? JSON.stringify(init.body)
           : undefined;
-  const resp = await invoke<HarborFetchResponse>("harbor_fetch", {
+  const nativeRequest = invoke<HarborFetchResponse>("harbor_fetch", {
     args: {
       url: input,
+      requestId,
       method: init?.method ?? "GET",
       headers,
       body,
       timeoutMs: 30000,
     },
   });
+  let onAbort: (() => void) | undefined;
+  const aborted = new Promise<never>((_, reject) => {
+    onAbort = () => {
+      void invoke("harbor_fetch_cancel", { requestId }).catch(() => {});
+      reject(abortError());
+    };
+    init?.signal?.addEventListener("abort", onAbort, { once: true });
+    if (init?.signal?.aborted) onAbort();
+  });
+  let resp: HarborFetchResponse;
+  try {
+    resp = await Promise.race([nativeRequest, aborted]);
+  } finally {
+    if (onAbort) init?.signal?.removeEventListener("abort", onAbort);
+  }
   return new Response(resp.body, {
     status: resp.status,
     headers: resp.contentType ? { "content-type": resp.contentType } : {},
@@ -123,9 +144,15 @@ export const safeFetch: typeof fetch = (input, init) => {
   if (isTauri) {
     if (typeof input === "string") {
       if (isIdempotent(init?.method)) {
-        return tauriHarborFetch(input, init).catch(
-          () => tauriFetchImpl(input as string, init as RequestInit) as Promise<Response>,
-        );
+        return tauriHarborFetch(input, init).catch((error) => {
+          if (
+            init?.signal?.aborted ||
+            (error instanceof DOMException && error.name === "AbortError")
+          ) {
+            throw abortError();
+          }
+          return tauriFetchImpl(input as string, init as RequestInit) as Promise<Response>;
+        });
       }
       return tauriHarborFetch(input, init);
     }
