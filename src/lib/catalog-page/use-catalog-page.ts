@@ -1,12 +1,39 @@
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import type { Meta } from "@/lib/cinemeta";
 import { CATALOG_REQUEST_TIMEOUT_MS, withTimeout } from "@/lib/progressive-rows";
-import { catalogHeroKey, catalogRowKey, rowFromSpec } from "./load";
+import { advanceRowPage, mergeRowPage, type RowPageState } from "./merge";
 import type { CatalogPageId, CatalogPageRow, CatalogRowSpec } from "./types";
 
 const STALE_MS = 5 * 60_000;
 const GC_MS = 30 * 60_000;
+const DEFAULT_MIN_VISIBLE = 14;
+
+export function catalogRowKey(
+  pageId: CatalogPageId,
+  scope: string,
+  rowKey: string,
+  pageNum: number,
+) {
+  return ["harbor", "catalog-page", pageId, scope, rowKey, pageNum] as const;
+}
+
+export function catalogHeroKey(pageId: CatalogPageId, scope: string) {
+  return ["harbor", "catalog-page", pageId, scope, "hero"] as const;
+}
+
+export function rowFromSpec(spec: CatalogRowSpec, metas: Meta[], page = 1): CatalogPageRow {
+  const min = spec.minVisible ?? DEFAULT_MIN_VISIBLE;
+  return {
+    key: spec.key,
+    title: spec.title,
+    metas,
+    page,
+    hasMore: !spec.noPaginate && metas.length >= min,
+    ready: true,
+    fetcher: spec.noPaginate ? undefined : spec.fetcher,
+  };
+}
 
 export type UseCatalogPageOptions = {
   pageId: CatalogPageId;
@@ -23,7 +50,7 @@ export type UseCatalogPageOptions = {
 /**
  * Shared catalog loader for Movies / Shows / Kids / Anime.
  * Uses TanStack Query `useQueries` so rows stay cached, never wipe on
- * remount, and preload via `queryClient.prefetchQuery` / ensureQueryData.
+ * remount, and preload via `queryClient.prefetchQuery`.
  */
 export function useCatalogPage(options: UseCatalogPageOptions) {
   const { pageId, scope, specs, heroFetcher, enabled = true, maxPerRow = 30, mapMetas } = options;
@@ -33,6 +60,9 @@ export function useCatalogPage(options: UseCatalogPageOptions) {
   const loadingKeys = useRef(new Set<string>());
   const specsRef = useRef(specs);
   specsRef.current = specs;
+  // Loaded page per row. The merged page-1 cache entry drives the UI, so real
+  // page numbers live here — keyed by scope to stay correct across key changes.
+  const [pages, setPages] = useState<Record<string, RowPageState>>({});
 
   const live = enabled && !!scope && specs.length > 0;
 
@@ -70,31 +100,36 @@ export function useCatalogPage(options: UseCatalogPageOptions) {
     const out: CatalogPageRow[] = [];
     for (let i = 0; i < specs.length; i++) {
       const spec = specs[i];
-      const q = rowQueries[i];
-      const metas = q?.data;
+      const metas = rowQueries[i]?.data;
       if (!metas || metas.length === 0) continue;
-      out.push(rowFromSpec(spec, metas, 1));
+      const row = rowFromSpec(spec, metas, 1);
+      const p = pages[`${scope}:${spec.key}`];
+      if (p) {
+        row.page = p.page;
+        row.hasMore = row.fetcher != null && p.hasMore;
+      }
+      out.push(row);
     }
     return out;
-  }, [specs, rowQueries]);
+  }, [specs, rowQueries, pages, scope]);
 
   const rowsByKey = useMemo(() => {
     const map: Record<string, CatalogPageRow> = {};
     for (const r of rows) map[r.key] = r;
-    for (const s of specs) {
-      if (!map[s.key]) {
-        const idx = specs.findIndex((x) => x.key === s.key);
-        const pending = rowQueries[idx]?.isPending || rowQueries[idx]?.isFetching;
-        map[s.key] = {
-          key: s.key,
-          title: s.title,
-          metas: [],
-          page: 1,
-          hasMore: false,
-          ready: !pending && (rowQueries[idx]?.isFetched ?? false),
-          fetcher: s.noPaginate ? undefined : s.fetcher,
-        };
-      }
+    for (let i = 0; i < specs.length; i++) {
+      const s = specs[i];
+      if (map[s.key]) continue;
+      const q = rowQueries[i];
+      const pending = q?.isPending || q?.isFetching;
+      map[s.key] = {
+        key: s.key,
+        title: s.title,
+        metas: [],
+        page: 1,
+        hasMore: false,
+        ready: !pending && (q?.isFetched ?? false),
+        fetcher: s.noPaginate ? undefined : s.fetcher,
+      };
     }
     return map;
   }, [rows, specs, rowQueries]);
@@ -110,10 +145,9 @@ export function useCatalogPage(options: UseCatalogPageOptions) {
       if (!spec || !row?.fetcher || !row.hasMore || row.metas.length >= maxPerRow) return;
       loadingKeys.current.add(rowKey);
       const next = row.page + 1;
-      const key = catalogRowKey(pageId, scope, rowKey, next);
       void queryClient
         .fetchQuery({
-          queryKey: key,
+          queryKey: catalogRowKey(pageId, scope, rowKey, next),
           queryFn: async () => {
             let more = await withTimeout(spec.fetcher(next), CATALOG_REQUEST_TIMEOUT_MS);
             const map = mapMetasRef.current;
@@ -126,11 +160,18 @@ export function useCatalogPage(options: UseCatalogPageOptions) {
           // Merge page N into the page-1 cache entry that drives the UI.
           const baseKey = catalogRowKey(pageId, scope, rowKey, 1);
           const current = queryClient.getQueryData<Meta[]>(baseKey) ?? row.metas;
-          const ids = new Set(current.map((m) => m.id));
-          const fresh = more.filter((m) => !ids.has(m.id));
-          const combined = [...current, ...fresh];
-          const capped = combined.length > maxPerRow ? combined.slice(0, maxPerRow) : combined;
-          queryClient.setQueryData(baseKey, capped);
+          const combined = mergeRowPage(current, more, maxPerRow);
+          queryClient.setQueryData(baseKey, combined);
+          setPages((prev) => ({
+            ...prev,
+            [`${scope}:${rowKey}`]: advanceRowPage(
+              prev[`${scope}:${rowKey}`],
+              more.length,
+              combined.length,
+              spec.minVisible ?? DEFAULT_MIN_VISIBLE,
+              maxPerRow,
+            ),
+          }));
         })
         .catch(() => {})
         .finally(() => {
@@ -151,7 +192,7 @@ export function useCatalogPage(options: UseCatalogPageOptions) {
   };
 }
 
-/** Prefetch helpers used by idle warmup + nav hover (TanStack Query preload). */
+/** Prefetch first rows (+ optional hero) for a page (idle warmup / nav intent). */
 export async function preloadCatalogPage(
   queryClient: ReturnType<typeof useQueryClient>,
   opts: {
