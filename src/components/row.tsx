@@ -536,6 +536,8 @@ function EdgeArrow({
           radius="9999px"
           shaderRadius={1}
           intensity={1}
+          variant="overlay"
+          backdropBlur
           className={`h-11 w-11 pointer-events-auto ${
             visible
               ? "opacity-0 group-hover/row:opacity-100 focus-within:opacity-100"
@@ -576,6 +578,8 @@ function EdgeArrow({
         radius="9999px"
         shaderRadius={1}
         intensity={1}
+        variant="overlay"
+        backdropBlur
         className={`h-11 w-11 pointer-events-auto ${
           visible
             ? "opacity-0 group-hover/row:opacity-100 focus-within:opacity-100"
