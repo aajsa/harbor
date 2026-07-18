@@ -1554,11 +1554,6 @@ html[data-theme-layout="stremio"] .harbor-hero-full {
   background-image: linear-gradient(var(--color-elevated), var(--color-elevated));
 }
 
-html[data-theme-card="crunch"] .harbor-wt-wrap,
-html[data-theme-card="noir"] .harbor-wt-wrap {
-  transform: translateY(2px);
-}
-
 html[data-theme-card="crunch"] .harbor-wt-tab,
 html[data-theme-card="noir"] .harbor-wt-tab,
 html[data-theme-card="glass"] .harbor-wt-tab {
