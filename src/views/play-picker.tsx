@@ -123,7 +123,7 @@ export function PlayPicker({
       ? findLocalEpisodeByIds(episode.season, episode.episode, tmdbId, imdbId)
       : findLocalMovie(tmdbId, imdbId);
   }, [meta.id, imdbId, episode]);
-  const { addons } = useAddons(authKey, settings);
+  const { addons, discovering: discoveringAddons } = useAddons(authKey, settings);
   const [seasonLogo, setSeasonLogo] = useState<string | undefined>(() =>
     peekCachedLogo(settings.tmdbKey, meta, { preferOwn: true }),
   );
@@ -173,7 +173,7 @@ export function PlayPicker({
     strictMode,
     filterDisabled,
   });
-  const baseLangs = settings.preferredLanguages ?? [];
+  const baseLangs = settings.preferredLanguages;
   const isAnimeRequest = useMemo(
     () => (streamIds ?? []).some((id) => id.startsWith("kitsu:") || id.startsWith("mal:")),
     [streamIds],
@@ -181,7 +181,7 @@ export function PlayPicker({
   const preferredLangs = useMemo(() => {
     const codes = settings.preferredAudioLangs ?? [];
     const animeAdd = isAnimeRequest ? ["Japanese"] : [];
-    const all = [...baseLangs, ...codes, ...animeAdd];
+    const all = [...(baseLangs ?? []), ...codes, ...animeAdd];
     const seen = new Set<string>();
     const out: string[] = [];
     for (const lang of all) {
@@ -194,7 +194,7 @@ export function PlayPicker({
     return out;
   }, [baseLangs, settings.preferredAudioLangs, isAnimeRequest]);
   const [langFilter, setLangFilter] = useState(
-    settings.requirePreferredLanguage === true && baseLangs.length > 0,
+    settings.requirePreferredLanguage === true && (baseLangs?.length ?? 0) > 0,
   );
   const [cachedOnly, setCachedOnly] = useState(false);
   const pickerMainRef = useRef<HTMLElement | null>(null);
@@ -527,7 +527,7 @@ export function PlayPicker({
       });
     }
     return [...seen.values()];
-  }, [result, addonLogoMap]);
+  }, [filteredPicker, addonLogoMap]);
   const backdropSrc = episode?.still || meta.background || meta.poster;
 
   const [maxWaitElapsed, setMaxWaitElapsed] = useState(false);
@@ -536,7 +536,7 @@ export function PlayPicker({
     const t = window.setTimeout(() => setMaxWaitElapsed(true), 30_000);
     return () => window.clearTimeout(t);
   }, [streamIds]);
-  const addonsSettled = pipelineDone || maxWaitElapsed;
+  const addonsSettled = (pipelineDone && !discoveringAddons) || maxWaitElapsed;
 
   const noStreamIds = addonsSettled && (!streamIds || streamIds.length === 0);
   const noDebrids = addonsSettled && !!streamIds && streamIds.length > 0 && debrids.length === 0;
@@ -601,7 +601,7 @@ export function PlayPicker({
   }, [attempt, episode, meta.id]);
   useScrollMemory(pickerScrollKey, pickerMainRef, !showAutoTransition);
 
-  const noSourcesConfigured = addons !== null && addons.length === 0 && debrids.length === 0;
+  const noSourcesConfigured = !discoveringAddons && addons.length === 0 && debrids.length === 0;
 
   if (pendingPreselect) {
     return (
@@ -733,6 +733,13 @@ export function PlayPicker({
 
         {!addonsSettled && (!filteredPicker || filteredPicker.all.length === 0) && (
           <CinematicLoader meta={metaForDisplay} />
+        )}
+
+        {allCount > 0 && (!pipelineDone || discoveringAddons) && (
+          <div className="flex items-center gap-2 rounded-xl border border-edge-soft/60 bg-canvas/55 px-4 py-2.5 text-[12.5px] text-ink-muted">
+            <Loader2 size={14} className="animate-spin text-accent" />
+            Showing available results while the remaining sources finish.
+          </div>
         )}
 
         <PickerEmptyLadder
