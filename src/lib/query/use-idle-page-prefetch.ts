@@ -1,11 +1,17 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
+import { prefetchCatalogPage, type CatalogRowSpec } from "@/lib/catalog-page";
+import { recentlyPlayed } from "@/lib/playback-history";
 import { useSettings } from "@/lib/settings";
-import { prefetchPageCatalog } from "./page-catalog";
+import { SPECS as ANIME_SPECS } from "@/views/anime/anime-rows";
+import { kidsSpecs } from "@/views/kids/kids-specs";
+import { buildMovieHero, movieSpecs } from "@/views/movies/movie-specs";
+import { buildShowHero } from "@/views/shows/hero-curation";
+import { showSpecs } from "@/views/shows/show-specs";
 
 /**
- * After first paint, warm Movies/Shows catalogs so tab switches feel instant.
- * Anime already streams in progressive batches and feels fast without this.
+ * After first paint, warm Movies / Shows / Kids / Anime from the same
+ * catalog-page pipeline so every route opens from shared cache.
  */
 export function useIdlePagePrefetch() {
   const { settings } = useSettings();
@@ -14,7 +20,7 @@ export function useIdlePagePrefetch() {
   const region = settings.region;
 
   useEffect(() => {
-    if (!tmdbKey || typeof window === "undefined") return;
+    if (typeof window === "undefined") return;
     let cancelled = false;
     const win = window as Window & {
       requestIdleCallback?: (cb: () => void, opts?: { timeout?: number }) => number;
@@ -23,8 +29,49 @@ export function useIdlePagePrefetch() {
 
     const run = () => {
       if (cancelled) return;
-      void prefetchPageCatalog(queryClient, "movies", tmdbKey, region).catch(() => {});
-      void prefetchPageCatalog(queryClient, "shows", tmdbKey, region).catch(() => {});
+
+      // Anime (Jikan) — always available
+      const animeSpecs: CatalogRowSpec[] = ANIME_SPECS.map((s) => ({
+        key: s.key,
+        title: s.title,
+        fetcher: s.fetcher,
+      }));
+      void prefetchCatalogPage({
+        queryClient,
+        pageId: "anime",
+        scope: "jikan",
+        specs: animeSpecs,
+        limit: 6,
+      }).catch(() => {});
+
+      if (!tmdbKey) return;
+      const scope = `tmdb:${tmdbKey}:${region}`;
+
+      void prefetchCatalogPage({
+        queryClient,
+        pageId: "movies",
+        scope,
+        specs: movieSpecs(tmdbKey, region),
+        heroFetcher: () => buildMovieHero(tmdbKey, recentlyPlayed()),
+        limit: 6,
+      }).catch(() => {});
+
+      void prefetchCatalogPage({
+        queryClient,
+        pageId: "shows",
+        scope,
+        specs: showSpecs(tmdbKey),
+        heroFetcher: () => buildShowHero(tmdbKey),
+        limit: 6,
+      }).catch(() => {});
+
+      void prefetchCatalogPage({
+        queryClient,
+        pageId: "kids",
+        scope: `tmdb:${tmdbKey}`,
+        specs: kidsSpecs(tmdbKey),
+        limit: 6,
+      }).catch(() => {});
     };
 
     const id =
