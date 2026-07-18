@@ -11,7 +11,6 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { useVirtualizer } from "@tanstack/react-virtual";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import { useSettings } from "@/lib/settings";
@@ -21,8 +20,6 @@ import { ThreeLiquidGlassSurface } from "@/components/ThreeLiquidGlassSurface";
 const GAP = 20;
 const EAGER_COUNT = 6;
 const NEAR_MARGIN = "300px";
-/** Virtualize horizontal tracks once they grow past a handful of posters. */
-const VIRTUAL_THRESHOLD = 10;
 
 export type RowShape = "portrait" | "landscape" | "service" | "rank" | "tile";
 
@@ -188,37 +185,36 @@ export function Row({
     if (el.clientWidth > 0 && remaining < 800) onEndRef.current?.();
   };
 
+  // Keep native CSS grid rails — horizontal virtualization made posters look
+  // mid-scrolled / misaligned. LazyChild + IO is enough for row-sized lists.
   const items = useMemo(() => Children.toArray(children), [children]);
   const childCount = items.length;
-  const useVirtual = childCount >= VIRTUAL_THRESHOLD && cellWidth != null;
-  const stride = (cellWidth ?? effMin) + GAP;
-
-  const virtualizer = useVirtualizer({
-    horizontal: true,
-    count: useVirtual ? childCount : 0,
-    getScrollElement: () => trackRef.current,
-    estimateSize: () => stride,
-    overscan: 4,
-    gap: GAP,
-  });
 
   const restoredRef = useRef(false);
   const userInteractedRef = useRef(false);
+  const prevChildCountRef = useRef(0);
   const { rememberRowScroll, recallRowScroll } = useView();
   useLayoutEffect(() => {
     measure();
     measureScroll();
     if (!trackEl || cellWidth == null) return;
+
+    // Fresh data (0 → N posters): always open at the start, never mid-rail.
+    const grewFromEmpty = prevChildCountRef.current === 0 && childCount > 0;
+    prevChildCountRef.current = childCount;
+    if (grewFromEmpty || (!userInteractedRef.current && childCount > 0)) {
+      if (readPos(trackEl) !== 0) writePos(trackEl, 0);
+      restoredRef.current = true;
+      measureScroll();
+      return;
+    }
+    // After the user has scrolled this rail, keep their position (optional restore).
     if (scrollKey && !restoredRef.current && childCount > 0) {
       const n = recallRowScroll(scrollKey);
       const max = trackEl.scrollWidth - trackEl.clientWidth;
       const target = n != null && n > 0 && max > 0 ? Math.min(n, max) : 0;
       if (readPos(trackEl) !== target) writePos(trackEl, target);
       restoredRef.current = true;
-      return;
-    }
-    if (!userInteractedRef.current && readPos(trackEl) !== 0) {
-      writePos(trackEl, 0);
     }
   }, [children, childCount, cellWidth, trackEl, scrollKey, recallRowScroll, effMin]);
 
@@ -504,65 +500,24 @@ export function Row({
             onPointerCancel={endDrag}
             onClickCapture={onClickCapture}
             onDragStart={(e) => e.preventDefault()}
-            className={
-              useVirtual
-                ? "harbor-row-track relative overflow-x-auto p-5 -m-5 scroll-ps-5 scroll-pe-5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] [overflow-anchor:none] overscroll-x-contain [&_img]:select-none [&_img]:[-webkit-user-drag:none]"
-                : "harbor-row-track grid grid-flow-col items-start gap-5 overflow-x-auto p-5 -m-5 scroll-ps-5 scroll-pe-5 [scroll-snap-type:x_mandatory] *:snap-start [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] [overflow-anchor:none] overscroll-x-contain [&_img]:select-none [&_img]:[-webkit-user-drag:none]"
-            }
-            style={
-              useVirtual
-                ? {
-                    willChange: "transform",
-                    transform: "translateZ(0)",
-                    contain: "layout style",
-                  }
-                : {
-                    gridAutoColumns: cellWidth != null ? `${cellWidth}px` : `${effMin}px`,
-                    willChange: "transform",
-                    transform: "translateZ(0)",
-                    contain: "layout style",
-                  }
-            }
+            className="harbor-row-track grid grid-flow-col items-start gap-5 overflow-x-auto p-5 -m-5 scroll-ps-5 scroll-pe-5 [scroll-snap-type:x_mandatory] *:snap-start [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] [overflow-anchor:none] overscroll-x-contain [&_img]:select-none [&_img]:[-webkit-user-drag:none]"
+            style={{
+              gridAutoColumns: cellWidth != null ? `${cellWidth}px` : `${effMin}px`,
+              willChange: "transform",
+              transform: "translateZ(0)",
+              contain: "layout style",
+            }}
           >
-            {useVirtual ? (
-              <div
-                className="relative"
-                style={{
-                  width: virtualizer.getTotalSize(),
-                  height: "100%",
-                  minHeight: shape === "landscape" ? 120 : 180,
-                }}
-              >
-                {virtualizer.getVirtualItems().map((vi) => {
-                  const child = items[vi.index];
-                  return (
-                    <div
-                      key={vi.key}
-                      data-index={vi.index}
-                      ref={virtualizer.measureElement}
-                      className="absolute top-0"
-                      style={{
-                        width: cellWidth ?? effMin,
-                        transform: `translateX(${vi.start}px)`,
-                      }}
-                    >
-                      {child}
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              items.map((child, i) => {
-                const span = isValidElement(child)
-                  ? (child.props as { style?: { gridColumn?: string } }).style?.gridColumn
-                  : undefined;
-                return (
-                  <LazyChild key={i} eager={i < EAGER_COUNT} shape={shape} span={span}>
-                    {child}
-                  </LazyChild>
-                );
-              })
-            )}
+            {items.map((child, i) => {
+              const span = isValidElement(child)
+                ? (child.props as { style?: { gridColumn?: string } }).style?.gridColumn
+                : undefined;
+              return (
+                <LazyChild key={i} eager={i < EAGER_COUNT} shape={shape} span={span}>
+                  {child}
+                </LazyChild>
+              );
+            })}
           </div>
         </RowTrackContext.Provider>
         <EdgeArrow side="left" visible={canPrev} always={arrowsAlways} onClick={() => scroll(-1)} />
