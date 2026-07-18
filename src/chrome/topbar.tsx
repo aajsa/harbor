@@ -283,9 +283,6 @@ export function TogetherButton({
 
   const sizing = idleSize;
 
-  /*
-   * شكل الزجاج يتغير عند اتصاله بالـPopover.
-   */
   const glassRadius = ownsModal
     ? above
       ? "0 0 8px 8px"
