@@ -1,4 +1,4 @@
-import { ExternalLink, GitBranch, KeyRound, Terminal, Users } from "lucide-react";
+import { Cloud, ExternalLink, KeyRound, Users } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useT } from "@/lib/i18n";
 import { openUrl } from "@/lib/window";
@@ -61,18 +61,16 @@ export function RelayDocs({ onBack }: { onBack: () => void }) {
 
         <DocsBlock>
           <div className="flex items-start gap-3">
-            <GitBranch size={19} strokeWidth={1.9} className="mt-1 shrink-0 text-accent" />
+            <Cloud size={19} strokeWidth={1.9} className="mt-1 shrink-0 text-accent" />
             <div>
               <DocsH2>{t("Fastest: Deploy to Cloudflare")}</DocsH2>
               <DocsP>
-                {t(
-                  "Cloudflare copies and deploys the open-source relay for you. This option requires connecting a GitHub or GitLab account to Cloudflare.",
-                )}
+                {t("Cloudflare sets up and deploys the open-source relay in your account.")}
               </DocsP>
             </div>
           </div>
           <DocsOl>
-            <li>{t("Open Cloudflare with the button below and connect your Git account.")}</li>
+            <li>{t("Open Cloudflare with the button below and sign in.")}</li>
             <li>{t("Choose your Cloudflare account, keep the suggested settings, and deploy.")}</li>
             <li>
               {t("Copy the resulting")} <DocsCode>workers.dev</DocsCode> {t("URL.")}
@@ -96,7 +94,7 @@ export function RelayDocs({ onBack }: { onBack: () => void }) {
           <div className="flex items-start gap-3">
             <KeyRound size={19} strokeWidth={1.9} className="mt-1 shrink-0 text-accent" />
             <div>
-              <DocsH2>{t("No Git account: deploy from Harbor")}</DocsH2>
+              <DocsH2>{t("Alternative: deploy from Harbor")}</DocsH2>
               <DocsP>
                 {t(
                   "Harbor can deploy directly with a limited Cloudflare API token. The token stays on this device and is used to manage your relay.",
@@ -115,27 +113,6 @@ export function RelayDocs({ onBack }: { onBack: () => void }) {
               )}
             </li>
           </DocsOl>
-        </DocsBlock>
-
-        <DocsBlock>
-          <div className="flex items-start gap-3">
-            <Terminal size={19} strokeWidth={1.9} className="mt-1 shrink-0 text-accent" />
-            <div>
-              <DocsH2>{t("CLI option")}</DocsH2>
-              <DocsP>
-                {t("For users who prefer Wrangler and want full control of the source.")}
-              </DocsP>
-            </div>
-          </div>
-          <DocsPre>{`git clone https://github.com/harborstremio/together-relay.git
-cd together-relay
-pnpm install
-pnpm deploy`}</DocsPre>
-          <DocsP>
-            {t(
-              "Wrangler opens Cloudflare sign-in in your browser. When deployment finishes, copy the workers.dev URL into Harbor Relay.",
-            )}
-          </DocsP>
         </DocsBlock>
 
         <DocsBlock>
@@ -212,13 +189,5 @@ function DocsKbd({ children }: { children: React.ReactNode }) {
     <kbd className="rounded-md border border-edge-soft bg-elevated px-1.5 py-0.5 font-mono text-[11.5px] font-medium text-ink shadow-[0_1px_0_var(--color-edge)]">
       {children}
     </kbd>
-  );
-}
-
-function DocsPre({ children }: { children: React.ReactNode }) {
-  return (
-    <pre className="overflow-x-auto rounded-xl border border-edge-soft bg-canvas/70 p-3 font-mono text-[12px] leading-relaxed text-ink">
-      {children}
-    </pre>
   );
 }
