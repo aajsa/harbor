@@ -28,6 +28,8 @@ export function VirtualGrid<T>({
   className?: string;
   getKey?: (item: T, index: number) => string | number;
 }) {
+  "use no memo";
+
   const containerRef = useRef<HTMLDivElement>(null);
   const [cols, setCols] = useState(1);
 
