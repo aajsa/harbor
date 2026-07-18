@@ -17,6 +17,7 @@ import { startMaintenance, subscribeMemoryPressure } from "@/lib/maintenance";
 import { MiddleClickScroll } from "@/lib/use-middle-click-scroll";
 import { exitWindowFullscreenOnPlayerClose, toggleWindowFullscreen } from "@/lib/fullscreen-state";
 import { flushCloudSync } from "@/views/player/hooks/use-stremio-sync";
+import { PlayerRouteFallback } from "@/views/player/player-route-fallback";
 import { setNativeMemoryActive } from "@/lib/native-memory";
 import { useOverlayPinned } from "@/lib/overlay-pin";
 import { isMobileDevice, isWeb } from "@/lib/platform";
@@ -36,7 +37,6 @@ import { EmbedViewportRoot } from "@/components/embed-viewport";
 import { InstallerViewportRoot } from "@/components/installer-viewport";
 import { UpdateRoot } from "@/components/update/update-root";
 import { CustomCodeMount } from "@/components/custom-code-mount";
-import { MemoryHud } from "@/components/memory-hud";
 import { OfflineBanner } from "@/chrome/offline-banner";
 import { MobileNotice } from "@/components/mobile-notice";
 import { WebhookLoopMount } from "@/components/webhook-loop-mount";
@@ -1270,7 +1270,7 @@ function Shell({ onReady }: { onReady?: () => void }) {
         )}
       </div>
       {player && (
-        <Suspense fallback={<div className="fixed inset-0 z-[100] bg-black" />}>
+        <Suspense fallback={<PlayerRouteFallback src={player} />}>
           <PlayerView
             key={player.meta.id.startsWith("iptv:") ? "player-live" : `player-${player.meta.id}`}
             src={player}
@@ -1279,7 +1279,6 @@ function Shell({ onReady }: { onReady?: () => void }) {
       )}
       <CustomCodeMount />
       <WebhookLoopMount />
-      <MemoryHud />
       {!player && <OfflineBanner />}
     </div>
   );
