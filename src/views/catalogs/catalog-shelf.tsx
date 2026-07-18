@@ -28,15 +28,13 @@ export function CatalogShelf({
   const { openGrid } = useView();
   const t = useT();
   const queryClient = useQueryClient();
-  const [inView, setInView] = useState(eager);
+  const [inView, setInView] = useState(false);
   const pageRef = useRef(1);
   const ref = useRef<HTMLDivElement>(null);
+  const shouldLoad = eager || inView;
 
   useEffect(() => {
-    if (eager) {
-      setInView(true);
-      return;
-    }
+    if (eager) return;
     const el = ref.current;
     if (!el) return;
     const io = new IntersectionObserver(
@@ -63,7 +61,7 @@ export function CatalogShelf({
   } = useQuery({
     queryKey: shelfKey,
     queryFn: () => browseFetcher(catalog, null)(1),
-    enabled: inView,
+    enabled: shouldLoad,
     staleTime: STALE_MS,
     gcTime: 30 * 60_000,
     retry: 1,
@@ -85,7 +83,7 @@ export function CatalogShelf({
 
   // null = loading skeleton; [] = loaded empty (hide shelf)
   const display: Meta[] | null =
-    !inView || (isPending && items === null) ? null : isError ? [] : items;
+    !shouldLoad || (isPending && items === null) ? null : isError ? [] : items;
 
   return (
     <div ref={ref}>
