@@ -92,7 +92,7 @@ export function Movies({ active = true }: { active?: boolean }) {
     );
   }, [tmdbKey]);
 
-  const { hero, rows, loadMore } = useCatalogPage({
+  const { hero, rows, loadMore, loading } = useCatalogPage({
     pageId: "movies",
     scope,
     specs,
@@ -160,23 +160,30 @@ export function Movies({ active = true }: { active?: boolean }) {
     if (top10.length > 0) {
       for (const m of top10) seen.add(m.id);
     }
-    return rows
-      .filter((r) => r.key !== "trending" || top10.length === 0)
-      .map((r) => {
-        const dedupedMetas = r.metas.filter((m) => {
-          if (seen.has(m.id)) return false;
-          seen.add(m.id);
-          return true;
-        });
-        return { ...r, metas: dedupedMetas };
-      })
-      .filter((r) => r.metas.length >= 4);
-  }, [rows, hero, top10]);
+    return (
+      rows
+        .filter((r) => r.key !== "trending" || top10.length === 0)
+        .map((r) => {
+          const dedupedMetas = r.metas.filter((m) => {
+            if (seen.has(m.id)) return false;
+            seen.add(m.id);
+            return true;
+          });
+          return { ...r, metas: dedupedMetas };
+        })
+        // Keep partial rows while loading; only drop tiny rails once we have content.
+        .filter((r) => r.metas.length >= (loading && rows.length < 3 ? 1 : 4))
+    );
+  }, [rows, hero, top10, loading]);
 
   return (
     <main ref={scrollCb} className="relative h-full overflow-y-auto bg-canvas">
       <ScrollRootContext.Provider value={scrollEl}>
-        <CinemaHero slides={hero} eyebrow={t("Featured tonight")} />
+        {hero.length > 0 ? (
+          <CinemaHero slides={hero} eyebrow={t("Featured tonight")} />
+        ) : (
+          <div className="h-[42vh] min-h-[280px] w-full animate-pulse bg-elevated/40" />
+        )}
         <div className="relative flex w-full flex-col gap-12 px-12 pb-32 pt-12">
           <CatalogCustomizeBar
             editMode={pageRows.editMode}
@@ -185,6 +192,24 @@ export function Movies({ active = true }: { active?: boolean }) {
             onReset={() => pageRows.persist(resetPageRows())}
           />
           {!settings.tmdbKey && <TmdbNudge />}
+          {loading && restRows.length === 0 && (
+            <div className="flex flex-col gap-10">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex flex-col gap-4">
+                  <div className="h-5 w-48 animate-pulse rounded bg-elevated/50" />
+                  <div className="flex gap-5 overflow-hidden">
+                    {Array.from({ length: 7 }).map((_, j) => (
+                      <div
+                        key={j}
+                        className="h-52 w-36 shrink-0 animate-pulse rounded-xl bg-elevated/40"
+                        style={{ animationDelay: `${j * 60}ms` }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
           {letterboxdRows.map((row, i) => {
             const catalogId = row.key.replace("letterboxd-", "");
             return (

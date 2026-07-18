@@ -13,9 +13,5 @@ export {
   rowFromSpec,
   runInBatches,
 } from "./load";
-export {
-  useCatalogPage,
-  specsToPlaceholders,
-  type UseCatalogPageOptions,
-} from "./use-catalog-page";
+export { preloadCatalogPage, useCatalogPage, type UseCatalogPageOptions } from "./use-catalog-page";
 export type { CatalogPageId, CatalogPageRow, CatalogRowSpec } from "./types";
