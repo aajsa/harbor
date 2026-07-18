@@ -95,7 +95,7 @@ import {
   onOpenLocalFile,
   startDeepLinkBridge,
 } from "@/lib/deep-link";
-import { HarborQueryProvider } from "@/lib/query";
+import { HarborQueryProvider, useIdlePagePrefetch } from "@/lib/query";
 import { HarborRouterProvider, ViewRouterSync } from "@/router";
 
 const importAnime = () => import("@/views/anime");
@@ -174,37 +174,62 @@ function useViewPreloader() {
     let cancelled = false;
     const win = window as Window & {
       requestIdleCallback?: (cb: () => void, opts?: { timeout?: number }) => number;
+      cancelIdleCallback?: (id: number) => void;
     };
-    const schedule = (cb: () => void) =>
+    const schedule = (cb: () => void, timeout: number) =>
       typeof win.requestIdleCallback === "function"
-        ? win.requestIdleCallback(cb, { timeout: 2500 })
-        : window.setTimeout(cb, 1200);
-    schedule(() => {
+        ? win.requestIdleCallback(cb, { timeout })
+        : window.setTimeout(cb, Math.min(timeout, 800));
+
+    // Priority: Movies/Shows chunks first — they were lazy and felt slower than Anime.
+    const priorityId = schedule(() => {
       if (cancelled) return;
+      void importMovies();
+      void importShows();
+      void importAnime();
+      void importDiscover();
       void importDetail();
       void importPlayPicker();
       void importPlayer();
+    }, 1200);
+
+    const restId = schedule(() => {
+      if (cancelled) return;
       void importSettings();
       void importAddons();
-      void importDiscover();
       void importPerson();
       void importFilter();
       void importCalendar();
-      void importMovies();
-      void importShows();
       void importLive();
-      void importAnime();
       void importQueue();
       void importAward();
       void importAnimeAward();
       void importService();
       void importMatchDetail();
       void importOnboarding();
-    });
+      void importLibrary();
+      void importCatalogs();
+      void importKids();
+      void importVod();
+      void importDownloads();
+    }, 2800);
+
     return () => {
       cancelled = true;
+      if (typeof win.cancelIdleCallback === "function") {
+        win.cancelIdleCallback(priorityId as number);
+        win.cancelIdleCallback(restId as number);
+      } else {
+        window.clearTimeout(priorityId);
+        window.clearTimeout(restId);
+      }
     };
   }, []);
+}
+
+function IdlePagePrefetch() {
+  useIdlePagePrefetch();
+  return null;
 }
 
 const KEEP_ALIVE_MS = 1500;
@@ -271,6 +296,7 @@ export function App({ onReady }: { onReady?: () => void }) {
                               <TogetherProvider>
                                 <ViewProvider>
                                   <ViewRouterSync />
+                                  <IdlePagePrefetch />
                                   <SearchProvider>
                                     <DvrProvider>
                                       <FavoritesProvider>
