@@ -98,7 +98,7 @@ export function Shows({ active = true }: { active?: boolean }) {
     return top.filter((m) => m.background).slice(0, HERO_POOL_TARGET);
   }, [tmdbKey]);
 
-  const { hero, rows, loadMore } = useCatalogPage({
+  const { hero, rows, loadMore, loading } = useCatalogPage({
     pageId: "shows",
     scope,
     specs,
@@ -173,8 +173,8 @@ export function Shows({ active = true }: { active?: boolean }) {
         ...r,
         metas: r.metas.filter((m) => !seen.has(m.id)),
       }))
-      .filter((r) => r.metas.length >= 4);
-  }, [rows, hero, top10.length]);
+      .filter((r) => r.metas.length >= (loading && rows.length < 3 ? 1 : 4));
+  }, [rows, hero, top10.length, loading]);
 
   return (
     <main ref={scrollCb} className="relative h-full overflow-y-auto bg-canvas">
@@ -182,7 +182,11 @@ export function Shows({ active = true }: { active?: boolean }) {
         <div className="relative flex w-full flex-col gap-12 px-12 pb-32 pt-32">
           <PageMast />
           <div className="relative">
-            <PeekHero slides={hero} />
+            {hero.length > 0 ? (
+              <PeekHero slides={hero} />
+            ) : (
+              <div className="h-[36vh] min-h-[240px] w-full animate-pulse rounded-2xl bg-elevated/40" />
+            )}
             <div className="absolute bottom-3 end-3 z-20">
               <CatalogCustomizeBar
                 editMode={pageRows.editMode}
@@ -193,6 +197,23 @@ export function Shows({ active = true }: { active?: boolean }) {
             </div>
           </div>
           {!settings.tmdbKey && <TmdbNudge />}
+          {loading && restRows.length === 0 && (
+            <div className="flex flex-col gap-10">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex flex-col gap-4">
+                  <div className="h-5 w-48 animate-pulse rounded bg-elevated/50" />
+                  <div className="flex gap-5 overflow-hidden">
+                    {Array.from({ length: 7 }).map((_, j) => (
+                      <div
+                        key={j}
+                        className="h-52 w-36 shrink-0 animate-pulse rounded-xl bg-elevated/40"
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
           {cwItems.length > 0 && (
             <Row
               title={t("Pick up where you left off")}
