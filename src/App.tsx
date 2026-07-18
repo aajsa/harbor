@@ -95,6 +95,8 @@ import {
   onOpenLocalFile,
   startDeepLinkBridge,
 } from "@/lib/deep-link";
+import { HarborQueryProvider } from "@/lib/query";
+import { HarborRouterProvider, ViewRouterSync } from "@/router";
 
 const importAnime = () => import("@/views/anime");
 const importCalendar = () => import("@/views/calendar");
@@ -253,87 +255,92 @@ function useIdleEvict(active: boolean, pin = false): boolean {
 export function App({ onReady }: { onReady?: () => void }) {
   if (isWeb() && isMobileDevice()) return <MobileNotice />;
   return (
-    <SettingsProvider>
-      <ProfilesProvider>
-        <ParentalProvider>
-          <TraktProvider>
-            <AnilistProvider>
-              <MalProvider>
-                <SimklProvider>
-                  <LetterboxdProvider>
-                    <RankingsProvider>
-                      <AuthProvider>
-                        <OnboardingProvider>
-                          <TogetherProvider>
-                            <ViewProvider>
-                              <SearchProvider>
-                                <DvrProvider>
-                                  <FavoritesProvider>
-                                    <MediaFavoritesProvider>
-                                      <LocalWatchlistProvider>
-                                        <ContextMenuProvider>
-                                          <TopRankModalProvider>
-                                            <HarborErrorBoundary>
-                                              <RemoteHostMount />
-                                              <ProfileIdentitySync />
-                                              <SettingsProfileBridge />
-                                              <TrackerProfileBridge />
-                                              <AnilistAvatarSync />
-                                              <MalAvatarSync />
-                                              <MiddleClickScroll />
-                                              <ThemeBackdrop />
-                                              <WatchlistSync />
-                                              <Shell onReady={onReady} />
-                                              <Suspense fallback={null}>
-                                                <OnboardingModal />
-                                              </Suspense>
-                                              <TogetherInviteToast />
-                                              <TogetherFloater />
-                                              <TogetherHostLeavingPrompt />
-                                              <TogetherSummonToast />
-                                              <TogetherParticipantLeftToast />
-                                              <AnilistSyncToast />
-                                              <MalSyncToast />
-                                              <ListToastHost />
-                                              <TogetherLeaveForLiveModal />
-                                              <TogetherLocationPublisher />
-                                              <DiscordPresence />
-                                              <ContextMenu />
-                                              <WatchLocalModal />
-                                              <LocalEpisodesModal />
-                                              <HoverPreview />
-                                              <CustomHoverCssMount />
-                                              <TopRankModal />
-                                              <ProfilePickerModal />
-                                              <CurfewGuard />
-                                              <SearchOverlay />
-                                              <SearchHotkey />
-                                              <EmbedViewportRoot />
-                                              <InstallerViewportRoot />
-                                              <UpdateRoot />
-                                            </HarborErrorBoundary>
-                                            <ErrorView />
-                                            <DevErrorTrigger />
-                                          </TopRankModalProvider>
-                                        </ContextMenuProvider>
-                                      </LocalWatchlistProvider>
-                                    </MediaFavoritesProvider>
-                                  </FavoritesProvider>
-                                </DvrProvider>
-                              </SearchProvider>
-                            </ViewProvider>
-                          </TogetherProvider>
-                        </OnboardingProvider>
-                      </AuthProvider>
-                    </RankingsProvider>
-                  </LetterboxdProvider>
-                </SimklProvider>
-              </MalProvider>
-            </AnilistProvider>
-          </TraktProvider>
-        </ParentalProvider>
-      </ProfilesProvider>
-    </SettingsProvider>
+    <HarborQueryProvider>
+      <HarborRouterProvider>
+        <SettingsProvider>
+          <ProfilesProvider>
+            <ParentalProvider>
+              <TraktProvider>
+                <AnilistProvider>
+                  <MalProvider>
+                    <SimklProvider>
+                      <LetterboxdProvider>
+                        <RankingsProvider>
+                          <AuthProvider>
+                            <OnboardingProvider>
+                              <TogetherProvider>
+                                <ViewProvider>
+                                  <ViewRouterSync />
+                                  <SearchProvider>
+                                    <DvrProvider>
+                                      <FavoritesProvider>
+                                        <MediaFavoritesProvider>
+                                          <LocalWatchlistProvider>
+                                            <ContextMenuProvider>
+                                              <TopRankModalProvider>
+                                                <HarborErrorBoundary>
+                                                  <RemoteHostMount />
+                                                  <ProfileIdentitySync />
+                                                  <SettingsProfileBridge />
+                                                  <TrackerProfileBridge />
+                                                  <AnilistAvatarSync />
+                                                  <MalAvatarSync />
+                                                  <MiddleClickScroll />
+                                                  <ThemeBackdrop />
+                                                  <WatchlistSync />
+                                                  <Shell onReady={onReady} />
+                                                  <Suspense fallback={null}>
+                                                    <OnboardingModal />
+                                                  </Suspense>
+                                                  <TogetherInviteToast />
+                                                  <TogetherFloater />
+                                                  <TogetherHostLeavingPrompt />
+                                                  <TogetherSummonToast />
+                                                  <TogetherParticipantLeftToast />
+                                                  <AnilistSyncToast />
+                                                  <MalSyncToast />
+                                                  <ListToastHost />
+                                                  <TogetherLeaveForLiveModal />
+                                                  <TogetherLocationPublisher />
+                                                  <DiscordPresence />
+                                                  <ContextMenu />
+                                                  <WatchLocalModal />
+                                                  <LocalEpisodesModal />
+                                                  <HoverPreview />
+                                                  <CustomHoverCssMount />
+                                                  <TopRankModal />
+                                                  <ProfilePickerModal />
+                                                  <CurfewGuard />
+                                                  <SearchOverlay />
+                                                  <SearchHotkey />
+                                                  <EmbedViewportRoot />
+                                                  <InstallerViewportRoot />
+                                                  <UpdateRoot />
+                                                </HarborErrorBoundary>
+                                                <ErrorView />
+                                                <DevErrorTrigger />
+                                              </TopRankModalProvider>
+                                            </ContextMenuProvider>
+                                          </LocalWatchlistProvider>
+                                        </MediaFavoritesProvider>
+                                      </FavoritesProvider>
+                                    </DvrProvider>
+                                  </SearchProvider>
+                                </ViewProvider>
+                              </TogetherProvider>
+                            </OnboardingProvider>
+                          </AuthProvider>
+                        </RankingsProvider>
+                      </LetterboxdProvider>
+                    </SimklProvider>
+                  </MalProvider>
+                </AnilistProvider>
+              </TraktProvider>
+            </ParentalProvider>
+          </ProfilesProvider>
+        </SettingsProvider>
+      </HarborRouterProvider>
+    </HarborQueryProvider>
   );
 }
 
