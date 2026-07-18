@@ -1,17 +1,10 @@
+export { advanceRowPage, mergeRowPage, type RowPageState } from "./merge";
 export {
-  CATALOG_BATCH,
-  CATALOG_BATCH_GAP_MS,
   catalogHeroKey,
   catalogRowKey,
-  fetchCatalogHero,
-  fetchCatalogRow,
-  hydrateRowsFromCache,
-  loadCatalogSpecs,
-  peekCatalogHero,
-  peekCatalogRow,
-  prefetchCatalogPage,
+  preloadCatalogPage,
   rowFromSpec,
-  runInBatches,
-} from "./load";
-export { preloadCatalogPage, useCatalogPage, type UseCatalogPageOptions } from "./use-catalog-page";
+  useCatalogPage,
+  type UseCatalogPageOptions,
+} from "./use-catalog-page";
 export type { CatalogPageId, CatalogPageRow, CatalogRowSpec } from "./types";
