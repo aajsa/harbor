@@ -1,6 +1,10 @@
 import { parse } from "parse-torrent-title";
 import type { DebridSlug, DebridStore, LibraryEntry } from "@/lib/debrid/types";
+import { withTimeout } from "@/lib/progressive-rows";
+import { fetchDmmStreams } from "./dmm";
 import type { Stream } from "./types";
+
+const BUILT_IN_SEARCH_TIMEOUT_MS = 15_000;
 
 export type LibraryQuery = {
   type: "movie" | "series";
@@ -17,7 +21,12 @@ export async function fetchLibraryStreams(
   signal: AbortSignal,
 ): Promise<Stream[]> {
   if (clients.length === 0) return [];
-  const settled = await Promise.allSettled(clients.map((c) => c.listLibrary(signal)));
+  const [dmmStreams, settled] = await Promise.all([
+    withTimeout(fetchDmmStreams(query, signal), BUILT_IN_SEARCH_TIMEOUT_MS).catch(() => []),
+    Promise.allSettled(
+      clients.map((client) => withTimeout(client.listLibrary(signal), BUILT_IN_SEARCH_TIMEOUT_MS)),
+    ),
+  ]);
   const out: Stream[] = [];
   for (let i = 0; i < clients.length; i++) {
     const r = settled[i];
@@ -30,7 +39,7 @@ export async function fetchLibraryStreams(
       out.push(buildLibraryStream(slug, entry, matched));
     }
   }
-  return out;
+  return [...dmmStreams, ...out];
 }
 
 function matchEntry(entry: LibraryEntry, query: LibraryQuery): MatchInfo | null {

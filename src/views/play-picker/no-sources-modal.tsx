@@ -17,8 +17,8 @@ export function NoSourcesConfiguredModal({ meta }: { meta: Meta }) {
           Harbor needs at least one streaming source before it can play {title}. Pick one of the options below to get set up.
         </p>
         <ul className="mt-3 space-y-1.5 text-[13.5px] leading-relaxed text-ink-muted">
-          <li>· Install a stream addon (Torrentio, Comet, MediaFusion).</li>
-          <li>· Add a debrid key (TorBox, Real-Debrid, AllDebrid, Premiumize, Debrid-Link).</li>
+          <li>· Add a debrid key to use Harbor Search.</li>
+          <li>· Or install a stream addon (Torrentio, Comet, MediaFusion).</li>
         </ul>
         <div className="mt-7 flex flex-col gap-2.5">
           <button
