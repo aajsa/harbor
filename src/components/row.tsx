@@ -190,33 +190,17 @@ export function Row({
   const items = useMemo(() => Children.toArray(children), [children]);
   const childCount = items.length;
 
-  const restoredRef = useRef(false);
   const userInteractedRef = useRef(false);
-  const prevChildCountRef = useRef(0);
-  const { rememberRowScroll, recallRowScroll } = useView();
+  const { rememberRowScroll } = useView();
   useLayoutEffect(() => {
     measure();
-    measureScroll();
-    if (!trackEl || cellWidth == null) return;
-
-    // Fresh data (0 → N posters): always open at the start, never mid-rail.
-    const grewFromEmpty = prevChildCountRef.current === 0 && childCount > 0;
-    prevChildCountRef.current = childCount;
-    if (grewFromEmpty || (!userInteractedRef.current && childCount > 0)) {
+    // Always pin rails to the first poster unless the user scrolled this session.
+    // Restoring saved scrollLeft made every page open mid-row ("posters scrolled").
+    if (trackEl && cellWidth != null && childCount > 0 && !userInteractedRef.current) {
       if (readPos(trackEl) !== 0) writePos(trackEl, 0);
-      restoredRef.current = true;
-      measureScroll();
-      return;
     }
-    // After the user has scrolled this rail, keep their position (optional restore).
-    if (scrollKey && !restoredRef.current && childCount > 0) {
-      const n = recallRowScroll(scrollKey);
-      const max = trackEl.scrollWidth - trackEl.clientWidth;
-      const target = n != null && n > 0 && max > 0 ? Math.min(n, max) : 0;
-      if (readPos(trackEl) !== target) writePos(trackEl, target);
-      restoredRef.current = true;
-    }
-  }, [children, childCount, cellWidth, trackEl, scrollKey, recallRowScroll, effMin]);
+    measureScroll();
+  }, [children, childCount, cellWidth, trackEl, effMin]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -283,13 +267,13 @@ export function Row({
     const onReset = (e: Event) => {
       const detail = (e as CustomEvent<{ prefix?: string }>).detail;
       if (!scrollKey) return;
-      if (!detail?.prefix || !scrollKey.startsWith(detail.prefix)) return;
+      // Empty/missing prefix = reset every rail (nav change). Otherwise match prefix.
+      if (detail?.prefix && !scrollKey.startsWith(detail.prefix)) return;
       if (saveTimer != null) {
         window.clearTimeout(saveTimer);
         saveTimer = null;
       }
       writePos(track, 0);
-      rememberRowScroll(scrollKey, 0);
       userInteractedRef.current = false;
       measureScroll();
     };
