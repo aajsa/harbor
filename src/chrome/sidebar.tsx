@@ -202,7 +202,7 @@ function ScrollableNav({
   const t = useT();
   const items = applyNavCustomization(NAV_ITEMS, settings.navCustomization);
   const warm = (view: View) => {
-    preloadNavPage(queryClient, view, settings.tmdbKey, settings.region, authKey);
+    preloadNavPage(queryClient, view, settings.tmdbKey, settings.region, authKey, settings);
   };
   const isItemVisible = (item: NavItem) => {
     if (kid) return item.view === "kids";

@@ -1270,7 +1270,7 @@ function Shell({ onReady }: { onReady?: () => void }) {
         )}
       </div>
       {player && (
-        <Suspense fallback={null}>
+        <Suspense fallback={<div className="fixed inset-0 z-[100] bg-black" />}>
           <PlayerView
             key={player.meta.id.startsWith("iptv:") ? "player-live" : `player-${player.meta.id}`}
             src={player}
