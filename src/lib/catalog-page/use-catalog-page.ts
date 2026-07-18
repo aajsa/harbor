@@ -1,15 +1,12 @@
-import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useMemo, useRef } from "react";
 import type { Meta } from "@/lib/cinemeta";
-import { upsertOrdered } from "@/lib/progressive-rows";
-import {
-  fetchCatalogHero,
-  hydrateRowsFromCache,
-  loadCatalogSpecs,
-  peekCatalogHero,
-  rowFromSpec,
-} from "./load";
+import { CATALOG_REQUEST_TIMEOUT_MS, withTimeout } from "@/lib/progressive-rows";
+import { catalogHeroKey, catalogRowKey, rowFromSpec } from "./load";
 import type { CatalogPageId, CatalogPageRow, CatalogRowSpec } from "./types";
+
+const STALE_MS = 5 * 60_000;
+const GC_MS = 30 * 60_000;
 
 export type UseCatalogPageOptions = {
   pageId: CatalogPageId;
@@ -17,155 +14,170 @@ export type UseCatalogPageOptions = {
   scope: string;
   specs: CatalogRowSpec[];
   heroFetcher?: () => Promise<Meta[]>;
-  /** When false, do not load (e.g. inactive tab). Default true. */
+  /** When false, queries stay dormant (keep-alive off-screen). Default true. */
   enabled?: boolean;
   maxPerRow?: number;
   mapMetas?: (metas: Meta[], key: string) => Meta[];
-  /** Extra dependency token to force reload (addons tick, etc.). */
-  reloadToken?: string | number;
 };
 
 /**
- * Shared progressive catalog loader for Movies / Shows / Kids / Anime rails.
- * Hydrates from TanStack Query cache, then fills rows in batches.
+ * Shared catalog loader for Movies / Shows / Kids / Anime.
+ * Uses TanStack Query `useQueries` so rows stay cached, never wipe on
+ * remount, and preload via `queryClient.prefetchQuery` / ensureQueryData.
  */
 export function useCatalogPage(options: UseCatalogPageOptions) {
-  const {
-    pageId,
-    scope,
-    specs,
-    heroFetcher,
-    enabled = true,
-    maxPerRow = 30,
-    mapMetas,
-    reloadToken = 0,
-  } = options;
+  const { pageId, scope, specs, heroFetcher, enabled = true, maxPerRow = 30, mapMetas } = options;
   const queryClient = useQueryClient();
-  const [hero, setHero] = useState<Meta[]>([]);
-  const [rows, setRows] = useState<CatalogPageRow[]>([]);
-  const [loading, setLoading] = useState(false);
-  const rowsRef = useRef(rows);
+  const mapMetasRef = useRef(mapMetas);
+  mapMetasRef.current = mapMetas;
   const loadingKeys = useRef(new Set<string>());
   const specsRef = useRef(specs);
   specsRef.current = specs;
 
-  useEffect(() => {
-    rowsRef.current = rows;
-  }, [rows]);
+  const live = enabled && !!scope && specs.length > 0;
 
-  const order = useMemo(() => specs.map((s) => s.key), [specs]);
-  const orderRef = useRef(order);
-  orderRef.current = order;
-
-  useEffect(() => {
-    if (!enabled || !scope || specs.length === 0) return;
-    let cancelled = false;
-    const isCancelled = () => cancelled;
-
-    // Instant paint from cache
-    const cachedHero = heroFetcher ? peekCatalogHero(queryClient, pageId, scope) : undefined;
-    if (cachedHero?.length) setHero(cachedHero);
-    const cachedRows = hydrateRowsFromCache(queryClient, pageId, scope, specs);
-    if (cachedRows.length > 0) {
-      setRows(cachedRows);
-    } else {
-      if (!cachedHero?.length) setHero([]);
-      setRows([]);
-    }
-
-    setLoading(true);
-    (async () => {
-      if (heroFetcher) {
-        void fetchCatalogHero(queryClient, pageId, scope, heroFetcher)
-          .then((pool) => {
-            if (!cancelled) setHero(pool);
-          })
-          .catch(() => {});
-      }
-
-      await loadCatalogSpecs({
-        queryClient,
-        pageId,
-        scope,
-        specs,
-        mapMetas,
-        isCancelled,
-        onRow: (row) => {
-          if (cancelled) return;
-          setRows((current) => upsertOrdered(current, row, orderRef.current));
-        },
-      });
-      if (!cancelled) setLoading(false);
-    })().catch(() => {
-      if (!cancelled) setLoading(false);
-    });
-
-    return () => {
-      cancelled = true;
-    };
-    // specs identity: rely on pageId+scope+reloadToken; callers should memoize specs.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, pageId, scope, queryClient, reloadToken, heroFetcher, mapMetas]);
-
-  const loadMore = useCallback(
-    (rowKey: string) => {
-      if (loadingKeys.current.has(rowKey)) return;
-      const row = rowsRef.current.find((r) => r.key === rowKey);
-      if (!row || !row.fetcher || !row.hasMore || row.metas.length >= maxPerRow) return;
-      loadingKeys.current.add(rowKey);
-      const next = row.page + 1;
-      row
-        .fetcher(next)
-        .then((more) => {
-          let mapped = more;
-          if (mapMetas) mapped = mapMetas(more, rowKey);
-          setRows((rs) =>
-            rs.map((r) => {
-              if (r.key !== rowKey) return r;
-              const ids = new Set(r.metas.map((m) => m.id));
-              const fresh = mapped.filter((m) => !ids.has(m.id));
-              const combined = [...r.metas, ...fresh];
-              const reachedCap = combined.length >= maxPerRow;
-              return {
-                ...r,
-                metas: reachedCap ? combined.slice(0, maxPerRow) : combined,
-                page: next,
-                hasMore: !reachedCap && mapped.length > 0,
-              };
-            }),
-          );
-        })
-        .catch(() => {})
-        .finally(() => {
-          loadingKeys.current.delete(rowKey);
-        });
+  const heroQuery = useQuery({
+    queryKey: catalogHeroKey(pageId, scope),
+    queryFn: async () => {
+      if (!heroFetcher) return [] as Meta[];
+      return withTimeout(heroFetcher(), CATALOG_REQUEST_TIMEOUT_MS);
     },
-    [mapMetas, maxPerRow],
-  );
+    enabled: live && !!heroFetcher,
+    staleTime: STALE_MS,
+    gcTime: GC_MS,
+    retry: 1,
+  });
+
+  const rowQueries = useQueries({
+    queries: specs.map((spec) => ({
+      queryKey: catalogRowKey(pageId, scope, spec.key, 1),
+      queryFn: async () => {
+        let metas = await withTimeout(spec.fetcher(1), CATALOG_REQUEST_TIMEOUT_MS);
+        const map = mapMetasRef.current;
+        if (map) metas = map(metas, spec.key);
+        return metas;
+      },
+      enabled: live,
+      staleTime: STALE_MS,
+      gcTime: GC_MS,
+      retry: 1,
+    })),
+  });
+
+  const hero = heroQuery.data ?? [];
+
+  const rows: CatalogPageRow[] = useMemo(() => {
+    const out: CatalogPageRow[] = [];
+    for (let i = 0; i < specs.length; i++) {
+      const spec = specs[i];
+      const q = rowQueries[i];
+      const metas = q?.data;
+      if (!metas || metas.length === 0) continue;
+      out.push(rowFromSpec(spec, metas, 1));
+    }
+    return out;
+  }, [specs, rowQueries]);
 
   const rowsByKey = useMemo(() => {
     const map: Record<string, CatalogPageRow> = {};
     for (const r of rows) map[r.key] = r;
-    // Ensure every spec has a ready=false placeholder for anime-style UI.
-    for (const s of specsRef.current) {
+    for (const s of specs) {
       if (!map[s.key]) {
+        const idx = specs.findIndex((x) => x.key === s.key);
+        const pending = rowQueries[idx]?.isPending || rowQueries[idx]?.isFetching;
         map[s.key] = {
           key: s.key,
           title: s.title,
           metas: [],
           page: 1,
           hasMore: false,
-          ready: false,
+          ready: !pending && (rowQueries[idx]?.isFetched ?? false),
           fetcher: s.noPaginate ? undefined : s.fetcher,
         };
       }
     }
     return map;
-  }, [rows]);
+  }, [rows, specs, rowQueries]);
 
-  return { hero, rows, rowsByKey, loadMore, loading, setHero, setRows };
+  const loading =
+    live && (heroQuery.isLoading || rowQueries.some((q) => q.isLoading)) && rows.length === 0;
+
+  const loadMore = useCallback(
+    (rowKey: string) => {
+      if (loadingKeys.current.has(rowKey)) return;
+      const spec = specsRef.current.find((s) => s.key === rowKey);
+      const row = rows.find((r) => r.key === rowKey);
+      if (!spec || !row?.fetcher || !row.hasMore || row.metas.length >= maxPerRow) return;
+      loadingKeys.current.add(rowKey);
+      const next = row.page + 1;
+      const key = catalogRowKey(pageId, scope, rowKey, next);
+      void queryClient
+        .fetchQuery({
+          queryKey: key,
+          queryFn: async () => {
+            let more = await withTimeout(spec.fetcher(next), CATALOG_REQUEST_TIMEOUT_MS);
+            const map = mapMetasRef.current;
+            if (map) more = map(more, rowKey);
+            return more;
+          },
+          staleTime: STALE_MS,
+        })
+        .then((more) => {
+          // Merge page N into the page-1 cache entry that drives the UI.
+          const baseKey = catalogRowKey(pageId, scope, rowKey, 1);
+          const current = queryClient.getQueryData<Meta[]>(baseKey) ?? row.metas;
+          const ids = new Set(current.map((m) => m.id));
+          const fresh = more.filter((m) => !ids.has(m.id));
+          const combined = [...current, ...fresh];
+          const capped = combined.length > maxPerRow ? combined.slice(0, maxPerRow) : combined;
+          queryClient.setQueryData(baseKey, capped);
+        })
+        .catch(() => {})
+        .finally(() => {
+          loadingKeys.current.delete(rowKey);
+        });
+    },
+    [maxPerRow, pageId, queryClient, rows, scope],
+  );
+
+  return {
+    hero,
+    rows,
+    rowsByKey,
+    loadMore,
+    loading,
+    /** True while any row query is in flight (including background). */
+    fetching: rowQueries.some((q) => q.isFetching) || heroQuery.isFetching,
+  };
 }
 
-export function specsToPlaceholders(specs: CatalogRowSpec[]): CatalogPageRow[] {
-  return specs.map((s) => rowFromSpec(s, [], 1));
+/** Prefetch helpers used by idle warmup + nav hover (TanStack Query preload). */
+export async function preloadCatalogPage(
+  queryClient: ReturnType<typeof useQueryClient>,
+  opts: {
+    pageId: CatalogPageId;
+    scope: string;
+    specs: CatalogRowSpec[];
+    heroFetcher?: () => Promise<Meta[]>;
+    limit?: number;
+  },
+): Promise<void> {
+  const { pageId, scope, specs, heroFetcher, limit = 8 } = opts;
+  if (!scope) return;
+  if (heroFetcher) {
+    void queryClient.prefetchQuery({
+      queryKey: catalogHeroKey(pageId, scope),
+      queryFn: () => withTimeout(heroFetcher(), CATALOG_REQUEST_TIMEOUT_MS),
+      staleTime: STALE_MS,
+    });
+  }
+  await Promise.all(
+    specs.slice(0, limit).map((spec) =>
+      queryClient.prefetchQuery({
+        queryKey: catalogRowKey(pageId, scope, spec.key, 1),
+        queryFn: () => withTimeout(spec.fetcher(1), CATALOG_REQUEST_TIMEOUT_MS),
+        staleTime: STALE_MS,
+      }),
+    ),
+  );
 }
