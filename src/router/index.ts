@@ -1,3 +1,3 @@
-export { harborHistory, HarborRouterProvider, harborRouter } from "./router";
+export { HarborRouterProvider } from "./router";
 export { ViewRouterSync } from "./sync";
-export { metaPath, pathFromView, VIEW_PATH, viewFromPath } from "./paths";
+export { metaPath, pathFromView, viewFromPath } from "./paths";
