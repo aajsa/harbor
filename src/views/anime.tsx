@@ -120,11 +120,6 @@ export function AnimeView({ active = true }: { active?: boolean }) {
     return map;
   }, [catalogRowsByKey]);
 
-  const rowsRef = useRef(rowsByKey);
-  useEffect(() => {
-    rowsRef.current = rowsByKey;
-  }, [rowsByKey]);
-
   const filterSig = `${settings.animeExcludeOrigins.join(",")}|${settings.animeHideWatchedPicks}`;
   const [heroSeed, setHeroSeed] = useState(() => Math.floor(Math.random() * 0x7fffffff));
   const [hero, setHero] = useState<HeroBuilt>(

@@ -1,7 +1,7 @@
 import { useRouter } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
 import { useView, type View } from "@/lib/view";
-import { pathFromView, viewFromPath } from "./paths";
+import { metaPath, pathFromView, viewFromPath } from "./paths";
 
 /**
  * Bidirectional bridge: root tab changes ↔ TanStack Router path.
@@ -26,7 +26,7 @@ export function ViewRouterSync() {
 
     let next = pathFromView(view);
     if (topKind === "meta" && meta?.type && meta?.id) {
-      next = `/detail/${encodeURIComponent(meta.type)}/${encodeURIComponent(meta.id)}`;
+      next = metaPath(meta.type, meta.id);
     }
 
     if (router.state.location.pathname === next) return;

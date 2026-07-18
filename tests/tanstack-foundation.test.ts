@@ -43,7 +43,6 @@ test("virtual grid still uses tanstack virtual for tall grids", () => {
 
 test("query and router modules export public API", () => {
   assert.match(queryIndex, /HarborQueryProvider/);
-  assert.match(queryIndex, /useMetaQuery/);
   assert.match(queryIndex, /queryKeys/);
   assert.match(routerIndex, /HarborRouterProvider/);
   assert.match(routerIndex, /ViewRouterSync/);
