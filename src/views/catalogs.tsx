@@ -93,12 +93,15 @@ export function Catalogs({ active = true }: { active?: boolean }) {
     [customize, catalogs, hiddenSet],
   );
 
-  let eagerLeft = EAGER_SHELF_COUNT;
-  const takeEager = () => {
-    if (eagerLeft <= 0) return false;
-    eagerLeft -= 1;
-    return true;
-  };
+  const eagerKeys = useMemo(() => {
+    const keys = new Set<string>();
+    const order = [...pinnedCats, ...groups.flatMap((g) => g.cats)];
+    for (const c of order) {
+      if (keys.size >= EAGER_SHELF_COUNT) break;
+      keys.add(c.key);
+    }
+    return keys;
+  }, [pinnedCats, groups]);
 
   return (
     <main className="flex-1 overflow-y-auto px-12 pb-24 pt-28">
@@ -221,7 +224,7 @@ export function Catalogs({ active = true }: { active?: boolean }) {
                 </div>
                 <div className="flex flex-col gap-7">
                   {pinnedCats.map((c) => (
-                    <CatalogShelf key={c.key} catalog={c} eager={takeEager()} />
+                    <CatalogShelf key={c.key} catalog={c} eager={eagerKeys.has(c.key)} />
                   ))}
                 </div>
               </section>
@@ -246,7 +249,7 @@ export function Catalogs({ active = true }: { active?: boolean }) {
                 </div>
                 <div className="flex flex-col gap-7">
                   {g.cats.map((c) => (
-                    <CatalogShelf key={c.key} catalog={c} eager={takeEager()} />
+                    <CatalogShelf key={c.key} catalog={c} eager={eagerKeys.has(c.key)} />
                   ))}
                 </div>
               </section>
