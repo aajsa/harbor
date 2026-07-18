@@ -12,8 +12,11 @@ export const queryKeys = {
 
   catalog: {
     all: ["harbor", "catalog"] as const,
+    list: (authKey: string | null) => ["harbor", "catalog", "list", authKey ?? "anon"] as const,
     page: (transportUrl: string, type: string, id: string, page: number) =>
       ["harbor", "catalog", transportUrl, type, id, page] as const,
+    shelf: (base: string, type: string, id: string) =>
+      ["harbor", "catalog", "shelf", base, type, id, 1] as const,
     rows: (authKey: string | null) => ["harbor", "catalog", "rows", authKey ?? "anon"] as const,
   },
 
