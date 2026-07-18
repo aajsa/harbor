@@ -1,6 +1,18 @@
 import { useEffect, useState } from "react";
-import { fetchInstalledAddons, fetchManifestAt, filterEnabled } from "@/lib/addon-store";
-import { torboxAddonFor, userAddons, withDebridKeys, type Addon } from "@/lib/addons";
+import {
+  fetchInstalledAddons,
+  fetchManifestAt,
+  filterEnabled,
+  loadInstalled,
+} from "@/lib/addon-store";
+import {
+  torboxAddonFor,
+  torrentioAddonFor,
+  userAddons,
+  withDebridKeys,
+  type Addon,
+  type DebridKeySet,
+} from "@/lib/addons";
 import { applyOrderToItems, loadDisplayOrder } from "@/lib/addons-store/reorder";
 import { withTimeout } from "@/lib/progressive-rows";
 import type { useSettings } from "@/lib/settings";
@@ -8,6 +20,27 @@ import type { useSettings } from "@/lib/settings";
 type Settings = ReturnType<typeof useSettings>["settings"];
 
 const ADDON_DISCOVERY_TIMEOUT_MS = 10_000;
+
+function savedAddons(): Addon[] {
+  return filterEnabled(loadInstalled()).flatMap((entry) =>
+    entry.manifest ? [{ manifest: entry.manifest, transportUrl: entry.transportUrl }] : [],
+  );
+}
+
+function appendBuiltInSources(addons: Addon[], keys: DebridKeySet): Addon[] {
+  const list = addons.slice();
+  if (
+    Object.values(keys).some((key) => key?.trim()) &&
+    !list.some((addon) => addon.manifest.id === "com.stremio.torrentio.addon")
+  ) {
+    list.push(torrentioAddonFor(keys));
+  }
+  const torbox = torboxAddonFor(keys.tbKey ?? "");
+  if (torbox && !list.some((addon) => addon.manifest.id === torbox.manifest.id)) {
+    list.push(torbox);
+  }
+  return list;
+}
 
 function hasAnyResources(a: Addon): boolean {
   return (a.manifest.resources ?? []).length > 0;
@@ -39,7 +72,17 @@ export function useAddons(
   addons: Addon[] | null;
   userHasStreamAddons: boolean;
 } {
-  const [addons, setAddons] = useState<Addon[] | null>(null);
+  const [addons, setAddons] = useState<Addon[] | null>(() => {
+    const debridKeys = {
+      rdKey: settings.rdKey,
+      tbKey: settings.tbKey,
+      adKey: settings.adKey,
+      pmKey: settings.pmKey,
+      dlKey: settings.dlKey,
+    };
+    const local = appendBuiltInSources(withDebridKeys(savedAddons(), debridKeys), debridKeys);
+    return local.length > 0 ? local : null;
+  });
   const [userHasStreamAddons, setUserHasStreamAddons] = useState(false);
   useEffect(() => {
     let cancelled = false;
@@ -50,7 +93,6 @@ export function useAddons(
       pmKey: settings.pmKey,
       dlKey: settings.dlKey,
     };
-    const torbox = torboxAddonFor(settings.tbKey);
     (async () => {
       const [stremioResult, installedResult] = await Promise.all([
         authKey
@@ -59,7 +101,7 @@ export function useAddons(
         withTimeout(fetchInstalledAddons(), ADDON_DISCOVERY_TIMEOUT_MS).catch(() => [] as Addon[]),
       ]);
       const stremioAddons = filterEnabled(stremioResult);
-      const installed = filterEnabled(installedResult);
+      const installed = filterEnabled([...savedAddons(), ...installedResult]);
       if (cancelled) return;
       const merged: Addon[] = [];
       const idxByUrl = new Map<string, number>();
@@ -86,11 +128,12 @@ export function useAddons(
       }
       const userStreamCount = merged.filter(declaresStream).length;
       setUserHasStreamAddons(userStreamCount > 0);
-      const list = withDebridKeys(merged, debridKeys);
+      const list = appendBuiltInSources(withDebridKeys(merged, debridKeys), debridKeys);
       const existingTorboxIdx = list.findIndex(
         (a) =>
           a.manifest.id === "app.torbox.stremio" || a.transportUrl?.includes("stremio.torbox.app"),
       );
+      const torbox = torboxAddonFor(settings.tbKey);
       console.info(
         `[picker] authKey=${authKey ? "yes" : "no"} tbKey=${settings.tbKey ? `set(${settings.tbKey.slice(0, 8)}…)` : "EMPTY"} stremioAddons=${stremioAddons.length} installed=${installed.length} merged=${merged.length} userStreamCount=${userStreamCount} hasTorbox=${existingTorboxIdx >= 0} torboxAutoAddable=${!!torbox}`,
       );
