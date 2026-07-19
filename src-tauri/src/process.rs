@@ -5,11 +5,20 @@ use tokio::io::AsyncReadExt;
 pub async fn terminate_descendants(pid: u32) {
     #[cfg(unix)]
     {
-        // yt-dlp may have a direct ffmpeg child. Target only children of the
-        // Harbor-owned PID; never use a name-based process sweep.
-        let mut command = tokio::process::Command::new("pkill");
-        command.args(["-KILL", "-P", &pid.to_string()]);
-        let _ = tokio::time::timeout(Duration::from_secs(2), command.status()).await;
+        // A media helper can spawn another helper (for example yt-dlp -> shell
+        // -> ffmpeg). Kill each known parent from the leaves upward so a
+        // grandchild cannot outlive its direct parent and retain Harbor's pipes.
+        // Every kill remains constrained by PPID; we never sweep by process name.
+        let mut parents = vec![pid];
+        let mut index = 0;
+        while index < parents.len() {
+            let parent = parents[index];
+            index += 1;
+            parents.extend(direct_children(parent).await);
+        }
+        for parent in parents.into_iter().rev() {
+            kill_direct_children(parent).await;
+        }
     }
     #[cfg(windows)]
     {
@@ -20,6 +29,34 @@ pub async fn terminate_descendants(pid: u32) {
             .creation_flags(0x0800_0000);
         let _ = tokio::time::timeout(Duration::from_secs(2), command.status()).await;
     }
+}
+
+#[cfg(unix)]
+async fn direct_children(pid: u32) -> Vec<u32> {
+    let output = tokio::time::timeout(Duration::from_secs(2), async {
+        tokio::process::Command::new("pgrep")
+            .args(["-P", &pid.to_string()])
+            .output()
+            .await
+    })
+    .await
+    .ok()
+    .and_then(Result::ok);
+    output
+        .map(|output| {
+            String::from_utf8_lossy(&output.stdout)
+                .lines()
+                .filter_map(|value| value.trim().parse::<u32>().ok())
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+#[cfg(unix)]
+async fn kill_direct_children(pid: u32) {
+    let mut command = tokio::process::Command::new("pkill");
+    command.args(["-KILL", "-P", &pid.to_string()]);
+    let _ = tokio::time::timeout(Duration::from_secs(2), command.status()).await;
 }
 
 pub async fn output_with_timeout(
@@ -184,5 +221,50 @@ mod tests {
             .is_some_and(|state| state != 'Z');
         let _ = std::fs::remove_file(marker_path);
         assert!(!running, "descendant process survived timeout: {state}");
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn timeout_terminates_nested_descendants() {
+        let marker_path = std::env::temp_dir().join(format!(
+            "harbor-nested-process-tree-{}.pid",
+            uuid::Uuid::new_v4()
+        ));
+        let marker_arg = marker_path.to_string_lossy().to_string();
+        let mut command = tokio::process::Command::new("sh");
+        command.arg("-c").arg(format!(
+            "sh -c \"sleep 2 & echo \\$! > '{}'; wait\" & wait",
+            marker_arg
+        ));
+
+        let started = Instant::now();
+        output_with_timeout(&mut command, Duration::from_millis(100))
+            .await
+            .expect_err("nested process tree must time out");
+        assert!(
+            started.elapsed() < Duration::from_secs(1),
+            "nested descendant kept the output pipes open"
+        );
+
+        let child_pid: i32 = std::fs::read_to_string(&marker_path)
+            .expect("read nested child pid")
+            .trim()
+            .parse()
+            .expect("parse nested child pid");
+        let process_state = std::process::Command::new("ps")
+            .args(["-o", "state=", "-p", &child_pid.to_string()])
+            .output()
+            .expect("inspect nested descendant state");
+        let state = String::from_utf8_lossy(&process_state.stdout);
+        let running = state
+            .trim()
+            .chars()
+            .next()
+            .is_some_and(|state| state != 'Z');
+        let _ = std::fs::remove_file(marker_path);
+        assert!(
+            !running,
+            "nested descendant process survived timeout: {state}"
+        );
     }
 }
