@@ -135,8 +135,7 @@ export function TogetherPopover() {
       className="
         harbor-together-surface
         w-[400px] max-w-[calc(100vw-24px)]
-        border border-edge bg-elevated
-        animate-popover-in
+        border border-edge
       "
       contentClassName="
         flex max-h-[80vh] w-full
@@ -144,6 +143,7 @@ export function TogetherPopover() {
         overflow-y-auto p-5
         [scrollbar-width:none]
         [&::-webkit-scrollbar]:hidden
+        animate-popover-in
       "
     >
       <TvModalClose onClose={closeModal} label={t("Close")} />
