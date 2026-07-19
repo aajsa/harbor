@@ -102,6 +102,7 @@ fn detect_audio_only(name: &str, model: &Option<String>, kind: &str) -> bool {
     false
 }
 
+#[derive(Debug)]
 enum ActiveSession {
     Chromecast {
         host: String,
@@ -199,7 +200,9 @@ async fn cancel_pending_prepare() -> Result<(), String> {
         .take();
     if let Some((_, token, finished)) = pending {
         token.cancel();
-        finished.notified().await;
+        // Device protocols may be inside an uninterruptible socket operation.
+        // Cancellation remains authoritative, but stop must never wait forever.
+        let _ = tokio::time::timeout(Duration::from_secs(2), finished.notified()).await;
     }
     Ok(())
 }
@@ -230,6 +233,22 @@ mod pending_prepare_tests {
         let _new = begin_pending_load().expect("register new load without subtitle");
         assert!(old_token.is_cancelled());
     }
+
+    #[tokio::test]
+    async fn superseded_generation_cannot_commit_active_session() {
+        let old = begin_pending_load().expect("register old load");
+        let _new = begin_pending_load().expect("supersede old load");
+        let result = replace_active_session_if_current(
+            old.id,
+            ActiveSession::Dlna {
+                control_url: "test".to_string(),
+                hls_session_id: None,
+            },
+            |_| async {},
+        )
+        .await;
+        assert!(matches!(result, Err((ref error, _)) if error == "cast load superseded"));
+    }
 }
 
 impl ActiveSession {
@@ -243,6 +262,7 @@ impl ActiveSession {
     }
 }
 
+#[cfg(test)]
 async fn replace_active_session<Stop, StopFuture>(
     next: ActiveSession,
     stop_hls: Stop,
@@ -261,6 +281,91 @@ where
         stop_hls(id).await;
     }
     Ok(())
+}
+
+async fn replace_active_session_if_current<Stop, StopFuture>(
+    load_id: u64,
+    next: ActiveSession,
+    stop_hls: Stop,
+) -> Result<(), (String, ActiveSession)>
+where
+    Stop: FnOnce(String) -> StopFuture,
+    StopFuture: std::future::Future<Output = ()>,
+{
+    let previous_hls = {
+        // Keep the generation check and active-session commit atomic with
+        // respect to begin_pending_prepare(), which owns this mutex.
+        let pending = match PENDING_PREPARE.lock() {
+            Ok(pending) => pending,
+            Err(error) => return Err((format!("cast load lock: {error}"), next)),
+        };
+        if !pending
+            .as_ref()
+            .is_some_and(|(current, _, _)| *current == load_id)
+        {
+            return Err(("cast load superseded".to_string(), next));
+        }
+        let mut active = match ACTIVE.lock() {
+            Ok(active) => active,
+            Err(error) => return Err((format!("lock: {error}"), next)),
+        };
+        active
+            .replace(next)
+            .and_then(|session| session.hls_session_id())
+    };
+    if let Some(id) = previous_hls {
+        stop_hls(id).await;
+    }
+    Ok(())
+}
+
+async fn cleanup_uncommitted_session(session: ActiveSession, proxy_state: &ProxyState) {
+    let hls_session_id = session.hls_session_id();
+    match session {
+        ActiveSession::Dlna { control_url, .. } => {
+            let _ = dlna::stop(control_url).await;
+        }
+        ActiveSession::Roku { ecp_base, .. } => {
+            let _ = roku::stop(ecp_base).await;
+        }
+        ActiveSession::AirPlay { host, port, .. } => {
+            let _ = airplay::stop(host, port).await;
+        }
+        ActiveSession::Chromecast {
+            host,
+            port,
+            session_id,
+            ..
+        } => {
+            let _ = tokio::task::spawn_blocking(move || {
+                if let Ok(device) = connect_device(&host, port) {
+                    let _ = device.receiver.stop_app(&session_id);
+                }
+            })
+            .await;
+        }
+    }
+    if let Some(id) = hls_session_id {
+        proxy_state.stop_hls_session(&id).await;
+    }
+}
+
+async fn commit_active_session(
+    load_id: u64,
+    next: ActiveSession,
+    proxy_state: &ProxyState,
+) -> Result<(), String> {
+    match replace_active_session_if_current(load_id, next, |id| async move {
+        proxy_state.stop_hls_session(&id).await;
+    })
+    .await
+    {
+        Ok(()) => Ok(()),
+        Err((error, stale)) => {
+            cleanup_uncommitted_session(stale, proxy_state).await;
+            Err(error)
+        }
+    }
 }
 
 fn parse_friendly_name(properties: &HashMap<String, String>) -> Option<String> {
@@ -685,14 +790,20 @@ pub async fn cast_load(
             }
             return Err(error);
         }
-        replace_active_session(
+        if pending_load.cancellation.is_cancelled() {
+            let _ = dlna::stop(cu.clone()).await;
+            if let Some(id) = hls_session_id.as_deref() {
+                proxy_state.stop_hls_session(id).await;
+            }
+            return Err("cast load superseded".to_string());
+        }
+        commit_active_session(
+            pending_load.id,
             ActiveSession::Dlna {
                 control_url: cu,
                 hls_session_id,
             },
-            |id| async move {
-                proxy_state.stop_hls_session(&id).await;
-            },
+            &proxy_state,
         )
         .await?;
         return Ok(());
@@ -710,14 +821,20 @@ pub async fn cast_load(
             }
             return Err(error);
         }
-        replace_active_session(
+        if pending_load.cancellation.is_cancelled() {
+            let _ = roku::stop(ecp.clone()).await;
+            if let Some(id) = hls_session_id.as_deref() {
+                proxy_state.stop_hls_session(id).await;
+            }
+            return Err("cast load superseded".to_string());
+        }
+        commit_active_session(
+            pending_load.id,
             ActiveSession::Roku {
                 ecp_base: ecp,
                 hls_session_id,
             },
-            |id| async move {
-                proxy_state.stop_hls_session(&id).await;
-            },
+            &proxy_state,
         )
         .await?;
         return Ok(());
@@ -729,15 +846,21 @@ pub async fn cast_load(
             }
             return Err(error);
         }
-        replace_active_session(
+        if pending_load.cancellation.is_cancelled() {
+            let _ = airplay::stop(host.clone(), port).await;
+            if let Some(id) = hls_session_id.as_deref() {
+                proxy_state.stop_hls_session(id).await;
+            }
+            return Err("cast load superseded".to_string());
+        }
+        commit_active_session(
+            pending_load.id,
             ActiveSession::AirPlay {
                 host,
                 port,
                 hls_session_id,
             },
-            |id| async move {
-                proxy_state.stop_hls_session(&id).await;
-            },
+            &proxy_state,
         )
         .await?;
         return Ok(());
@@ -754,10 +877,30 @@ pub async fn cast_load(
     .await;
     match result {
         Ok(session) => {
-            replace_active_session(session, |id| async move {
-                proxy_state.stop_hls_session(&id).await;
-            })
-            .await
+            if pending_load.cancellation.is_cancelled() {
+                if let ActiveSession::Chromecast {
+                    host,
+                    port,
+                    session_id,
+                    ..
+                } = &session
+                {
+                    let host = host.clone();
+                    let port = *port;
+                    let session_id = session_id.clone();
+                    let _ = tokio::task::spawn_blocking(move || {
+                        if let Ok(device) = connect_device(&host, port) {
+                            let _ = device.receiver.stop_app(&session_id);
+                        }
+                    })
+                    .await;
+                }
+                if let Some(id) = hls_session_id.as_deref() {
+                    proxy_state.stop_hls_session(id).await;
+                }
+                return Err("cast load superseded".to_string());
+            }
+            commit_active_session(pending_load.id, session, &proxy_state).await
         }
         Err(error) => {
             if let Some(id) = hls_session_id.as_deref() {
