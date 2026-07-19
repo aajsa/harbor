@@ -17,13 +17,7 @@ import { ReturnToVideo } from "./together-modal/return-to-video";
 import { TogetherRelayBanner } from "./together-relay-banner";
 import { ThreeLiquidGlassSurface } from "@/components/ThreeLiquidGlassSurface";
 
-export function TogetherPopover({
-  placement = "below-right",
-  connectStyle = "popover",
-}: {
-  placement?: "below-right" | "above-left";
-  connectStyle?: "tab" | "popover";
-} = {}) {
+export function TogetherPopover() {
   const {
     enabled,
     snapshot,
@@ -128,49 +122,20 @@ export function TogetherPopover({
   return (
     <ThreeLiquidGlassSurface
       role="dialog"
-      aria-modal="true"
       data-tv-focus-scope
       aria-label={t("Watch together")}
-      radius="16px"
+      radius="var(--radius-lg)"
       shaderRadius={0.3}
       intensity={0.74}
       interactive={false}
       alwaysActive
       style={{
-        background: "transparent",
         boxShadow: "none",
-        ...(connectStyle === "tab"
-          ? placement === "above-left"
-            ? {
-                borderStartStartRadius: "16px",
-                borderStartEndRadius: "16px",
-                borderEndStartRadius: 0,
-                borderEndEndRadius: 0,
-              }
-            : {
-                borderStartStartRadius: 0,
-                borderStartEndRadius: 0,
-                borderEndStartRadius: "16px",
-                borderEndEndRadius: "16px",
-              }
-          : placement === "above-left"
-            ? {
-                borderStartStartRadius: "16px",
-                borderStartEndRadius: "16px",
-                borderEndStartRadius: 0,
-                borderEndEndRadius: "16px",
-              }
-            : {
-                borderStartStartRadius: "16px",
-                borderStartEndRadius: 0,
-                borderEndStartRadius: "16px",
-                borderEndEndRadius: "16px",
-              }),
       }}
       className="
         harbor-together-surface
         w-[400px] max-w-[calc(100vw-24px)]
-        border border-edge
+        border border-edge bg-elevated
         animate-popover-in
       "
       contentClassName="

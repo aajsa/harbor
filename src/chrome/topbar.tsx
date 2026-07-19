@@ -1,5 +1,5 @@
 import { ArrowLeft, Search, Users } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { BackChrome } from "@/chrome/back-chrome";
 import { HarborMark } from "@/components/icons/harbor-mark";
@@ -223,22 +223,26 @@ const TOPBAR_MAX_AVATARS = 3;
 export function TogetherButton({
   variant = "chip",
   popoverPlacement = "below-right",
-  connectStyle = "popover",
 }: {
   variant?: "chip" | "ghost";
   popoverPlacement?: "below-right" | "above-left";
-  connectStyle?: "tab" | "popover";
 } = {}) {
-  const { snapshot, modalOpen, openModal, closeModal, clientId } = useTogether();
+  const { snapshot, modalOwner, openModal, closeModal, clientId } = useTogether();
 
   const { avatar: selfAvatar, color: selfColor } = useSelfIdentity();
 
   const t = useT();
   const live = snapshot.state === "joined";
   const wrapRef = useRef<HTMLDivElement>(null);
+  const modalId = useId();
+  const ownsModal = modalOwner === modalId;
 
   useEffect(() => {
-    if (!modalOpen) return;
+    if (modalOwner === "auto") openModal(modalId);
+  }, [modalId, modalOwner, openModal]);
+
+  useEffect(() => {
+    if (!ownsModal) return;
 
     const onDown = (event: MouseEvent) => {
       if (!wrapRef.current?.contains(event.target as Node)) {
@@ -259,7 +263,7 @@ export function TogetherButton({
       document.removeEventListener("mousedown", onDown);
       document.removeEventListener("keydown", onKey);
     };
-  }, [modalOpen, closeModal]);
+  }, [ownsModal, closeModal]);
 
   const visible = snapshot.participants.slice(0, TOPBAR_MAX_AVATARS);
 
@@ -275,57 +279,38 @@ export function TogetherButton({
       ? "h-9 w-9 justify-center"
       : "h-11 w-11 justify-center";
 
-  const sizing =
-    modalOpen && !above ? (live ? "h-14 gap-2 px-3" : "h-14 w-11 justify-center") : idleSize;
+  const sizing = idleSize;
 
-  /*
-   * شكل الزجاج يتغير عند اتصاله بالـPopover.
-   */
-  const glassRadius = modalOpen
-    ? above
-      ? "0 0 8px 8px"
-      : "8px 8px 0 0"
-    : variant === "ghost"
-      ? "9999px"
-      : "12px";
+  const glassRadius = variant === "ghost" ? "9999px" : "var(--radius-md)";
 
-  const glassChrome = modalOpen
-    ? `z-[51] harbor-together-surface border border-edge text-ink ${
-        above ? "border-t-0" : "border-b-0"
-      }`
-    : `border border-white/[0.10] ${live ? "text-ink" : "text-ink-muted hover:text-ink"}`;
+  const glassChrome = ownsModal
+    ? "z-[51] border border-edge bg-surface text-ink"
+    : `border border-edge bg-surface ${live ? "text-ink" : "text-ink-muted hover:text-ink"}`;
 
   return (
-    <div
-      ref={wrapRef}
-      className={`relative ${
-        modalOpen && !above ? "harbor-wt-wrap flex flex-col self-stretch justify-end" : ""
-      }`}
-    >
+    <div ref={wrapRef} className="relative">
       <ThreeLiquidGlassSurface
         radius={glassRadius}
-        shaderRadius={variant === "ghost" ? 1 : modalOpen ? 0.3 : 0.48}
+        shaderRadius={variant === "ghost" ? 1 : ownsModal ? 0.3 : 0.48}
         intensity={0.78}
-        style={{
-          background: "transparent",
-          boxShadow: "none",
-        }}
         className={`
+          harbor-together-surface
           relative inline-flex
           transition-colors duration-150
           ${glassChrome}
-          ${modalOpen && !above ? "harbor-wt-tab" : ""}
         `}
         contentClassName="h-full w-full"
       >
         <button
           type="button"
           aria-label={t("chrome.watchTogether")}
+          aria-haspopup="dialog"
+          aria-expanded={ownsModal}
           onClick={() => {
-            if (modalOpen) {
+            if (ownsModal) {
               closeModal();
             } else {
-              openModal();
+              openModal(modalId);
             }
           }}
           className={`
@@ -425,13 +410,13 @@ export function TogetherButton({
         </button>
       </ThreeLiquidGlassSurface>
 
-      {modalOpen && (
+      {ownsModal && (
         <div
           className={`harbor-wt-modal absolute z-50 ${
-            above ? "bottom-[calc(100%-1px)] start-0" : "end-0 top-[calc(100%-1px)]"
+            above ? "bottom-[calc(100%+8px)] start-0" : "end-0 top-[calc(100%+8px)]"
           }`}
         >
-          <TogetherPopover placement={popoverPlacement} connectStyle={connectStyle} />
+          <TogetherPopover />
         </div>
       )}
     </div>
