@@ -312,7 +312,17 @@ fn relay_child_stdout(
         use tokio::io::AsyncReadExt;
         let mut buffer = vec![0_u8; 64 * 1024];
         loop {
-            match stdout.read(&mut buffer).await {
+            let read_result = tokio::select! {
+                biased;
+                _ = body_tx.closed() => {
+                    let _ = child.kill().await;
+                    let _ = child.wait().await;
+                    eprintln!("[harbor::transcode] client disconnected; ffmpeg stopped");
+                    return;
+                }
+                result = stdout.read(&mut buffer) => result,
+            };
+            match read_result {
                 Ok(0) => break,
                 Ok(read) => {
                     let bytes = axum::body::Bytes::copy_from_slice(&buffer[..read]);
@@ -335,6 +345,38 @@ fn relay_child_stdout(
         }
     });
     body_rx
+}
+
+#[cfg(test)]
+mod relay_tests {
+    use super::*;
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn dropping_response_stops_stalled_transcoder() {
+        let mut command = tokio::process::Command::new("sh");
+        command
+            .arg("-c")
+            .arg("sleep 30")
+            .stdout(std::process::Stdio::piped());
+        let mut child = command.spawn().expect("spawn stalled child");
+        let pid = child.id().expect("child pid") as i32;
+        let stdout = child.stdout.take().expect("child stdout");
+        let response = relay_child_stdout(child, stdout);
+        drop(response);
+
+        tokio::time::timeout(std::time::Duration::from_secs(2), async {
+            loop {
+                let alive = unsafe { libc::kill(pid, 0) } == 0;
+                if !alive {
+                    break;
+                }
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .expect("stalled child should be killed when response is dropped");
+    }
 }
 
 fn scale_filter(max_height: u32) -> String {

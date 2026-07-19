@@ -2,6 +2,27 @@ use std::process::{ExitStatus, Output, Stdio};
 use std::time::Duration;
 use tokio::io::AsyncReadExt;
 
+pub async fn terminate_descendants(pid: u32) {
+    #[cfg(unix)]
+    {
+        // yt-dlp may have a direct ffmpeg child. Target only children of the
+        // Harbor-owned PID; never use a name-based process sweep.
+        let _ = tokio::process::Command::new("pkill")
+            .args(["-KILL", "-P", &pid.to_string()])
+            .status()
+            .await;
+    }
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        let _ = tokio::process::Command::new("taskkill")
+            .args(["/PID", &pid.to_string(), "/T", "/F"])
+            .creation_flags(0x0800_0000)
+            .status()
+            .await;
+    }
+}
+
 pub async fn output_with_timeout(
     command: &mut tokio::process::Command,
     timeout: Duration,
@@ -59,6 +80,9 @@ async fn output_with_timeout_inner(
     let status: ExitStatus = match completion {
         Completion::Exited(result) => result.map_err(|error| format!("wait: {error}"))?,
         Completion::TimedOut | Completion::Cancelled => {
+            if let Some(pid) = child.id() {
+                terminate_descendants(pid).await;
+            }
             if child.kill().await.is_err() {
                 let _ = child.wait().await;
             }
@@ -124,5 +148,30 @@ mod tests {
                 .expect_err("cancelled child must stop");
 
         assert_eq!(error, "cancelled");
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn timeout_terminates_direct_descendants() {
+        let marker_path =
+            std::env::temp_dir().join(format!("harbor-process-tree-{}.pid", uuid::Uuid::new_v4()));
+        let marker_arg = marker_path.to_string_lossy().to_string();
+        let mut command = tokio::process::Command::new("sh");
+        command
+            .arg("-c")
+            .arg(format!("sleep 30 & echo $! > '{}' && wait", marker_arg));
+
+        output_with_timeout(&mut command, Duration::from_millis(100))
+            .await
+            .expect_err("process tree must time out");
+
+        let child_pid: i32 = std::fs::read_to_string(&marker_path)
+            .expect("read child pid")
+            .trim()
+            .parse()
+            .expect("parse child pid");
+        let alive = unsafe { libc::kill(child_pid, 0) } == 0;
+        let _ = std::fs::remove_file(marker_path);
+        assert!(!alive, "descendant process survived timeout");
     }
 }

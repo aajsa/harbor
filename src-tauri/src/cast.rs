@@ -128,6 +128,7 @@ enum ActiveSession {
 }
 
 static ACTIVE: Mutex<Option<ActiveSession>> = Mutex::new(None);
+static CAST_LOAD_GATE: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 static PENDING_PREPARE: Mutex<
     Option<(
         u64,
@@ -136,6 +137,18 @@ static PENDING_PREPARE: Mutex<
     )>,
 > = Mutex::new(None);
 static NEXT_PREPARE_ID: AtomicU64 = AtomicU64::new(1);
+
+struct PendingLoad {
+    id: u64,
+    cancellation: tokio_util::sync::CancellationToken,
+    finished: std::sync::Arc<tokio::sync::Notify>,
+}
+
+impl Drop for PendingLoad {
+    fn drop(&mut self) {
+        finish_pending_prepare(self.id, &self.finished);
+    }
+}
 
 fn begin_pending_prepare() -> Result<
     (
@@ -156,6 +169,15 @@ fn begin_pending_prepare() -> Result<
         previous_token.cancel();
     }
     Ok((id, token, finished))
+}
+
+fn begin_pending_load() -> Result<PendingLoad, String> {
+    let (id, cancellation, finished) = begin_pending_prepare()?;
+    Ok(PendingLoad {
+        id,
+        cancellation,
+        finished,
+    })
 }
 
 fn finish_pending_prepare(id: u64, finished: &tokio::sync::Notify) {
@@ -199,6 +221,14 @@ mod pending_prepare_tests {
             .expect("cancel pending preparation");
         assert!(token.is_cancelled());
         worker.await.expect("preparation worker exits");
+    }
+
+    #[tokio::test]
+    async fn every_new_load_cancels_the_previous_generation() {
+        let old = begin_pending_load().expect("register old load");
+        let old_token = old.cancellation.clone();
+        let _new = begin_pending_load().expect("register new load without subtitle");
+        assert!(old_token.is_cancelled());
     }
 }
 
@@ -528,6 +558,14 @@ pub async fn cast_load(
     subtitle: Option<CastSub>,
     sub_style: Option<CastSubStyle>,
 ) -> Result<(), String> {
+    // Register every load before waiting for the serialization gate. This makes
+    // the newest request authoritative even when an older request is preparing
+    // subtitles or proxy resources.
+    let pending_load = begin_pending_load()?;
+    let _load_gate = CAST_LOAD_GATE.lock().await;
+    if pending_load.cancellation.is_cancelled() {
+        return Err("cast load superseded".to_string());
+    }
     let kind_str = kind.unwrap_or_else(|| "chromecast".into());
     let control_url = required_control_url(&kind_str, control_url)?;
     let req_headers = headers.unwrap_or_default();
@@ -535,11 +573,16 @@ pub async fn cast_load(
         Some(ref s) if !s.off => {
             let style = sub_style.unwrap_or_default();
             let seek = start_time_sec.unwrap_or(0.0).max(0.0);
-            let (prepare_id, cancellation, preparation_finished) = begin_pending_prepare()?;
-            let result =
-                cast_subs::prepare(s, &style, &url, &req_headers, seek, &cancellation).await;
-            finish_pending_prepare(prepare_id, &preparation_finished);
-            if cancellation.is_cancelled() {
+            let result = cast_subs::prepare(
+                s,
+                &style,
+                &url,
+                &req_headers,
+                seek,
+                &pending_load.cancellation,
+            )
+            .await;
+            if pending_load.cancellation.is_cancelled() {
                 return Err("cast subtitle preparation cancelled".to_string());
             }
             result
@@ -608,6 +651,12 @@ pub async fn cast_load(
             burn_sub_style,
         })
         .await;
+    if pending_load.cancellation.is_cancelled() {
+        if proxied.url.contains("/cast/hls/") {
+            proxy_state.stop_hls_session(&proxied.session_id).await;
+        }
+        return Err("cast load superseded".to_string());
+    }
     eprintln!("[harbor::cast] proxied stream ready");
     let hls_session_id = proxied
         .url
