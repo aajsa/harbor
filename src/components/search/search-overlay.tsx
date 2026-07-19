@@ -22,6 +22,7 @@ import { AiModeButton } from "./ai-mode-button";
 import { AiExampleHint, SEARCH_EXAMPLES } from "@/components/ai-example-hint";
 import { useSettings } from "@/lib/settings";
 import { isMagnetInput, isDirectVideoUrl } from "@/lib/torrent/magnet";
+import { getSearchDisplayState } from "@/lib/search-display-state";
 
 export function SearchOverlay() {
   const { open, setOpen, query, setQuery, results, status, clear, recordRecent } = useSearch();
@@ -91,35 +92,14 @@ export function SearchOverlay() {
   };
 
   const trimmed = query.trim();
-  const currentResults = results?.query === trimmed ? results : null;
+  const { currentResults, hasResults, noResults, tmdbUnavailable } = getSearchDisplayState(
+    results,
+    query,
+    status,
+  );
   const magnetInput = !!trimmed && isMagnetInput(trimmed);
   const urlInput = !!trimmed && !magnetInput && isDirectVideoUrl(trimmed);
   const directInput = magnetInput || urlInput;
-  const hasResults = !!(
-    currentResults &&
-    trimmed &&
-    (currentResults.topMatch ||
-      currentResults.people.length ||
-      currentResults.movies.length ||
-      currentResults.series.length ||
-      currentResults.liveTv.length ||
-      currentResults.anime.length ||
-      currentResults.addons.length ||
-      currentResults.addonGroups.length)
-  );
-  const noResults = !!(
-    currentResults &&
-    trimmed &&
-    status === "done" &&
-    !currentResults.topMatch &&
-    currentResults.people.length === 0 &&
-    currentResults.movies.length === 0 &&
-    currentResults.series.length === 0 &&
-    currentResults.liveTv.length === 0 &&
-    currentResults.anime.length === 0 &&
-    currentResults.addons.length === 0 &&
-    currentResults.addonGroups.length === 0
-  );
 
   return createPortal(
     <div
@@ -274,13 +254,16 @@ export function SearchOverlay() {
             />
           )}
 
+          {tmdbUnavailable && !directInput && !aiActive && (
+            <div className="mb-5 rounded-2xl border border-edge-soft bg-elevated/60 px-5 py-4 text-[13px] text-ink-muted">
+              {hasResults
+                ? t("TMDB is temporarily unavailable. These results may be incomplete.")
+                : t("TMDB is temporarily unavailable. Try your search again shortly.")}
+            </div>
+          )}
+
           {trimmed && !directInput && hasResults && !aiActive && currentResults && (
             <div className="flex flex-col gap-8 pb-12">
-              {currentResults.tmdbUnavailable && (
-                <p className="-mb-3 text-[13px] text-ink-muted">
-                  {t("TMDB is temporarily unavailable. These results may be incomplete.")}
-                </p>
-              )}
               {currentResults.topMatch && (
                 <TopMatch match={currentResults.topMatch} onClose={close} />
               )}
