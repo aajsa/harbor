@@ -10,29 +10,34 @@ import { metaPath, pathFromView, viewFromPath } from "./paths";
 export function ViewRouterSync() {
   const router = useRouter();
   const { view, setView, topKind, meta } = useView();
+  const metaId = meta?.id;
+  const metaType = meta?.type;
   const lastPath = useRef(router.state.location.pathname);
   const lastView = useRef(view);
+  const previousMetaId = useRef(metaId);
   const suppress = useRef(false);
 
   // View → Router
   useEffect(() => {
+    const closedMeta = previousMetaId.current != null && metaId == null;
+    previousMetaId.current = metaId;
     if (suppress.current) {
       suppress.current = false;
       lastView.current = view;
       return;
     }
-    if (view === lastView.current && topKind !== "meta") return;
+    if (view === lastView.current && topKind !== "meta" && !closedMeta) return;
     lastView.current = view;
 
     let next = pathFromView(view);
-    if (topKind === "meta" && meta?.type && meta?.id) {
-      next = metaPath(meta.type, meta.id);
+    if (topKind === "meta" && metaType && metaId) {
+      next = metaPath(metaType, metaId);
     }
 
     if (router.state.location.pathname === next) return;
     lastPath.current = next;
     void router.navigate({ to: next, replace: false });
-  }, [view, topKind, meta?.type, meta?.id, router]);
+  }, [view, topKind, metaType, metaId, router]);
 
   // Router → View (back/forward or external navigate)
   useEffect(() => {

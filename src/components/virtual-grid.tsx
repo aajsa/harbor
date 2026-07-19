@@ -53,6 +53,10 @@ export function VirtualGrid<T>({
     count: items.length === 0 ? 0 : rowCount,
     getScrollElement: () => scrollRef.current,
     estimateSize: () => estimateRowHeight + gapY,
+    // Each virtual item contains exactly one CSS-grid row, so `rowGap` would
+    // not create spacing between virtual rows. Include the gap in measurement
+    // as well as the estimate, otherwise measured rows stack flush together.
+    measureElement: (element) => element.getBoundingClientRect().height + gapY,
     overscan,
   });
 
@@ -74,7 +78,6 @@ export function VirtualGrid<T>({
                 transform: `translateY(${row.start}px)`,
                 gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
                 columnGap: gapX,
-                rowGap: gapY,
               }}
             >
               {slice.map((item, i) => {
