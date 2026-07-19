@@ -244,6 +244,21 @@ export async function searchAll(
     query: trimmed,
     include_adult: "false",
   });
+  if (!data) {
+    return {
+      query: trimmed,
+      topMatch: null,
+      people: [],
+      movies: [],
+      series: [],
+      liveTv: [],
+      anime: [],
+      addonGroups: [],
+      addons: [],
+      intent: detectIntent(trimmed),
+      tmdbUnavailable: true,
+    };
+  }
   const exclude = new Set(opts.excludeGenres ?? []);
   const hasExcludedGenre = (gs?: number[]) => (gs ?? []).some((id) => exclude.has(id));
   const results = (data?.results ?? []).filter((r) => {

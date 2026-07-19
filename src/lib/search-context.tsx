@@ -21,6 +21,7 @@ import {
 import { searchAddonCatalogs, searchAddonGroups, mergeMetas } from "@/lib/search-addons";
 import { searchAddonIndex } from "@/lib/search-addon-index";
 import { createSearchRequestGuard } from "@/lib/search-request-guard";
+import { normalizeSearchQuery } from "@/lib/search-query";
 import { gatherCatalogAddons, type Addon } from "@/lib/addons";
 import { useAuth } from "@/lib/auth";
 import { useSettings } from "@/lib/settings";
@@ -151,7 +152,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
       if (!requestGuardRef.current.isCurrent(id)) return;
       setStatus("loading");
       const liveTv = liveTvAllowed ? searchLiveTvChannels(trimmed, settings.iptvPlaylists) : [];
-      const normalizedQuery = trimmed.toLocaleLowerCase().replace(/\s+/g, " ");
+      const normalizedQuery = normalizeSearchQuery(trimmed);
       const tmdbCacheKey = [
         settings.tmdbKey,
         settings.tmdbLanguage,
