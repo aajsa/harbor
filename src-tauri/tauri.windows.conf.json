@@ -4,6 +4,11 @@
       "libmpv/libmpv-2.dll": "libmpv-2.dll",
       "binaries/mpv-x86_64-pc-windows-msvc.exe": "mpv.exe",
       "fonts/*": "fonts/"
+    },
+    "windows": {
+      "nsis": {
+        "compression": "zlib"
+      }
     }
   }
 }
