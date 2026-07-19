@@ -106,6 +106,7 @@ async fn collect_sidecar_output(
     match tokio::time::timeout(timeout, collect).await {
         Ok(output) => Ok(output),
         Err(_) => {
+            crate::process::terminate_descendants(child.pid()).await;
             let _ = child.kill();
             while events.recv().await.is_some() {}
             Err(format!("yt-dlp {label} timed out"))

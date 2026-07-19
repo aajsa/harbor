@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { fetch as tauriFetchImpl } from "@tauri-apps/plugin-http";
 import { TrackerBlockedError, isBlockedUrl, noteBlocked } from "./privacy/blocklist";
+import { canFallbackAfterNativeFetchError } from "./safe-fetch-policy";
 
 const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
@@ -151,6 +152,7 @@ export const safeFetch: typeof fetch = (input, init) => {
           ) {
             throw abortError();
           }
+          if (!canFallbackAfterNativeFetchError(error)) throw error;
           return tauriFetchImpl(input as string, init as RequestInit) as Promise<Response>;
         });
       }
