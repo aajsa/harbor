@@ -17,6 +17,7 @@ import { startMaintenance, subscribeMemoryPressure } from "@/lib/maintenance";
 import { MiddleClickScroll } from "@/lib/use-middle-click-scroll";
 import { exitWindowFullscreenOnPlayerClose, toggleWindowFullscreen } from "@/lib/fullscreen-state";
 import { flushCloudSync } from "@/views/player/hooks/use-stremio-sync";
+import { PlayerRouteFallback } from "@/views/player/player-route-fallback";
 import { setNativeMemoryActive } from "@/lib/native-memory";
 import { useOverlayPinned } from "@/lib/overlay-pin";
 import { isMobileDevice, isWeb } from "@/lib/platform";
@@ -1237,7 +1238,7 @@ function Shell({ onReady }: { onReady?: () => void }) {
         )}
       </div>
       {player && (
-        <Suspense fallback={null}>
+        <Suspense fallback={<PlayerRouteFallback src={player} />}>
           <PlayerView
             key={player.meta.id.startsWith("iptv:") ? "player-live" : `player-${player.meta.id}`}
             src={player}
