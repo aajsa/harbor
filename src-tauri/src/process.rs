@@ -7,19 +7,18 @@ pub async fn terminate_descendants(pid: u32) {
     {
         // yt-dlp may have a direct ffmpeg child. Target only children of the
         // Harbor-owned PID; never use a name-based process sweep.
-        let _ = tokio::process::Command::new("pkill")
-            .args(["-KILL", "-P", &pid.to_string()])
-            .status()
-            .await;
+        let mut command = tokio::process::Command::new("pkill");
+        command.args(["-KILL", "-P", &pid.to_string()]);
+        let _ = tokio::time::timeout(Duration::from_secs(2), command.status()).await;
     }
     #[cfg(windows)]
     {
         use std::os::windows::process::CommandExt;
-        let _ = tokio::process::Command::new("taskkill")
+        let mut command = tokio::process::Command::new("taskkill");
+        command
             .args(["/PID", &pid.to_string(), "/T", "/F"])
-            .creation_flags(0x0800_0000)
-            .status()
-            .await;
+            .creation_flags(0x0800_0000);
+        let _ = tokio::time::timeout(Duration::from_secs(2), command.status()).await;
     }
 }
 
