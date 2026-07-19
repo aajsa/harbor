@@ -13,7 +13,6 @@ pub async fn terminate_descendants(pid: u32) {
     }
     #[cfg(windows)]
     {
-        use std::os::windows::process::CommandExt;
         let mut command = tokio::process::Command::new("taskkill");
         command
             .args(["/PID", &pid.to_string(), "/T", "/F"])
