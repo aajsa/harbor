@@ -169,8 +169,20 @@ mod tests {
             .trim()
             .parse()
             .expect("parse child pid");
-        let alive = unsafe { libc::kill(child_pid, 0) } == 0;
+        let process_state = std::process::Command::new("ps")
+            .args(["-o", "state=", "-p", &child_pid.to_string()])
+            .output()
+            .expect("inspect descendant state");
+        let state = String::from_utf8_lossy(&process_state.stdout);
+        // A killed descendant can remain as a zombie until the runner's init
+        // process reaps it. Zombies are terminated and execute no work, even
+        // though kill(pid, 0) still reports that their PID exists.
+        let running = state
+            .trim()
+            .chars()
+            .next()
+            .is_some_and(|state| state != 'Z');
         let _ = std::fs::remove_file(marker_path);
-        assert!(!alive, "descendant process survived timeout");
+        assert!(!running, "descendant process survived timeout: {state}");
     }
 }
