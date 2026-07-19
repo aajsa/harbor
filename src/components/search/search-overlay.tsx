@@ -72,7 +72,7 @@ export function SearchOverlay() {
   };
 
   const onIntent = () => {
-    const intent = results?.intent;
+    const intent = currentResults?.intent;
     if (!intent) return;
     if (intent.kind === "genre") {
       const id = (intent.mediaType === "movie" ? MOVIE_GENRES : TV_GENRES)[intent.genre];
@@ -91,33 +91,34 @@ export function SearchOverlay() {
   };
 
   const trimmed = query.trim();
+  const currentResults = results?.query === trimmed ? results : null;
   const magnetInput = !!trimmed && isMagnetInput(trimmed);
   const urlInput = !!trimmed && !magnetInput && isDirectVideoUrl(trimmed);
   const directInput = magnetInput || urlInput;
   const hasResults = !!(
-    results &&
+    currentResults &&
     trimmed &&
-    (results.topMatch ||
-      results.people.length ||
-      results.movies.length ||
-      results.series.length ||
-      results.liveTv.length ||
-      results.anime.length ||
-      results.addons.length ||
-      results.addonGroups.length)
+    (currentResults.topMatch ||
+      currentResults.people.length ||
+      currentResults.movies.length ||
+      currentResults.series.length ||
+      currentResults.liveTv.length ||
+      currentResults.anime.length ||
+      currentResults.addons.length ||
+      currentResults.addonGroups.length)
   );
   const noResults = !!(
-    results &&
+    currentResults &&
     trimmed &&
     status === "done" &&
-    !results.topMatch &&
-    results.people.length === 0 &&
-    results.movies.length === 0 &&
-    results.series.length === 0 &&
-    results.liveTv.length === 0 &&
-    results.anime.length === 0 &&
-    results.addons.length === 0 &&
-    results.addonGroups.length === 0
+    !currentResults.topMatch &&
+    currentResults.people.length === 0 &&
+    currentResults.movies.length === 0 &&
+    currentResults.series.length === 0 &&
+    currentResults.liveTv.length === 0 &&
+    currentResults.anime.length === 0 &&
+    currentResults.addons.length === 0 &&
+    currentResults.addonGroups.length === 0
   );
 
   return createPortal(
@@ -176,10 +177,10 @@ export function SearchOverlay() {
                   }
                   return;
                 }
-                if (results?.topMatch) {
+                if (currentResults?.topMatch) {
                   e.preventDefault();
                   recordRecent(query);
-                  const meta = results.topMatch.meta;
+                  const meta = currentResults.topMatch.meta;
                   setOpen(false);
                   openMeta(meta);
                 }
@@ -240,13 +241,13 @@ export function SearchOverlay() {
             </div>
           )}
 
-          {trimmed && !directInput && results?.intent && (
+          {trimmed && !directInput && currentResults?.intent && (
             <button
               onClick={onIntent}
               className="mb-5 flex h-14 w-full items-center gap-3 rounded-2xl border border-accent/40 bg-accent/10 px-5 text-start transition-colors hover:bg-accent/15"
             >
               <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent/20 text-accent">
-                {results.intent.kind === "year" ? (
+                {currentResults.intent.kind === "year" ? (
                   <CalendarRange size={16} strokeWidth={2.1} />
                 ) : (
                   <Tag size={16} strokeWidth={2.1} />
@@ -256,7 +257,9 @@ export function SearchOverlay() {
                 <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
                   {t("Browse")}
                 </span>
-                <span className="text-[15px] font-semibold text-ink">{results.intent.label}</span>
+                <span className="text-[15px] font-semibold text-ink">
+                  {currentResults.intent.label}
+                </span>
               </span>
               <CornerDownLeft size={15} className="ms-auto text-ink-subtle" />
             </button>
@@ -271,18 +274,25 @@ export function SearchOverlay() {
             />
           )}
 
-          {trimmed && !directInput && hasResults && !aiActive && results && (
+          {trimmed && !directInput && hasResults && !aiActive && currentResults && (
             <div className="flex flex-col gap-8 pb-12">
-              {results.topMatch && <TopMatch match={results.topMatch} onClose={close} />}
-              <LiveTvRow items={results.liveTv} onClose={close} />
-              <AddonHits hits={results.addons} onClose={close} />
-              <PeopleRow people={results.people} onClose={close} />
+              {currentResults.tmdbUnavailable && (
+                <p className="-mb-3 text-[13px] text-ink-muted">
+                  {t("TMDB is temporarily unavailable. These results may be incomplete.")}
+                </p>
+              )}
+              {currentResults.topMatch && (
+                <TopMatch match={currentResults.topMatch} onClose={close} />
+              )}
+              <LiveTvRow items={currentResults.liveTv} onClose={close} />
+              <AddonHits hits={currentResults.addons} onClose={close} />
+              <PeopleRow people={currentResults.people} onClose={close} />
               <div className="grid gap-8 lg:grid-cols-2">
-                <MetaList title={t("Movies")} items={results.movies} onClose={close} />
-                <MetaList title={t("Series")} items={results.series} onClose={close} />
+                <MetaList title={t("Movies")} items={currentResults.movies} onClose={close} />
+                <MetaList title={t("Series")} items={currentResults.series} onClose={close} />
               </div>
-              <AnimeRow items={results.anime} onClose={close} />
-              <AddonResults groups={results.addonGroups} onClose={close} />
+              <AnimeRow items={currentResults.anime} onClose={close} />
+              <AddonResults groups={currentResults.addonGroups} onClose={close} />
             </div>
           )}
 
@@ -299,7 +309,7 @@ export function SearchOverlay() {
             </div>
           )}
 
-          {trimmed && !directInput && !results && status !== "done" && (
+          {trimmed && !directInput && !currentResults && status !== "done" && (
             <div className="flex flex-col items-center gap-3 pt-16 text-ink-muted">
               <Loader2 size={22} className="animate-spin" />
               <span className="text-[13.5px]">{t("Looking…")}</span>
