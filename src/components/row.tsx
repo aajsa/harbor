@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
   type ReactNode,
@@ -192,26 +193,22 @@ export function Row({
     if (el.clientWidth > 0 && remaining < 800) onEndRef.current?.();
   };
 
-  const childCount = Children.count(children);
-  const restoredRef = useRef(false);
+  // Keep native CSS grid rails — horizontal virtualization made posters look
+  // mid-scrolled / misaligned. LazyChild + IO is enough for row-sized lists.
+  const items = useMemo(() => Children.toArray(children), [children]);
+  const childCount = items.length;
+
   const userInteractedRef = useRef(false);
-  const { rememberRowScroll, recallRowScroll } = useView();
+  const { rememberRowScroll } = useView();
   useLayoutEffect(() => {
     measure();
+    // Always pin rails to the first poster unless the user scrolled this session.
+    // Restoring saved scrollLeft made every page open mid-row ("posters scrolled").
+    if (trackEl && cellWidth != null && childCount > 0 && !userInteractedRef.current) {
+      if (readPos(trackEl) !== 0) writePos(trackEl, 0);
+    }
     measureScroll();
-    if (!trackEl || cellWidth == null) return;
-    if (scrollKey && !restoredRef.current && childCount > 0) {
-      const n = recallRowScroll(scrollKey);
-      const max = trackEl.scrollWidth - trackEl.clientWidth;
-      const target = n != null && n > 0 && max > 0 ? Math.min(n, max) : 0;
-      if (readPos(trackEl) !== target) writePos(trackEl, target);
-      restoredRef.current = true;
-      return;
-    }
-    if (!userInteractedRef.current && readPos(trackEl) !== 0) {
-      writePos(trackEl, 0);
-    }
-  }, [children, childCount, cellWidth, trackEl, scrollKey, recallRowScroll, effMin]);
+  }, [children, childCount, cellWidth, trackEl, effMin]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -278,13 +275,13 @@ export function Row({
     const onReset = (e: Event) => {
       const detail = (e as CustomEvent<{ prefix?: string }>).detail;
       if (!scrollKey) return;
-      if (!detail?.prefix || !scrollKey.startsWith(detail.prefix)) return;
+      // Empty/missing prefix = reset every rail (nav change). Otherwise match prefix.
+      if (detail?.prefix && !scrollKey.startsWith(detail.prefix)) return;
       if (saveTimer != null) {
         window.clearTimeout(saveTimer);
         saveTimer = null;
       }
       writePos(track, 0);
-      rememberRowScroll(scrollKey, 0);
       userInteractedRef.current = false;
       measureScroll();
     };
@@ -352,8 +349,9 @@ export function Row({
       gap: GAP,
       scrollPosition: readPos(track),
       rtl: isRtlTrack(track),
+      transitionMs: settings.posterDockTransitionMs,
     });
-  }, [cellWidth, dockEnabled, effMin, resetPosterDock]);
+  }, [cellWidth, dockEnabled, effMin, resetPosterDock, settings.posterDockTransitionMs]);
 
   const schedulePosterDock = useCallback(
     (clientX: number) => {
@@ -559,7 +557,7 @@ export function Row({
             }}
             onClickCapture={onClickCapture}
             onDragStart={(e) => e.preventDefault()}
-            className="harbor-row-track grid grid-flow-col items-start gap-5 overflow-x-auto px-5 pb-5 pt-8 -mx-5 -mb-5 -mt-8 scroll-ps-5 scroll-pe-5 [scroll-snap-type:x_mandatory] *:snap-start [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] [overflow-anchor:none] overscroll-x-contain [&_img]:select-none [&_img]:[-webkit-user-drag:none]"
+            className="harbor-row-track grid grid-flow-col items-start gap-5 overflow-x-auto px-5 pb-8 pt-14 -mx-5 -mb-8 -mt-14 scroll-ps-5 scroll-pe-5 [scroll-snap-type:x_mandatory] *:snap-start [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] [overflow-anchor:none] overscroll-x-contain [&_img]:select-none [&_img]:[-webkit-user-drag:none]"
             style={{
               gridAutoColumns: cellWidth != null ? `${cellWidth}px` : `${effMin}px`,
               willChange: "transform",
@@ -567,12 +565,12 @@ export function Row({
               contain: "layout style",
             }}
           >
-            {Children.map(children, (child, i) => {
+            {items.map((child, i) => {
               const span = isValidElement(child)
                 ? (child.props as { style?: { gridColumn?: string } }).style?.gridColumn
                 : undefined;
               return (
-                <LazyChild eager={i < EAGER_COUNT} shape={shape} span={span}>
+                <LazyChild key={i} eager={i < EAGER_COUNT} shape={shape} span={span}>
                   {child}
                 </LazyChild>
               );
@@ -609,15 +607,17 @@ function EdgeArrow({
       >
         <ThreeLiquidGlassSurface
           radius="9999px"
-          shaderRadius={1}
-          intensity={1}
-          variant="overlay"
-          backdropBlur
-          className={`h-11 w-11 pointer-events-auto ${
-            visible
-              ? "opacity-0 group-hover/row:opacity-100 focus-within:opacity-100"
-              : "pointer-events-none opacity-0"
-          }`}
+          shaderRadius={0.58}
+          intensity={0.9}
+          style={{
+            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.10), inset 0 -1px 0 rgba(0,0,0,0.05)",
+          }}
+          className={`h-11 w-11 pointer-events-auto border border-white/[0.08]
+            transition-opacity duration-200 ${
+              visible
+                ? "opacity-85 group-hover/row:opacity-100 focus-within:opacity-100"
+                : "pointer-events-none opacity-0"
+            }`}
           contentClassName="flex h-full w-full items-center justify-center"
         >
           <button
@@ -626,11 +626,11 @@ function EdgeArrow({
             aria-label={label}
             tabIndex={visible ? 0 : -1}
             className="
-      flex h-full w-full
-      items-center justify-center
-      rounded-full bg-transparent
-      text-ink outline-none
-    "
+            flex h-full w-full
+            items-center justify-center
+            rounded-full bg-transparent
+            text-ink outline-none
+          "
           >
             {side === "left" ? (
               <ChevronLeft size={22} strokeWidth={2.2} className="dir-icon" />
@@ -651,15 +651,17 @@ function EdgeArrow({
     >
       <ThreeLiquidGlassSurface
         radius="9999px"
-        shaderRadius={1}
-        intensity={1}
-        variant="overlay"
-        backdropBlur
-        className={`h-11 w-11 pointer-events-auto ${
-          visible
-            ? "opacity-0 group-hover/row:opacity-100 focus-within:opacity-100"
-            : "pointer-events-none opacity-0"
-        }`}
+        shaderRadius={0.58}
+        intensity={0.9}
+        style={{
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.10), inset 0 -1px 0 rgba(0,0,0,0.05)",
+        }}
+        className={`h-11 w-11 pointer-events-auto border border-white/[0.08]
+            transition-opacity duration-200 ${
+              visible
+                ? "opacity-85 group-hover/row:opacity-100 focus-within:opacity-100"
+                : "pointer-events-none opacity-0"
+            }`}
         contentClassName="flex h-full w-full items-center justify-center"
       >
         <button
